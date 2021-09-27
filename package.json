@@ -14,5 +14,8 @@
   "version": "0.2.0",
   "description": "Hello World Diagram Example",
   "main": "dist/lassoDiagram.umd.min.js",
-  "types": "types/hello-world.d.ts"
+  "types": "types/hello-world.d.ts",
+  "dependencies": {
+    "vue": "^2.6.11"
+  }
 }

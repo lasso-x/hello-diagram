@@ -1,0 +1,14 @@
+{
+  "name": "@lasso-x/hello-diagram",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/lasso-x/hello-diagram.git"
+  },
+  "bugs": {
+    "url": "https://github.com/lasso-x/hello-diagram/issues"
+  },
+  "homepage": "https://github.com/lasso-x/hello-diagram#readme",
+  "version": "0.1.0",
+  "description": "Hello World Diagram Example",
+  "main": "index.js"
+}

@@ -11308,9 +11308,9 @@ var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_
 
   /*
   Insert item x in list a, and keep it sorted assuming a is sorted.
-  
+
   If x is already in a, insert it to the right of the rightmost x.
-  
+
   Optional args lo (default 0) and hi (default a.length) bound the slice
   of a to be searched.
    */
@@ -11377,7 +11377,7 @@ var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_
 
   /*
   Pop and return the current smallest value, and add the new item.
-  
+
   This is more efficient than heappop() followed by heappush(), and can be
   more appropriate when using a fixed size heap. Note that the value
   returned may be larger than item! That constrains reasonable use of
@@ -12617,7 +12617,7 @@ var cxtmenu = function cxtmenu(params) {
       var rx1 = (r + rs) / 2 * Math.cos(midtheta);
       var ry1 = (r + rs) / 2 * Math.sin(midtheta);
 
-      // Arbitrary multiplier to increase the sizing of the space 
+      // Arbitrary multiplier to increase the sizing of the space
       // available for the item.
       var width = 1 * Math.abs((r - rs) * Math.cos(midtheta));
       var height = 1 * Math.abs((r - rs) * Math.sin(midtheta));
@@ -12765,7 +12765,7 @@ var cxtmenu = function cxtmenu(params) {
     c2d.rotate(rot);
 
     // clear the indicator
-    // The indicator size (arrow) depends on the node size as well. If the indicator size is bigger and the rendered node size + padding, 
+    // The indicator size (arrow) depends on the node size as well. If the indicator size is bigger and the rendered node size + padding,
     // use the rendered node size + padding as the indicator size.
     var indicatorSize = options.indicatorSize > rs + options.spotlightPadding ? rs + options.spotlightPadding : options.indicatorSize;
     c2d.beginPath();
@@ -13185,7 +13185,7 @@ var defaults = {
   fillColor: 'rgba(0, 0, 0, 0.75)', // the background colour of the menu
   activeFillColor: 'rgba(1, 105, 217, 0.75)', // the colour used to indicate the selected command
   activePadding: 20, // additional size in pixels for the active command
-  indicatorSize: 24, // the size in pixels of the pointer to the active command, will default to the node size if the node size is smaller than the indicator size, 
+  indicatorSize: 24, // the size in pixels of the pointer to the active command, will default to the node size if the node size is smaller than the indicator size,
   separatorWidth: 3, // the empty spacing in pixels between successive commands
   spotlightPadding: 4, // extra spacing in pixels between the element and the spotlight
   adaptativeNodeSpotlightRadius: false, // specify whether the spotlight radius should adapt to the node size
@@ -33083,7 +33083,7 @@ var defaults$a = {
   // callback on layoutstop
   transform: function transform(node, position) {
     return position;
-  } // transform a given node position. Useful for changing flow direction in discrete layouts 
+  } // transform a given node position. Useful for changing flow direction in discrete layouts
 
 };
 
@@ -34618,7 +34618,7 @@ var defaults$d = {
   // callback on layoutstop
   transform: function transform(node, position) {
     return position;
-  } // transform a given node position. Useful for changing flow direction in discrete layouts 
+  } // transform a given node position. Useful for changing flow direction in discrete layouts
 
 };
 
@@ -34987,7 +34987,7 @@ var defaults$g = {
   // callback on layoutstop
   transform: function transform(node, position) {
     return position;
-  } // transform a given node position. Useful for changing flow direction in discrete layouts 
+  } // transform a given node position. Useful for changing flow direction in discrete layouts
 
 };
 
@@ -46977,7 +46977,7 @@ var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_
     if (descriptor && descriptor.get !== getCurrentScript && document.currentScript) {
       return document.currentScript
     }
-  
+
     // IE 8-10 support script readyState
     // IE 11+ & Firefox support stack trace
     try {
@@ -46995,24 +46995,24 @@ var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_
         inlineScriptSourceRegExp,
         inlineScriptSource,
         scripts = document.getElementsByTagName('script'); // Live NodeList collection
-  
+
       if (scriptLocation === currentLocation) {
         pageSource = document.documentElement.outerHTML;
         inlineScriptSourceRegExp = new RegExp('(?:[^\\n]+?\\n){0,' + (line - 2) + '}[^<]*<script>([\\d\\D]*?)<\\/script>[\\d\\D]*', 'i');
         inlineScriptSource = pageSource.replace(inlineScriptSourceRegExp, '$1').trim();
       }
-  
+
       for (var i = 0; i < scripts.length; i++) {
         // If ready state is interactive, return the script tag
         if (scripts[i].readyState === 'interactive') {
           return scripts[i];
         }
-  
+
         // If src matches, return the script tag
         if (scripts[i].src === scriptLocation) {
           return scripts[i];
         }
-  
+
         // If inline source matches, return the script tag
         if (
           scriptLocation === currentLocation &&
@@ -47022,7 +47022,7 @@ var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_
           return scripts[i];
         }
       }
-  
+
       // If no match, return null
       return null;
     }
@@ -51400,7 +51400,7 @@ __decorate([Prop({
 ButtonGroupvue_type_script_lang_ts_ButtonGroup = __decorate([vue_class_component_esm({})], ButtonGroupvue_type_script_lang_ts_ButtonGroup);
 /* harmony default export */ var ButtonGroupvue_type_script_lang_ts_ = (ButtonGroupvue_type_script_lang_ts_ButtonGroup);
 // CONCATENATED MODULE: ./src/components/ButtonGroup.vue?vue&type=script&lang=ts&
- /* harmony default export */ var components_ButtonGroupvue_type_script_lang_ts_ = (ButtonGroupvue_type_script_lang_ts_); 
+ /* harmony default export */ var components_ButtonGroupvue_type_script_lang_ts_ = (ButtonGroupvue_type_script_lang_ts_);
 // EXTERNAL MODULE: ./src/components/ButtonGroup.vue?vue&type=style&index=0&lang=scss&
 var ButtonGroupvue_type_style_index_0_lang_scss_ = __webpack_require__("b761");
 
@@ -51521,7 +51521,7 @@ var component = normalizeComponent(
   null,
   null,
   null
-  
+
 )
 
 /* harmony default export */ var components_ButtonGroup = (component.exports);
@@ -51580,7 +51580,7 @@ __decorate([Prop({
 Iconvue_type_script_lang_ts_Icon = __decorate([vue_class_component_esm({})], Iconvue_type_script_lang_ts_Icon);
 /* harmony default export */ var Iconvue_type_script_lang_ts_ = (Iconvue_type_script_lang_ts_Icon);
 // CONCATENATED MODULE: ./src/components/Icon.vue?vue&type=script&lang=ts&
- /* harmony default export */ var components_Iconvue_type_script_lang_ts_ = (Iconvue_type_script_lang_ts_); 
+ /* harmony default export */ var components_Iconvue_type_script_lang_ts_ = (Iconvue_type_script_lang_ts_);
 // EXTERNAL MODULE: ./src/components/Icon.vue?vue&type=style&index=0&lang=scss&
 var Iconvue_type_style_index_0_lang_scss_ = __webpack_require__("83b4");
 
@@ -51601,7 +51601,7 @@ var Icon_component = normalizeComponent(
   null,
   null,
   null
-  
+
 )
 
 /* harmony default export */ var components_Icon = (Icon_component.exports);
@@ -51672,7 +51672,7 @@ BaseButtonvue_type_script_lang_ts_BaseButton = __decorate([vue_class_component_e
 })], BaseButtonvue_type_script_lang_ts_BaseButton);
 /* harmony default export */ var BaseButtonvue_type_script_lang_ts_ = (BaseButtonvue_type_script_lang_ts_BaseButton);
 // CONCATENATED MODULE: ./src/components/BaseButton.vue?vue&type=script&lang=ts&
- /* harmony default export */ var components_BaseButtonvue_type_script_lang_ts_ = (BaseButtonvue_type_script_lang_ts_); 
+ /* harmony default export */ var components_BaseButtonvue_type_script_lang_ts_ = (BaseButtonvue_type_script_lang_ts_);
 // EXTERNAL MODULE: ./src/components/BaseButton.vue?vue&type=style&index=0&lang=scss&
 var BaseButtonvue_type_style_index_0_lang_scss_ = __webpack_require__("55ae");
 
@@ -51693,7 +51693,7 @@ var BaseButton_component = normalizeComponent(
   null,
   null,
   null
-  
+
 )
 
 /* harmony default export */ var components_BaseButton = (BaseButton_component.exports);
@@ -51761,7 +51761,7 @@ Buttonvue_type_script_lang_ts_Button = __decorate([vue_class_component_esm({
 })], Buttonvue_type_script_lang_ts_Button);
 /* harmony default export */ var Buttonvue_type_script_lang_ts_ = (Buttonvue_type_script_lang_ts_Button);
 // CONCATENATED MODULE: ./src/components/Button.vue?vue&type=script&lang=ts&
- /* harmony default export */ var components_Buttonvue_type_script_lang_ts_ = (Buttonvue_type_script_lang_ts_); 
+ /* harmony default export */ var components_Buttonvue_type_script_lang_ts_ = (Buttonvue_type_script_lang_ts_);
 // EXTERNAL MODULE: ./src/components/Button.vue?vue&type=style&index=0&lang=scss&
 var Buttonvue_type_style_index_0_lang_scss_ = __webpack_require__("ef55");
 
@@ -51782,7 +51782,7 @@ var Button_component = normalizeComponent(
   null,
   null,
   null
-  
+
 )
 
 /* harmony default export */ var components_Button = (Button_component.exports);
@@ -51823,7 +51823,7 @@ TopBarvue_type_script_lang_ts_TopBar = __decorate([vue_class_component_esm({
 })], TopBarvue_type_script_lang_ts_TopBar);
 /* harmony default export */ var TopBarvue_type_script_lang_ts_ = (TopBarvue_type_script_lang_ts_TopBar);
 // CONCATENATED MODULE: ./src/components/TopBar.vue?vue&type=script&lang=ts&
- /* harmony default export */ var components_TopBarvue_type_script_lang_ts_ = (TopBarvue_type_script_lang_ts_); 
+ /* harmony default export */ var components_TopBarvue_type_script_lang_ts_ = (TopBarvue_type_script_lang_ts_);
 // EXTERNAL MODULE: ./src/components/TopBar.vue?vue&type=style&index=0&lang=scss&
 var TopBarvue_type_style_index_0_lang_scss_ = __webpack_require__("d4bd");
 
@@ -51844,7 +51844,7 @@ var TopBar_component = normalizeComponent(
   null,
   null,
   null
-  
+
 )
 
 /* harmony default export */ var components_TopBar = (TopBar_component.exports);
@@ -52673,7 +52673,7 @@ __decorate([Watch('diagram.data', {
 Graphvue_type_script_lang_ts_Graph = __decorate([vue_class_component_esm({})], Graphvue_type_script_lang_ts_Graph);
 /* harmony default export */ var Graphvue_type_script_lang_ts_ = (Graphvue_type_script_lang_ts_Graph);
 // CONCATENATED MODULE: ./src/components/Graph.vue?vue&type=script&lang=ts&
- /* harmony default export */ var components_Graphvue_type_script_lang_ts_ = (Graphvue_type_script_lang_ts_); 
+ /* harmony default export */ var components_Graphvue_type_script_lang_ts_ = (Graphvue_type_script_lang_ts_);
 // EXTERNAL MODULE: ./src/components/Graph.vue?vue&type=style&index=0&lang=scss&
 var Graphvue_type_style_index_0_lang_scss_ = __webpack_require__("2a3c");
 
@@ -52694,7 +52694,7 @@ var Graph_component = normalizeComponent(
   null,
   null,
   null
-  
+
 )
 
 /* harmony default export */ var components_Graph = (Graph_component.exports);
@@ -52850,7 +52850,7 @@ CustomizerFieldGroupDropdownButtonvue_type_script_lang_ts_CustomizerFieldGroupDr
 })], CustomizerFieldGroupDropdownButtonvue_type_script_lang_ts_CustomizerFieldGroupDropdownButton);
 /* harmony default export */ var CustomizerFieldGroupDropdownButtonvue_type_script_lang_ts_ = (CustomizerFieldGroupDropdownButtonvue_type_script_lang_ts_CustomizerFieldGroupDropdownButton);
 // CONCATENATED MODULE: ./src/components/CustomizerFieldGroupDropdownButton.vue?vue&type=script&lang=ts&
- /* harmony default export */ var components_CustomizerFieldGroupDropdownButtonvue_type_script_lang_ts_ = (CustomizerFieldGroupDropdownButtonvue_type_script_lang_ts_); 
+ /* harmony default export */ var components_CustomizerFieldGroupDropdownButtonvue_type_script_lang_ts_ = (CustomizerFieldGroupDropdownButtonvue_type_script_lang_ts_);
 // EXTERNAL MODULE: ./src/components/CustomizerFieldGroupDropdownButton.vue?vue&type=style&index=0&lang=scss&
 var CustomizerFieldGroupDropdownButtonvue_type_style_index_0_lang_scss_ = __webpack_require__("8e9e");
 
@@ -52871,7 +52871,7 @@ var CustomizerFieldGroupDropdownButton_component = normalizeComponent(
   null,
   null,
   null
-  
+
 )
 
 /* harmony default export */ var components_CustomizerFieldGroupDropdownButton = (CustomizerFieldGroupDropdownButton_component.exports);
@@ -52926,7 +52926,7 @@ CustomizerFieldGroupvue_type_script_lang_ts_CustomizerFieldGroup = __decorate([v
 })], CustomizerFieldGroupvue_type_script_lang_ts_CustomizerFieldGroup);
 /* harmony default export */ var CustomizerFieldGroupvue_type_script_lang_ts_ = (CustomizerFieldGroupvue_type_script_lang_ts_CustomizerFieldGroup);
 // CONCATENATED MODULE: ./src/components/CustomizerFieldGroup.vue?vue&type=script&lang=ts&
- /* harmony default export */ var components_CustomizerFieldGroupvue_type_script_lang_ts_ = (CustomizerFieldGroupvue_type_script_lang_ts_); 
+ /* harmony default export */ var components_CustomizerFieldGroupvue_type_script_lang_ts_ = (CustomizerFieldGroupvue_type_script_lang_ts_);
 // EXTERNAL MODULE: ./src/components/CustomizerFieldGroup.vue?vue&type=style&index=0&lang=scss&
 var CustomizerFieldGroupvue_type_style_index_0_lang_scss_ = __webpack_require__("ef7a");
 
@@ -52947,7 +52947,7 @@ var CustomizerFieldGroup_component = normalizeComponent(
   null,
   null,
   null
-  
+
 )
 
 /* harmony default export */ var components_CustomizerFieldGroup = (CustomizerFieldGroup_component.exports);
@@ -53012,7 +53012,7 @@ Customizervue_type_script_lang_ts_Customizer = __decorate([vue_class_component_e
 })], Customizervue_type_script_lang_ts_Customizer);
 /* harmony default export */ var Customizervue_type_script_lang_ts_ = (Customizervue_type_script_lang_ts_Customizer);
 // CONCATENATED MODULE: ./src/components/Customizer.vue?vue&type=script&lang=ts&
- /* harmony default export */ var components_Customizervue_type_script_lang_ts_ = (Customizervue_type_script_lang_ts_); 
+ /* harmony default export */ var components_Customizervue_type_script_lang_ts_ = (Customizervue_type_script_lang_ts_);
 // EXTERNAL MODULE: ./src/components/Customizer.vue?vue&type=style&index=0&lang=scss&
 var Customizervue_type_style_index_0_lang_scss_ = __webpack_require__("7fc0");
 
@@ -53033,7 +53033,7 @@ var Customizer_component = normalizeComponent(
   null,
   null,
   null
-  
+
 )
 
 /* harmony default export */ var components_Customizer = (Customizer_component.exports);
@@ -53147,7 +53147,7 @@ IconButtonvue_type_script_lang_ts_IconButton = __decorate([vue_class_component_e
 })], IconButtonvue_type_script_lang_ts_IconButton);
 /* harmony default export */ var IconButtonvue_type_script_lang_ts_ = (IconButtonvue_type_script_lang_ts_IconButton);
 // CONCATENATED MODULE: ./src/components/IconButton.vue?vue&type=script&lang=ts&
- /* harmony default export */ var components_IconButtonvue_type_script_lang_ts_ = (IconButtonvue_type_script_lang_ts_); 
+ /* harmony default export */ var components_IconButtonvue_type_script_lang_ts_ = (IconButtonvue_type_script_lang_ts_);
 // EXTERNAL MODULE: ./src/components/IconButton.vue?vue&type=style&index=0&lang=scss&
 var IconButtonvue_type_style_index_0_lang_scss_ = __webpack_require__("e4aa");
 
@@ -53168,7 +53168,7 @@ var IconButton_component = normalizeComponent(
   null,
   null,
   null
-  
+
 )
 
 /* harmony default export */ var components_IconButton = (IconButton_component.exports);
@@ -53302,7 +53302,7 @@ __decorate([Watch('buttonEl')], DropdownMenuvue_type_script_lang_ts_DropdownMenu
 DropdownMenuvue_type_script_lang_ts_DropdownMenu = __decorate([vue_class_component_esm({})], DropdownMenuvue_type_script_lang_ts_DropdownMenu);
 /* harmony default export */ var DropdownMenuvue_type_script_lang_ts_ = (DropdownMenuvue_type_script_lang_ts_DropdownMenu);
 // CONCATENATED MODULE: ./src/components/DropdownMenu.vue?vue&type=script&lang=ts&
- /* harmony default export */ var components_DropdownMenuvue_type_script_lang_ts_ = (DropdownMenuvue_type_script_lang_ts_); 
+ /* harmony default export */ var components_DropdownMenuvue_type_script_lang_ts_ = (DropdownMenuvue_type_script_lang_ts_);
 // EXTERNAL MODULE: ./src/components/DropdownMenu.vue?vue&type=style&index=0&lang=scss&
 var DropdownMenuvue_type_style_index_0_lang_scss_ = __webpack_require__("bf1c");
 
@@ -53323,7 +53323,7 @@ var DropdownMenu_component = normalizeComponent(
   null,
   null,
   null
-  
+
 )
 
 /* harmony default export */ var components_DropdownMenu = (DropdownMenu_component.exports);
@@ -53370,7 +53370,7 @@ DropdownMenuItemvue_type_script_lang_ts_DropdownMenuItem = __decorate([vue_class
 })], DropdownMenuItemvue_type_script_lang_ts_DropdownMenuItem);
 /* harmony default export */ var DropdownMenuItemvue_type_script_lang_ts_ = (DropdownMenuItemvue_type_script_lang_ts_DropdownMenuItem);
 // CONCATENATED MODULE: ./src/components/DropdownMenuItem.vue?vue&type=script&lang=ts&
- /* harmony default export */ var components_DropdownMenuItemvue_type_script_lang_ts_ = (DropdownMenuItemvue_type_script_lang_ts_); 
+ /* harmony default export */ var components_DropdownMenuItemvue_type_script_lang_ts_ = (DropdownMenuItemvue_type_script_lang_ts_);
 // EXTERNAL MODULE: ./src/components/DropdownMenuItem.vue?vue&type=style&index=0&lang=scss&
 var DropdownMenuItemvue_type_style_index_0_lang_scss_ = __webpack_require__("21a5");
 
@@ -53391,7 +53391,7 @@ var DropdownMenuItem_component = normalizeComponent(
   null,
   null,
   null
-  
+
 )
 
 /* harmony default export */ var components_DropdownMenuItem = (DropdownMenuItem_component.exports);
@@ -53426,7 +53426,7 @@ var DropdownMenuDividervue_type_script_lang_ts_DropdownMenuDivider = /*#__PURE__
 DropdownMenuDividervue_type_script_lang_ts_DropdownMenuDivider = __decorate([vue_class_component_esm({})], DropdownMenuDividervue_type_script_lang_ts_DropdownMenuDivider);
 /* harmony default export */ var DropdownMenuDividervue_type_script_lang_ts_ = (DropdownMenuDividervue_type_script_lang_ts_DropdownMenuDivider);
 // CONCATENATED MODULE: ./src/components/DropdownMenuDivider.vue?vue&type=script&lang=ts&
- /* harmony default export */ var components_DropdownMenuDividervue_type_script_lang_ts_ = (DropdownMenuDividervue_type_script_lang_ts_); 
+ /* harmony default export */ var components_DropdownMenuDividervue_type_script_lang_ts_ = (DropdownMenuDividervue_type_script_lang_ts_);
 // EXTERNAL MODULE: ./src/components/DropdownMenuDivider.vue?vue&type=style&index=0&lang=scss&
 var DropdownMenuDividervue_type_style_index_0_lang_scss_ = __webpack_require__("ebf2");
 
@@ -53447,7 +53447,7 @@ var DropdownMenuDivider_component = normalizeComponent(
   null,
   null,
   null
-  
+
 )
 
 /* harmony default export */ var components_DropdownMenuDivider = (DropdownMenuDivider_component.exports);
@@ -53525,7 +53525,7 @@ TextFieldvue_type_script_lang_ts_TextField = __decorate([vue_class_component_esm
 })], TextFieldvue_type_script_lang_ts_TextField);
 /* harmony default export */ var TextFieldvue_type_script_lang_ts_ = (TextFieldvue_type_script_lang_ts_TextField);
 // CONCATENATED MODULE: ./src/components/TextField.vue?vue&type=script&lang=ts&
- /* harmony default export */ var components_TextFieldvue_type_script_lang_ts_ = (TextFieldvue_type_script_lang_ts_); 
+ /* harmony default export */ var components_TextFieldvue_type_script_lang_ts_ = (TextFieldvue_type_script_lang_ts_);
 // EXTERNAL MODULE: ./src/components/TextField.vue?vue&type=style&index=0&lang=scss&
 var TextFieldvue_type_style_index_0_lang_scss_ = __webpack_require__("2b23");
 
@@ -53546,7 +53546,7 @@ var TextField_component = normalizeComponent(
   null,
   null,
   null
-  
+
 )
 
 /* harmony default export */ var components_TextField = (TextField_component.exports);
@@ -53805,7 +53805,7 @@ Editorvue_type_script_lang_ts_Editor = __decorate([vue_class_component_esm({
 })], Editorvue_type_script_lang_ts_Editor);
 /* harmony default export */ var Editorvue_type_script_lang_ts_ = (Editorvue_type_script_lang_ts_Editor);
 // CONCATENATED MODULE: ./src/components/Editor.vue?vue&type=script&lang=ts&
- /* harmony default export */ var components_Editorvue_type_script_lang_ts_ = (Editorvue_type_script_lang_ts_); 
+ /* harmony default export */ var components_Editorvue_type_script_lang_ts_ = (Editorvue_type_script_lang_ts_);
 // EXTERNAL MODULE: ./src/components/Editor.vue?vue&type=style&index=0&lang=scss&
 var Editorvue_type_style_index_0_lang_scss_ = __webpack_require__("58d3");
 
@@ -53826,7 +53826,7 @@ var Editor_component = normalizeComponent(
   null,
   null,
   null
-  
+
 )
 
 /* harmony default export */ var components_Editor = (Editor_component.exports);
@@ -53929,7 +53929,7 @@ Diagramvue_type_script_lang_ts_DiagramVue = __decorate([vue_class_component_esm(
 })], Diagramvue_type_script_lang_ts_DiagramVue);
 /* harmony default export */ var Diagramvue_type_script_lang_ts_ = (Diagramvue_type_script_lang_ts_DiagramVue);
 // CONCATENATED MODULE: ./src/components/Diagram.vue?vue&type=script&lang=ts&
- /* harmony default export */ var components_Diagramvue_type_script_lang_ts_ = (Diagramvue_type_script_lang_ts_); 
+ /* harmony default export */ var components_Diagramvue_type_script_lang_ts_ = (Diagramvue_type_script_lang_ts_);
 // EXTERNAL MODULE: ./src/components/Diagram.vue?vue&type=style&index=0&lang=scss&
 var Diagramvue_type_style_index_0_lang_scss_ = __webpack_require__("034b");
 
@@ -53950,7 +53950,7 @@ var Diagram_component = normalizeComponent(
   null,
   null,
   null
-  
+
 )
 
 /* harmony default export */ var components_Diagram = (Diagram_component.exports);
@@ -54636,7 +54636,7 @@ HelloWorldDiagramvue_type_script_lang_ts_HelloWorldDiagram = __decorate([vue_cla
 })], HelloWorldDiagramvue_type_script_lang_ts_HelloWorldDiagram);
 /* harmony default export */ var HelloWorldDiagramvue_type_script_lang_ts_ = (HelloWorldDiagramvue_type_script_lang_ts_HelloWorldDiagram);
 // CONCATENATED MODULE: ./src/HelloWorldDiagram.vue?vue&type=script&lang=ts&
- /* harmony default export */ var src_HelloWorldDiagramvue_type_script_lang_ts_ = (HelloWorldDiagramvue_type_script_lang_ts_); 
+ /* harmony default export */ var src_HelloWorldDiagramvue_type_script_lang_ts_ = (HelloWorldDiagramvue_type_script_lang_ts_);
 // EXTERNAL MODULE: ./src/HelloWorldDiagram.vue?vue&type=style&index=0&lang=scss&
 var HelloWorldDiagramvue_type_style_index_0_lang_scss_ = __webpack_require__("8d23");
 
@@ -54657,7 +54657,7 @@ var HelloWorldDiagram_component = normalizeComponent(
   null,
   null,
   null
-  
+
 )
 
 /* harmony default export */ var src_HelloWorldDiagram = (HelloWorldDiagram_component.exports);
@@ -54716,7 +54716,7 @@ var HelloWorld = {
         id: '3',
         type: 'word',
         data: {
-          text: 'data'
+          text: 'Verden'
         }
       }],
       relations: [{

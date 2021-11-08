@@ -1,4 +1,4 @@
-import Diagram, { Entity, EntityDefinition, EntityStyle, Relation, RelationDefinition, RelationStyle } from '../diagram';
+import Diagram, { Entity, EntityDefinition, EntityStyle, Relation, RelationDefinition, RelationStyle } from '@/diagram';
 export default class DiagramData {
     constructor(diagram: Diagram, options?: {
         data?: DiagramDataDefinition;
@@ -19,15 +19,15 @@ export default class DiagramData {
     get canUndo(): boolean;
     get canRedo(): boolean;
     reset(): void;
-    add(options: DiagramDataDefinition): void;
-    addUnique(options: DiagramDataDefinition): void;
-    remove(options: {
-        entityIds?: string[];
-        relationIds?: string[];
-    }): void;
-    commitChange(change: Change): void;
+    add(options: Omit<AdditionChange, 'type'>): void;
+    remove(options: Omit<RemovalChange, 'type'>): void;
+    edit(options: Omit<EditChange, 'type'>): void;
+    commitChange(change: Change, isInitial?: boolean): void;
     undo(): void;
     redo(): void;
+    parseEntities(entities: EntityDefinition[]): Entity[];
+    parseRelations(relations: RelationDefinition[]): Relation[];
+    private _compileChange;
     private _addEntities;
     private _addRelations;
     private _removeEntities;
@@ -41,7 +41,7 @@ export interface DiagramDataDefinition {
 }
 export interface CompiledChange {
     change: Change;
-    apply: () => void;
+    apply: () => void | false;
     revert: () => void;
 }
 export declare type Change = (AdditionChange | RemovalChange | EditChange);

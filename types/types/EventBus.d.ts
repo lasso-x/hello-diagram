@@ -1,8 +1,8 @@
 declare class EventBus<Event extends BaseEvent> {
     private handlers;
     private getHandlers;
-    on<Name extends Event['name']>(name: Name, handler: EventHandler<EventByName<Event, Name>>): void;
-    off<Name extends Event['name']>(name: Name, handler: EventHandler<EventByName<Event, Name>>): void;
+    on<Name extends Event['name']>(names: Name | Name[], handler: EventHandler<EventByName<Event, Name>>): () => void;
+    off<Name extends Event['name']>(names: Name | Name[], handler: EventHandler<EventByName<Event, Name>>): void;
     emit<E extends Event>(event: E): void;
 }
 export default EventBus;

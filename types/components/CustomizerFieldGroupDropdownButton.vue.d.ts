@@ -1,5 +1,5 @@
 import { Vue } from 'vue-property-decorator';
-import Diagram, { FieldGroup, Field } from '../diagram';
+import Diagram, { FieldGroup, Field } from '@/diagram';
 export default class CustomizerFieldGroupDropdownButton extends Vue {
     readonly diagram: Diagram;
     readonly fieldGroup: FieldGroup;

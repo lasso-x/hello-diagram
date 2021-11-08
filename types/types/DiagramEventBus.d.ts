@@ -1,17 +1,18 @@
-import { Entity, Relation } from '../diagram';
 import EventBus from './EventBus';
 export declare type DiagramEvent = ({
-    name: 'entityDataChanged';
-    entity: Entity;
+    name: 'dataUpdated';
 } | {
-    name: 'relationDataChanged';
-    relation: Relation;
+    name: 'undo';
+} | {
+    name: 'redo';
 } | {
     name: 'settingsChanged';
 } | {
     name: 'activeFieldsChanged';
 } | {
     name: 'activeFiltersChanged';
+} | {
+    name: 'activeLayoutChanged';
 });
 export default class DiagramEventBus extends EventBus<DiagramEvent> {
 }

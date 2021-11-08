@@ -7,13 +7,13 @@ export default class Diagram {
     element?: Element;
     vm?: Vue;
     eventBus: DiagramEventBus;
-    activeDiagram: ActiveDiagram;
     mainEntityId: string;
     entityTypes: EntityTypes;
     relationTypes: RelationTypes;
     fieldGroups: FieldGroup[];
     fields: Field[];
     filters: Filter[];
+    layouts: LayoutDefinition[];
     methods: {
         getEntityData?: (options: {
             ids: string[];
@@ -23,6 +23,7 @@ export default class Diagram {
         }) => Promise<DiagramDataDefinition>;
     };
     saveSettingsToLocalStorage: boolean;
+    activeDiagram: ActiveDiagram;
     constructor(config: DiagramConfig);
     render(container: Element): HTMLDivElement;
 }
@@ -32,6 +33,7 @@ export interface DiagramConfig {
     relationTypes?: RelationTypeDefinition[];
     fieldGroups?: FieldGroupDefinition[];
     filters?: FilterDefinition[];
+    layouts?: LayoutDefinition[];
     methods?: {
         onBeforePrint?: () => void;
         onAfterPrint?: () => void;
@@ -88,7 +90,7 @@ export declare class EntityType {
     labels: {
         singular: string;
         plural: string;
-        editorLabel?: (entity: Entity) => string;
+        editorLabel?: (data: Record<string, any>) => string;
     };
     style: EntityStyle;
     constructor(options: EntityTypeDefinition);
@@ -99,7 +101,7 @@ export interface EntityTypeDefinition {
     labels: {
         singular: string;
         plural: string;
-        editorLabel?: (entity: Entity) => string;
+        editorLabel?: (data: Record<string, any>) => string;
     };
     style?: EntityStyle;
 }
@@ -116,7 +118,7 @@ export declare class RelationType {
         pluralFrom?: string;
         singularTo?: string;
         pluralTo?: string;
-        editorLabel?: (relation: Relation) => string;
+        editorLabel?: (data: Record<string, any>) => string;
     };
     style: RelationStyle;
     supports: RelationTypeSupport[];
@@ -135,13 +137,9 @@ export declare type RelationTypeDefinition = {
         pluralFrom?: string;
         singularTo?: string;
         pluralTo?: string;
-        editorLabel?: (relation: Relation) => string;
+        editorLabel?: (data: Record<string, any>) => string;
     };
-    style?: {
-        arrowFrom?: boolean;
-        arrowTo?: boolean;
-        lineStyle?: 'solid' | 'dotted' | 'dashed';
-    };
+    style?: RelationStyle;
     supports: RelationTypeSupportDefinition[];
 };
 export declare class RelationTypeSupport {
@@ -169,11 +167,7 @@ export declare class Entity {
     style: EntityStyle;
     constructor(diagram: Diagram, options: EntityDefinition);
     get isMainEntity(): boolean;
-    merge(options: {
-        data?: Record<string, any>;
-        style?: EntityStyle;
-    }): void;
-    clone(): Entity;
+    getFieldValue(field: Field): any;
 }
 export interface EntityDefinition {
     type: string;
@@ -203,11 +197,7 @@ export declare class Relation {
     data: Record<string, any>;
     style: RelationStyle;
     constructor(diagram: Diagram, options: RelationDefinition);
-    merge(options: {
-        data?: Record<string, any>;
-        style?: RelationStyle;
-    }): void;
-    clone(): Relation;
+    getFieldValue(field: Field): any;
 }
 export interface RelationDefinition {
     type: string;
@@ -238,10 +228,12 @@ export declare class Field {
     fieldGroup: FieldGroup;
     id: string;
     fullId: string;
+    type: 'text' | 'boolean' | 'radio-buttons';
     title: string;
     entityTypes: EntityTypes;
     relationTypes: RelationTypes;
     dataKey: string;
+    getInitialValue?: (data: Record<string, any>) => any;
     formatter?: (value: any) => any;
     isEntityLabel: boolean;
     isRelationLabel: boolean;
@@ -255,10 +247,12 @@ export declare class Field {
 }
 export interface FieldDefinition {
     id: string;
+    type?: 'text' | 'boolean';
     title: string;
     entityTypes?: string[];
     relationTypes?: string[];
     dataKey: string;
+    getInitialValue?: (data: Record<string, any>) => any;
     formatter?: (value: any) => any;
     isEntityLabel?: boolean;
     isRelationLabel?: boolean;
@@ -285,10 +279,24 @@ export interface FilterDefinition {
     filter?: (entity: any) => boolean;
     startActive?: boolean;
 }
+export interface LayoutDefinition {
+    id: string;
+    name: string;
+    default?: boolean;
+    directed?: boolean;
+    inverted?: boolean;
+    grid?: boolean;
+    spacingFactor?: number;
+    maximal?: boolean;
+    animate?: boolean;
+    animationDuration?: number;
+    animationEasing?: string;
+}
 export declare class Settings {
     diagram: Diagram;
     activeFields: Record<string, boolean | undefined>;
     activeFilters: Record<string, boolean | undefined>;
+    activeLayout: LayoutDefinition | null;
     constructor(diagram: Diagram);
     reset(): void;
     loadFromLocalStorage(): void;

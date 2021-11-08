@@ -1,5 +1,6 @@
 import { Vue } from 'vue-property-decorator';
 export default class DropdownMenu extends Vue {
+    get dropdownMenuVm(): this;
     readonly buttonEl?: HTMLElement;
     readonly close?: () => void;
     readonly boundsEl: HTMLElement;

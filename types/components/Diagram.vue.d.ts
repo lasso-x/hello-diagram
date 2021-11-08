@@ -1,12 +1,20 @@
 import { Vue } from 'vue-property-decorator';
-import Diagram from '../diagram';
+import Diagram, { Entity, Relation } from '@/diagram';
+import { VueConstructor } from 'vue';
 export default class DiagramVue extends Vue {
+    get diagramVm(): this;
     readonly diagram: Diagram;
     editor: {
         show: boolean;
-        object: unknown;
+        object: Entity | Relation | null;
     };
+    dialogs: ({
+        component: VueConstructor;
+        props?: any;
+    })[];
     mounted(): void;
-    showEditor(object: unknown): void;
+    beforeDestroy(): void;
+    showEditor(object: Entity | Relation): void;
     hideEditor(): void;
+    showDialog(component: VueConstructor, props?: any): void;
 }

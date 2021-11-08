@@ -11634,6 +11634,173 @@ var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_
 
 /***/ }),
 
+/***/ "1276":
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+var fixRegExpWellKnownSymbolLogic = __webpack_require__("d784");
+var isRegExp = __webpack_require__("44e7");
+var anObject = __webpack_require__("825a");
+var requireObjectCoercible = __webpack_require__("1d80");
+var speciesConstructor = __webpack_require__("4840");
+var advanceStringIndex = __webpack_require__("8aa5");
+var toLength = __webpack_require__("50c4");
+var toString = __webpack_require__("577e");
+var callRegExpExec = __webpack_require__("14c3");
+var regexpExec = __webpack_require__("9263");
+var stickyHelpers = __webpack_require__("9f7f");
+var fails = __webpack_require__("d039");
+
+var UNSUPPORTED_Y = stickyHelpers.UNSUPPORTED_Y;
+var arrayPush = [].push;
+var min = Math.min;
+var MAX_UINT32 = 0xFFFFFFFF;
+
+// Chrome 51 has a buggy "split" implementation when RegExp#exec !== nativeExec
+// Weex JS has frozen built-in prototypes, so use try / catch wrapper
+var SPLIT_WORKS_WITH_OVERWRITTEN_EXEC = !fails(function () {
+  // eslint-disable-next-line regexp/no-empty-group -- required for testing
+  var re = /(?:)/;
+  var originalExec = re.exec;
+  re.exec = function () { return originalExec.apply(this, arguments); };
+  var result = 'ab'.split(re);
+  return result.length !== 2 || result[0] !== 'a' || result[1] !== 'b';
+});
+
+// @@split logic
+fixRegExpWellKnownSymbolLogic('split', function (SPLIT, nativeSplit, maybeCallNative) {
+  var internalSplit;
+  if (
+    'abbc'.split(/(b)*/)[1] == 'c' ||
+    // eslint-disable-next-line regexp/no-empty-group -- required for testing
+    'test'.split(/(?:)/, -1).length != 4 ||
+    'ab'.split(/(?:ab)*/).length != 2 ||
+    '.'.split(/(.?)(.?)/).length != 4 ||
+    // eslint-disable-next-line regexp/no-empty-capturing-group, regexp/no-empty-group -- required for testing
+    '.'.split(/()()/).length > 1 ||
+    ''.split(/.?/).length
+  ) {
+    // based on es5-shim implementation, need to rework it
+    internalSplit = function (separator, limit) {
+      var string = toString(requireObjectCoercible(this));
+      var lim = limit === undefined ? MAX_UINT32 : limit >>> 0;
+      if (lim === 0) return [];
+      if (separator === undefined) return [string];
+      // If `separator` is not a regex, use native split
+      if (!isRegExp(separator)) {
+        return nativeSplit.call(string, separator, lim);
+      }
+      var output = [];
+      var flags = (separator.ignoreCase ? 'i' : '') +
+                  (separator.multiline ? 'm' : '') +
+                  (separator.unicode ? 'u' : '') +
+                  (separator.sticky ? 'y' : '');
+      var lastLastIndex = 0;
+      // Make `global` and avoid `lastIndex` issues by working with a copy
+      var separatorCopy = new RegExp(separator.source, flags + 'g');
+      var match, lastIndex, lastLength;
+      while (match = regexpExec.call(separatorCopy, string)) {
+        lastIndex = separatorCopy.lastIndex;
+        if (lastIndex > lastLastIndex) {
+          output.push(string.slice(lastLastIndex, match.index));
+          if (match.length > 1 && match.index < string.length) arrayPush.apply(output, match.slice(1));
+          lastLength = match[0].length;
+          lastLastIndex = lastIndex;
+          if (output.length >= lim) break;
+        }
+        if (separatorCopy.lastIndex === match.index) separatorCopy.lastIndex++; // Avoid an infinite loop
+      }
+      if (lastLastIndex === string.length) {
+        if (lastLength || !separatorCopy.test('')) output.push('');
+      } else output.push(string.slice(lastLastIndex));
+      return output.length > lim ? output.slice(0, lim) : output;
+    };
+  // Chakra, V8
+  } else if ('0'.split(undefined, 0).length) {
+    internalSplit = function (separator, limit) {
+      return separator === undefined && limit === 0 ? [] : nativeSplit.call(this, separator, limit);
+    };
+  } else internalSplit = nativeSplit;
+
+  return [
+    // `String.prototype.split` method
+    // https://tc39.es/ecma262/#sec-string.prototype.split
+    function split(separator, limit) {
+      var O = requireObjectCoercible(this);
+      var splitter = separator == undefined ? undefined : separator[SPLIT];
+      return splitter !== undefined
+        ? splitter.call(separator, O, limit)
+        : internalSplit.call(toString(O), separator, limit);
+    },
+    // `RegExp.prototype[@@split]` method
+    // https://tc39.es/ecma262/#sec-regexp.prototype-@@split
+    //
+    // NOTE: This cannot be properly polyfilled in engines that don't support
+    // the 'y' flag.
+    function (string, limit) {
+      var rx = anObject(this);
+      var S = toString(string);
+      var res = maybeCallNative(internalSplit, rx, S, limit, internalSplit !== nativeSplit);
+
+      if (res.done) return res.value;
+
+      var C = speciesConstructor(rx, RegExp);
+
+      var unicodeMatching = rx.unicode;
+      var flags = (rx.ignoreCase ? 'i' : '') +
+                  (rx.multiline ? 'm' : '') +
+                  (rx.unicode ? 'u' : '') +
+                  (UNSUPPORTED_Y ? 'g' : 'y');
+
+      // ^(? + rx + ) is needed, in combination with some S slicing, to
+      // simulate the 'y' flag.
+      var splitter = new C(UNSUPPORTED_Y ? '^(?:' + rx.source + ')' : rx, flags);
+      var lim = limit === undefined ? MAX_UINT32 : limit >>> 0;
+      if (lim === 0) return [];
+      if (S.length === 0) return callRegExpExec(splitter, S) === null ? [S] : [];
+      var p = 0;
+      var q = 0;
+      var A = [];
+      while (q < S.length) {
+        splitter.lastIndex = UNSUPPORTED_Y ? 0 : q;
+        var z = callRegExpExec(splitter, UNSUPPORTED_Y ? S.slice(q) : S);
+        var e;
+        if (
+          z === null ||
+          (e = min(toLength(splitter.lastIndex + (UNSUPPORTED_Y ? q : 0)), S.length)) === p
+        ) {
+          q = advanceStringIndex(S, q, unicodeMatching);
+        } else {
+          A.push(S.slice(p, q));
+          if (A.length === lim) return A;
+          for (var i = 1; i <= z.length - 1; i++) {
+            A.push(z[i]);
+            if (A.length === lim) return A;
+          }
+          q = p = e;
+        }
+      }
+      A.push(S.slice(p));
+      return A;
+    }
+  ];
+}, !SPLIT_WORKS_WITH_OVERWRITTEN_EXEC, UNSUPPORTED_Y);
+
+
+/***/ }),
+
+/***/ "1319":
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+/* harmony import */ var _node_modules_mini_css_extract_plugin_dist_loader_js_ref_8_oneOf_1_0_node_modules_css_loader_dist_cjs_js_ref_8_oneOf_1_1_node_modules_vue_loader_lib_loaders_stylePostLoader_js_node_modules_postcss_loader_src_index_js_ref_8_oneOf_1_2_node_modules_sass_loader_dist_cjs_js_ref_8_oneOf_1_3_node_modules_cache_loader_dist_cjs_js_ref_0_0_node_modules_vue_loader_lib_index_js_vue_loader_options_FieldContainer_vue_vue_type_style_index_0_lang_scss___WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__("3396");
+/* harmony import */ var _node_modules_mini_css_extract_plugin_dist_loader_js_ref_8_oneOf_1_0_node_modules_css_loader_dist_cjs_js_ref_8_oneOf_1_1_node_modules_vue_loader_lib_loaders_stylePostLoader_js_node_modules_postcss_loader_src_index_js_ref_8_oneOf_1_2_node_modules_sass_loader_dist_cjs_js_ref_8_oneOf_1_3_node_modules_cache_loader_dist_cjs_js_ref_0_0_node_modules_vue_loader_lib_index_js_vue_loader_options_FieldContainer_vue_vue_type_style_index_0_lang_scss___WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(_node_modules_mini_css_extract_plugin_dist_loader_js_ref_8_oneOf_1_0_node_modules_css_loader_dist_cjs_js_ref_8_oneOf_1_1_node_modules_vue_loader_lib_loaders_stylePostLoader_js_node_modules_postcss_loader_src_index_js_ref_8_oneOf_1_2_node_modules_sass_loader_dist_cjs_js_ref_8_oneOf_1_3_node_modules_cache_loader_dist_cjs_js_ref_0_0_node_modules_vue_loader_lib_index_js_vue_loader_options_FieldContainer_vue_vue_type_style_index_0_lang_scss___WEBPACK_IMPORTED_MODULE_0__);
+/* unused harmony reexport * */
+
+
+/***/ }),
+
 /***/ "14c3":
 /***/ (function(module, exports, __webpack_require__) {
 
@@ -11709,6 +11876,17 @@ module.exports = !STRICT_METHOD ? function forEach(callbackfn /* , thisArg */) {
   return $forEach(this, callbackfn, arguments.length > 1 ? arguments[1] : undefined);
 // eslint-disable-next-line es/no-array-prototype-foreach -- safe
 } : [].forEach;
+
+
+/***/ }),
+
+/***/ "18da":
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+/* harmony import */ var _node_modules_mini_css_extract_plugin_dist_loader_js_ref_8_oneOf_1_0_node_modules_css_loader_dist_cjs_js_ref_8_oneOf_1_1_node_modules_vue_loader_lib_loaders_stylePostLoader_js_node_modules_postcss_loader_src_index_js_ref_8_oneOf_1_2_node_modules_sass_loader_dist_cjs_js_ref_8_oneOf_1_3_node_modules_cache_loader_dist_cjs_js_ref_0_0_node_modules_vue_loader_lib_index_js_vue_loader_options_ColorField_vue_vue_type_style_index_0_lang_scss___WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__("5f29");
+/* harmony import */ var _node_modules_mini_css_extract_plugin_dist_loader_js_ref_8_oneOf_1_0_node_modules_css_loader_dist_cjs_js_ref_8_oneOf_1_1_node_modules_vue_loader_lib_loaders_stylePostLoader_js_node_modules_postcss_loader_src_index_js_ref_8_oneOf_1_2_node_modules_sass_loader_dist_cjs_js_ref_8_oneOf_1_3_node_modules_cache_loader_dist_cjs_js_ref_0_0_node_modules_vue_loader_lib_index_js_vue_loader_options_ColorField_vue_vue_type_style_index_0_lang_scss___WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(_node_modules_mini_css_extract_plugin_dist_loader_js_ref_8_oneOf_1_0_node_modules_css_loader_dist_cjs_js_ref_8_oneOf_1_1_node_modules_vue_loader_lib_loaders_stylePostLoader_js_node_modules_postcss_loader_src_index_js_ref_8_oneOf_1_2_node_modules_sass_loader_dist_cjs_js_ref_8_oneOf_1_3_node_modules_cache_loader_dist_cjs_js_ref_0_0_node_modules_vue_loader_lib_index_js_vue_loader_options_ColorField_vue_vue_type_style_index_0_lang_scss___WEBPACK_IMPORTED_MODULE_0__);
+/* unused harmony reexport * */
 
 
 /***/ }),
@@ -13675,6 +13853,24 @@ module.exports = version && +version;
 
 /***/ }),
 
+/***/ "3396":
+/***/ (function(module, exports, __webpack_require__) {
+
+// extracted by mini-css-extract-plugin
+
+/***/ }),
+
+/***/ "33fd":
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+/* harmony import */ var _node_modules_mini_css_extract_plugin_dist_loader_js_ref_8_oneOf_1_0_node_modules_css_loader_dist_cjs_js_ref_8_oneOf_1_1_node_modules_vue_loader_lib_loaders_stylePostLoader_js_node_modules_postcss_loader_src_index_js_ref_8_oneOf_1_2_node_modules_sass_loader_dist_cjs_js_ref_8_oneOf_1_3_node_modules_cache_loader_dist_cjs_js_ref_0_0_node_modules_vue_loader_lib_index_js_vue_loader_options_Dialog_vue_vue_type_style_index_0_lang_scss___WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__("fed5");
+/* harmony import */ var _node_modules_mini_css_extract_plugin_dist_loader_js_ref_8_oneOf_1_0_node_modules_css_loader_dist_cjs_js_ref_8_oneOf_1_1_node_modules_vue_loader_lib_loaders_stylePostLoader_js_node_modules_postcss_loader_src_index_js_ref_8_oneOf_1_2_node_modules_sass_loader_dist_cjs_js_ref_8_oneOf_1_3_node_modules_cache_loader_dist_cjs_js_ref_0_0_node_modules_vue_loader_lib_index_js_vue_loader_options_Dialog_vue_vue_type_style_index_0_lang_scss___WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(_node_modules_mini_css_extract_plugin_dist_loader_js_ref_8_oneOf_1_0_node_modules_css_loader_dist_cjs_js_ref_8_oneOf_1_1_node_modules_vue_loader_lib_loaders_stylePostLoader_js_node_modules_postcss_loader_src_index_js_ref_8_oneOf_1_2_node_modules_sass_loader_dist_cjs_js_ref_8_oneOf_1_3_node_modules_cache_loader_dist_cjs_js_ref_0_0_node_modules_vue_loader_lib_index_js_vue_loader_options_Dialog_vue_vue_type_style_index_0_lang_scss___WEBPACK_IMPORTED_MODULE_0__);
+/* unused harmony reexport * */
+
+
+/***/ }),
+
 /***/ "3410":
 /***/ (function(module, exports, __webpack_require__) {
 
@@ -13704,6 +13900,17 @@ $({ target: 'Object', stat: true, forced: FAILS_ON_PRIMITIVES, sham: !CORRECT_PR
 var getBuiltIn = __webpack_require__("d066");
 
 module.exports = getBuiltIn('navigator', 'userAgent') || '';
+
+
+/***/ }),
+
+/***/ "3585":
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+/* harmony import */ var _node_modules_mini_css_extract_plugin_dist_loader_js_ref_8_oneOf_1_0_node_modules_css_loader_dist_cjs_js_ref_8_oneOf_1_1_node_modules_vue_loader_lib_loaders_stylePostLoader_js_node_modules_postcss_loader_src_index_js_ref_8_oneOf_1_2_node_modules_sass_loader_dist_cjs_js_ref_8_oneOf_1_3_node_modules_cache_loader_dist_cjs_js_ref_0_0_node_modules_vue_loader_lib_index_js_vue_loader_options_ColorPicker_vue_vue_type_style_index_0_lang_scss___WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__("d786");
+/* harmony import */ var _node_modules_mini_css_extract_plugin_dist_loader_js_ref_8_oneOf_1_0_node_modules_css_loader_dist_cjs_js_ref_8_oneOf_1_1_node_modules_vue_loader_lib_loaders_stylePostLoader_js_node_modules_postcss_loader_src_index_js_ref_8_oneOf_1_2_node_modules_sass_loader_dist_cjs_js_ref_8_oneOf_1_3_node_modules_cache_loader_dist_cjs_js_ref_0_0_node_modules_vue_loader_lib_index_js_vue_loader_options_ColorPicker_vue_vue_type_style_index_0_lang_scss___WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(_node_modules_mini_css_extract_plugin_dist_loader_js_ref_8_oneOf_1_0_node_modules_css_loader_dist_cjs_js_ref_8_oneOf_1_1_node_modules_vue_loader_lib_loaders_stylePostLoader_js_node_modules_postcss_loader_src_index_js_ref_8_oneOf_1_2_node_modules_sass_loader_dist_cjs_js_ref_8_oneOf_1_3_node_modules_cache_loader_dist_cjs_js_ref_0_0_node_modules_vue_loader_lib_index_js_vue_loader_options_ColorPicker_vue_vue_type_style_index_0_lang_scss___WEBPACK_IMPORTED_MODULE_0__);
+/* unused harmony reexport * */
 
 
 /***/ }),
@@ -45564,6 +45771,25 @@ module.exports = cytoscape;
 
 /***/ }),
 
+/***/ "44e7":
+/***/ (function(module, exports, __webpack_require__) {
+
+var isObject = __webpack_require__("861d");
+var classof = __webpack_require__("c6b6");
+var wellKnownSymbol = __webpack_require__("b622");
+
+var MATCH = wellKnownSymbol('match');
+
+// `IsRegExp` abstract operation
+// https://tc39.es/ecma262/#sec-isregexp
+module.exports = function (it) {
+  var isRegExp;
+  return isObject(it) && ((isRegExp = it[MATCH]) !== undefined ? !!isRegExp : classof(it) == 'RegExp');
+};
+
+
+/***/ }),
+
 /***/ "4840":
 /***/ (function(module, exports, __webpack_require__) {
 
@@ -45677,6 +45903,13 @@ $({ target: 'Reflect', stat: true, forced: FORCED, sham: FORCED }, {
   }
 });
 
+
+/***/ }),
+
+/***/ "4c04":
+/***/ (function(module, exports, __webpack_require__) {
+
+// extracted by mini-css-extract-plugin
 
 /***/ }),
 
@@ -46134,6 +46367,13 @@ $({ target: 'Array', proto: true }, {
 
 /***/ }),
 
+/***/ "5f29":
+/***/ (function(module, exports, __webpack_require__) {
+
+// extracted by mini-css-extract-plugin
+
+/***/ }),
+
 /***/ "605d":
 /***/ (function(module, exports, __webpack_require__) {
 
@@ -46166,6 +46406,68 @@ module.exports = collection('Set', function (init) {
 /***/ (function(module, exports) {
 
 module.exports = typeof window == 'object';
+
+
+/***/ }),
+
+/***/ "60da":
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+var DESCRIPTORS = __webpack_require__("83ab");
+var fails = __webpack_require__("d039");
+var objectKeys = __webpack_require__("df75");
+var getOwnPropertySymbolsModule = __webpack_require__("7418");
+var propertyIsEnumerableModule = __webpack_require__("d1e7");
+var toObject = __webpack_require__("7b0b");
+var IndexedObject = __webpack_require__("44ad");
+
+// eslint-disable-next-line es/no-object-assign -- safe
+var $assign = Object.assign;
+// eslint-disable-next-line es/no-object-defineproperty -- required for testing
+var defineProperty = Object.defineProperty;
+
+// `Object.assign` method
+// https://tc39.es/ecma262/#sec-object.assign
+module.exports = !$assign || fails(function () {
+  // should have correct order of operations (Edge bug)
+  if (DESCRIPTORS && $assign({ b: 1 }, $assign(defineProperty({}, 'a', {
+    enumerable: true,
+    get: function () {
+      defineProperty(this, 'b', {
+        value: 3,
+        enumerable: false
+      });
+    }
+  }), { b: 2 })).b !== 1) return true;
+  // should work with symbols and should have deterministic property order (V8 bug)
+  var A = {};
+  var B = {};
+  // eslint-disable-next-line es/no-symbol -- safe
+  var symbol = Symbol();
+  var alphabet = 'abcdefghijklmnopqrst';
+  A[symbol] = 7;
+  alphabet.split('').forEach(function (chr) { B[chr] = chr; });
+  return $assign({}, A)[symbol] != 7 || objectKeys($assign({}, B)).join('') != alphabet;
+}) ? function assign(target, source) { // eslint-disable-line no-unused-vars -- required for `.length`
+  var T = toObject(target);
+  var argumentsLength = arguments.length;
+  var index = 1;
+  var getOwnPropertySymbols = getOwnPropertySymbolsModule.f;
+  var propertyIsEnumerable = propertyIsEnumerableModule.f;
+  while (argumentsLength > index) {
+    var S = IndexedObject(arguments[index++]);
+    var keys = getOwnPropertySymbols ? objectKeys(S).concat(getOwnPropertySymbols(S)) : objectKeys(S);
+    var length = keys.length;
+    var j = 0;
+    var key;
+    while (length > j) {
+      key = keys[j++];
+      if (!DESCRIPTORS || propertyIsEnumerable.call(S, key)) T[key] = S[key];
+    }
+  } return T;
+} : $assign;
 
 
 /***/ }),
@@ -46506,6 +46808,17 @@ module.exports = {
   enforce: enforce,
   getterFor: getterFor
 };
+
+
+/***/ }),
+
+/***/ "6bbf":
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+/* harmony import */ var _node_modules_mini_css_extract_plugin_dist_loader_js_ref_8_oneOf_1_0_node_modules_css_loader_dist_cjs_js_ref_8_oneOf_1_1_node_modules_vue_loader_lib_loaders_stylePostLoader_js_node_modules_postcss_loader_src_index_js_ref_8_oneOf_1_2_node_modules_sass_loader_dist_cjs_js_ref_8_oneOf_1_3_node_modules_cache_loader_dist_cjs_js_ref_0_0_node_modules_vue_loader_lib_index_js_vue_loader_options_RadioField_vue_vue_type_style_index_0_lang_scss___WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__("4c04");
+/* harmony import */ var _node_modules_mini_css_extract_plugin_dist_loader_js_ref_8_oneOf_1_0_node_modules_css_loader_dist_cjs_js_ref_8_oneOf_1_1_node_modules_vue_loader_lib_loaders_stylePostLoader_js_node_modules_postcss_loader_src_index_js_ref_8_oneOf_1_2_node_modules_sass_loader_dist_cjs_js_ref_8_oneOf_1_3_node_modules_cache_loader_dist_cjs_js_ref_0_0_node_modules_vue_loader_lib_index_js_vue_loader_options_RadioField_vue_vue_type_style_index_0_lang_scss___WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(_node_modules_mini_css_extract_plugin_dist_loader_js_ref_8_oneOf_1_0_node_modules_css_loader_dist_cjs_js_ref_8_oneOf_1_1_node_modules_vue_loader_lib_loaders_stylePostLoader_js_node_modules_postcss_loader_src_index_js_ref_8_oneOf_1_2_node_modules_sass_loader_dist_cjs_js_ref_8_oneOf_1_3_node_modules_cache_loader_dist_cjs_js_ref_0_0_node_modules_vue_loader_lib_index_js_vue_loader_options_RadioField_vue_vue_type_style_index_0_lang_scss___WEBPACK_IMPORTED_MODULE_0__);
+/* unused harmony reexport * */
 
 
 /***/ }),
@@ -46908,6 +47221,35 @@ module.exports = Object.create || function create(O, Properties) {
 
 /***/ }),
 
+/***/ "7db0":
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+var $ = __webpack_require__("23e7");
+var $find = __webpack_require__("b727").find;
+var addToUnscopables = __webpack_require__("44d2");
+
+var FIND = 'find';
+var SKIPS_HOLES = true;
+
+// Shouldn't skip holes
+if (FIND in []) Array(1)[FIND](function () { SKIPS_HOLES = false; });
+
+// `Array.prototype.find` method
+// https://tc39.es/ecma262/#sec-array.prototype.find
+$({ target: 'Array', proto: true, forced: SKIPS_HOLES }, {
+  find: function find(callbackfn /* , that = undefined */) {
+    return $find(this, callbackfn, arguments.length > 1 ? arguments[1] : undefined);
+  }
+});
+
+// https://tc39.es/ecma262/#sec-array.prototype-@@unscopables
+addToUnscopables(FIND);
+
+
+/***/ }),
+
 /***/ "7dd0":
 /***/ (function(module, exports, __webpack_require__) {
 
@@ -47101,6 +47443,13 @@ module.exports = function (it) {
   return typeof it === 'object' ? it !== null : typeof it === 'function';
 };
 
+
+/***/ }),
+
+/***/ "86af":
+/***/ (function(module, exports, __webpack_require__) {
+
+// extracted by mini-css-extract-plugin
 
 /***/ }),
 
@@ -49735,6 +50084,22 @@ var __WEBPACK_AMD_DEFINE_RESULT__;(function () {
 
 /***/ }),
 
+/***/ "cca6":
+/***/ (function(module, exports, __webpack_require__) {
+
+var $ = __webpack_require__("23e7");
+var assign = __webpack_require__("60da");
+
+// `Object.assign` method
+// https://tc39.es/ecma262/#sec-object.assign
+// eslint-disable-next-line es/no-object-assign -- required for testing
+$({ target: 'Object', stat: true, forced: Object.assign !== assign }, {
+  assign: assign
+});
+
+
+/***/ }),
+
 /***/ "cdf9":
 /***/ (function(module, exports, __webpack_require__) {
 
@@ -50019,6 +50384,13 @@ module.exports = function (KEY, exec, FORCED, SHAM) {
 
 /***/ }),
 
+/***/ "d786":
+/***/ (function(module, exports, __webpack_require__) {
+
+// extracted by mini-css-extract-plugin
+
+/***/ }),
+
 /***/ "d81d":
 /***/ (function(module, exports, __webpack_require__) {
 
@@ -50114,6 +50486,17 @@ $({ target: 'Object', stat: true, sham: !DESCRIPTORS }, {
     return result;
   }
 });
+
+
+/***/ }),
+
+/***/ "dda3":
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+/* harmony import */ var _node_modules_mini_css_extract_plugin_dist_loader_js_ref_8_oneOf_1_0_node_modules_css_loader_dist_cjs_js_ref_8_oneOf_1_1_node_modules_vue_loader_lib_loaders_stylePostLoader_js_node_modules_postcss_loader_src_index_js_ref_8_oneOf_1_2_node_modules_sass_loader_dist_cjs_js_ref_8_oneOf_1_3_node_modules_cache_loader_dist_cjs_js_ref_0_0_node_modules_vue_loader_lib_index_js_vue_loader_options_DropdownButton_vue_vue_type_style_index_0_lang_scss___WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__("86af");
+/* harmony import */ var _node_modules_mini_css_extract_plugin_dist_loader_js_ref_8_oneOf_1_0_node_modules_css_loader_dist_cjs_js_ref_8_oneOf_1_1_node_modules_vue_loader_lib_loaders_stylePostLoader_js_node_modules_postcss_loader_src_index_js_ref_8_oneOf_1_2_node_modules_sass_loader_dist_cjs_js_ref_8_oneOf_1_3_node_modules_cache_loader_dist_cjs_js_ref_0_0_node_modules_vue_loader_lib_index_js_vue_loader_options_DropdownButton_vue_vue_type_style_index_0_lang_scss___WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(_node_modules_mini_css_extract_plugin_dist_loader_js_ref_8_oneOf_1_0_node_modules_css_loader_dist_cjs_js_ref_8_oneOf_1_1_node_modules_vue_loader_lib_loaders_stylePostLoader_js_node_modules_postcss_loader_src_index_js_ref_8_oneOf_1_2_node_modules_sass_loader_dist_cjs_js_ref_8_oneOf_1_3_node_modules_cache_loader_dist_cjs_js_ref_0_0_node_modules_vue_loader_lib_index_js_vue_loader_options_DropdownButton_vue_vue_type_style_index_0_lang_scss___WEBPACK_IMPORTED_MODULE_0__);
+/* unused harmony reexport * */
 
 
 /***/ }),
@@ -51052,6 +51435,1004 @@ hiddenKeys[METADATA] = true;
 
 /***/ }),
 
+/***/ "f4c4":
+/***/ (function(module, exports, __webpack_require__) {
+
+/* WEBPACK VAR INJECTION */(function(global) {/**
+ * lodash (Custom Build) <https://lodash.com/>
+ * Build: `lodash modularize exports="npm" -o ./`
+ * Copyright jQuery Foundation and other contributors <https://jquery.org/>
+ * Released under MIT license <https://lodash.com/license>
+ * Based on Underscore.js 1.8.3 <http://underscorejs.org/LICENSE>
+ * Copyright Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
+ */
+
+/** Used as the `TypeError` message for "Functions" methods. */
+var FUNC_ERROR_TEXT = 'Expected a function';
+
+/** Used to stand-in for `undefined` hash values. */
+var HASH_UNDEFINED = '__lodash_hash_undefined__';
+
+/** Used as references for various `Number` constants. */
+var INFINITY = 1 / 0,
+    MAX_SAFE_INTEGER = 9007199254740991;
+
+/** `Object#toString` result references. */
+var funcTag = '[object Function]',
+    genTag = '[object GeneratorFunction]',
+    symbolTag = '[object Symbol]';
+
+/** Used to match property names within property paths. */
+var reIsDeepProp = /\.|\[(?:[^[\]]*|(["'])(?:(?!\1)[^\\]|\\.)*?\1)\]/,
+    reIsPlainProp = /^\w*$/,
+    reLeadingDot = /^\./,
+    rePropName = /[^.[\]]+|\[(?:(-?\d+(?:\.\d+)?)|(["'])((?:(?!\2)[^\\]|\\.)*?)\2)\]|(?=(?:\.|\[\])(?:\.|\[\]|$))/g;
+
+/**
+ * Used to match `RegExp`
+ * [syntax characters](http://ecma-international.org/ecma-262/7.0/#sec-patterns).
+ */
+var reRegExpChar = /[\\^$.*+?()[\]{}|]/g;
+
+/** Used to match backslashes in property paths. */
+var reEscapeChar = /\\(\\)?/g;
+
+/** Used to detect host constructors (Safari). */
+var reIsHostCtor = /^\[object .+?Constructor\]$/;
+
+/** Used to detect unsigned integer values. */
+var reIsUint = /^(?:0|[1-9]\d*)$/;
+
+/** Detect free variable `global` from Node.js. */
+var freeGlobal = typeof global == 'object' && global && global.Object === Object && global;
+
+/** Detect free variable `self`. */
+var freeSelf = typeof self == 'object' && self && self.Object === Object && self;
+
+/** Used as a reference to the global object. */
+var root = freeGlobal || freeSelf || Function('return this')();
+
+/**
+ * Gets the value at `key` of `object`.
+ *
+ * @private
+ * @param {Object} [object] The object to query.
+ * @param {string} key The key of the property to get.
+ * @returns {*} Returns the property value.
+ */
+function getValue(object, key) {
+  return object == null ? undefined : object[key];
+}
+
+/**
+ * Checks if `value` is a host object in IE < 9.
+ *
+ * @private
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if `value` is a host object, else `false`.
+ */
+function isHostObject(value) {
+  // Many host objects are `Object` objects that can coerce to strings
+  // despite having improperly defined `toString` methods.
+  var result = false;
+  if (value != null && typeof value.toString != 'function') {
+    try {
+      result = !!(value + '');
+    } catch (e) {}
+  }
+  return result;
+}
+
+/** Used for built-in method references. */
+var arrayProto = Array.prototype,
+    funcProto = Function.prototype,
+    objectProto = Object.prototype;
+
+/** Used to detect overreaching core-js shims. */
+var coreJsData = root['__core-js_shared__'];
+
+/** Used to detect methods masquerading as native. */
+var maskSrcKey = (function() {
+  var uid = /[^.]+$/.exec(coreJsData && coreJsData.keys && coreJsData.keys.IE_PROTO || '');
+  return uid ? ('Symbol(src)_1.' + uid) : '';
+}());
+
+/** Used to resolve the decompiled source of functions. */
+var funcToString = funcProto.toString;
+
+/** Used to check objects for own properties. */
+var hasOwnProperty = objectProto.hasOwnProperty;
+
+/**
+ * Used to resolve the
+ * [`toStringTag`](http://ecma-international.org/ecma-262/7.0/#sec-object.prototype.tostring)
+ * of values.
+ */
+var objectToString = objectProto.toString;
+
+/** Used to detect if a method is native. */
+var reIsNative = RegExp('^' +
+  funcToString.call(hasOwnProperty).replace(reRegExpChar, '\\$&')
+  .replace(/hasOwnProperty|(function).*?(?=\\\()| for .+?(?=\\\])/g, '$1.*?') + '$'
+);
+
+/** Built-in value references. */
+var Symbol = root.Symbol,
+    splice = arrayProto.splice;
+
+/* Built-in method references that are verified to be native. */
+var Map = getNative(root, 'Map'),
+    nativeCreate = getNative(Object, 'create');
+
+/** Used to convert symbols to primitives and strings. */
+var symbolProto = Symbol ? Symbol.prototype : undefined,
+    symbolToString = symbolProto ? symbolProto.toString : undefined;
+
+/**
+ * Creates a hash object.
+ *
+ * @private
+ * @constructor
+ * @param {Array} [entries] The key-value pairs to cache.
+ */
+function Hash(entries) {
+  var index = -1,
+      length = entries ? entries.length : 0;
+
+  this.clear();
+  while (++index < length) {
+    var entry = entries[index];
+    this.set(entry[0], entry[1]);
+  }
+}
+
+/**
+ * Removes all key-value entries from the hash.
+ *
+ * @private
+ * @name clear
+ * @memberOf Hash
+ */
+function hashClear() {
+  this.__data__ = nativeCreate ? nativeCreate(null) : {};
+}
+
+/**
+ * Removes `key` and its value from the hash.
+ *
+ * @private
+ * @name delete
+ * @memberOf Hash
+ * @param {Object} hash The hash to modify.
+ * @param {string} key The key of the value to remove.
+ * @returns {boolean} Returns `true` if the entry was removed, else `false`.
+ */
+function hashDelete(key) {
+  return this.has(key) && delete this.__data__[key];
+}
+
+/**
+ * Gets the hash value for `key`.
+ *
+ * @private
+ * @name get
+ * @memberOf Hash
+ * @param {string} key The key of the value to get.
+ * @returns {*} Returns the entry value.
+ */
+function hashGet(key) {
+  var data = this.__data__;
+  if (nativeCreate) {
+    var result = data[key];
+    return result === HASH_UNDEFINED ? undefined : result;
+  }
+  return hasOwnProperty.call(data, key) ? data[key] : undefined;
+}
+
+/**
+ * Checks if a hash value for `key` exists.
+ *
+ * @private
+ * @name has
+ * @memberOf Hash
+ * @param {string} key The key of the entry to check.
+ * @returns {boolean} Returns `true` if an entry for `key` exists, else `false`.
+ */
+function hashHas(key) {
+  var data = this.__data__;
+  return nativeCreate ? data[key] !== undefined : hasOwnProperty.call(data, key);
+}
+
+/**
+ * Sets the hash `key` to `value`.
+ *
+ * @private
+ * @name set
+ * @memberOf Hash
+ * @param {string} key The key of the value to set.
+ * @param {*} value The value to set.
+ * @returns {Object} Returns the hash instance.
+ */
+function hashSet(key, value) {
+  var data = this.__data__;
+  data[key] = (nativeCreate && value === undefined) ? HASH_UNDEFINED : value;
+  return this;
+}
+
+// Add methods to `Hash`.
+Hash.prototype.clear = hashClear;
+Hash.prototype['delete'] = hashDelete;
+Hash.prototype.get = hashGet;
+Hash.prototype.has = hashHas;
+Hash.prototype.set = hashSet;
+
+/**
+ * Creates an list cache object.
+ *
+ * @private
+ * @constructor
+ * @param {Array} [entries] The key-value pairs to cache.
+ */
+function ListCache(entries) {
+  var index = -1,
+      length = entries ? entries.length : 0;
+
+  this.clear();
+  while (++index < length) {
+    var entry = entries[index];
+    this.set(entry[0], entry[1]);
+  }
+}
+
+/**
+ * Removes all key-value entries from the list cache.
+ *
+ * @private
+ * @name clear
+ * @memberOf ListCache
+ */
+function listCacheClear() {
+  this.__data__ = [];
+}
+
+/**
+ * Removes `key` and its value from the list cache.
+ *
+ * @private
+ * @name delete
+ * @memberOf ListCache
+ * @param {string} key The key of the value to remove.
+ * @returns {boolean} Returns `true` if the entry was removed, else `false`.
+ */
+function listCacheDelete(key) {
+  var data = this.__data__,
+      index = assocIndexOf(data, key);
+
+  if (index < 0) {
+    return false;
+  }
+  var lastIndex = data.length - 1;
+  if (index == lastIndex) {
+    data.pop();
+  } else {
+    splice.call(data, index, 1);
+  }
+  return true;
+}
+
+/**
+ * Gets the list cache value for `key`.
+ *
+ * @private
+ * @name get
+ * @memberOf ListCache
+ * @param {string} key The key of the value to get.
+ * @returns {*} Returns the entry value.
+ */
+function listCacheGet(key) {
+  var data = this.__data__,
+      index = assocIndexOf(data, key);
+
+  return index < 0 ? undefined : data[index][1];
+}
+
+/**
+ * Checks if a list cache value for `key` exists.
+ *
+ * @private
+ * @name has
+ * @memberOf ListCache
+ * @param {string} key The key of the entry to check.
+ * @returns {boolean} Returns `true` if an entry for `key` exists, else `false`.
+ */
+function listCacheHas(key) {
+  return assocIndexOf(this.__data__, key) > -1;
+}
+
+/**
+ * Sets the list cache `key` to `value`.
+ *
+ * @private
+ * @name set
+ * @memberOf ListCache
+ * @param {string} key The key of the value to set.
+ * @param {*} value The value to set.
+ * @returns {Object} Returns the list cache instance.
+ */
+function listCacheSet(key, value) {
+  var data = this.__data__,
+      index = assocIndexOf(data, key);
+
+  if (index < 0) {
+    data.push([key, value]);
+  } else {
+    data[index][1] = value;
+  }
+  return this;
+}
+
+// Add methods to `ListCache`.
+ListCache.prototype.clear = listCacheClear;
+ListCache.prototype['delete'] = listCacheDelete;
+ListCache.prototype.get = listCacheGet;
+ListCache.prototype.has = listCacheHas;
+ListCache.prototype.set = listCacheSet;
+
+/**
+ * Creates a map cache object to store key-value pairs.
+ *
+ * @private
+ * @constructor
+ * @param {Array} [entries] The key-value pairs to cache.
+ */
+function MapCache(entries) {
+  var index = -1,
+      length = entries ? entries.length : 0;
+
+  this.clear();
+  while (++index < length) {
+    var entry = entries[index];
+    this.set(entry[0], entry[1]);
+  }
+}
+
+/**
+ * Removes all key-value entries from the map.
+ *
+ * @private
+ * @name clear
+ * @memberOf MapCache
+ */
+function mapCacheClear() {
+  this.__data__ = {
+    'hash': new Hash,
+    'map': new (Map || ListCache),
+    'string': new Hash
+  };
+}
+
+/**
+ * Removes `key` and its value from the map.
+ *
+ * @private
+ * @name delete
+ * @memberOf MapCache
+ * @param {string} key The key of the value to remove.
+ * @returns {boolean} Returns `true` if the entry was removed, else `false`.
+ */
+function mapCacheDelete(key) {
+  return getMapData(this, key)['delete'](key);
+}
+
+/**
+ * Gets the map value for `key`.
+ *
+ * @private
+ * @name get
+ * @memberOf MapCache
+ * @param {string} key The key of the value to get.
+ * @returns {*} Returns the entry value.
+ */
+function mapCacheGet(key) {
+  return getMapData(this, key).get(key);
+}
+
+/**
+ * Checks if a map value for `key` exists.
+ *
+ * @private
+ * @name has
+ * @memberOf MapCache
+ * @param {string} key The key of the entry to check.
+ * @returns {boolean} Returns `true` if an entry for `key` exists, else `false`.
+ */
+function mapCacheHas(key) {
+  return getMapData(this, key).has(key);
+}
+
+/**
+ * Sets the map `key` to `value`.
+ *
+ * @private
+ * @name set
+ * @memberOf MapCache
+ * @param {string} key The key of the value to set.
+ * @param {*} value The value to set.
+ * @returns {Object} Returns the map cache instance.
+ */
+function mapCacheSet(key, value) {
+  getMapData(this, key).set(key, value);
+  return this;
+}
+
+// Add methods to `MapCache`.
+MapCache.prototype.clear = mapCacheClear;
+MapCache.prototype['delete'] = mapCacheDelete;
+MapCache.prototype.get = mapCacheGet;
+MapCache.prototype.has = mapCacheHas;
+MapCache.prototype.set = mapCacheSet;
+
+/**
+ * Assigns `value` to `key` of `object` if the existing value is not equivalent
+ * using [`SameValueZero`](http://ecma-international.org/ecma-262/7.0/#sec-samevaluezero)
+ * for equality comparisons.
+ *
+ * @private
+ * @param {Object} object The object to modify.
+ * @param {string} key The key of the property to assign.
+ * @param {*} value The value to assign.
+ */
+function assignValue(object, key, value) {
+  var objValue = object[key];
+  if (!(hasOwnProperty.call(object, key) && eq(objValue, value)) ||
+      (value === undefined && !(key in object))) {
+    object[key] = value;
+  }
+}
+
+/**
+ * Gets the index at which the `key` is found in `array` of key-value pairs.
+ *
+ * @private
+ * @param {Array} array The array to inspect.
+ * @param {*} key The key to search for.
+ * @returns {number} Returns the index of the matched value, else `-1`.
+ */
+function assocIndexOf(array, key) {
+  var length = array.length;
+  while (length--) {
+    if (eq(array[length][0], key)) {
+      return length;
+    }
+  }
+  return -1;
+}
+
+/**
+ * The base implementation of `_.isNative` without bad shim checks.
+ *
+ * @private
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if `value` is a native function,
+ *  else `false`.
+ */
+function baseIsNative(value) {
+  if (!isObject(value) || isMasked(value)) {
+    return false;
+  }
+  var pattern = (isFunction(value) || isHostObject(value)) ? reIsNative : reIsHostCtor;
+  return pattern.test(toSource(value));
+}
+
+/**
+ * The base implementation of `_.set`.
+ *
+ * @private
+ * @param {Object} object The object to modify.
+ * @param {Array|string} path The path of the property to set.
+ * @param {*} value The value to set.
+ * @param {Function} [customizer] The function to customize path creation.
+ * @returns {Object} Returns `object`.
+ */
+function baseSet(object, path, value, customizer) {
+  if (!isObject(object)) {
+    return object;
+  }
+  path = isKey(path, object) ? [path] : castPath(path);
+
+  var index = -1,
+      length = path.length,
+      lastIndex = length - 1,
+      nested = object;
+
+  while (nested != null && ++index < length) {
+    var key = toKey(path[index]),
+        newValue = value;
+
+    if (index != lastIndex) {
+      var objValue = nested[key];
+      newValue = customizer ? customizer(objValue, key, nested) : undefined;
+      if (newValue === undefined) {
+        newValue = isObject(objValue)
+          ? objValue
+          : (isIndex(path[index + 1]) ? [] : {});
+      }
+    }
+    assignValue(nested, key, newValue);
+    nested = nested[key];
+  }
+  return object;
+}
+
+/**
+ * The base implementation of `_.toString` which doesn't convert nullish
+ * values to empty strings.
+ *
+ * @private
+ * @param {*} value The value to process.
+ * @returns {string} Returns the string.
+ */
+function baseToString(value) {
+  // Exit early for strings to avoid a performance hit in some environments.
+  if (typeof value == 'string') {
+    return value;
+  }
+  if (isSymbol(value)) {
+    return symbolToString ? symbolToString.call(value) : '';
+  }
+  var result = (value + '');
+  return (result == '0' && (1 / value) == -INFINITY) ? '-0' : result;
+}
+
+/**
+ * Casts `value` to a path array if it's not one.
+ *
+ * @private
+ * @param {*} value The value to inspect.
+ * @returns {Array} Returns the cast property path array.
+ */
+function castPath(value) {
+  return isArray(value) ? value : stringToPath(value);
+}
+
+/**
+ * Gets the data for `map`.
+ *
+ * @private
+ * @param {Object} map The map to query.
+ * @param {string} key The reference key.
+ * @returns {*} Returns the map data.
+ */
+function getMapData(map, key) {
+  var data = map.__data__;
+  return isKeyable(key)
+    ? data[typeof key == 'string' ? 'string' : 'hash']
+    : data.map;
+}
+
+/**
+ * Gets the native function at `key` of `object`.
+ *
+ * @private
+ * @param {Object} object The object to query.
+ * @param {string} key The key of the method to get.
+ * @returns {*} Returns the function if it's native, else `undefined`.
+ */
+function getNative(object, key) {
+  var value = getValue(object, key);
+  return baseIsNative(value) ? value : undefined;
+}
+
+/**
+ * Checks if `value` is a valid array-like index.
+ *
+ * @private
+ * @param {*} value The value to check.
+ * @param {number} [length=MAX_SAFE_INTEGER] The upper bounds of a valid index.
+ * @returns {boolean} Returns `true` if `value` is a valid index, else `false`.
+ */
+function isIndex(value, length) {
+  length = length == null ? MAX_SAFE_INTEGER : length;
+  return !!length &&
+    (typeof value == 'number' || reIsUint.test(value)) &&
+    (value > -1 && value % 1 == 0 && value < length);
+}
+
+/**
+ * Checks if `value` is a property name and not a property path.
+ *
+ * @private
+ * @param {*} value The value to check.
+ * @param {Object} [object] The object to query keys on.
+ * @returns {boolean} Returns `true` if `value` is a property name, else `false`.
+ */
+function isKey(value, object) {
+  if (isArray(value)) {
+    return false;
+  }
+  var type = typeof value;
+  if (type == 'number' || type == 'symbol' || type == 'boolean' ||
+      value == null || isSymbol(value)) {
+    return true;
+  }
+  return reIsPlainProp.test(value) || !reIsDeepProp.test(value) ||
+    (object != null && value in Object(object));
+}
+
+/**
+ * Checks if `value` is suitable for use as unique object key.
+ *
+ * @private
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if `value` is suitable, else `false`.
+ */
+function isKeyable(value) {
+  var type = typeof value;
+  return (type == 'string' || type == 'number' || type == 'symbol' || type == 'boolean')
+    ? (value !== '__proto__')
+    : (value === null);
+}
+
+/**
+ * Checks if `func` has its source masked.
+ *
+ * @private
+ * @param {Function} func The function to check.
+ * @returns {boolean} Returns `true` if `func` is masked, else `false`.
+ */
+function isMasked(func) {
+  return !!maskSrcKey && (maskSrcKey in func);
+}
+
+/**
+ * Converts `string` to a property path array.
+ *
+ * @private
+ * @param {string} string The string to convert.
+ * @returns {Array} Returns the property path array.
+ */
+var stringToPath = memoize(function(string) {
+  string = toString(string);
+
+  var result = [];
+  if (reLeadingDot.test(string)) {
+    result.push('');
+  }
+  string.replace(rePropName, function(match, number, quote, string) {
+    result.push(quote ? string.replace(reEscapeChar, '$1') : (number || match));
+  });
+  return result;
+});
+
+/**
+ * Converts `value` to a string key if it's not a string or symbol.
+ *
+ * @private
+ * @param {*} value The value to inspect.
+ * @returns {string|symbol} Returns the key.
+ */
+function toKey(value) {
+  if (typeof value == 'string' || isSymbol(value)) {
+    return value;
+  }
+  var result = (value + '');
+  return (result == '0' && (1 / value) == -INFINITY) ? '-0' : result;
+}
+
+/**
+ * Converts `func` to its source code.
+ *
+ * @private
+ * @param {Function} func The function to process.
+ * @returns {string} Returns the source code.
+ */
+function toSource(func) {
+  if (func != null) {
+    try {
+      return funcToString.call(func);
+    } catch (e) {}
+    try {
+      return (func + '');
+    } catch (e) {}
+  }
+  return '';
+}
+
+/**
+ * Creates a function that memoizes the result of `func`. If `resolver` is
+ * provided, it determines the cache key for storing the result based on the
+ * arguments provided to the memoized function. By default, the first argument
+ * provided to the memoized function is used as the map cache key. The `func`
+ * is invoked with the `this` binding of the memoized function.
+ *
+ * **Note:** The cache is exposed as the `cache` property on the memoized
+ * function. Its creation may be customized by replacing the `_.memoize.Cache`
+ * constructor with one whose instances implement the
+ * [`Map`](http://ecma-international.org/ecma-262/7.0/#sec-properties-of-the-map-prototype-object)
+ * method interface of `delete`, `get`, `has`, and `set`.
+ *
+ * @static
+ * @memberOf _
+ * @since 0.1.0
+ * @category Function
+ * @param {Function} func The function to have its output memoized.
+ * @param {Function} [resolver] The function to resolve the cache key.
+ * @returns {Function} Returns the new memoized function.
+ * @example
+ *
+ * var object = { 'a': 1, 'b': 2 };
+ * var other = { 'c': 3, 'd': 4 };
+ *
+ * var values = _.memoize(_.values);
+ * values(object);
+ * // => [1, 2]
+ *
+ * values(other);
+ * // => [3, 4]
+ *
+ * object.a = 2;
+ * values(object);
+ * // => [1, 2]
+ *
+ * // Modify the result cache.
+ * values.cache.set(object, ['a', 'b']);
+ * values(object);
+ * // => ['a', 'b']
+ *
+ * // Replace `_.memoize.Cache`.
+ * _.memoize.Cache = WeakMap;
+ */
+function memoize(func, resolver) {
+  if (typeof func != 'function' || (resolver && typeof resolver != 'function')) {
+    throw new TypeError(FUNC_ERROR_TEXT);
+  }
+  var memoized = function() {
+    var args = arguments,
+        key = resolver ? resolver.apply(this, args) : args[0],
+        cache = memoized.cache;
+
+    if (cache.has(key)) {
+      return cache.get(key);
+    }
+    var result = func.apply(this, args);
+    memoized.cache = cache.set(key, result);
+    return result;
+  };
+  memoized.cache = new (memoize.Cache || MapCache);
+  return memoized;
+}
+
+// Assign cache to `_.memoize`.
+memoize.Cache = MapCache;
+
+/**
+ * Performs a
+ * [`SameValueZero`](http://ecma-international.org/ecma-262/7.0/#sec-samevaluezero)
+ * comparison between two values to determine if they are equivalent.
+ *
+ * @static
+ * @memberOf _
+ * @since 4.0.0
+ * @category Lang
+ * @param {*} value The value to compare.
+ * @param {*} other The other value to compare.
+ * @returns {boolean} Returns `true` if the values are equivalent, else `false`.
+ * @example
+ *
+ * var object = { 'a': 1 };
+ * var other = { 'a': 1 };
+ *
+ * _.eq(object, object);
+ * // => true
+ *
+ * _.eq(object, other);
+ * // => false
+ *
+ * _.eq('a', 'a');
+ * // => true
+ *
+ * _.eq('a', Object('a'));
+ * // => false
+ *
+ * _.eq(NaN, NaN);
+ * // => true
+ */
+function eq(value, other) {
+  return value === other || (value !== value && other !== other);
+}
+
+/**
+ * Checks if `value` is classified as an `Array` object.
+ *
+ * @static
+ * @memberOf _
+ * @since 0.1.0
+ * @category Lang
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if `value` is an array, else `false`.
+ * @example
+ *
+ * _.isArray([1, 2, 3]);
+ * // => true
+ *
+ * _.isArray(document.body.children);
+ * // => false
+ *
+ * _.isArray('abc');
+ * // => false
+ *
+ * _.isArray(_.noop);
+ * // => false
+ */
+var isArray = Array.isArray;
+
+/**
+ * Checks if `value` is classified as a `Function` object.
+ *
+ * @static
+ * @memberOf _
+ * @since 0.1.0
+ * @category Lang
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if `value` is a function, else `false`.
+ * @example
+ *
+ * _.isFunction(_);
+ * // => true
+ *
+ * _.isFunction(/abc/);
+ * // => false
+ */
+function isFunction(value) {
+  // The use of `Object#toString` avoids issues with the `typeof` operator
+  // in Safari 8-9 which returns 'object' for typed array and other constructors.
+  var tag = isObject(value) ? objectToString.call(value) : '';
+  return tag == funcTag || tag == genTag;
+}
+
+/**
+ * Checks if `value` is the
+ * [language type](http://www.ecma-international.org/ecma-262/7.0/#sec-ecmascript-language-types)
+ * of `Object`. (e.g. arrays, functions, objects, regexes, `new Number(0)`, and `new String('')`)
+ *
+ * @static
+ * @memberOf _
+ * @since 0.1.0
+ * @category Lang
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if `value` is an object, else `false`.
+ * @example
+ *
+ * _.isObject({});
+ * // => true
+ *
+ * _.isObject([1, 2, 3]);
+ * // => true
+ *
+ * _.isObject(_.noop);
+ * // => true
+ *
+ * _.isObject(null);
+ * // => false
+ */
+function isObject(value) {
+  var type = typeof value;
+  return !!value && (type == 'object' || type == 'function');
+}
+
+/**
+ * Checks if `value` is object-like. A value is object-like if it's not `null`
+ * and has a `typeof` result of "object".
+ *
+ * @static
+ * @memberOf _
+ * @since 4.0.0
+ * @category Lang
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if `value` is object-like, else `false`.
+ * @example
+ *
+ * _.isObjectLike({});
+ * // => true
+ *
+ * _.isObjectLike([1, 2, 3]);
+ * // => true
+ *
+ * _.isObjectLike(_.noop);
+ * // => false
+ *
+ * _.isObjectLike(null);
+ * // => false
+ */
+function isObjectLike(value) {
+  return !!value && typeof value == 'object';
+}
+
+/**
+ * Checks if `value` is classified as a `Symbol` primitive or object.
+ *
+ * @static
+ * @memberOf _
+ * @since 4.0.0
+ * @category Lang
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if `value` is a symbol, else `false`.
+ * @example
+ *
+ * _.isSymbol(Symbol.iterator);
+ * // => true
+ *
+ * _.isSymbol('abc');
+ * // => false
+ */
+function isSymbol(value) {
+  return typeof value == 'symbol' ||
+    (isObjectLike(value) && objectToString.call(value) == symbolTag);
+}
+
+/**
+ * Converts `value` to a string. An empty string is returned for `null`
+ * and `undefined` values. The sign of `-0` is preserved.
+ *
+ * @static
+ * @memberOf _
+ * @since 4.0.0
+ * @category Lang
+ * @param {*} value The value to process.
+ * @returns {string} Returns the string.
+ * @example
+ *
+ * _.toString(null);
+ * // => ''
+ *
+ * _.toString(-0);
+ * // => '-0'
+ *
+ * _.toString([1, 2, 3]);
+ * // => '1,2,3'
+ */
+function toString(value) {
+  return value == null ? '' : baseToString(value);
+}
+
+/**
+ * Sets the value at `path` of `object`. If a portion of `path` doesn't exist,
+ * it's created. Arrays are created for missing index properties while objects
+ * are created for all other missing properties. Use `_.setWith` to customize
+ * `path` creation.
+ *
+ * **Note:** This method mutates `object`.
+ *
+ * @static
+ * @memberOf _
+ * @since 3.7.0
+ * @category Object
+ * @param {Object} object The object to modify.
+ * @param {Array|string} path The path of the property to set.
+ * @param {*} value The value to set.
+ * @returns {Object} Returns `object`.
+ * @example
+ *
+ * var object = { 'a': [{ 'b': { 'c': 3 } }] };
+ *
+ * _.set(object, 'a[0].b.c', 4);
+ * console.log(object.a[0].b.c);
+ * // => 4
+ *
+ * _.set(object, ['x', '0', 'y', 'z'], 5);
+ * console.log(object.x[0].y.z);
+ * // => 5
+ */
+function set(object, path, value) {
+  return object == null ? object : baseSet(object, path, value);
+}
+
+module.exports = set;
+
+/* WEBPACK VAR INJECTION */}.call(this, __webpack_require__("c8ba")))
+
+/***/ }),
+
 /***/ "f5df":
 /***/ (function(module, exports, __webpack_require__) {
 
@@ -51493,6 +52874,7 @@ module.exports = debounce;
 __webpack_require__.r(__webpack_exports__);
 
 // EXPORTS
+__webpack_require__.d(__webpack_exports__, "Diagram", function() { return /* reexport */ LassoDiagram; });
 __webpack_require__.d(__webpack_exports__, "exampleConfig", function() { return /* reexport */ exampleConfig; });
 __webpack_require__.d(__webpack_exports__, "exampleData", function() { return /* reexport */ exampleData; });
 
@@ -51563,82 +52945,6 @@ function _typeof(obj) {
   }
 
   return _typeof(obj);
-}
-// EXTERNAL MODULE: ./node_modules/core-js/modules/es.object.keys.js
-var es_object_keys = __webpack_require__("b64b");
-
-// EXTERNAL MODULE: ./node_modules/core-js/modules/es.array.filter.js
-var es_array_filter = __webpack_require__("4de4");
-
-// EXTERNAL MODULE: ./node_modules/core-js/modules/es.object.get-own-property-descriptor.js
-var es_object_get_own_property_descriptor = __webpack_require__("e439");
-
-// EXTERNAL MODULE: ./node_modules/core-js/modules/web.dom-collections.for-each.js
-var web_dom_collections_for_each = __webpack_require__("159b");
-
-// EXTERNAL MODULE: ./node_modules/core-js/modules/es.object.get-own-property-descriptors.js
-var es_object_get_own_property_descriptors = __webpack_require__("dbb4");
-
-// CONCATENATED MODULE: ./node_modules/@babel/runtime/helpers/esm/defineProperty.js
-function _defineProperty(obj, key, value) {
-  if (key in obj) {
-    Object.defineProperty(obj, key, {
-      value: value,
-      enumerable: true,
-      configurable: true,
-      writable: true
-    });
-  } else {
-    obj[key] = value;
-  }
-
-  return obj;
-}
-// CONCATENATED MODULE: ./node_modules/@babel/runtime/helpers/esm/objectSpread2.js
-
-
-
-
-
-
-
-
-function ownKeys(object, enumerableOnly) {
-  var keys = Object.keys(object);
-
-  if (Object.getOwnPropertySymbols) {
-    var symbols = Object.getOwnPropertySymbols(object);
-
-    if (enumerableOnly) {
-      symbols = symbols.filter(function (sym) {
-        return Object.getOwnPropertyDescriptor(object, sym).enumerable;
-      });
-    }
-
-    keys.push.apply(keys, symbols);
-  }
-
-  return keys;
-}
-
-function _objectSpread2(target) {
-  for (var i = 1; i < arguments.length; i++) {
-    var source = arguments[i] != null ? arguments[i] : {};
-
-    if (i % 2) {
-      ownKeys(Object(source), true).forEach(function (key) {
-        _defineProperty(target, key, source[key]);
-      });
-    } else if (Object.getOwnPropertyDescriptors) {
-      Object.defineProperties(target, Object.getOwnPropertyDescriptors(source));
-    } else {
-      ownKeys(Object(source)).forEach(function (key) {
-        Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key));
-      });
-    }
-  }
-
-  return target;
 }
 // EXTERNAL MODULE: ./node_modules/core-js/modules/es.array.slice.js
 var es_array_slice = __webpack_require__("fb6a");
@@ -51739,6 +53045,82 @@ function _createForOfIteratorHelper(o, allowArrayLike) {
     }
   };
 }
+// EXTERNAL MODULE: ./node_modules/core-js/modules/es.object.keys.js
+var es_object_keys = __webpack_require__("b64b");
+
+// EXTERNAL MODULE: ./node_modules/core-js/modules/es.array.filter.js
+var es_array_filter = __webpack_require__("4de4");
+
+// EXTERNAL MODULE: ./node_modules/core-js/modules/es.object.get-own-property-descriptor.js
+var es_object_get_own_property_descriptor = __webpack_require__("e439");
+
+// EXTERNAL MODULE: ./node_modules/core-js/modules/web.dom-collections.for-each.js
+var web_dom_collections_for_each = __webpack_require__("159b");
+
+// EXTERNAL MODULE: ./node_modules/core-js/modules/es.object.get-own-property-descriptors.js
+var es_object_get_own_property_descriptors = __webpack_require__("dbb4");
+
+// CONCATENATED MODULE: ./node_modules/@babel/runtime/helpers/esm/defineProperty.js
+function _defineProperty(obj, key, value) {
+  if (key in obj) {
+    Object.defineProperty(obj, key, {
+      value: value,
+      enumerable: true,
+      configurable: true,
+      writable: true
+    });
+  } else {
+    obj[key] = value;
+  }
+
+  return obj;
+}
+// CONCATENATED MODULE: ./node_modules/@babel/runtime/helpers/esm/objectSpread2.js
+
+
+
+
+
+
+
+
+function ownKeys(object, enumerableOnly) {
+  var keys = Object.keys(object);
+
+  if (Object.getOwnPropertySymbols) {
+    var symbols = Object.getOwnPropertySymbols(object);
+
+    if (enumerableOnly) {
+      symbols = symbols.filter(function (sym) {
+        return Object.getOwnPropertyDescriptor(object, sym).enumerable;
+      });
+    }
+
+    keys.push.apply(keys, symbols);
+  }
+
+  return keys;
+}
+
+function _objectSpread2(target) {
+  for (var i = 1; i < arguments.length; i++) {
+    var source = arguments[i] != null ? arguments[i] : {};
+
+    if (i % 2) {
+      ownKeys(Object(source), true).forEach(function (key) {
+        _defineProperty(target, key, source[key]);
+      });
+    } else if (Object.getOwnPropertyDescriptors) {
+      Object.defineProperties(target, Object.getOwnPropertyDescriptors(source));
+    } else {
+      ownKeys(Object(source)).forEach(function (key) {
+        Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key));
+      });
+    }
+  }
+
+  return target;
+}
 // EXTERNAL MODULE: ./node_modules/core-js/modules/es.promise.js
 var es_promise = __webpack_require__("e6cf");
 
@@ -51820,6 +53202,9 @@ var es_map = __webpack_require__("4ec9");
 
 // EXTERNAL MODULE: ./node_modules/core-js/modules/es.array.concat.js
 var es_array_concat = __webpack_require__("99af");
+
+// EXTERNAL MODULE: ./node_modules/core-js/modules/es.array.find.js
+var es_array_find = __webpack_require__("7db0");
 
 // EXTERNAL MODULE: external {"commonjs":"vue","commonjs2":"vue","root":"Vue"}
 var external_commonjs_vue_commonjs2_vue_root_Vue_ = __webpack_require__("8bbf");
@@ -51953,29 +53338,61 @@ var EventBus_EventBus = /*#__PURE__*/function () {
     }
   }, {
     key: "on",
-    value: function on(name, handler) {
-      this.getHandlers(name).add(handler);
-    }
-  }, {
-    key: "off",
-    value: function off(name, handler) {
-      this.getHandlers(name).delete(handler);
-    }
-  }, {
-    key: "emit",
-    value: function emit(event) {
-      var _iterator = _createForOfIteratorHelper(this.getHandlers(event.name)),
+    value: function on(names, handler) {
+      var _this = this;
+
+      var _iterator = _createForOfIteratorHelper(Array.isArray(names) ? names : [names]),
           _step;
 
       try {
         for (_iterator.s(); !(_step = _iterator.n()).done;) {
-          var handler = _step.value;
-          handler(event);
+          var name = _step.value;
+          this.getHandlers(name).add(handler);
         }
       } catch (err) {
         _iterator.e(err);
       } finally {
         _iterator.f();
+      }
+
+      return function () {
+        return _this.off(names, handler);
+      };
+    }
+  }, {
+    key: "off",
+    value: function off(names, handler) {
+      var _iterator2 = _createForOfIteratorHelper(Array.isArray(names) ? names : [names]),
+          _step2;
+
+      try {
+        for (_iterator2.s(); !(_step2 = _iterator2.n()).done;) {
+          var name = _step2.value;
+          this.getHandlers(name).delete(handler);
+        }
+      } catch (err) {
+        _iterator2.e(err);
+      } finally {
+        _iterator2.f();
+      }
+    }
+  }, {
+    key: "emit",
+    value: function emit(event) {
+      console.log("Emitted event: ".concat(event.name));
+
+      var _iterator3 = _createForOfIteratorHelper(this.getHandlers(event.name)),
+          _step3;
+
+      try {
+        for (_iterator3.s(); !(_step3 = _iterator3.n()).done;) {
+          var handler = _step3.value;
+          handler(event);
+        }
+      } catch (err) {
+        _iterator3.e(err);
+      } finally {
+        _iterator3.f();
       }
     }
   }]);
@@ -52005,12 +53422,12 @@ var DiagramEventBus_DiagramEventBus = /*#__PURE__*/function (_EventBus) {
 }(types_EventBus);
 
 
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"73fd892e-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/Diagram.vue?vue&type=template&id=3720d18b&
-var Diagramvue_type_template_id_3720d18b_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"lassox-diagram__Diagram"},[_c('div',{staticClass:"lassox-diagram__Diagram_graph-columns"},[_c('Graph',{attrs:{"diagram":_vm.diagram,"data":_vm.diagram.data},on:{"clickEntity":function (entity) { return _vm.showEditor(entity); },"clickRelation":function (relation) { return _vm.showEditor(relation); }}}),_c('Customizer',{attrs:{"diagram":_vm.diagram}})],1)])}
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"1c2f91b6-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/Diagram.vue?vue&type=template&id=048e8898&
+var Diagramvue_type_template_id_048e8898_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"lassox-diagram__Diagram"},[_c('TopBar',{attrs:{"diagram":_vm.diagram}}),_c('div',{staticClass:"lassox-diagram__Diagram_graph-columns"},[_c('Graph',{attrs:{"diagram":_vm.diagram,"data":_vm.diagram.data},on:{"clickEntity":function (entity) { return _vm.showEditor(entity); },"clickRelation":function (relation) { return _vm.showEditor(relation); }}}),_c('Customizer',{attrs:{"diagram":_vm.diagram}}),(_vm.editor.show)?_c('Editor',{attrs:{"diagram":_vm.diagram,"object":_vm.editor.object,"close":function () { return _vm.hideEditor(); }}}):_vm._e()],1),_c('div',{staticClass:"lassox-diagram__Diagram_dialogs"},_vm._l((_vm.dialogs),function(dialog,i){return _c(dialog.component,_vm._b({key:i,tag:"component",on:{"close":function($event){return _vm.dialogs.splice(i, 1)}}},'component',dialog.props,false))}),1)],1)}
 var staticRenderFns = []
 
 
-// CONCATENATED MODULE: ./src/components/Diagram.vue?vue&type=template&id=3720d18b&
+// CONCATENATED MODULE: ./src/components/Diagram.vue?vue&type=template&id=048e8898&
 
 // CONCATENATED MODULE: ./node_modules/tslib/tslib.es6.js
 /*! *****************************************************************************
@@ -52938,14 +54355,18 @@ function Watch(path, options) {
 
 
 
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"73fd892e-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/TopBar.vue?vue&type=template&id=4f11106b&
-var TopBarvue_type_template_id_4f11106b_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"lassox-diagram__TopBar"},[_c('ButtonGroup',[_c('Button',{attrs:{"type":"primary","label":"Udskriv"}}),_c('Button',{attrs:{"label":"Gem","trailingIcon":_vm.showSaveDropdownMenu ? 'expand_less' : 'expand_more'},on:{"click":function () { return _vm.showSaveDropdownMenu = !_vm.showSaveDropdownMenu; }}}),_c('Button',{attrs:{"label":"Indlæs","trailingIcon":_vm.showLoadDropdownMenu ? 'expand_less' : 'expand_more'},on:{"click":function () { return _vm.showLoadDropdownMenu = !_vm.showLoadDropdownMenu; }}})],1),_c('div',{staticStyle:{"width":"16px","margin":"auto"}}),_c('ButtonGroup',[_c('Button',{staticClass:"lassox-diagram__TopBar_fullscreen-button",attrs:{"icon":"fullscreen"}}),_c('Button',{attrs:{"label":"Variant 1"}}),_c('Button',{attrs:{"label":"Variant 2"}}),_c('Button',{attrs:{"label":"Udvid"}}),_c('Button',{ref:"editDropdownButton",attrs:{"label":"Rediger","trailingIcon":_vm.showEditDropdownMenu ? 'expand_less' : 'expand_more'},on:{"click":function () { return _vm.showEditDropdownMenu = !_vm.showEditDropdownMenu; }}})],1),_c('DropdownMenu',{attrs:{"buttonEl":_vm.showEditDropdownMenu ? _vm.$refs.editDropdownButton.$el : null,"close":function () { return _vm.showEditDropdownMenu = false; }}},[_c('DropdownMenuItem',{attrs:{"label":"Fortryd","disabled":!_vm.canUndo},on:{"click":_vm.undo}}),_c('DropdownMenuItem',{attrs:{"label":"Annuller fortryd","disabled":!_vm.canRedo},on:{"click":_vm.redo}}),_c('DropdownMenuItem',{attrs:{"label":"Nulstil"},on:{"click":_vm.reset}}),_c('DropdownMenuDivider'),_c('DropdownMenuItem',{attrs:{"label":"Rediger navn og deling","disabled":""},on:{"click":function () {}}}),_c('DropdownMenuItem',{attrs:{"label":"Slet","disabled":""},on:{"click":function () {}}})],1)],1)}
-var TopBarvue_type_template_id_4f11106b_staticRenderFns = []
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"1c2f91b6-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/TopBar.vue?vue&type=template&id=1f3fa752&
+var TopBarvue_type_template_id_1f3fa752_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"lassox-diagram__TopBar"},[_c('ButtonGroup',{staticStyle:{"margin-left":"auto"}},[(_vm.diagram.layouts.length)?_c('Button',{ref:"layoutDropdownButton",attrs:{"label":"Layout","trailingIcon":_vm.showLayoutDropdownMenu ? 'expand_less' : 'expand_more'},on:{"click":function () { return _vm.showLayoutDropdownMenu = !_vm.showLayoutDropdownMenu; }}}):_vm._e(),_c('Button',{ref:"editDropdownButton",attrs:{"label":"Rediger","trailingIcon":_vm.showEditDropdownMenu ? 'expand_less' : 'expand_more'},on:{"click":function () { return _vm.showEditDropdownMenu = !_vm.showEditDropdownMenu; }}})],1),(_vm.diagram.layouts.length)?_c('DropdownMenu',{attrs:{"buttonEl":_vm.showLayoutDropdownMenu ? _vm.$refs.layoutDropdownButton.$el : null,"close":function () { return _vm.showLayoutDropdownMenu = false; }}},_vm._l((_vm.diagram.layouts),function(layout){return _c('DropdownMenuItem',{key:layout.id,attrs:{"label":layout.name,"icon":layout == _vm.diagram.activeDiagram.settings.activeLayout ? 'check' : ' '},on:{"click":function () {
+        _vm.diagram.activeDiagram.settings.activeLayout = layout
+        _vm.diagram.eventBus.emit({ name: 'settingsChanged' })
+        _vm.diagram.eventBus.emit({ name: 'activeLayoutChanged' })
+      }}})}),1):_vm._e(),_c('DropdownMenu',{attrs:{"buttonEl":_vm.showEditDropdownMenu ? _vm.$refs.editDropdownButton.$el : null,"close":function () { return _vm.showEditDropdownMenu = false; }}},[_c('DropdownMenuItem',{attrs:{"label":"Fortryd","icon":"undo","disabled":!_vm.canUndo},on:{"click":_vm.undo}}),_c('DropdownMenuItem',{attrs:{"label":"Annuller fortryd","icon":"redo","disabled":!_vm.canRedo},on:{"click":_vm.redo}}),_c('DropdownMenuItem',{attrs:{"label":"Nulstil","icon":"replay"},on:{"click":_vm.reset}})],1)],1)}
+var TopBarvue_type_template_id_1f3fa752_staticRenderFns = []
 
 
-// CONCATENATED MODULE: ./src/components/TopBar.vue?vue&type=template&id=4f11106b&
+// CONCATENATED MODULE: ./src/components/TopBar.vue?vue&type=template&id=1f3fa752&
 
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"73fd892e-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/ButtonGroup.vue?vue&type=template&id=633ec098&
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"1c2f91b6-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/ButtonGroup.vue?vue&type=template&id=633ec098&
 var ButtonGroupvue_type_template_id_633ec098_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{class:[
     'lassox-diagram__ButtonGroup',
     ("lassox-diagram__ButtonGroup--align-" + _vm.align) ]},[_vm._t("default")],2)}
@@ -53108,7 +54529,7 @@ var component = normalizeComponent(
 )
 
 /* harmony default export */ var components_ButtonGroup = (component.exports);
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"73fd892e-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/Button.vue?vue&type=template&id=6c8546b3&
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"1c2f91b6-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/Button.vue?vue&type=template&id=6c8546b3&
 var Buttonvue_type_template_id_6c8546b3_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('BaseButton',_vm._g(_vm._b({class:[
     'lassox-diagram__Button',
     ("lassox-diagram__Button--type-" + _vm.type) ]},'BaseButton',{ label: _vm.label, icon: _vm.icon, leadingIcon: _vm.leadingIcon, trailingIcon: _vm.trailingIcon, disabled: _vm.disabled },false),_vm.$listeners))}
@@ -53117,22 +54538,22 @@ var Buttonvue_type_template_id_6c8546b3_staticRenderFns = []
 
 // CONCATENATED MODULE: ./src/components/Button.vue?vue&type=template&id=6c8546b3&
 
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"73fd892e-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/BaseButton.vue?vue&type=template&id=0d4777f6&
-var BaseButtonvue_type_template_id_0d4777f6_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('button',_vm._g({class:[
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"1c2f91b6-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/BaseButton.vue?vue&type=template&id=20ab1ea2&
+var BaseButtonvue_type_template_id_20ab1ea2_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('button',_vm._g({class:[
     'lassox-diagram__BaseButton',
     _vm.disabled && 'lassox-diagram__BaseButton--disabled' ],attrs:{"disabled":_vm.disabled}},Object.assign({}, _vm.$listeners,
     {click: function (e) { return !_vm.disabled && _vm.$emit('click', e); }})),[_vm._t("default"),(_vm.finalLeadingIcon)?_c('Icon',{staticClass:"lassox-diagram__BaseButton_leading-icon",attrs:{"icon":_vm.finalLeadingIcon}}):_vm._e(),(_vm.label)?_c('div',{staticClass:"lassox-diagram__BaseButton_label",domProps:{"textContent":_vm._s(_vm.label)}}):_vm._e(),(_vm.finalTrailingIcon)?_c('Icon',{staticClass:"lassox-diagram__BaseButton_trailing-icon",attrs:{"icon":_vm.finalTrailingIcon}}):_vm._e(),_c('div',{staticClass:"lassox-diagram__BaseButton_outline"}),_c('div',{staticClass:"lassox-diagram__BaseButton_overlay"})],2)}
-var BaseButtonvue_type_template_id_0d4777f6_staticRenderFns = []
+var BaseButtonvue_type_template_id_20ab1ea2_staticRenderFns = []
 
 
-// CONCATENATED MODULE: ./src/components/BaseButton.vue?vue&type=template&id=0d4777f6&
+// CONCATENATED MODULE: ./src/components/BaseButton.vue?vue&type=template&id=20ab1ea2&
 
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"73fd892e-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/Icon.vue?vue&type=template&id=8ba96850&
-var Iconvue_type_template_id_8ba96850_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"lassox-diagram__Icon"},[_c('span',{staticClass:"material-icons-outlined"},[_vm._v(_vm._s(_vm.icon))])])}
-var Iconvue_type_template_id_8ba96850_staticRenderFns = []
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"1c2f91b6-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/Icon.vue?vue&type=template&id=0a991a76&
+var Iconvue_type_template_id_0a991a76_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"lassox-diagram__Icon"},[(_vm.icon && _vm.icon != ' ')?_c('span',{staticClass:"material-icons-outlined",domProps:{"textContent":_vm._s(_vm.icon)}}):_vm._e()])}
+var Iconvue_type_template_id_0a991a76_staticRenderFns = []
 
 
-// CONCATENATED MODULE: ./src/components/Icon.vue?vue&type=template&id=8ba96850&
+// CONCATENATED MODULE: ./src/components/Icon.vue?vue&type=template&id=0a991a76&
 
 // CONCATENATED MODULE: ./node_modules/babel-loader/lib!./node_modules/ts-loader??ref--14-1!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/Icon.vue?vue&type=script&lang=ts&
 
@@ -53178,8 +54599,8 @@ var Iconvue_type_style_index_0_lang_scss_ = __webpack_require__("83b4");
 
 var Icon_component = normalizeComponent(
   components_Iconvue_type_script_lang_ts_,
-  Iconvue_type_template_id_8ba96850_render,
-  Iconvue_type_template_id_8ba96850_staticRenderFns,
+  Iconvue_type_template_id_0a991a76_render,
+  Iconvue_type_template_id_0a991a76_staticRenderFns,
   false,
   null,
   null,
@@ -53270,8 +54691,8 @@ var BaseButtonvue_type_style_index_0_lang_scss_ = __webpack_require__("55ae");
 
 var BaseButton_component = normalizeComponent(
   components_BaseButtonvue_type_script_lang_ts_,
-  BaseButtonvue_type_template_id_0d4777f6_render,
-  BaseButtonvue_type_template_id_0d4777f6_staticRenderFns,
+  BaseButtonvue_type_template_id_20ab1ea2_render,
+  BaseButtonvue_type_template_id_20ab1ea2_staticRenderFns,
   false,
   null,
   null,
@@ -53369,14 +54790,14 @@ var Button_component = normalizeComponent(
 )
 
 /* harmony default export */ var components_Button = (Button_component.exports);
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"73fd892e-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/DropdownMenu.vue?vue&type=template&id=520f6309&
-var DropdownMenuvue_type_template_id_520f6309_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"lassox-diagram__DropdownMenu"},[_c('div',{ref:"boundsEl",staticClass:"lassox-diagram__DropdownMenu_bounds"}),_c('div',{ref:"dropdownMenuEl",staticClass:"lassox-diagram__DropdownMenu_dropdown-menu",style:([
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"1c2f91b6-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/DropdownMenu.vue?vue&type=template&id=d376f59a&
+var DropdownMenuvue_type_template_id_d376f59a_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"lassox-diagram__DropdownMenu"},[_c('div',{ref:"boundsEl",staticClass:"lassox-diagram__DropdownMenu_bounds"}),_c('div',{ref:"dropdownMenuEl",staticClass:"lassox-diagram__DropdownMenu_dropdown-menu",style:([
       !_vm.buttonEl ? { visibility: 'hidden' } : null,
       _vm.dropdownMenuStyle ]),attrs:{"tabindex":"-1"}},[_vm._t("default")],2)])}
-var DropdownMenuvue_type_template_id_520f6309_staticRenderFns = []
+var DropdownMenuvue_type_template_id_d376f59a_staticRenderFns = []
 
 
-// CONCATENATED MODULE: ./src/components/DropdownMenu.vue?vue&type=template&id=520f6309&
+// CONCATENATED MODULE: ./src/components/DropdownMenu.vue?vue&type=template&id=d376f59a&
 
 // EXTERNAL MODULE: ./node_modules/core-js/modules/es.array.join.js
 var es_array_join = __webpack_require__("a15b");
@@ -53544,11 +54965,11 @@ function watchRect(element, callback) {
   if (rafId == null) start();
   return {
     unwatch: function unwatch() {
-      return unwatchRect(element, callback);
+      return watch_rect_unwatchRect(element, callback);
     }
   };
 }
-function unwatchRect(element, callback) {
+function watch_rect_unwatchRect(element, callback) {
   var state = watchers.get(element);
   if (!state) return;
   state.callbacks.delete(callback);
@@ -53589,27 +55010,49 @@ var DropdownMenuvue_type_script_lang_ts_DropdownMenu = /*#__PURE__*/function (_V
   }
 
   _createClass(DropdownMenu, [{
+    key: "dropdownMenuVm",
+    get: function get() {
+      return this;
+    }
+  }, {
     key: "dropdownMenuStyle",
     get: function get() {
       var buttonRect = this.buttonRect,
           boundsRect = this.boundsRect,
           dropdownMenuRect = this.dropdownMenuRect;
       if (!buttonRect || !boundsRect || !dropdownMenuRect) return null;
+      var spaceAbove = buttonRect.top - boundsRect.top;
+      var spaceBelow = boundsRect.bottom - buttonRect.bottom;
       var spaceLeft = buttonRect.right - boundsRect.left;
       var spaceRight = boundsRect.right - buttonRect.left;
-      var space = Math.max(spaceLeft, spaceRight);
-      var align = spaceLeft < spaceRight ? 'left' : 'right';
+      var hAlign = 'left';
+      var vAlign = 'below';
       var minWidth = Math.max(buttonRect.width, 112);
-      var maxWidth = Math.min(space, 280);
-      var maxHeight = boundsRect.bottom - buttonRect.bottom;
-      var transforms = ["translateY(".concat(buttonRect.bottom, "px)")];
+      var maxWidth = Math.min(Math.max(spaceLeft, spaceRight), 280);
+      var maxHeight;
+      var transforms = [];
 
-      if (align == 'left') {
+      if (maxWidth > spaceRight && spaceLeft > spaceRight) {
+        hAlign = 'right';
+      }
+
+      if (hAlign == 'left') {
         transforms.push("translateX(".concat(buttonRect.left, "px)"));
       } else {
         transforms.push("translateX(".concat(buttonRect.right, "px) translateX(-100%)"));
-      } // TODO : Position on right side, if too big
+      }
 
+      if (spaceBelow <= 280 && spaceAbove > spaceBelow) {
+        vAlign = 'above';
+      }
+
+      if (vAlign == 'above') {
+        maxHeight = spaceAbove;
+        transforms.push("translateY(".concat(buttonRect.top, "px) translateY(-100%)"));
+      } else {
+        maxHeight = spaceBelow;
+        transforms.push("translateY(".concat(buttonRect.bottom, "px)"));
+      }
 
       return {
         minWidth: "".concat(minWidth, "px"),
@@ -53658,13 +55101,13 @@ var DropdownMenuvue_type_script_lang_ts_DropdownMenu = /*#__PURE__*/function (_V
     key: "onButtonElChanged",
     value: function onButtonElChanged(buttonEl, oldButtonEl) {
       if (oldButtonEl) {
-        unwatchRect(oldButtonEl, this.updateButtonRect);
+        watch_rect_unwatchRect(oldButtonEl, this.updateButtonRect);
         oldButtonEl.removeEventListener('focusout', this.onFocusOut);
       }
 
       if (!buttonEl) {
-        unwatchRect(this.boundsEl, this.updateBoundsRect);
-        unwatchRect(this.dropdownMenuEl, this.updateDropdownMenuRect);
+        watch_rect_unwatchRect(this.boundsEl, this.updateBoundsRect);
+        watch_rect_unwatchRect(this.dropdownMenuEl, this.updateDropdownMenuRect);
         this.dropdownMenuEl.removeEventListener('focusout', this.onFocusOut);
       } else {
         if (!oldButtonEl) {
@@ -53681,6 +55124,8 @@ var DropdownMenuvue_type_script_lang_ts_DropdownMenu = /*#__PURE__*/function (_V
 
   return DropdownMenu;
 }(external_commonjs_vue_commonjs2_vue_root_Vue_default.a);
+
+__decorate([Provide()], DropdownMenuvue_type_script_lang_ts_DropdownMenu.prototype, "dropdownMenuVm", null);
 
 __decorate([Prop({
   type: HTMLElement
@@ -53714,8 +55159,8 @@ var DropdownMenuvue_type_style_index_0_lang_scss_ = __webpack_require__("bf1c");
 
 var DropdownMenu_component = normalizeComponent(
   components_DropdownMenuvue_type_script_lang_ts_,
-  DropdownMenuvue_type_template_id_520f6309_render,
-  DropdownMenuvue_type_template_id_520f6309_staticRenderFns,
+  DropdownMenuvue_type_template_id_d376f59a_render,
+  DropdownMenuvue_type_template_id_d376f59a_staticRenderFns,
   false,
   null,
   null,
@@ -53724,12 +55169,16 @@ var DropdownMenu_component = normalizeComponent(
 )
 
 /* harmony default export */ var components_DropdownMenu = (DropdownMenu_component.exports);
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"73fd892e-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/DropdownMenuItem.vue?vue&type=template&id=e4bed03e&
-var DropdownMenuItemvue_type_template_id_e4bed03e_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('BaseButton',_vm._g({staticClass:"lassox-diagram__DropdownMenuItem",attrs:{"icon":_vm.icon,"label":_vm.label,"disabled":_vm.disabled,"tabindex":"0"}},_vm.$listeners))}
-var DropdownMenuItemvue_type_template_id_e4bed03e_staticRenderFns = []
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"1c2f91b6-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/DropdownMenuItem.vue?vue&type=template&id=5446e124&
+var DropdownMenuItemvue_type_template_id_5446e124_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('BaseButton',_vm._g({staticClass:"lassox-diagram__DropdownMenuItem",attrs:{"icon":_vm.icon,"label":_vm.label,"disabled":_vm.disabled,"tabindex":"0"}},Object.assign({}, _vm.$listeners,
+    {click: function (e) {
+      _vm.$emit('click', e)
+      if (_vm.dropdownMenuVm.close) { _vm.dropdownMenuVm.close() }
+    }})))}
+var DropdownMenuItemvue_type_template_id_5446e124_staticRenderFns = []
 
 
-// CONCATENATED MODULE: ./src/components/DropdownMenuItem.vue?vue&type=template&id=e4bed03e&
+// CONCATENATED MODULE: ./src/components/DropdownMenuItem.vue?vue&type=template&id=5446e124&
 
 // CONCATENATED MODULE: ./node_modules/babel-loader/lib!./node_modules/ts-loader??ref--14-1!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/DropdownMenuItem.vue?vue&type=script&lang=ts&
 
@@ -53752,6 +55201,8 @@ var DropdownMenuItemvue_type_script_lang_ts_DropdownMenuItem = /*#__PURE__*/func
 
   return DropdownMenuItem;
 }(external_commonjs_vue_commonjs2_vue_root_Vue_default.a);
+
+__decorate([Inject()], DropdownMenuItemvue_type_script_lang_ts_DropdownMenuItem.prototype, "dropdownMenuVm", void 0);
 
 __decorate([Prop(String)], DropdownMenuItemvue_type_script_lang_ts_DropdownMenuItem.prototype, "icon", void 0);
 
@@ -53787,8 +55238,8 @@ var DropdownMenuItemvue_type_style_index_0_lang_scss_ = __webpack_require__("21a
 
 var DropdownMenuItem_component = normalizeComponent(
   components_DropdownMenuItemvue_type_script_lang_ts_,
-  DropdownMenuItemvue_type_template_id_e4bed03e_render,
-  DropdownMenuItemvue_type_template_id_e4bed03e_staticRenderFns,
+  DropdownMenuItemvue_type_template_id_5446e124_render,
+  DropdownMenuItemvue_type_template_id_5446e124_staticRenderFns,
   false,
   null,
   null,
@@ -53797,7 +55248,7 @@ var DropdownMenuItem_component = normalizeComponent(
 )
 
 /* harmony default export */ var components_DropdownMenuItem = (DropdownMenuItem_component.exports);
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"73fd892e-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/DropdownMenuDivider.vue?vue&type=template&id=17d44d15&
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"1c2f91b6-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/DropdownMenuDivider.vue?vue&type=template&id=17d44d15&
 var DropdownMenuDividervue_type_template_id_17d44d15_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"lassox-diagram__DropdownMenuDivider"})}
 var DropdownMenuDividervue_type_template_id_17d44d15_staticRenderFns = []
 
@@ -53853,7 +55304,312 @@ var DropdownMenuDivider_component = normalizeComponent(
 )
 
 /* harmony default export */ var components_DropdownMenuDivider = (DropdownMenuDivider_component.exports);
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"1c2f91b6-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/ConfirmResetDialog.vue?vue&type=template&id=4a86d982&
+var ConfirmResetDialogvue_type_template_id_4a86d982_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('Dialog',{staticClass:"lassox-diagram__ConfirmAdditionDialog",attrs:{"dismissable":true,"title":"Nulstil diagrammet?","content":"Dette vil fjerne eventuelle ændringer og nulstille dine indstillinger. Vil du fortsætte?","onClose":_vm.dismiss},scopedSlots:_vm._u([{key:"actions",fn:function(){return [_c('ButtonGroup',{attrs:{"align":"right"}},[_c('Button',{attrs:{"label":"Fortryd"},on:{"click":_vm.dismiss}}),_c('Button',{attrs:{"label":"Fortsæt","type":"primary"},on:{"click":_vm.confirm}})],1)]},proxy:true}])})}
+var ConfirmResetDialogvue_type_template_id_4a86d982_staticRenderFns = []
+
+
+// CONCATENATED MODULE: ./src/components/ConfirmResetDialog.vue?vue&type=template&id=4a86d982&
+
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"1c2f91b6-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/Dialog.vue?vue&type=template&id=71afca30&
+var Dialogvue_type_template_id_71afca30_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"lassox-diagram__Dialog"},[_c('div',{staticClass:"lassox-diagram__Dialog-backdrop",on:{"click":function () { return _vm.dismissable && _vm.close(); }}}),_c('div',{staticClass:"lassox-diagram__Dialog-box"},[(_vm.title || _vm.dismissable || _vm.$slots['header'] || _vm.$slots['title'])?_c('div',{staticClass:"lassox-diagram__Dialog-header"},[_vm._t("header",function(){return [(_vm.title)?_c('div',{staticClass:"lassox-diagram__Dialog-title"},[_vm._t("title",function(){return [(_vm.title)?_c('div',{domProps:{"textContent":_vm._s(_vm.title)}}):_vm._e()]},null,_vm.slotProps)],2):_vm._e(),(_vm.dismissable)?_c('IconButton',{staticClass:"lassox-diagram__Dialog-close-button",attrs:{"icon":"close"},on:{"click":_vm.close}}):_vm._e()]},null,_vm.slotProps)],2):_vm._e(),(_vm.content || _vm.$slots['content'])?_c('div',{staticClass:"lassox-diagram__Dialog-content"},[_vm._t("content",function(){return [(_vm.content)?_c('div',{domProps:{"textContent":_vm._s(_vm.content)}}):_vm._e()]},null,_vm.slotProps)],2):_vm._e(),(_vm.$slots['actions'])?_c('div',{staticClass:"lassox-diagram__Dialog-actions"},[_vm._t("actions",null,null,_vm.slotProps)],2):_vm._e()])])}
+var Dialogvue_type_template_id_71afca30_staticRenderFns = []
+
+
+// CONCATENATED MODULE: ./src/components/Dialog.vue?vue&type=template&id=71afca30&
+
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"1c2f91b6-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/IconButton.vue?vue&type=template&id=2fdbaffc&
+var IconButtonvue_type_template_id_2fdbaffc_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"lassox-diagram__IconButton",style:({
+    width: (_vm.finalIconSize + "px"),
+    height: (_vm.finalIconSize + "px"),
+  })},[_c('BaseButton',_vm._g({staticClass:"lassox-diagram__IconButton_button",style:({
+      width: (_vm.finalButtonSize + "px"),
+      height: (_vm.finalButtonSize + "px"),
+    })},_vm.$listeners),[_c('Icon',{staticClass:"lassox-diagram__IconButton_button-icon",style:({
+        fontSize: (_vm.finalIconSize + "px"),
+      }),attrs:{"icon":_vm.icon}})],1)],1)}
+var IconButtonvue_type_template_id_2fdbaffc_staticRenderFns = []
+
+
+// CONCATENATED MODULE: ./src/components/IconButton.vue?vue&type=template&id=2fdbaffc&
+
+// EXTERNAL MODULE: ./node_modules/core-js/modules/es.number.constructor.js
+var es_number_constructor = __webpack_require__("a9e3");
+
+// CONCATENATED MODULE: ./node_modules/babel-loader/lib!./node_modules/ts-loader??ref--14-1!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/IconButton.vue?vue&type=script&lang=ts&
+
+
+
+
+
+
+
+
+
+var sizes = {
+  small: {
+    iconSize: 18,
+    buttonSize: 32
+  },
+  normal: {
+    iconSize: 24,
+    buttonSize: 40
+  }
+};
+
+var IconButtonvue_type_script_lang_ts_IconButton = /*#__PURE__*/function (_Vue) {
+  _inherits(IconButton, _Vue);
+
+  var _super = _createSuper(IconButton);
+
+  function IconButton() {
+    _classCallCheck(this, IconButton);
+
+    return _super.apply(this, arguments);
+  }
+
+  _createClass(IconButton, [{
+    key: "finalSize",
+    get: function get() {
+      return sizes[this.size];
+    }
+  }, {
+    key: "finalIconSize",
+    get: function get() {
+      var _this$iconSize;
+
+      return (_this$iconSize = this.iconSize) !== null && _this$iconSize !== void 0 ? _this$iconSize : this.finalSize.iconSize;
+    }
+  }, {
+    key: "finalButtonSize",
+    get: function get() {
+      var _this$buttonSize;
+
+      return (_this$buttonSize = this.buttonSize) !== null && _this$buttonSize !== void 0 ? _this$buttonSize : this.finalSize.buttonSize;
+    }
+  }]);
+
+  return IconButton;
+}(external_commonjs_vue_commonjs2_vue_root_Vue_default.a);
+
+__decorate([Prop({
+  type: String,
+  required: true
+})], IconButtonvue_type_script_lang_ts_IconButton.prototype, "icon", void 0);
+
+__decorate([Prop({
+  type: String,
+  default: 'normal',
+  validator: function validator(preset) {
+    return preset in sizes;
+  }
+})], IconButtonvue_type_script_lang_ts_IconButton.prototype, "size", void 0);
+
+__decorate([Prop({
+  type: Number
+})], IconButtonvue_type_script_lang_ts_IconButton.prototype, "iconSize", void 0);
+
+__decorate([Prop({
+  type: Number
+})], IconButtonvue_type_script_lang_ts_IconButton.prototype, "buttonSize", void 0);
+
+IconButtonvue_type_script_lang_ts_IconButton = __decorate([vue_class_component_esm({
+  components: {
+    BaseButton: components_BaseButton,
+    Icon: components_Icon
+  }
+})], IconButtonvue_type_script_lang_ts_IconButton);
+/* harmony default export */ var IconButtonvue_type_script_lang_ts_ = (IconButtonvue_type_script_lang_ts_IconButton);
+// CONCATENATED MODULE: ./src/components/IconButton.vue?vue&type=script&lang=ts&
+ /* harmony default export */ var components_IconButtonvue_type_script_lang_ts_ = (IconButtonvue_type_script_lang_ts_); 
+// EXTERNAL MODULE: ./src/components/IconButton.vue?vue&type=style&index=0&lang=scss&
+var IconButtonvue_type_style_index_0_lang_scss_ = __webpack_require__("e4aa");
+
+// CONCATENATED MODULE: ./src/components/IconButton.vue
+
+
+
+
+
+
+/* normalize component */
+
+var IconButton_component = normalizeComponent(
+  components_IconButtonvue_type_script_lang_ts_,
+  IconButtonvue_type_template_id_2fdbaffc_render,
+  IconButtonvue_type_template_id_2fdbaffc_staticRenderFns,
+  false,
+  null,
+  null,
+  null
+  
+)
+
+/* harmony default export */ var components_IconButton = (IconButton_component.exports);
+// CONCATENATED MODULE: ./node_modules/babel-loader/lib!./node_modules/ts-loader??ref--14-1!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/Dialog.vue?vue&type=script&lang=ts&
+
+
+
+
+
+
+
+
+var Dialogvue_type_script_lang_ts_Dialog = /*#__PURE__*/function (_Vue) {
+  _inherits(Dialog, _Vue);
+
+  var _super = _createSuper(Dialog);
+
+  function Dialog() {
+    _classCallCheck(this, Dialog);
+
+    return _super.apply(this, arguments);
+  }
+
+  _createClass(Dialog, [{
+    key: "close",
+    value: function close() {
+      var _this$onClose;
+
+      this.$emit('close');
+      (_this$onClose = this.onClose) === null || _this$onClose === void 0 ? void 0 : _this$onClose.call(this);
+    }
+  }, {
+    key: "slotProps",
+    get: function get() {
+      return {
+        close: this.close
+      };
+    }
+  }]);
+
+  return Dialog;
+}(external_commonjs_vue_commonjs2_vue_root_Vue_default.a);
+
+__decorate([Prop(Boolean)], Dialogvue_type_script_lang_ts_Dialog.prototype, "dismissable", void 0);
+
+__decorate([Prop(String)], Dialogvue_type_script_lang_ts_Dialog.prototype, "title", void 0);
+
+__decorate([Prop(String)], Dialogvue_type_script_lang_ts_Dialog.prototype, "content", void 0);
+
+__decorate([Prop(Function)], Dialogvue_type_script_lang_ts_Dialog.prototype, "onClose", void 0);
+
+Dialogvue_type_script_lang_ts_Dialog = __decorate([vue_class_component_esm({
+  components: {
+    IconButton: components_IconButton
+  }
+})], Dialogvue_type_script_lang_ts_Dialog);
+/* harmony default export */ var Dialogvue_type_script_lang_ts_ = (Dialogvue_type_script_lang_ts_Dialog);
+// CONCATENATED MODULE: ./src/components/Dialog.vue?vue&type=script&lang=ts&
+ /* harmony default export */ var components_Dialogvue_type_script_lang_ts_ = (Dialogvue_type_script_lang_ts_); 
+// EXTERNAL MODULE: ./src/components/Dialog.vue?vue&type=style&index=0&lang=scss&
+var Dialogvue_type_style_index_0_lang_scss_ = __webpack_require__("33fd");
+
+// CONCATENATED MODULE: ./src/components/Dialog.vue
+
+
+
+
+
+
+/* normalize component */
+
+var Dialog_component = normalizeComponent(
+  components_Dialogvue_type_script_lang_ts_,
+  Dialogvue_type_template_id_71afca30_render,
+  Dialogvue_type_template_id_71afca30_staticRenderFns,
+  false,
+  null,
+  null,
+  null
+  
+)
+
+/* harmony default export */ var components_Dialog = (Dialog_component.exports);
+// CONCATENATED MODULE: ./node_modules/babel-loader/lib!./node_modules/ts-loader??ref--14-1!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/ConfirmResetDialog.vue?vue&type=script&lang=ts&
+
+
+
+
+
+
+
+
+
+
+var ConfirmResetDialogvue_type_script_lang_ts_ConfirmResetDialog = /*#__PURE__*/function (_Vue) {
+  _inherits(ConfirmResetDialog, _Vue);
+
+  var _super = _createSuper(ConfirmResetDialog);
+
+  function ConfirmResetDialog() {
+    _classCallCheck(this, ConfirmResetDialog);
+
+    return _super.apply(this, arguments);
+  }
+
+  _createClass(ConfirmResetDialog, [{
+    key: "close",
+    value: function close() {
+      this.$emit('close');
+    }
+  }, {
+    key: "confirm",
+    value: function confirm() {
+      var _this$onConfirm;
+
+      this.close();
+      (_this$onConfirm = this.onConfirm) === null || _this$onConfirm === void 0 ? void 0 : _this$onConfirm.call(this);
+    }
+  }, {
+    key: "dismiss",
+    value: function dismiss() {
+      var _this$onDismiss;
+
+      this.close();
+      (_this$onDismiss = this.onDismiss) === null || _this$onDismiss === void 0 ? void 0 : _this$onDismiss.call(this);
+    }
+  }]);
+
+  return ConfirmResetDialog;
+}(external_commonjs_vue_commonjs2_vue_root_Vue_default.a);
+
+__decorate([Prop(Function)], ConfirmResetDialogvue_type_script_lang_ts_ConfirmResetDialog.prototype, "onConfirm", void 0);
+
+__decorate([Prop(Function)], ConfirmResetDialogvue_type_script_lang_ts_ConfirmResetDialog.prototype, "onDismiss", void 0);
+
+ConfirmResetDialogvue_type_script_lang_ts_ConfirmResetDialog = __decorate([vue_class_component_esm({
+  components: {
+    Dialog: components_Dialog,
+    ButtonGroup: components_ButtonGroup,
+    Button: components_Button
+  }
+})], ConfirmResetDialogvue_type_script_lang_ts_ConfirmResetDialog);
+/* harmony default export */ var ConfirmResetDialogvue_type_script_lang_ts_ = (ConfirmResetDialogvue_type_script_lang_ts_ConfirmResetDialog);
+// CONCATENATED MODULE: ./src/components/ConfirmResetDialog.vue?vue&type=script&lang=ts&
+ /* harmony default export */ var components_ConfirmResetDialogvue_type_script_lang_ts_ = (ConfirmResetDialogvue_type_script_lang_ts_); 
+// CONCATENATED MODULE: ./src/components/ConfirmResetDialog.vue
+
+
+
+
+
+/* normalize component */
+
+var ConfirmResetDialog_component = normalizeComponent(
+  components_ConfirmResetDialogvue_type_script_lang_ts_,
+  ConfirmResetDialogvue_type_template_id_4a86d982_render,
+  ConfirmResetDialogvue_type_template_id_4a86d982_staticRenderFns,
+  false,
+  null,
+  null,
+  null
+  
+)
+
+/* harmony default export */ var components_ConfirmResetDialog = (ConfirmResetDialog_component.exports);
 // CONCATENATED MODULE: ./node_modules/babel-loader/lib!./node_modules/ts-loader??ref--14-1!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/TopBar.vue?vue&type=script&lang=ts&
+
 
 
 
@@ -53880,6 +55636,7 @@ var TopBarvue_type_script_lang_ts_TopBar = /*#__PURE__*/function (_Vue) {
     _this = _super.apply(this, arguments);
     _this.showSaveDropdownMenu = false;
     _this.showLoadDropdownMenu = false;
+    _this.showLayoutDropdownMenu = false;
     _this.showEditDropdownMenu = false;
     return _this;
   }
@@ -53895,6 +55652,11 @@ var TopBarvue_type_script_lang_ts_TopBar = /*#__PURE__*/function (_Vue) {
       return this.diagram.activeDiagram.data.canRedo;
     }
   }, {
+    key: "expand",
+    value: function expand() {
+      this.diagram.activeDiagram.expand();
+    }
+  }, {
     key: "undo",
     value: function undo() {
       this.diagram.activeDiagram.data.undo();
@@ -53907,12 +55669,20 @@ var TopBarvue_type_script_lang_ts_TopBar = /*#__PURE__*/function (_Vue) {
   }, {
     key: "reset",
     value: function reset() {
-      this.diagram.activeDiagram.data.reset();
+      var _this2 = this;
+
+      this.diagramVm.showDialog(components_ConfirmResetDialog, {
+        onConfirm: function onConfirm() {
+          return _this2.diagram.activeDiagram.data.reset();
+        }
+      });
     }
   }]);
 
   return TopBar;
 }(external_commonjs_vue_commonjs2_vue_root_Vue_default.a);
+
+__decorate([Inject()], TopBarvue_type_script_lang_ts_TopBar.prototype, "diagramVm", void 0);
 
 __decorate([Prop({
   type: diagram_Diagram,
@@ -53945,8 +55715,8 @@ var TopBarvue_type_style_index_0_lang_scss_ = __webpack_require__("d4bd");
 
 var TopBar_component = normalizeComponent(
   components_TopBarvue_type_script_lang_ts_,
-  TopBarvue_type_template_id_4f11106b_render,
-  TopBarvue_type_template_id_4f11106b_staticRenderFns,
+  TopBarvue_type_template_id_1f3fa752_render,
+  TopBarvue_type_template_id_1f3fa752_staticRenderFns,
   false,
   null,
   null,
@@ -53955,12 +55725,12 @@ var TopBar_component = normalizeComponent(
 )
 
 /* harmony default export */ var components_TopBar = (TopBar_component.exports);
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"73fd892e-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/Graph.vue?vue&type=template&id=277a4792&
-var Graphvue_type_template_id_277a4792_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"lassox-diagram__Graph",attrs:{"tabindex":"-1"},on:{"keydown":_vm.onKeyDown}},[_c('div',{ref:"graphContainerEl",staticStyle:{"width":"100%","height":"100%"},on:{"mousedown":_vm.redirectCytoscapeBlur,"touchstart":_vm.redirectCytoscapeBlur}})])}
-var Graphvue_type_template_id_277a4792_staticRenderFns = []
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"1c2f91b6-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/Graph.vue?vue&type=template&id=670c5142&
+var Graphvue_type_template_id_670c5142_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"lassox-diagram__Graph",attrs:{"tabindex":"-1"},on:{"keydown":_vm.onKeyDown}},[_c('div',{ref:"graphContainerEl",staticStyle:{"width":"100%","height":"100%"},on:{"mousedown":_vm.redirectCytoscapeBlur,"touchstart":_vm.redirectCytoscapeBlur}})])}
+var Graphvue_type_template_id_670c5142_staticRenderFns = []
 
 
-// CONCATENATED MODULE: ./src/components/Graph.vue?vue&type=template&id=277a4792&
+// CONCATENATED MODULE: ./src/components/Graph.vue?vue&type=template&id=670c5142&
 
 // CONCATENATED MODULE: ./node_modules/@babel/runtime/helpers/esm/arrayWithoutHoles.js
 
@@ -54016,7 +55786,1811 @@ var cytoscape_cxtmenu_default = /*#__PURE__*/__webpack_require__.n(cytoscape_cxt
 // EXTERNAL MODULE: ./node_modules/cytoscape-panzoom/cytoscape.js-panzoom.css
 var cytoscape_js_panzoom = __webpack_require__("df13");
 
+// CONCATENATED MODULE: ./node_modules/@jaames/iro/dist/iro.es.js
+/*!
+ * iro.js v5.5.2
+ * 2016-2021 James Daniel
+ * Licensed under MPL 2.0
+ * github.com/jaames/iro.js
+ */
+
+var iro_es_n,u,t,iro_es_i,iro_es_r,iro_es_o,f={},iro_es_e=[],c=/acit|ex(?:s|g|n|p|$)|rph|grid|ows|mnc|ntw|ine[ch]|zoo|^ord|^--/i;function s(n,l){for(var u in l){ n[u]=l[u]; }return n}function a(n){var l=n.parentNode;l&&l.removeChild(n);}function iro_es_h(n,l,u){var t,i,r,o,f=arguments;if(l=s({},l),arguments.length>3){ for(u=[u],t=3;t<arguments.length;t++){ u.push(f[t]); } }if(null!=u&&(l.children=u),null!=n&&null!=n.defaultProps){ for(i in n.defaultProps){ void 0===l[i]&&(l[i]=n.defaultProps[i]); } }return o=l.key,null!=(r=l.ref)&&delete l.ref,null!=o&&delete l.key,iro_es_v(n,l,o,r)}function iro_es_v(l,u,t,i){var r={type:l,props:u,key:t,ref:i,__k:null,__p:null,__b:0,__e:null,l:null,__c:null,constructor:void 0};return iro_es_n.vnode&&iro_es_n.vnode(r),r}function d(n){return n.children}function y(n){if(null==n||"boolean"==typeof n){ return null; }if("string"==typeof n||"number"==typeof n){ return iro_es_v(null,n,null,null); }if(null!=n.__e||null!=n.__c){var l=iro_es_v(n.type,n.props,n.key,null);return l.__e=n.__e,l}return n}function m(n,l){this.props=n,this.context=l;}function w(n,l){if(null==l){ return n.__p?w(n.__p,n.__p.__k.indexOf(n)+1):null; }for(var u;l<n.__k.length;l++){ if(null!=(u=n.__k[l])&&null!=u.__e){ return u.__e; } }return "function"==typeof n.type?w(n):null}function g(n){var l,u;if(null!=(n=n.__p)&&null!=n.__c){for(n.__e=n.__c.base=null,l=0;l<n.__k.length;l++){ if(null!=(u=n.__k[l])&&null!=u.__e){n.__e=n.__c.base=u.__e;break} }return g(n)}}function iro_es_k(l){(!l.__d&&(l.__d=!0)&&1===u.push(l)||iro_es_i!==iro_es_n.debounceRendering)&&(iro_es_i=iro_es_n.debounceRendering,(iro_es_n.debounceRendering||t)(_));}function _(){var n,l,t,i,r,o,f,e;for(u.sort(function(n,l){return l.__v.__b-n.__v.__b});n=u.pop();){ n.__d&&(t=void 0,i=void 0,o=(r=(l=n).__v).__e,f=l.__P,e=l.u,l.u=!1,f&&(t=[],i=$(f,r,s({},r),l.__n,void 0!==f.ownerSVGElement,null,t,e,null==o?w(r):o),j(t,r),i!=o&&g(r))); }}function b(n,l,u,t,i,r,o,c,s){var h,v,p,d,y,m,g,k=u&&u.__k||iro_es_e,_=k.length;if(c==f&&(c=null!=r?r[0]:_?w(u,0):null),h=0,l.__k=x(l.__k,function(u){if(null!=u){if(u.__p=l,u.__b=l.__b+1,null===(p=k[h])||p&&u.key==p.key&&u.type===p.type){ k[h]=void 0; }else { for(v=0;v<_;v++){if((p=k[v])&&u.key==p.key&&u.type===p.type){k[v]=void 0;break}p=null;} }if(d=$(n,u,p=p||f,t,i,r,o,null,c,s),(v=u.ref)&&p.ref!=v&&(g||(g=[])).push(v,u.__c||d,u),null!=d){if(null==m&&(m=d),null!=u.l){ d=u.l,u.l=null; }else if(r==p||d!=c||null==d.parentNode){n:if(null==c||c.parentNode!==n){ n.appendChild(d); }else{for(y=c,v=0;(y=y.nextSibling)&&v<_;v+=2){ if(y==d){ break n; } }n.insertBefore(d,c);}"option"==l.type&&(n.value="");}c=d.nextSibling,"function"==typeof l.type&&(l.l=d);}}return h++,u}),l.__e=m,null!=r&&"function"!=typeof l.type){ for(h=r.length;h--;){ null!=r[h]&&a(r[h]); } }for(h=_;h--;){ null!=k[h]&&D(k[h],k[h]); }if(g){ for(h=0;h<g.length;h++){ A(g[h],g[++h],g[++h]); } }}function x(n,l,u){if(null==u&&(u=[]),null==n||"boolean"==typeof n){ l&&u.push(l(null)); }else if(Array.isArray(n)){ for(var t=0;t<n.length;t++){ x(n[t],l,u); } }else { u.push(l?l(y(n)):n); }return u}function C(n,l,u,t,i){var r;for(r in u){ r in l||N(n,r,null,u[r],t); }for(r in l){ i&&"function"!=typeof l[r]||"value"===r||"checked"===r||u[r]===l[r]||N(n,r,l[r],u[r],t); }}function P(n,l,u){"-"===l[0]?n.setProperty(l,u):n[l]="number"==typeof u&&!1===c.test(l)?u+"px":null==u?"":u;}function N(n,l,u,t,i){var r,o,f,e,c;if("key"===(l=i?"className"===l?"class":l:"class"===l?"className":l)||"children"===l);else if("style"===l){ if(r=n.style,"string"==typeof u){ r.cssText=u; }else{if("string"==typeof t&&(r.cssText="",t=null),t){ for(o in t){ u&&o in u||P(r,o,""); } }if(u){ for(f in u){ t&&u[f]===t[f]||P(r,f,u[f]); } }} }else{ "o"===l[0]&&"n"===l[1]?(e=l!==(l=l.replace(/Capture$/,"")),c=l.toLowerCase(),l=(c in n?c:l).slice(2),u?(t||n.addEventListener(l,T,e),(n.t||(n.t={}))[l]=u):n.removeEventListener(l,T,e)):"list"!==l&&"tagName"!==l&&"form"!==l&&!i&&l in n?n[l]=null==u?"":u:"function"!=typeof u&&"dangerouslySetInnerHTML"!==l&&(l!==(l=l.replace(/^xlink:?/,""))?null==u||!1===u?n.removeAttributeNS("http://www.w3.org/1999/xlink",l.toLowerCase()):n.setAttributeNS("http://www.w3.org/1999/xlink",l.toLowerCase(),u):null==u||!1===u?n.removeAttribute(l):n.setAttribute(l,u)); }}function T(l){return this.t[l.type](iro_es_n.event?iro_es_n.event(l):l)}function $(l,u,t,i,r,o,f,e,c,a){var h,v,p,y,w,g,k,_,C,P,N=u.type;if(void 0!==u.constructor){ return null; }(h=iro_es_n.__b)&&h(u);try{n:if("function"==typeof N){if(_=u.props,C=(h=N.contextType)&&i[h.__c],P=h?C?C.props.value:h.__p:i,t.__c?k=(v=u.__c=t.__c).__p=v.__E:("prototype"in N&&N.prototype.render?u.__c=v=new N(_,P):(u.__c=v=new m(_,P),v.constructor=N,v.render=H),C&&C.sub(v),v.props=_,v.state||(v.state={}),v.context=P,v.__n=i,p=v.__d=!0,v.__h=[]),null==v.__s&&(v.__s=v.state),null!=N.getDerivedStateFromProps&&s(v.__s==v.state?v.__s=s({},v.__s):v.__s,N.getDerivedStateFromProps(_,v.__s)),p){ null==N.getDerivedStateFromProps&&null!=v.componentWillMount&&v.componentWillMount(),null!=v.componentDidMount&&f.push(v); }else{if(null==N.getDerivedStateFromProps&&null==e&&null!=v.componentWillReceiveProps&&v.componentWillReceiveProps(_,P),!e&&null!=v.shouldComponentUpdate&&!1===v.shouldComponentUpdate(_,v.__s,P)){for(v.props=_,v.state=v.__s,v.__d=!1,v.__v=u,u.__e=null!=c?c!==t.__e?c:t.__e:null,u.__k=t.__k,h=0;h<u.__k.length;h++){ u.__k[h]&&(u.__k[h].__p=u); }break n}null!=v.componentWillUpdate&&v.componentWillUpdate(_,v.__s,P);}for(y=v.props,w=v.state,v.context=P,v.props=_,v.state=v.__s,(h=iro_es_n.__r)&&h(u),v.__d=!1,v.__v=u,v.__P=l,h=v.render(v.props,v.state,v.context),u.__k=x(null!=h&&h.type==d&&null==h.key?h.props.children:h),null!=v.getChildContext&&(i=s(s({},i),v.getChildContext())),p||null==v.getSnapshotBeforeUpdate||(g=v.getSnapshotBeforeUpdate(y,w)),b(l,u,t,i,r,o,f,c,a),v.base=u.__e;h=v.__h.pop();){ v.__s&&(v.state=v.__s),h.call(v); }p||null==y||null==v.componentDidUpdate||v.componentDidUpdate(y,w,g),k&&(v.__E=v.__p=null);}else { u.__e=z(t.__e,u,t,i,r,o,f,a); }(h=iro_es_n.diffed)&&h(u);}catch(l){iro_es_n.__e(l,u,t);}return u.__e}function j(l,u){for(var t;t=l.pop();){ try{t.componentDidMount();}catch(l){iro_es_n.__e(l,t.__v);} }iro_es_n.__c&&iro_es_n.__c(u);}function z(n,l,u,t,i,r,o,c){var s,a,h,v,p=u.props,d=l.props;if(i="svg"===l.type||i,null==n&&null!=r){ for(s=0;s<r.length;s++){ if(null!=(a=r[s])&&(null===l.type?3===a.nodeType:a.localName===l.type)){n=a,r[s]=null;break} } }if(null==n){if(null===l.type){ return document.createTextNode(d); }n=i?document.createElementNS("http://www.w3.org/2000/svg",l.type):document.createElement(l.type),r=null;}return null===l.type?p!==d&&(null!=r&&(r[r.indexOf(n)]=null),n.data=d):l!==u&&(null!=r&&(r=iro_es_e.slice.call(n.childNodes)),h=(p=u.props||f).dangerouslySetInnerHTML,v=d.dangerouslySetInnerHTML,c||(v||h)&&(v&&h&&v.__html==h.__html||(n.innerHTML=v&&v.__html||"")),C(n,d,p,i,c),l.__k=l.props.children,v||b(n,l,u,t,"foreignObject"!==l.type&&i,r,o,f,c),c||("value"in d&&void 0!==d.value&&d.value!==n.value&&(n.value=null==d.value?"":d.value),"checked"in d&&void 0!==d.checked&&d.checked!==n.checked&&(n.checked=d.checked))),n}function A(l,u,t){try{"function"==typeof l?l(u):l.current=u;}catch(l){iro_es_n.__e(l,t);}}function D(l,u,t){var i,r,o;if(iro_es_n.unmount&&iro_es_n.unmount(l),(i=l.ref)&&A(i,null,u),t||"function"==typeof l.type||(t=null!=(r=l.__e)),l.__e=l.l=null,null!=(i=l.__c)){if(i.componentWillUnmount){ try{i.componentWillUnmount();}catch(l){iro_es_n.__e(l,u);} }i.base=i.__P=null;}if(i=l.__k){ for(o=0;o<i.length;o++){ i[o]&&D(i[o],u,t); } }null!=r&&a(r);}function H(n,l,u){return this.constructor(n,u)}function I(l,u,t){var i,o,c;iro_es_n.__p&&iro_es_n.__p(l,u),o=(i=t===iro_es_r)?null:t&&t.__k||u.__k,l=iro_es_h(d,null,[l]),c=[],$(u,i?u.__k=l:(t||u).__k=l,o||f,f,void 0!==u.ownerSVGElement,t&&!i?[t]:o?null:iro_es_e.slice.call(u.childNodes),c,!1,t||f,i),j(c,l);}iro_es_n={},m.prototype.setState=function(n,l){var u=this.__s!==this.state&&this.__s||(this.__s=s({},this.state));("function"!=typeof n||(n=n(u,this.props)))&&s(u,n),null!=n&&this.__v&&(this.u=!1,l&&this.__h.push(l),iro_es_k(this));},m.prototype.forceUpdate=function(n){this.__v&&(n&&this.__h.push(n),this.u=!0,iro_es_k(this));},m.prototype.render=d,u=[],t="function"==typeof Promise?Promise.prototype.then.bind(Promise.resolve()):setTimeout,iro_es_i=iro_es_n.debounceRendering,iro_es_n.__e=function(n,l,u){for(var t;l=l.__p;){ if((t=l.__c)&&!t.__p){ try{if(t.constructor&&null!=t.constructor.getDerivedStateFromError){ t.setState(t.constructor.getDerivedStateFromError(n)); }else{if(null==t.componentDidCatch){ continue; }t.componentDidCatch(n);}return iro_es_k(t.__E=t)}catch(l){n=l;} } }throw n},iro_es_r=f,iro_es_o=0;
+
+function iro_es_defineProperties(target, props) {
+  for (var i = 0; i < props.length; i++) {
+    var descriptor = props[i];
+    descriptor.enumerable = descriptor.enumerable || false;
+    descriptor.configurable = true;
+    if ("value" in descriptor) { descriptor.writable = true; }
+    Object.defineProperty(target, descriptor.key, descriptor);
+  }
+}
+
+function iro_es_createClass(Constructor, protoProps, staticProps) {
+  if (protoProps) { iro_es_defineProperties(Constructor.prototype, protoProps); }
+  if (staticProps) { iro_es_defineProperties(Constructor, staticProps); }
+  return Constructor;
+}
+
+function _extends() {
+  _extends = Object.assign || function (target) {
+    var arguments$1 = arguments;
+
+    for (var i = 1; i < arguments.length; i++) {
+      var source = arguments$1[i];
+
+      for (var key in source) {
+        if (Object.prototype.hasOwnProperty.call(source, key)) {
+          target[key] = source[key];
+        }
+      }
+    }
+
+    return target;
+  };
+
+  return _extends.apply(this, arguments);
+}
+
+// Some regular expressions for rgb() and hsl() Colors are borrowed from tinyColor
+// https://github.com/bgrins/TinyColor
+// Kelvin temperature math borrowed from Neil Barlett's implementation
+// from https://github.com/neilbartlett/color-temperature
+// https://www.w3.org/TR/css3-values/#integers
+var CSS_INTEGER = '[-\\+]?\\d+%?'; // http://www.w3.org/TR/css3-values/#number-value
+
+var CSS_NUMBER = '[-\\+]?\\d*\\.\\d+%?'; // Allow positive/negative integer/number. Don't capture the either/or, just the entire outcome
+
+var CSS_UNIT = '(?:' + CSS_NUMBER + ')|(?:' + CSS_INTEGER + ')'; // Parse function params
+// Parens and commas are optional, and this also allows for whitespace between numbers
+
+var PERMISSIVE_MATCH_3 = '[\\s|\\(]+(' + CSS_UNIT + ')[,|\\s]+(' + CSS_UNIT + ')[,|\\s]+(' + CSS_UNIT + ')\\s*\\)?';
+var PERMISSIVE_MATCH_4 = '[\\s|\\(]+(' + CSS_UNIT + ')[,|\\s]+(' + CSS_UNIT + ')[,|\\s]+(' + CSS_UNIT + ')[,|\\s]+(' + CSS_UNIT + ')\\s*\\)?'; // Regex patterns for functional color strings
+
+var REGEX_FUNCTIONAL_RGB = new RegExp('rgb' + PERMISSIVE_MATCH_3);
+var REGEX_FUNCTIONAL_RGBA = new RegExp('rgba' + PERMISSIVE_MATCH_4);
+var REGEX_FUNCTIONAL_HSL = new RegExp('hsl' + PERMISSIVE_MATCH_3);
+var REGEX_FUNCTIONAL_HSLA = new RegExp('hsla' + PERMISSIVE_MATCH_4); // Color string parsing regex
+
+var HEX_START = '^(?:#?|0x?)';
+var HEX_INT_SINGLE = '([0-9a-fA-F]{1})';
+var HEX_INT_DOUBLE = '([0-9a-fA-F]{2})';
+var REGEX_HEX_3 = new RegExp(HEX_START + HEX_INT_SINGLE + HEX_INT_SINGLE + HEX_INT_SINGLE + '$');
+var REGEX_HEX_4 = new RegExp(HEX_START + HEX_INT_SINGLE + HEX_INT_SINGLE + HEX_INT_SINGLE + HEX_INT_SINGLE + '$');
+var REGEX_HEX_6 = new RegExp(HEX_START + HEX_INT_DOUBLE + HEX_INT_DOUBLE + HEX_INT_DOUBLE + '$');
+var REGEX_HEX_8 = new RegExp(HEX_START + HEX_INT_DOUBLE + HEX_INT_DOUBLE + HEX_INT_DOUBLE + HEX_INT_DOUBLE + '$'); // Kelvin temperature bounds
+
+var KELVIN_MIN = 2000;
+var KELVIN_MAX = 40000; // Math shorthands
+
+var log = Math.log,
+    round = Math.round,
+    floor = Math.floor;
+/**
+ * @desc Clamp a number between a min and max value
+ * @param num - input value
+ * @param min - min allowed value
+ * @param max - max allowed value
+ */
+
+function clamp(num, min, max) {
+  return Math.min(Math.max(num, min), max);
+}
+/**
+ * @desc Parse a css unit string - either regular int or a percentage number
+ * @param str - css unit string
+ * @param max - max unit value, used for calculating percentages
+ */
+
+
+function parseUnit(str, max) {
+  var isPercentage = str.indexOf('%') > -1;
+  var num = parseFloat(str);
+  return isPercentage ? max / 100 * num : num;
+}
+/**
+ * @desc Parse hex str to an int
+ * @param str - hex string to parse
+ */
+
+
+function parseHexInt(str) {
+  return parseInt(str, 16);
+}
+/**
+ * @desc Convert nunber into to 2-digit hex
+ * @param int - number to convert
+ */
+
+
+function intToHex(_int) {
+  return _int.toString(16).padStart(2, '0');
+}
+
+var IroColor =
+/*#__PURE__*/
+function () {
+  /**
+    * @constructor Color object
+    * @param value - initial color value
+  */
+  function IroColor(value, onChange) {
+    // The default Color value
+    this.$ = {
+      h: 0,
+      s: 0,
+      v: 0,
+      a: 1
+    };
+    if (value) { this.set(value); } // The watch callback function for this Color will be stored here
+
+    this.onChange = onChange;
+    this.initialValue = _extends({}, this.$); // copy initial value
+  }
+  /**
+    * @desc Set the Color from any valid value
+    * @param value - new color value
+  */
+
+
+  var _proto = IroColor.prototype;
+
+  _proto.set = function set(value) {
+    if (typeof value === 'string') {
+      if (/^(?:#?|0x?)[0-9a-fA-F]{3,8}$/.test(value)) {
+        this.hexString = value;
+      } else if (/^rgba?/.test(value)) {
+        this.rgbString = value;
+      } else if (/^hsla?/.test(value)) {
+        this.hslString = value;
+      }
+    } else if (typeof value === 'object') {
+      if (value instanceof IroColor) {
+        this.hsva = value.hsva;
+      } else if ('r' in value && 'g' in value && 'b' in value) {
+        this.rgb = value;
+      } else if ('h' in value && 's' in value && 'v' in value) {
+        this.hsv = value;
+      } else if ('h' in value && 's' in value && 'l' in value) {
+        this.hsl = value;
+      } else if ('kelvin' in value) {
+        this.kelvin = value.kelvin;
+      }
+    } else {
+      throw new Error('Invalid color value');
+    }
+  }
+  /**
+    * @desc Shortcut to set a specific channel value
+    * @param format - hsv | hsl | rgb
+    * @param channel - individual channel to set, for example if model = hsl, chanel = h | s | l
+    * @param value - new value for the channel
+  */
+  ;
+
+  _proto.setChannel = function setChannel(format, channel, value) {
+    var _extends2;
+
+    this[format] = _extends({}, this[format], (_extends2 = {}, _extends2[channel] = value, _extends2));
+  }
+  /**
+   * @desc Reset color back to its initial value
+   */
+  ;
+
+  _proto.reset = function reset() {
+    this.hsva = this.initialValue;
+  }
+  /**
+    * @desc make new Color instance with the same value as this one
+  */
+  ;
+
+  _proto.clone = function clone() {
+    return new IroColor(this);
+  }
+  /**
+   * @desc remove color onChange
+   */
+  ;
+
+  _proto.unbind = function unbind() {
+    this.onChange = undefined;
+  }
+  /**
+    * @desc Convert hsv object to rgb
+    * @param hsv - hsv color object
+  */
+  ;
+
+  IroColor.hsvToRgb = function hsvToRgb(hsv) {
+    var h = hsv.h / 60;
+    var s = hsv.s / 100;
+    var v = hsv.v / 100;
+    var i = floor(h);
+    var f = h - i;
+    var p = v * (1 - s);
+    var q = v * (1 - f * s);
+    var t = v * (1 - (1 - f) * s);
+    var mod = i % 6;
+    var r = [v, q, p, p, t, v][mod];
+    var g = [t, v, v, q, p, p][mod];
+    var b = [p, p, t, v, v, q][mod];
+    return {
+      r: clamp(r * 255, 0, 255),
+      g: clamp(g * 255, 0, 255),
+      b: clamp(b * 255, 0, 255)
+    };
+  }
+  /**
+    * @desc Convert rgb object to hsv
+    * @param rgb - rgb object
+  */
+  ;
+
+  IroColor.rgbToHsv = function rgbToHsv(rgb) {
+    var r = rgb.r / 255;
+    var g = rgb.g / 255;
+    var b = rgb.b / 255;
+    var max = Math.max(r, g, b);
+    var min = Math.min(r, g, b);
+    var delta = max - min;
+    var hue = 0;
+    var value = max;
+    var saturation = max === 0 ? 0 : delta / max;
+
+    switch (max) {
+      case min:
+        hue = 0; // achromatic
+
+        break;
+
+      case r:
+        hue = (g - b) / delta + (g < b ? 6 : 0);
+        break;
+
+      case g:
+        hue = (b - r) / delta + 2;
+        break;
+
+      case b:
+        hue = (r - g) / delta + 4;
+        break;
+    }
+
+    return {
+      h: hue * 60 % 360,
+      s: clamp(saturation * 100, 0, 100),
+      v: clamp(value * 100, 0, 100)
+    };
+  }
+  /**
+    * @desc Convert hsv object to hsl
+    * @param hsv - hsv object
+  */
+  ;
+
+  IroColor.hsvToHsl = function hsvToHsl(hsv) {
+    var s = hsv.s / 100;
+    var v = hsv.v / 100;
+    var l = (2 - s) * v;
+    var divisor = l <= 1 ? l : 2 - l; // Avoid division by zero when lightness is close to zero
+
+    var saturation = divisor < 1e-9 ? 0 : s * v / divisor;
+    return {
+      h: hsv.h,
+      s: clamp(saturation * 100, 0, 100),
+      l: clamp(l * 50, 0, 100)
+    };
+  }
+  /**
+    * @desc Convert hsl object to hsv
+    * @param hsl - hsl object
+  */
+  ;
+
+  IroColor.hslToHsv = function hslToHsv(hsl) {
+    var l = hsl.l * 2;
+    var s = hsl.s * (l <= 100 ? l : 200 - l) / 100; // Avoid division by zero when l + s is near 0
+
+    var saturation = l + s < 1e-9 ? 0 : 2 * s / (l + s);
+    return {
+      h: hsl.h,
+      s: clamp(saturation * 100, 0, 100),
+      v: clamp((l + s) / 2, 0, 100)
+    };
+  }
+  /**
+    * @desc Convert a kelvin temperature to an approx, RGB value
+    * @param kelvin - kelvin temperature
+  */
+  ;
+
+  IroColor.kelvinToRgb = function kelvinToRgb(kelvin) {
+    var temp = kelvin / 100;
+    var r, g, b;
+
+    if (temp < 66) {
+      r = 255;
+      g = -155.25485562709179 - 0.44596950469579133 * (g = temp - 2) + 104.49216199393888 * log(g);
+      b = temp < 20 ? 0 : -254.76935184120902 + 0.8274096064007395 * (b = temp - 10) + 115.67994401066147 * log(b);
+    } else {
+      r = 351.97690566805693 + 0.114206453784165 * (r = temp - 55) - 40.25366309332127 * log(r);
+      g = 325.4494125711974 + 0.07943456536662342 * (g = temp - 50) - 28.0852963507957 * log(g);
+      b = 255;
+    }
+
+    return {
+      r: clamp(floor(r), 0, 255),
+      g: clamp(floor(g), 0, 255),
+      b: clamp(floor(b), 0, 255)
+    };
+  }
+  /**
+   * @desc Convert an RGB color to an approximate kelvin temperature
+   * @param kelvin - kelvin temperature
+  */
+  ;
+
+  IroColor.rgbToKelvin = function rgbToKelvin(rgb) {
+    var r = rgb.r,
+        b = rgb.b;
+    var eps = 0.4;
+    var minTemp = KELVIN_MIN;
+    var maxTemp = KELVIN_MAX;
+    var temp;
+
+    while (maxTemp - minTemp > eps) {
+      temp = (maxTemp + minTemp) * 0.5;
+
+      var _rgb = IroColor.kelvinToRgb(temp);
+
+      if (_rgb.b / _rgb.r >= b / r) {
+        maxTemp = temp;
+      } else {
+        minTemp = temp;
+      }
+    }
+
+    return temp;
+  };
+
+  iro_es_createClass(IroColor, [{
+    key: "hsv",
+    get: function get() {
+      // value is cloned to allow changes to be made to the values before passing them back
+      var value = this.$;
+      return {
+        h: value.h,
+        s: value.s,
+        v: value.v
+      };
+    },
+    set: function set(newValue) {
+      var oldValue = this.$;
+      newValue = _extends({}, oldValue, newValue); // If this Color is being watched for changes we need to compare the new and old values to check the difference
+      // Otherwise we can just be lazy
+
+      if (this.onChange) {
+        // Compute changed values
+        var changes = {
+          h: false,
+          v: false,
+          s: false,
+          a: false
+        };
+
+        for (var key in oldValue) {
+          changes[key] = newValue[key] != oldValue[key];
+        }
+
+        this.$ = newValue; // If the value has changed, call hook callback
+
+        if (changes.h || changes.s || changes.v || changes.a) { this.onChange(this, changes); }
+      } else {
+        this.$ = newValue;
+      }
+    }
+  }, {
+    key: "hsva",
+    get: function get() {
+      return _extends({}, this.$);
+    },
+    set: function set(value) {
+      this.hsv = value;
+    }
+  }, {
+    key: "hue",
+    get: function get() {
+      return this.$.h;
+    },
+    set: function set(value) {
+      this.hsv = {
+        h: value
+      };
+    }
+  }, {
+    key: "saturation",
+    get: function get() {
+      return this.$.s;
+    },
+    set: function set(value) {
+      this.hsv = {
+        s: value
+      };
+    }
+  }, {
+    key: "value",
+    get: function get() {
+      return this.$.v;
+    },
+    set: function set(value) {
+      this.hsv = {
+        v: value
+      };
+    }
+  }, {
+    key: "alpha",
+    get: function get() {
+      return this.$.a;
+    },
+    set: function set(value) {
+      this.hsv = _extends({}, this.hsv, {
+        a: value
+      });
+    }
+  }, {
+    key: "kelvin",
+    get: function get() {
+      return IroColor.rgbToKelvin(this.rgb);
+    },
+    set: function set(value) {
+      this.rgb = IroColor.kelvinToRgb(value);
+    }
+  }, {
+    key: "red",
+    get: function get() {
+      var rgb = this.rgb;
+      return rgb.r;
+    },
+    set: function set(value) {
+      this.rgb = _extends({}, this.rgb, {
+        r: value
+      });
+    }
+  }, {
+    key: "green",
+    get: function get() {
+      var rgb = this.rgb;
+      return rgb.g;
+    },
+    set: function set(value) {
+      this.rgb = _extends({}, this.rgb, {
+        g: value
+      });
+    }
+  }, {
+    key: "blue",
+    get: function get() {
+      var rgb = this.rgb;
+      return rgb.b;
+    },
+    set: function set(value) {
+      this.rgb = _extends({}, this.rgb, {
+        b: value
+      });
+    }
+  }, {
+    key: "rgb",
+    get: function get() {
+      var _IroColor$hsvToRgb = IroColor.hsvToRgb(this.$),
+          r = _IroColor$hsvToRgb.r,
+          g = _IroColor$hsvToRgb.g,
+          b = _IroColor$hsvToRgb.b;
+
+      return {
+        r: round(r),
+        g: round(g),
+        b: round(b)
+      };
+    },
+    set: function set(value) {
+      this.hsv = _extends({}, IroColor.rgbToHsv(value), {
+        a: value.a === undefined ? 1 : value.a
+      });
+    }
+  }, {
+    key: "rgba",
+    get: function get() {
+      return _extends({}, this.rgb, {
+        a: this.alpha
+      });
+    },
+    set: function set(value) {
+      this.rgb = value;
+    }
+  }, {
+    key: "hsl",
+    get: function get() {
+      var _IroColor$hsvToHsl = IroColor.hsvToHsl(this.$),
+          h = _IroColor$hsvToHsl.h,
+          s = _IroColor$hsvToHsl.s,
+          l = _IroColor$hsvToHsl.l;
+
+      return {
+        h: round(h),
+        s: round(s),
+        l: round(l)
+      };
+    },
+    set: function set(value) {
+      this.hsv = _extends({}, IroColor.hslToHsv(value), {
+        a: value.a === undefined ? 1 : value.a
+      });
+    }
+  }, {
+    key: "hsla",
+    get: function get() {
+      return _extends({}, this.hsl, {
+        a: this.alpha
+      });
+    },
+    set: function set(value) {
+      this.hsl = value;
+    }
+  }, {
+    key: "rgbString",
+    get: function get() {
+      var rgb = this.rgb;
+      return "rgb(" + rgb.r + ", " + rgb.g + ", " + rgb.b + ")";
+    },
+    set: function set(value) {
+      var match;
+      var r,
+          g,
+          b,
+          a = 1;
+
+      if (match = REGEX_FUNCTIONAL_RGB.exec(value)) {
+        r = parseUnit(match[1], 255);
+        g = parseUnit(match[2], 255);
+        b = parseUnit(match[3], 255);
+      } else if (match = REGEX_FUNCTIONAL_RGBA.exec(value)) {
+        r = parseUnit(match[1], 255);
+        g = parseUnit(match[2], 255);
+        b = parseUnit(match[3], 255);
+        a = parseUnit(match[4], 1);
+      }
+
+      if (match) {
+        this.rgb = {
+          r: r,
+          g: g,
+          b: b,
+          a: a
+        };
+      } else {
+        throw new Error('Invalid rgb string');
+      }
+    }
+  }, {
+    key: "rgbaString",
+    get: function get() {
+      var rgba = this.rgba;
+      return "rgba(" + rgba.r + ", " + rgba.g + ", " + rgba.b + ", " + rgba.a + ")";
+    },
+    set: function set(value) {
+      this.rgbString = value;
+    }
+  }, {
+    key: "hexString",
+    get: function get() {
+      var rgb = this.rgb;
+      return "#" + intToHex(rgb.r) + intToHex(rgb.g) + intToHex(rgb.b);
+    },
+    set: function set(value) {
+      var match;
+      var r,
+          g,
+          b,
+          a = 255;
+
+      if (match = REGEX_HEX_3.exec(value)) {
+        r = parseHexInt(match[1]) * 17;
+        g = parseHexInt(match[2]) * 17;
+        b = parseHexInt(match[3]) * 17;
+      } else if (match = REGEX_HEX_4.exec(value)) {
+        r = parseHexInt(match[1]) * 17;
+        g = parseHexInt(match[2]) * 17;
+        b = parseHexInt(match[3]) * 17;
+        a = parseHexInt(match[4]) * 17;
+      } else if (match = REGEX_HEX_6.exec(value)) {
+        r = parseHexInt(match[1]);
+        g = parseHexInt(match[2]);
+        b = parseHexInt(match[3]);
+      } else if (match = REGEX_HEX_8.exec(value)) {
+        r = parseHexInt(match[1]);
+        g = parseHexInt(match[2]);
+        b = parseHexInt(match[3]);
+        a = parseHexInt(match[4]);
+      }
+
+      if (match) {
+        this.rgb = {
+          r: r,
+          g: g,
+          b: b,
+          a: a / 255
+        };
+      } else {
+        throw new Error('Invalid hex string');
+      }
+    }
+  }, {
+    key: "hex8String",
+    get: function get() {
+      var rgba = this.rgba;
+      return "#" + intToHex(rgba.r) + intToHex(rgba.g) + intToHex(rgba.b) + intToHex(floor(rgba.a * 255));
+    },
+    set: function set(value) {
+      this.hexString = value;
+    }
+  }, {
+    key: "hslString",
+    get: function get() {
+      var hsl = this.hsl;
+      return "hsl(" + hsl.h + ", " + hsl.s + "%, " + hsl.l + "%)";
+    },
+    set: function set(value) {
+      var match;
+      var h,
+          s,
+          l,
+          a = 1;
+
+      if (match = REGEX_FUNCTIONAL_HSL.exec(value)) {
+        h = parseUnit(match[1], 360);
+        s = parseUnit(match[2], 100);
+        l = parseUnit(match[3], 100);
+      } else if (match = REGEX_FUNCTIONAL_HSLA.exec(value)) {
+        h = parseUnit(match[1], 360);
+        s = parseUnit(match[2], 100);
+        l = parseUnit(match[3], 100);
+        a = parseUnit(match[4], 1);
+      }
+
+      if (match) {
+        this.hsl = {
+          h: h,
+          s: s,
+          l: l,
+          a: a
+        };
+      } else {
+        throw new Error('Invalid hsl string');
+      }
+    }
+  }, {
+    key: "hslaString",
+    get: function get() {
+      var hsla = this.hsla;
+      return "hsla(" + hsla.h + ", " + hsla.s + "%, " + hsla.l + "%, " + hsla.a + ")";
+    },
+    set: function set(value) {
+      this.hslString = value;
+    }
+  }]);
+
+  return IroColor;
+}();
+
+var sliderDefaultOptions = {
+  sliderShape: 'bar',
+  sliderType: 'value',
+  minTemperature: 2200,
+  maxTemperature: 11000
+};
+/**
+ * @desc Get the bounding dimensions of the slider
+ * @param props - slider props
+ */
+
+function getSliderDimensions(props) {
+  var _sliderSize;
+
+  var width = props.width,
+      sliderSize = props.sliderSize,
+      borderWidth = props.borderWidth,
+      handleRadius = props.handleRadius,
+      padding = props.padding,
+      sliderShape = props.sliderShape;
+  var ishorizontal = props.layoutDirection === 'horizontal'; // automatically calculate sliderSize if its not defined
+
+  sliderSize = (_sliderSize = sliderSize) != null ? _sliderSize : padding * 2 + handleRadius * 2;
+
+  if (sliderShape === 'circle') {
+    return {
+      handleStart: props.padding + props.handleRadius,
+      handleRange: width - padding * 2 - handleRadius * 2,
+      width: width,
+      height: width,
+      cx: width / 2,
+      cy: width / 2,
+      radius: width / 2 - borderWidth / 2
+    };
+  } else {
+    return {
+      handleStart: sliderSize / 2,
+      handleRange: width - sliderSize,
+      radius: sliderSize / 2,
+      x: 0,
+      y: 0,
+      width: ishorizontal ? sliderSize : width,
+      height: ishorizontal ? width : sliderSize
+    };
+  }
+}
+/**
+ * @desc Get the current slider value for a given color, as a percentage
+ * @param props - slider props
+ * @param color
+ */
+
+function getCurrentSliderValue(props, color) {
+  var hsva = color.hsva;
+  var rgb = color.rgb;
+
+  switch (props.sliderType) {
+    case 'red':
+      return rgb.r / 2.55;
+
+    case 'green':
+      return rgb.g / 2.55;
+
+    case 'blue':
+      return rgb.b / 2.55;
+
+    case 'alpha':
+      return hsva.a * 100;
+
+    case 'kelvin':
+      var minTemperature = props.minTemperature,
+          maxTemperature = props.maxTemperature;
+      var temperatureRange = maxTemperature - minTemperature;
+      var percent = (color.kelvin - minTemperature) / temperatureRange * 100; // clmap percentage
+
+      return Math.max(0, Math.min(percent, 100));
+
+    case 'hue':
+      return hsva.h /= 3.6;
+
+    case 'saturation':
+      return hsva.s;
+
+    case 'value':
+    default:
+      return hsva.v;
+  }
+}
+/**
+ * @desc Get the current slider value from user input
+ * @param props - slider props
+ * @param x - global input x position
+ * @param y - global input y position
+ */
+
+function getSliderValueFromInput(props, x, y) {
+  var _getSliderDimensions = getSliderDimensions(props),
+      handleRange = _getSliderDimensions.handleRange,
+      handleStart = _getSliderDimensions.handleStart;
+
+  var handlePos;
+
+  if (props.layoutDirection === 'horizontal') {
+    handlePos = -1 * y + handleRange + handleStart;
+  } else {
+    handlePos = x - handleStart;
+  } // clamp handle position
+
+
+  handlePos = Math.max(Math.min(handlePos, handleRange), 0);
+  var percent = Math.round(100 / handleRange * handlePos);
+
+  switch (props.sliderType) {
+    case 'kelvin':
+      var minTemperature = props.minTemperature,
+          maxTemperature = props.maxTemperature;
+      var temperatureRange = maxTemperature - minTemperature;
+      return minTemperature + temperatureRange * (percent / 100);
+
+    case 'alpha':
+      return percent / 100;
+
+    case 'hue':
+      return percent * 3.6;
+
+    case 'red':
+    case 'blue':
+    case 'green':
+      return percent * 2.55;
+
+    default:
+      return percent;
+  }
+}
+/**
+ * @desc Get the current handle position for a given color
+ * @param props - slider props
+ * @param color
+ */
+
+function getSliderHandlePosition(props, color) {
+  var _getSliderDimensions2 = getSliderDimensions(props),
+      width = _getSliderDimensions2.width,
+      height = _getSliderDimensions2.height,
+      handleRange = _getSliderDimensions2.handleRange,
+      handleStart = _getSliderDimensions2.handleStart;
+
+  var ishorizontal = props.layoutDirection === 'horizontal';
+  var sliderValue = getCurrentSliderValue(props, color);
+  var midPoint = ishorizontal ? width / 2 : height / 2;
+  var handlePos = handleStart + sliderValue / 100 * handleRange;
+
+  if (ishorizontal) {
+    handlePos = -1 * handlePos + handleRange + handleStart * 2;
+  }
+
+  return {
+    x: ishorizontal ? midPoint : handlePos,
+    y: ishorizontal ? handlePos : midPoint
+  };
+}
+/**
+ * @desc Get the gradient stops for a slider
+ * @param props - slider props
+ * @param color
+ */
+
+function getSliderGradient(props, color) {
+  var hsv = color.hsv;
+  var rgb = color.rgb;
+
+  switch (props.sliderType) {
+    case 'red':
+      return [[0, "rgb(" + 0 + "," + rgb.g + "," + rgb.b + ")"], [100, "rgb(" + 255 + "," + rgb.g + "," + rgb.b + ")"]];
+
+    case 'green':
+      return [[0, "rgb(" + rgb.r + "," + 0 + "," + rgb.b + ")"], [100, "rgb(" + rgb.r + "," + 255 + "," + rgb.b + ")"]];
+
+    case 'blue':
+      return [[0, "rgb(" + rgb.r + "," + rgb.g + "," + 0 + ")"], [100, "rgb(" + rgb.r + "," + rgb.g + "," + 255 + ")"]];
+
+    case 'alpha':
+      return [[0, "rgba(" + rgb.r + "," + rgb.g + "," + rgb.b + ",0)"], [100, "rgb(" + rgb.r + "," + rgb.g + "," + rgb.b + ")"]];
+
+    case 'kelvin':
+      var stops = [];
+      var min = props.minTemperature;
+      var max = props.maxTemperature;
+      var numStops = 8;
+      var range = max - min;
+
+      for (var kelvin = min, stop = 0; kelvin < max; kelvin += range / numStops, stop += 1) {
+        var _IroColor$kelvinToRgb = IroColor.kelvinToRgb(kelvin),
+            r = _IroColor$kelvinToRgb.r,
+            g = _IroColor$kelvinToRgb.g,
+            b = _IroColor$kelvinToRgb.b;
+
+        stops.push([100 / numStops * stop, "rgb(" + r + "," + g + "," + b + ")"]);
+      }
+
+      return stops;
+
+    case 'hue':
+      return [[0, '#f00'], [16.666, '#ff0'], [33.333, '#0f0'], [50, '#0ff'], [66.666, '#00f'], [83.333, '#f0f'], [100, '#f00']];
+
+    case 'saturation':
+      var noSat = IroColor.hsvToHsl({
+        h: hsv.h,
+        s: 0,
+        v: hsv.v
+      });
+      var fullSat = IroColor.hsvToHsl({
+        h: hsv.h,
+        s: 100,
+        v: hsv.v
+      });
+      return [[0, "hsl(" + noSat.h + "," + noSat.s + "%," + noSat.l + "%)"], [100, "hsl(" + fullSat.h + "," + fullSat.s + "%," + fullSat.l + "%)"]];
+
+    case 'value':
+    default:
+      var hsl = IroColor.hsvToHsl({
+        h: hsv.h,
+        s: hsv.s,
+        v: 100
+      });
+      return [[0, '#000'], [100, "hsl(" + hsl.h + "," + hsl.s + "%," + hsl.l + "%)"]];
+  }
+}
+
+var TAU = Math.PI * 2; // javascript's modulo operator doesn't produce positive numbers with negative input
+// https://dev.to/maurobringolf/a-neat-trick-to-compute-modulo-of-negative-numbers-111e
+
+var mod = function mod(a, n) {
+  return (a % n + n) % n;
+}; // distance between points (x, y) and (0, 0)
+
+
+var dist = function dist(x, y) {
+  return Math.sqrt(x * x + y * y);
+};
+/**
+ * @param props - wheel props
+ * @internal
+ */
+
+
+function getHandleRange(props) {
+  return props.width / 2 - props.padding - props.handleRadius - props.borderWidth;
+}
+/**
+ * Returns true if point (x, y) lands inside the wheel
+ * @param props - wheel props
+ * @param x
+ * @param y
+ */
+
+
+function isInputInsideWheel(props, x, y) {
+  var _getWheelDimensions = getWheelDimensions(props),
+      cx = _getWheelDimensions.cx,
+      cy = _getWheelDimensions.cy;
+
+  var r = props.width / 2;
+  return dist(cx - x, cy - y) < r;
+}
+/**
+ * @desc Get the point as the center of the wheel
+ * @param props - wheel props
+ */
+
+function getWheelDimensions(props) {
+  var r = props.width / 2;
+  return {
+    width: props.width,
+    radius: r - props.borderWidth,
+    cx: r,
+    cy: r
+  };
+}
+/**
+ * @desc Translate an angle according to wheelAngle and wheelDirection
+ * @param props - wheel props
+ * @param angle - input angle
+ */
+
+function translateWheelAngle(props, angle, invert) {
+  var wheelAngle = props.wheelAngle;
+  var wheelDirection = props.wheelDirection; // inverted and clockwisee
+
+  if (invert && wheelDirection === 'clockwise') { angle = wheelAngle + angle; } // clockwise (input handling)
+  else if (wheelDirection === 'clockwise') { angle = 360 - wheelAngle + angle; } // inverted and anticlockwise
+    else if (invert && wheelDirection === 'anticlockwise') { angle = wheelAngle + 180 - angle; } // anticlockwise (input handling)
+      else if (wheelDirection === 'anticlockwise') { angle = wheelAngle - angle; }
+  return mod(angle, 360);
+}
+/**
+ * @desc Get the current handle position for a given color
+ * @param props - wheel props
+ * @param color
+ */
+
+function getWheelHandlePosition(props, color) {
+  var hsv = color.hsv;
+
+  var _getWheelDimensions2 = getWheelDimensions(props),
+      cx = _getWheelDimensions2.cx,
+      cy = _getWheelDimensions2.cy;
+
+  var handleRange = getHandleRange(props);
+  var handleAngle = (180 + translateWheelAngle(props, hsv.h, true)) * (TAU / 360);
+  var handleDist = hsv.s / 100 * handleRange;
+  var direction = props.wheelDirection === 'clockwise' ? -1 : 1;
+  return {
+    x: cx + handleDist * Math.cos(handleAngle) * direction,
+    y: cy + handleDist * Math.sin(handleAngle) * direction
+  };
+}
+/**
+ * @desc Get the current wheel value from user input
+ * @param props - wheel props
+ * @param x - global input x position
+ * @param y - global input y position
+ */
+
+function getWheelValueFromInput(props, x, y) {
+  var _getWheelDimensions3 = getWheelDimensions(props),
+      cx = _getWheelDimensions3.cx,
+      cy = _getWheelDimensions3.cy;
+
+  var handleRange = getHandleRange(props);
+  x = cx - x;
+  y = cy - y; // Calculate the hue by converting the angle to radians
+
+  var hue = translateWheelAngle(props, Math.atan2(-y, -x) * (360 / TAU)); // Find the point's distance from the center of the wheel
+  // This is used to show the saturation level
+
+  var handleDist = Math.min(dist(x, y), handleRange);
+  return {
+    h: Math.round(hue),
+    s: Math.round(100 / handleRange * handleDist)
+  };
+}
+/**
+ * @desc Get the bounding dimensions of the box
+ * @param props - box props
+ */
+
+function getBoxDimensions(props) {
+  var width = props.width,
+      boxHeight = props.boxHeight,
+      padding = props.padding,
+      handleRadius = props.handleRadius;
+  return {
+    width: width,
+    height: boxHeight != null ? boxHeight : width,
+    radius: padding + handleRadius
+  };
+}
+/**
+ * @desc Get the current box value from user input
+ * @param props - box props
+ * @param x - global input x position
+ * @param y - global input y position
+ */
+
+function getBoxValueFromInput(props, x, y) {
+  var _getBoxDimensions = getBoxDimensions(props),
+      width = _getBoxDimensions.width,
+      height = _getBoxDimensions.height,
+      radius = _getBoxDimensions.radius;
+
+  var handleStart = radius;
+  var handleRangeX = width - radius * 2;
+  var handleRangeY = height - radius * 2;
+  var percentX = (x - handleStart) / handleRangeX * 100;
+  var percentY = (y - handleStart) / handleRangeY * 100;
+  return {
+    s: Math.max(0, Math.min(percentX, 100)),
+    v: Math.max(0, Math.min(100 - percentY, 100))
+  };
+}
+/**
+ * @desc Get the current box handle position for a given color
+ * @param props - box props
+ * @param color
+ */
+
+function getBoxHandlePosition(props, color) {
+  var _getBoxDimensions2 = getBoxDimensions(props),
+      width = _getBoxDimensions2.width,
+      height = _getBoxDimensions2.height,
+      radius = _getBoxDimensions2.radius;
+
+  var hsv = color.hsv;
+  var handleStart = radius;
+  var handleRangeX = width - radius * 2;
+  var handleRangeY = height - radius * 2;
+  return {
+    x: handleStart + hsv.s / 100 * handleRangeX,
+    y: handleStart + (handleRangeY - hsv.v / 100 * handleRangeY)
+  };
+}
+/**
+ * @desc Get the gradient stops for a box
+ * @param props - box props
+ * @param color
+ */
+
+function getBoxGradients(props, color) {
+  var hue = color.hue;
+  return [// saturation gradient
+  [[0, '#fff'], [100, "hsl(" + hue + ",100%,50%)"]], // lightness gradient
+  [[0, 'rgba(0,0,0,0)'], [100, '#000']]];
+}
+
+// Keep track of html <base> elements for resolveSvgUrl
+// getElementsByTagName returns a live HTMLCollection, which stays in sync with the DOM tree
+// So it only needs to be called once
+var BASE_ELEMENTS;
+/**
+ * @desc Resolve an SVG reference URL
+ * This is required to work around how Safari and iOS webviews handle gradient URLS under certain conditions
+ * If a page is using a client-side routing library which makes use of the HTML <base> tag,
+ * Safari won't be able to render SVG gradients properly (as they are referenced by URLs)
+ * More info on the problem:
+ * https://stackoverflow.com/questions/19742805/angular-and-svg-filters/19753427#19753427
+ * https://github.com/jaames/iro.js/issues/18
+ * https://github.com/jaames/iro.js/issues/45
+ * https://github.com/jaames/iro.js/pull/89
+ * @props url - SVG reference URL
+ */
+
+function resolveSvgUrl(url) {
+  if (!BASE_ELEMENTS) { BASE_ELEMENTS = document.getElementsByTagName('base'); } // Sniff useragent string to check if the user is running Safari
+
+  var ua = window.navigator.userAgent;
+  var isSafari = /^((?!chrome|android).)*safari/i.test(ua);
+  var isIos = /iPhone|iPod|iPad/i.test(ua);
+  var location = window.location;
+  return (isSafari || isIos) && BASE_ELEMENTS.length > 0 ? location.protocol + "//" + location.host + location.pathname + location.search + url : url;
+}
+/**
+ * @desc Given a specifc (x, y) position, test if there's a handle there and return its index, else return null.
+ *       This is used for components like the box and wheel which support multiple handles when multicolor is active
+ * @props x - point x position
+ * @props y - point y position
+ * @props handlePositions - array of {x, y} coords for each handle
+ */
+
+function getHandleAtPoint(props, x, y, handlePositions) {
+  for (var i = 0; i < handlePositions.length; i++) {
+    var dX = handlePositions[i].x - x;
+    var dY = handlePositions[i].y - y;
+    var dist = Math.sqrt(dX * dX + dY * dY);
+
+    if (dist < props.handleRadius) {
+      return i;
+    }
+  }
+
+  return null;
+}
+
+function cssBorderStyles(props) {
+  return {
+    boxSizing: 'border-box',
+    border: props.borderWidth + "px solid " + props.borderColor
+  };
+}
+function cssGradient(type, direction, stops) {
+  return type + "-gradient(" + direction + ", " + stops.map(function (_ref) {
+    var o = _ref[0],
+        col = _ref[1];
+    return col + " " + o + "%";
+  }).join(',') + ")";
+}
+function cssValue(value) {
+  if (typeof value === 'string') { return value; }
+  return value + "px";
+}
+
+var iroColorPickerOptionDefaults = {
+  width: 300,
+  height: 300,
+  color: '#fff',
+  colors: [],
+  padding: 6,
+  layoutDirection: 'vertical',
+  borderColor: '#fff',
+  borderWidth: 0,
+  handleRadius: 8,
+  activeHandleRadius: null,
+  handleSvg: null,
+  handleProps: {
+    x: 0,
+    y: 0
+  },
+  wheelLightness: true,
+  wheelAngle: 0,
+  wheelDirection: 'anticlockwise',
+  sliderSize: null,
+  sliderMargin: 12,
+  boxHeight: null
+};
+
+var SECONDARY_EVENTS = ["mousemove" /* MouseMove */, "touchmove" /* TouchMove */, "mouseup" /* MouseUp */, "touchend" /* TouchEnd */];
+// Base component class for iro UI components
+// This extends the Preact component class to allow them to react to mouse/touch input events by themselves
+var IroComponentWrapper = /*@__PURE__*/(function (Component) {
+    function IroComponentWrapper(props) {
+        Component.call(this, props);
+        // Generate unique ID for the component
+        // This can be used to generate unique IDs for gradients, etc
+        this.uid = (Math.random() + 1).toString(36).substring(5);
+    }
+
+    if ( Component ) IroComponentWrapper.__proto__ = Component;
+    IroComponentWrapper.prototype = Object.create( Component && Component.prototype );
+    IroComponentWrapper.prototype.constructor = IroComponentWrapper;
+    IroComponentWrapper.prototype.render = function render (props) {
+        var eventHandler = this.handleEvent.bind(this);
+        var rootProps = {
+            onMouseDown: eventHandler,
+            // https://github.com/jaames/iro.js/issues/126
+            // https://github.com/preactjs/preact/issues/2113#issuecomment-553408767
+            ontouchstart: eventHandler,
+        };
+        var isHorizontal = props.layoutDirection === 'horizontal';
+        var margin = props.margin === null ? props.sliderMargin : props.margin;
+        var rootStyles = {
+            overflow: 'visible',
+            display: isHorizontal ? 'inline-block' : 'block'
+        };
+        // first component shouldn't have any margin
+        if (props.index > 0) {
+            rootStyles[isHorizontal ? 'marginLeft' : 'marginTop'] = margin;
+        }
+        return (iro_es_h(d, null, props.children(this.uid, rootProps, rootStyles)));
+    };
+    // More info on handleEvent:
+    // https://medium.com/@WebReflection/dom-handleevent-a-cross-platform-standard-since-year-2000-5bf17287fd38
+    // TL;DR this lets us have a single point of entry for multiple events, and we can avoid callback/binding hell
+    IroComponentWrapper.prototype.handleEvent = function handleEvent (e) {
+        var this$1 = this;
+
+        var inputHandler = this.props.onInput;
+        // Get the screen position of the component
+        var bounds = this.base.getBoundingClientRect();
+        // Prefect default browser action
+        e.preventDefault();
+        // Detect if the event is a touch event by checking if it has the `touches` property
+        // If it is a touch event, use the first touch input
+        var point = e.touches ? e.changedTouches[0] : e;
+        var x = point.clientX - bounds.left;
+        var y = point.clientY - bounds.top;
+        switch (e.type) {
+            case "mousedown" /* MouseDown */:
+            case "touchstart" /* TouchStart */:
+                var result = inputHandler(x, y, 0 /* Start */);
+                if (result !== false) {
+                    SECONDARY_EVENTS.forEach(function (event) {
+                        document.addEventListener(event, this$1, { passive: false });
+                    });
+                }
+                break;
+            case "mousemove" /* MouseMove */:
+            case "touchmove" /* TouchMove */:
+                inputHandler(x, y, 1 /* Move */);
+                break;
+            case "mouseup" /* MouseUp */:
+            case "touchend" /* TouchEnd */:
+                inputHandler(x, y, 2 /* End */);
+                SECONDARY_EVENTS.forEach(function (event) {
+                    document.removeEventListener(event, this$1, { passive: false });
+                });
+                break;
+        }
+    };
+
+    return IroComponentWrapper;
+}(m));
+
+function IroHandle(props) {
+    var radius = props.r;
+    var url = props.url;
+    var cx = radius;
+    var cy = radius;
+    return (iro_es_h("svg", { className: ("IroHandle IroHandle--" + (props.index) + " " + (props.isActive ? 'IroHandle--isActive' : '')), style: {
+            '-webkit-tap-highlight-color': 'rgba(0, 0, 0, 0);',
+            transform: ("translate(" + (cssValue(props.x)) + ", " + (cssValue(props.y)) + ")"),
+            willChange: 'transform',
+            top: cssValue(-radius),
+            left: cssValue(-radius),
+            width: cssValue(radius * 2),
+            height: cssValue(radius * 2),
+            position: 'absolute',
+            overflow: 'visible'
+        } },
+        url && (iro_es_h("use", Object.assign({ xlinkHref: resolveSvgUrl(url) }, props.props))),
+        !url && (iro_es_h("circle", { cx: cx, cy: cy, r: radius, fill: "none", "stroke-width": 2, stroke: "#000" })),
+        !url && (iro_es_h("circle", { cx: cx, cy: cy, r: radius - 2, fill: props.fill, "stroke-width": 2, stroke: "#fff" }))));
+}
+IroHandle.defaultProps = {
+    fill: 'none',
+    x: 0,
+    y: 0,
+    r: 8,
+    url: null,
+    props: { x: 0, y: 0 }
+};
+
+function IroSlider(props) {
+    var activeIndex = props.activeIndex;
+    var activeColor = (activeIndex !== undefined && activeIndex < props.colors.length) ? props.colors[activeIndex] : props.color;
+    var ref = getSliderDimensions(props);
+    var width = ref.width;
+    var height = ref.height;
+    var radius = ref.radius;
+    var handlePos = getSliderHandlePosition(props, activeColor);
+    var gradient = getSliderGradient(props, activeColor);
+    function handleInput(x, y, type) {
+        var value = getSliderValueFromInput(props, x, y);
+        props.parent.inputActive = true;
+        activeColor[props.sliderType] = value;
+        props.onInput(type, props.id);
+    }
+    return (iro_es_h(IroComponentWrapper, Object.assign({}, props, { onInput: handleInput }), function (uid, rootProps, rootStyles) { return (iro_es_h("div", Object.assign({}, rootProps, { className: "IroSlider", style: Object.assign({}, {position: 'relative',
+            width: cssValue(width),
+            height: cssValue(height),
+            borderRadius: cssValue(radius),
+            // checkered bg to represent alpha
+            background: "conic-gradient(#ccc 25%, #fff 0 50%, #ccc 0 75%, #fff 0)",
+            backgroundSize: '8px 8px'},
+            rootStyles) }),
+        iro_es_h("div", { className: "IroSliderGradient", style: Object.assign({}, {position: 'absolute',
+                top: 0,
+                left: 0,
+                width: "100%",
+                height: "100%",
+                borderRadius: cssValue(radius),
+                background: cssGradient('linear', props.layoutDirection === 'horizontal' ? 'to top' : 'to right', gradient)},
+                cssBorderStyles(props)) }),
+        iro_es_h(IroHandle, { isActive: true, index: activeColor.index, r: props.handleRadius, url: props.handleSvg, props: props.handleProps, x: handlePos.x, y: handlePos.y }))); }));
+}
+IroSlider.defaultProps = Object.assign({}, sliderDefaultOptions);
+
+function IroBox(props) {
+    var ref = getBoxDimensions(props);
+    var width = ref.width;
+    var height = ref.height;
+    var radius = ref.radius;
+    var colors = props.colors;
+    var colorPicker = props.parent;
+    var activeIndex = props.activeIndex;
+    var activeColor = (activeIndex !== undefined && activeIndex < props.colors.length) ? props.colors[activeIndex] : props.color;
+    var gradients = getBoxGradients(props, activeColor);
+    var handlePositions = colors.map(function (color) { return getBoxHandlePosition(props, color); });
+    function handleInput(x, y, inputType) {
+        if (inputType === 0 /* Start */) {
+            // getHandleAtPoint() returns the index for the handle if the point 'hits' it, or null otherwise
+            var activeHandle = getHandleAtPoint(props, x, y, handlePositions);
+            // If the input hit a handle, set it as the active handle, but don't update the color
+            if (activeHandle !== null) {
+                colorPicker.setActiveColor(activeHandle);
+            }
+            // If the input didn't hit a handle, set the currently active handle to that position
+            else {
+                colorPicker.inputActive = true;
+                activeColor.hsv = getBoxValueFromInput(props, x, y);
+                props.onInput(inputType, props.id);
+            }
+        }
+        // move is fired when the user has started dragging
+        else if (inputType === 1 /* Move */) {
+            colorPicker.inputActive = true;
+            activeColor.hsv = getBoxValueFromInput(props, x, y);
+        }
+        // let the color picker fire input:start, input:move or input:end events
+        props.onInput(inputType, props.id);
+    }
+    return (iro_es_h(IroComponentWrapper, Object.assign({}, props, { onInput: handleInput }), function (uid, rootProps, rootStyles) { return (iro_es_h("div", Object.assign({}, rootProps, { className: "IroBox", style: Object.assign({}, {width: cssValue(width),
+            height: cssValue(height),
+            position: 'relative'},
+            rootStyles) }),
+        iro_es_h("div", { className: "IroBox", style: Object.assign({}, {width: '100%',
+                height: '100%',
+                borderRadius: cssValue(radius)},
+                cssBorderStyles(props),
+                {background: cssGradient('linear', 'to bottom', gradients[1])
+                    + ',' +
+                    cssGradient('linear', 'to right', gradients[0])}) }),
+        colors.filter(function (color) { return color !== activeColor; }).map(function (color) { return (iro_es_h(IroHandle, { isActive: false, index: color.index, fill: color.hslString, r: props.handleRadius, url: props.handleSvg, props: props.handleProps, x: handlePositions[color.index].x, y: handlePositions[color.index].y })); }),
+        iro_es_h(IroHandle, { isActive: true, index: activeColor.index, fill: activeColor.hslString, r: props.activeHandleRadius || props.handleRadius, url: props.handleSvg, props: props.handleProps, x: handlePositions[activeColor.index].x, y: handlePositions[activeColor.index].y }))); }));
+}
+
+var HUE_GRADIENT_CLOCKWISE = 'conic-gradient(red, yellow, lime, aqua, blue, magenta, red)';
+var HUE_GRADIENT_ANTICLOCKWISE = 'conic-gradient(red, magenta, blue, aqua, lime, yellow, red)';
+function IroWheel(props) {
+    var ref = getWheelDimensions(props);
+    var width = ref.width;
+    var colors = props.colors;
+    var borderWidth = props.borderWidth;
+    var colorPicker = props.parent;
+    var activeColor = props.color;
+    var hsv = activeColor.hsv;
+    var handlePositions = colors.map(function (color) { return getWheelHandlePosition(props, color); });
+    var circleStyles = {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        width: '100%',
+        height: '100%',
+        borderRadius: '50%',
+        boxSizing: 'border-box'
+    };
+    function handleInput(x, y, inputType) {
+        if (inputType === 0 /* Start */) {
+            // input hitbox is a square, 
+            // so we want to ignore any initial clicks outside the circular shape of the wheel
+            if (!isInputInsideWheel(props, x, y)) {
+                // returning false will cease all event handling for this interaction
+                return false;
+            }
+            // getHandleAtPoint() returns the index for the handle if the point 'hits' it, or null otherwise
+            var activeHandle = getHandleAtPoint(props, x, y, handlePositions);
+            // If the input hit a handle, set it as the active handle, but don't update the color
+            if (activeHandle !== null) {
+                colorPicker.setActiveColor(activeHandle);
+            }
+            // If the input didn't hit a handle, set the currently active handle to that position
+            else {
+                colorPicker.inputActive = true;
+                activeColor.hsv = getWheelValueFromInput(props, x, y);
+                props.onInput(inputType, props.id);
+            }
+        }
+        // move is fired when the user has started dragging
+        else if (inputType === 1 /* Move */) {
+            colorPicker.inputActive = true;
+            activeColor.hsv = getWheelValueFromInput(props, x, y);
+        }
+        // let the color picker fire input:start, input:move or input:end events
+        props.onInput(inputType, props.id);
+    }
+    return (iro_es_h(IroComponentWrapper, Object.assign({}, props, { onInput: handleInput }), function (uid, rootProps, rootStyles) { return (iro_es_h("div", Object.assign({}, rootProps, { className: "IroWheel", style: Object.assign({}, {width: cssValue(width),
+            height: cssValue(width),
+            position: 'relative'},
+            rootStyles) }),
+        iro_es_h("div", { className: "IroWheelHue", style: Object.assign({}, circleStyles,
+                {transform: ("rotateZ(" + (props.wheelAngle + 90) + "deg)"),
+                background: props.wheelDirection === 'clockwise' ? HUE_GRADIENT_CLOCKWISE : HUE_GRADIENT_ANTICLOCKWISE}) }),
+        iro_es_h("div", { className: "IroWheelSaturation", style: Object.assign({}, circleStyles,
+                {background: 'radial-gradient(circle closest-side, #fff, transparent)'}) }),
+        props.wheelLightness && (iro_es_h("div", { className: "IroWheelLightness", style: Object.assign({}, circleStyles,
+                {background: '#000',
+                opacity: 1 - hsv.v / 100}) })),
+        iro_es_h("div", { className: "IroWheelBorder", style: Object.assign({}, circleStyles,
+                cssBorderStyles(props)) }),
+        colors.filter(function (color) { return color !== activeColor; }).map(function (color) { return (iro_es_h(IroHandle, { isActive: false, index: color.index, fill: color.hslString, r: props.handleRadius, url: props.handleSvg, props: props.handleProps, x: handlePositions[color.index].x, y: handlePositions[color.index].y })); }),
+        iro_es_h(IroHandle, { isActive: true, index: activeColor.index, fill: activeColor.hslString, r: props.activeHandleRadius || props.handleRadius, url: props.handleSvg, props: props.handleProps, x: handlePositions[activeColor.index].x, y: handlePositions[activeColor.index].y }))); }));
+}
+
+function createWidget(WidgetComponent) {
+    var widgetFactory = function (parent, props) {
+        var widget; // will become an instance of the widget component class
+        var widgetRoot = document.createElement('div');
+        // Render widget into a temp DOM node
+        I(iro_es_h(WidgetComponent, Object.assign({}, {ref: function (ref) { return widget = ref; }},
+            props)), widgetRoot);
+        function mountWidget() {
+            var container = parent instanceof Element ? parent : document.querySelector(parent);
+            container.appendChild(widget.base);
+            widget.onMount(container);
+        }
+        // Mount it into the DOM when the page document is ready
+        if (document.readyState !== 'loading') {
+            mountWidget();
+        }
+        else {
+            document.addEventListener('DOMContentLoaded', mountWidget);
+        }
+        return widget;
+    };
+    // Allow the widget factory to inherit component prototype + static class methods
+    // This makes it easier for plugin authors to extend the base widget component
+    widgetFactory.prototype = WidgetComponent.prototype;
+    Object.assign(widgetFactory, WidgetComponent);
+    // Add reference to base component too
+    widgetFactory.__component = WidgetComponent;
+    return widgetFactory;
+}
+
+var IroColorPicker = /*@__PURE__*/(function (Component) {
+    function IroColorPicker(props) {
+        var this$1 = this;
+
+        Component.call(this, props);
+        this.colors = [];
+        this.inputActive = false;
+        this.events = {};
+        this.activeEvents = {};
+        this.deferredEvents = {};
+        this.id = props.id;
+        var colors = props.colors.length > 0 ? props.colors : [props.color];
+        colors.forEach(function (colorValue) { return this$1.addColor(colorValue); });
+        this.setActiveColor(0);
+        // Pass all the props into the component's state,
+        // Except we want to add the color object and make sure that refs aren't passed down to children
+        this.state = Object.assign({}, props,
+            {color: this.color,
+            colors: this.colors,
+            layout: props.layout});
+    }
+
+    if ( Component ) IroColorPicker.__proto__ = Component;
+    IroColorPicker.prototype = Object.create( Component && Component.prototype );
+    IroColorPicker.prototype.constructor = IroColorPicker;
+    // Plubic multicolor API
+    /**
+    * @desc Add a color to the color picker
+    * @param color new color to add
+    * @param index optional color index
+    */
+    IroColorPicker.prototype.addColor = function addColor (color, index) {
+        if ( index === void 0 ) index = this.colors.length;
+
+        // Create a new iro.Color
+        // Also bind it to onColorChange, so whenever the color changes it updates the color picker
+        var newColor = new IroColor(color, this.onColorChange.bind(this));
+        // Insert color @ the given index
+        this.colors.splice(index, 0, newColor);
+        // Reindex colors
+        this.colors.forEach(function (color, index) { return color.index = index; });
+        // Update picker state if necessary
+        if (this.state) {
+            this.setState({ colors: this.colors });
+        }
+        // Fire color init event
+        this.deferredEmit('color:init', newColor);
+    };
+    /**
+     * @desc Remove a color from the color picker
+     * @param index color index
+     */
+    IroColorPicker.prototype.removeColor = function removeColor (index) {
+        var color = this.colors.splice(index, 1)[0];
+        // Destroy the color object -- this unbinds it from the color picker
+        color.unbind();
+        // Reindex colors
+        this.colors.forEach(function (color, index) { return color.index = index; });
+        // Update picker state if necessary
+        if (this.state) {
+            this.setState({ colors: this.colors });
+        }
+        // If the active color was removed, default active color to 0
+        if (color.index === this.color.index) {
+            this.setActiveColor(0);
+        }
+        // Fire color remove event
+        this.emit('color:remove', color);
+    };
+    /**
+     * @desc Set the currently active color
+     * @param index color index
+     */
+    IroColorPicker.prototype.setActiveColor = function setActiveColor (index) {
+        this.color = this.colors[index];
+        if (this.state) {
+            this.setState({ color: this.color });
+        }
+        // Fire color switch event
+        this.emit('color:setActive', this.color);
+    };
+    /**
+     * @desc Replace all of the current colorPicker colors
+     * @param newColorValues list of new colors to add
+     */
+    IroColorPicker.prototype.setColors = function setColors (newColorValues, activeColorIndex) {
+        var this$1 = this;
+        if ( activeColorIndex === void 0 ) activeColorIndex = 0;
+
+        // Unbind color events
+        this.colors.forEach(function (color) { return color.unbind(); });
+        // Destroy old colors
+        this.colors = [];
+        // Add new colors
+        newColorValues.forEach(function (colorValue) { return this$1.addColor(colorValue); });
+        // Reset active color
+        this.setActiveColor(activeColorIndex);
+        this.emit('color:setAll', this.colors);
+    };
+    // Public ColorPicker events API
+    /**
+     * @desc Set a callback function for an event
+     * @param eventList event(s) to listen to
+     * @param callback - Function called when the event is fired
+     */
+    IroColorPicker.prototype.on = function on (eventList, callback) {
+        var this$1 = this;
+
+        var events = this.events;
+        // eventList can be an eventType string or an array of eventType strings
+        (!Array.isArray(eventList) ? [eventList] : eventList).forEach(function (eventType) {
+            // Add event callback
+            (events[eventType] || (events[eventType] = [])).push(callback);
+            // Call deferred events
+            // These are events that can be stored until a listener for them is added
+            if (this$1.deferredEvents[eventType]) {
+                // Deffered events store an array of arguments from when the event was called
+                this$1.deferredEvents[eventType].forEach(function (args) {
+                    callback.apply(null, args);
+                });
+                // Clear deferred events
+                this$1.deferredEvents[eventType] = [];
+            }
+        });
+    };
+    /**
+     * @desc Remove a callback function for an event added with on()
+     * @param eventList - event(s) to listen to
+     * @param callback - original callback function to remove
+     */
+    IroColorPicker.prototype.off = function off (eventList, callback) {
+        var this$1 = this;
+
+        (!Array.isArray(eventList) ? [eventList] : eventList).forEach(function (eventType) {
+            var callbackList = this$1.events[eventType];
+            // this.emitHook('event:off', eventType, callback);
+            if (callbackList)
+                { callbackList.splice(callbackList.indexOf(callback), 1); }
+        });
+    };
+    /**
+     * @desc Emit an event
+     * @param eventType event to emit
+     */
+    IroColorPicker.prototype.emit = function emit (eventType) {
+        var this$1 = this;
+        var args = [], len = arguments.length - 1;
+        while ( len-- > 0 ) args[ len ] = arguments[ len + 1 ];
+
+        var activeEvents = this.activeEvents;
+        var isEventActive = activeEvents.hasOwnProperty(eventType) ? activeEvents[eventType] : false;
+        // Prevent event callbacks from firing if the event is already active
+        // This stops infinite loops if something in an event callback causes the same event to be fired again
+        // (e.g. setting the color inside a color:change callback)
+        if (!isEventActive) {
+            activeEvents[eventType] = true;
+            var callbackList = this.events[eventType] || [];
+            callbackList.forEach(function (fn) { return fn.apply(this$1, args); });
+            activeEvents[eventType] = false;
+        }
+    };
+    /**
+     * @desc Emit an event now, or save it for when the relevent event listener is added
+     * @param eventType - The name of the event to emit
+     */
+    IroColorPicker.prototype.deferredEmit = function deferredEmit (eventType) {
+        var ref;
+
+        var args = [], len = arguments.length - 1;
+        while ( len-- > 0 ) args[ len ] = arguments[ len + 1 ];
+        var deferredEvents = this.deferredEvents;
+        (ref = this).emit.apply(ref, [ eventType ].concat( args ));
+        (deferredEvents[eventType] || (deferredEvents[eventType] = [])).push(args);
+    };
+    // Public utility methods
+    IroColorPicker.prototype.setOptions = function setOptions (newOptions) {
+        this.setState(newOptions);
+    };
+    /**
+     * @desc Resize the color picker
+     * @param width - new width
+     */
+    IroColorPicker.prototype.resize = function resize (width) {
+        this.setOptions({ width: width });
+    };
+    /**
+     * @desc Reset the color picker to the initial color provided in the color picker options
+     */
+    IroColorPicker.prototype.reset = function reset () {
+        this.colors.forEach(function (color) { return color.reset(); });
+        this.setState({ colors: this.colors });
+    };
+    /**
+     * @desc Called by the createWidget wrapper when the element is mounted into the page
+     * @param container - the container element for this ColorPicker instance
+     */
+    IroColorPicker.prototype.onMount = function onMount (container) {
+        this.el = container;
+        this.deferredEmit('mount', this);
+    };
+    // Internal methods
+    /**
+     * @desc React to a color update
+     * @param color - current color
+     * @param changes - shows which h,s,v,a color channels changed
+     */
+    IroColorPicker.prototype.onColorChange = function onColorChange (color, changes) {
+        this.setState({ color: this.color });
+        if (this.inputActive) {
+            this.inputActive = false;
+            this.emit('input:change', color, changes);
+        }
+        this.emit('color:change', color, changes);
+    };
+    /**
+     * @desc Handle input from a UI control element
+     * @param type - event type
+     */
+    IroColorPicker.prototype.emitInputEvent = function emitInputEvent (type, originId) {
+        if (type === 0 /* Start */) {
+            this.emit('input:start', this.color, originId);
+        }
+        else if (type === 1 /* Move */) {
+            this.emit('input:move', this.color, originId);
+        }
+        else if (type === 2 /* End */) {
+            this.emit('input:end', this.color, originId);
+        }
+    };
+    IroColorPicker.prototype.render = function render (props, state) {
+        var this$1 = this;
+
+        var layout = state.layout;
+        // use layout shorthands
+        if (!Array.isArray(layout)) {
+            switch (layout) {
+                // TODO: implement some?
+                default:
+                    layout = [
+                        { component: IroWheel },
+                        { component: IroSlider } ];
+            }
+            // add transparency slider to the layout
+            if (state.transparency) {
+                layout.push({
+                    component: IroSlider,
+                    options: {
+                        sliderType: 'alpha'
+                    }
+                });
+            }
+        }
+        return (iro_es_h("div", { class: "IroColorPicker", id: state.id, style: {
+                display: state.display
+            } }, layout.map(function (ref, componentIndex) {
+                var UiComponent = ref.component;
+                var options = ref.options;
+
+                return (iro_es_h(UiComponent, Object.assign({}, state, options, { ref: undefined, onInput: this$1.emitInputEvent.bind(this$1), parent: this$1, index: componentIndex })));
+        })));
+    };
+
+    return IroColorPicker;
+}(m));
+IroColorPicker.defaultProps = Object.assign({}, iroColorPickerOptionDefaults,
+    {colors: [],
+    display: 'block',
+    id: null,
+    layout: 'default',
+    margin: null});
+var IroColorPickerWidget = createWidget(IroColorPicker);
+
+var iro;
+(function (iro) {
+    iro.version = "5.5.2"; // replaced by @rollup/plugin-replace; see rollup.config.js
+    iro.Color = IroColor;
+    iro.ColorPicker = IroColorPickerWidget;
+    var ui;
+    (function (ui) {
+        ui.h = iro_es_h;
+        ui.ComponentBase = IroComponentWrapper;
+        ui.Handle = IroHandle;
+        ui.Slider = IroSlider;
+        ui.Wheel = IroWheel;
+        ui.Box = IroBox;
+    })(ui = iro.ui || (iro.ui = {}));
+})(iro || (iro = {}));
+var iro$1 = iro;
+
+/* harmony default export */ var iro_es = (iro$1);
+
+// CONCATENATED MODULE: ./src/util/color.ts
+
+
+
+
+
+
+var getPercBrightness = function () {
+  var cache = new Map();
+  return function (color) {
+    var cacheKey = "".concat(color.red, ",").concat(color.green, ",").concat(color.blue);
+    var result = cache.get(cacheKey);
+
+    if (result === undefined) {
+      result = Math.sqrt(color.red * color.red * .241 + color.green * color.green * .691 + color.blue * color.blue * .068);
+      cache.set(cacheKey, result);
+    }
+
+    return result;
+  };
+}();
 // CONCATENATED MODULE: ./node_modules/babel-loader/lib!./node_modules/ts-loader??ref--14-1!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/Graph.vue?vue&type=script&lang=ts&
+
+
 
 
 
@@ -54080,7 +57654,6 @@ var Graphvue_type_script_lang_ts_generateStyle = function generateStyle(diagram)
       'width': function width() {
         return 4;
       },
-      // 'label': 'data(label)',
       'label': function label(edge) {
         var relation = edge.data('relation');
         var strings = [];
@@ -54100,8 +57673,9 @@ var Graphvue_type_script_lang_ts_generateStyle = function generateStyle(diagram)
                 var field = _step2.value;
                 if (!field.isRelationLabel) continue;
                 if (!field.active) continue;
-                if (!field.relationTypes.has(relation.type)) continue;
-                var value = relation.data[field.dataKey];
+                if (!field.relationTypes.has(relation.type)) continue; // const value = relation.data[field.dataKey]
+
+                var value = relation.getFieldValue(field);
                 var formatted = String(field.formatter ? field.formatter(value) : value !== null && value !== void 0 ? value : '');
                 if (formatted) strings.push(formatted);
               }
@@ -54147,7 +57721,10 @@ var Graphvue_type_script_lang_ts_generateStyle = function generateStyle(diagram)
         return 'filled';
       },
       'line-style': function lineStyle(edge) {
-        return getStyle(edge, 'lineStyle', 'solid');
+        return getStyle(edge, 'lineStyle', 'solid') === 'solid' ? 'solid' : 'dashed';
+      },
+      "line-dash-pattern": function lineDashPattern(edge) {
+        return getStyle(edge, 'lineStyle', 'solid') === 'dotted' ? [4, 8] : [8, 4];
       },
       'source-arrow-shape': function sourceArrowShape(edge) {
         return getStyle(edge, 'arrowFrom', false) ? 'triangle' : 'none';
@@ -54176,7 +57753,7 @@ var Graphvue_type_script_lang_ts_initNodeHtmlLabel = function initNodeHtmlLabel(
   graph.nodeHtmlLabel([{
     query: '.entity:inside',
     tpl: function tpl(data) {
-      var _entity$style$backgro, _entity$style$borderC, _entity$style$borderS, _entity$style$borderW, _entity$style$labelsB;
+      var _getStyleValue, _getStyleValue2, _getStyleValue3;
 
       var entity = data.entity; // FIXME: Disabled
       // // depending on the filters, we might not show the entity at all
@@ -54200,24 +57777,40 @@ var Graphvue_type_script_lang_ts_initNodeHtmlLabel = function initNodeHtmlLabel(
         }).join('');
       };
 
-      var style = createStyleString([['visibility', data.hidden ? 'hidden' : 'visible'], ['background-color', (_entity$style$backgro = entity.style.backgroundColor) !== null && _entity$style$backgro !== void 0 ? _entity$style$backgro : entity.type.style.backgroundColor], ['border-color', (_entity$style$borderC = entity.style.borderColor) !== null && _entity$style$borderC !== void 0 ? _entity$style$borderC : entity.type.style.borderColor], ['border-style', (_entity$style$borderS = entity.style.borderStyle) !== null && _entity$style$borderS !== void 0 ? _entity$style$borderS : entity.type.style.borderStyle], ['border-width', (_entity$style$borderW = entity.style.borderWidth) !== null && _entity$style$borderW !== void 0 ? _entity$style$borderW : entity.type.style.borderWidth]]);
-      var labelsStyle = createStyleString([['background-color', (_entity$style$labelsB = entity.style.labelsBackgroundColor) !== null && _entity$style$labelsB !== void 0 ? _entity$style$labelsB : entity.type.style.labelsBackgroundColor]]);
+      var getStyleValue = function getStyleValue(prop) {
+        var _entity$style$prop;
+
+        return (_entity$style$prop = entity.style[prop]) !== null && _entity$style$prop !== void 0 ? _entity$style$prop : entity.type.style[prop];
+      };
+
+      var getContrastingTextColor = function getContrastingTextColor(bgColor) {
+        return getPercBrightness(new iro_es.Color(bgColor)) > 165 ? 'rgba(0, 0, 0, 0.68)' : 'rgb(255, 255, 255)';
+      };
+
+      var borderWidth = "".concat((_getStyleValue = getStyleValue('borderWidth')) !== null && _getStyleValue !== void 0 ? _getStyleValue : 2, "px");
+      var borderStyle = getStyleValue('borderStyle');
+      var borderColor = entity.isMainEntity ? 'black' : getStyleValue('borderColor');
+      var bgColor = (_getStyleValue2 = getStyleValue('backgroundColor')) !== null && _getStyleValue2 !== void 0 ? _getStyleValue2 : '#ffffff';
+      var labelsBgColor = (_getStyleValue3 = getStyleValue('labelsBackgroundColor')) !== null && _getStyleValue3 !== void 0 ? _getStyleValue3 : bgColor;
+      var style = createStyleString([['visibility', data.hidden ? 'hidden' : 'visible'], ['border-width', borderWidth], ['border-style', borderStyle], ['border-color', borderColor]]);
+      var labelsStyle = createStyleString([['color', getContrastingTextColor(labelsBgColor)], ['background-color', labelsBgColor]]);
+      var fieldsStyle = createStyleString([['border-top-width', borderWidth], ['border-style', borderStyle], ['border-color', borderColor], ['color', getContrastingTextColor(bgColor)], ['background-color', bgColor]]);
 
       var createHtmlField = function createHtmlField(options) {
-        var _options$text;
+        var _options$legendColor, _options$field, _options$text;
 
         var getFormattedFieldValue = function getFormattedFieldValue(field) {
-          var value = entity.data[field.dataKey];
+          var value = entity.getFieldValue(field);
           if (field.formatter) return field.formatter(value);
-          return String(value !== null && value !== void 0 ? value : '-');
+          return String(value !== null && value !== void 0 ? value : '');
         };
 
         var encodeHTML = function encodeHTML(string) {
           return string.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
         };
 
-        var legendColor = options.field ? options.field.addToLegend ? options.field.legendColor : null : options.legendColor;
-        var text = options.field ? getFormattedFieldValue(options.field) : (_options$text = options.text) !== null && _options$text !== void 0 ? _options$text : '';
+        var legendColor = (_options$legendColor = options.legendColor) !== null && _options$legendColor !== void 0 ? _options$legendColor : (_options$field = options.field) !== null && _options$field !== void 0 && _options$field.addToLegend ? options.field.legendColor : null;
+        var text = (_options$text = options.text) !== null && _options$text !== void 0 ? _options$text : options.field ? getFormattedFieldValue(options.field) : '';
         if (!text) return '';
         var html = '';
         html += '<div class="lassox-diagram__Graph_entity-field">';
@@ -54246,7 +57839,8 @@ var Graphvue_type_script_lang_ts_initNodeHtmlLabel = function initNodeHtmlLabel(
               if (!field.active) continue;
               if (!field.entityTypes.has(entity.type)) continue;
               if (field.isEntityLabel) labels.push(createHtmlField({
-                field: field
+                field: field,
+                legendColor: ''
               }));else fields.push(createHtmlField({
                 field: field
               }));
@@ -54269,7 +57863,9 @@ var Graphvue_type_script_lang_ts_initNodeHtmlLabel = function initNodeHtmlLabel(
         }));
       }
 
-      return "<div class=\"".concat(classes, "\" style=\"").concat(style, "\">") + "<div class=\"lassox-diagram__Graph_entity-labels-wrapper\" style=\"".concat(labelsStyle, "\">") + (entity.type.icon ? "<div class=\"lassox-diagram__Graph_entity-icon material-icons-outlined\">".concat(entity.type.icon, "</div>") : '') + '<div class="lassox-diagram__Graph_entity-labels">' + labels.join('') + '</div>' + '</div>' + (fields.length ? '<div class="lassox-diagram__Graph_entity-fields">' + fields.join('') + '</div>' : '') + '</div>';
+      var labelsHtml = labels.join('');
+      var fieldsHtml = fields.join('');
+      return "<div class=\"".concat(classes, "\" style=\"").concat(style, "\">") + "<div class=\"lassox-diagram__Graph_entity-labels-wrapper\" style=\"".concat(labelsStyle, "\">") + (entity.type.icon ? "<div class=\"lassox-diagram__Graph_entity-icon material-icons-outlined\">".concat(entity.type.icon, "</div>") : '') + '<div class="lassox-diagram__Graph_entity-labels">' + labelsHtml + '</div>' + '</div>' + (fieldsHtml ? "<div class=\"lassox-diagram__Graph_entity-fields\" style=\"".concat(fieldsStyle, "\">") + fieldsHtml + '</div>' : '') + '</div>';
     }
   }], {
     enablePointerEvents: true
@@ -54292,6 +57888,7 @@ var Graphvue_type_script_lang_ts_Graph = /*#__PURE__*/function (_Vue) {
 
     _this = _super.apply(this, arguments);
     _this.addedItems = new Map();
+    _this.activeDiagramChanged = true;
     return _this;
   }
 
@@ -54305,24 +57902,45 @@ var Graphvue_type_script_lang_ts_Graph = /*#__PURE__*/function (_Vue) {
     value: function mounted() {
       var _this2 = this;
 
-      watchRect(this.el, this.onResize);
+      var destroyCallbacks = [];
+      destroyCallbacks.push(watchRect(this.el, this.onResize).unwatch);
       this.initialize();
-      this.diagram.eventBus.on('activeFieldsChanged', function () {
+      destroyCallbacks.push(this.diagram.eventBus.on(['dataUpdated', 'activeFieldsChanged'], function () {
         return _this2.updateElements();
-      });
+      }));
+      destroyCallbacks.push(this.diagram.eventBus.on('activeLayoutChanged', function () {
+        return _this2.runLayout(false);
+      }));
       this.$watch(function () {
-        return [_this2.diagram.activeDiagram.data.entities, _this2.diagram.activeDiagram.data.relations];
+        return _this2.diagram.activeDiagram;
       }, function () {
-        return _this2.updateElements();
+        return _this2.activeDiagramChanged = true;
       });
+
+      this.onDestroy = function () {
+        var _iterator5 = _createForOfIteratorHelper(destroyCallbacks),
+            _step5;
+
+        try {
+          for (_iterator5.s(); !(_step5 = _iterator5.n()).done;) {
+            var cb = _step5.value;
+            cb();
+          }
+        } catch (err) {
+          _iterator5.e(err);
+        } finally {
+          _iterator5.f();
+        }
+      };
     }
   }, {
     key: "beforeDestroy",
     value: function beforeDestroy() {
-      var _this$_graph;
+      var _this$onDestroy, _this$_graph;
 
-      unwatchRect(this.el, this.onResize);
+      (_this$onDestroy = this.onDestroy) === null || _this$onDestroy === void 0 ? void 0 : _this$onDestroy.call(this);
       (_this$_graph = this._graph) === null || _this$_graph === void 0 ? void 0 : _this$_graph.destroy();
+      this._graph = undefined;
     } // When clicking the graph container, cytoscape removes focus, so body ends up focused.
     // This focuses the graph container instead.
 
@@ -54345,18 +57963,25 @@ var Graphvue_type_script_lang_ts_Graph = /*#__PURE__*/function (_Vue) {
       if (event.defaultPrevented) return;
 
       if (event.ctrlKey) {
-        switch (event.key.toLowerCase()) {
-          case 'z':
-            {
-              this.diagram.activeDiagram.data.undo();
-              break;
-            }
+        var key = event.key.toLowerCase();
+        var action = key == 'z' ? 'undo' : key == 'y' ? 'redo' : null;
 
-          case 'y':
-            {
-              this.diagram.activeDiagram.data.redo();
-              break;
-            }
+        if (action) {
+          event.preventDefault();
+
+          switch (action) {
+            case 'undo':
+              {
+                this.diagram.activeDiagram.data.undo();
+                break;
+              }
+
+            case 'redo':
+              {
+                this.diagram.activeDiagram.data.redo();
+                break;
+              }
+          }
         }
       }
     }
@@ -54419,38 +58044,38 @@ var Graphvue_type_script_lang_ts_Graph = /*#__PURE__*/function (_Vue) {
         var toUpdate = [];
         var toRemove = [];
 
-        var _iterator5 = _createForOfIteratorHelper(items),
-            _step5;
-
-        try {
-          for (_iterator5.s(); !(_step5 = _iterator5.n()).done;) {
-            var _step5$value = _slicedToArray(_step5.value, 2),
-                id = _step5$value[0],
-                _item3 = _step5$value[1];
-
-            if (!_this5.addedItems.has(id)) toAdd.push(_item3);else toUpdate.push(_item3);
-          }
-        } catch (err) {
-          _iterator5.e(err);
-        } finally {
-          _iterator5.f();
-        }
-
-        var _iterator6 = _createForOfIteratorHelper(_this5.addedItems),
+        var _iterator6 = _createForOfIteratorHelper(items),
             _step6;
 
         try {
           for (_iterator6.s(); !(_step6 = _iterator6.n()).done;) {
             var _step6$value = _slicedToArray(_step6.value, 2),
-                _id = _step6$value[0],
-                _item4 = _step6$value[1];
+                id = _step6$value[0],
+                _item3 = _step6$value[1];
 
-            if (!items.has(_id)) toRemove.push(_item4);
+            if (!_this5.addedItems.has(id)) toAdd.push(_item3);else toUpdate.push(_item3);
           }
         } catch (err) {
           _iterator6.e(err);
         } finally {
           _iterator6.f();
+        }
+
+        var _iterator7 = _createForOfIteratorHelper(_this5.addedItems),
+            _step7;
+
+        try {
+          for (_iterator7.s(); !(_step7 = _iterator7.n()).done;) {
+            var _step7$value = _slicedToArray(_step7.value, 2),
+                _id = _step7$value[0],
+                _item4 = _step7$value[1];
+
+            if (!items.has(_id)) toRemove.push(_item4);
+          }
+        } catch (err) {
+          _iterator7.e(err);
+        } finally {
+          _iterator7.f();
         }
 
         var elementDefinitions = [];
@@ -54503,117 +58128,105 @@ var Graphvue_type_script_lang_ts_Graph = /*#__PURE__*/function (_Vue) {
         var edges = elements.edges();
         elements.data('hidden', true);
         _this5.addedItems = items;
-        graph.one('render', function () {
-          graph.batch(function () {
-            nodes.forEach(function (node) {
-              var _this5$el$querySelect;
 
-              var nodeEl = (_this5$el$querySelect = _this5.el.querySelector(".lassox-diagram__Graph_entity--id-".concat(node.id()))) === null || _this5$el$querySelect === void 0 ? void 0 : _this5$el$querySelect.parentElement;
-              if (!nodeEl) return;
+        if (graph.elements().length) {
+          var runLayout = _this5.activeDiagramChanged;
+          _this5.activeDiagramChanged = false;
+          graph.one('render', function () {
+            graph.batch(function () {
+              nodes.forEach(function (node) {
+                var _this5$el$querySelect;
 
-              var onRectChanged = function onRectChanged(rect, oldRect) {
-                var _this5$_graph$zoom, _this5$_graph;
+                var nodeEl = (_this5$el$querySelect = _this5.el.querySelector(".lassox-diagram__Graph_entity--id-".concat(node.id()))) === null || _this5$el$querySelect === void 0 ? void 0 : _this5$el$querySelect.parentElement;
+                if (!nodeEl) return;
 
-                if (oldRect && rect.width === oldRect.width && rect.height === oldRect.height) return;
-                var zoom = (_this5$_graph$zoom = (_this5$_graph = _this5._graph) === null || _this5$_graph === void 0 ? void 0 : _this5$_graph.zoom()) !== null && _this5$_graph$zoom !== void 0 ? _this5$_graph$zoom : 1;
-                var width = rect.width / zoom;
-                var height = rect.height / zoom;
+                var onRectChanged = function onRectChanged(rect, oldRect) {
+                  var _this5$_graph$zoom, _this5$_graph;
 
-                var _node$data = node.data(),
-                    oldWidth = _node$data.width,
-                    oldHeight = _node$data.height;
+                  if (oldRect && rect.width === oldRect.width && rect.height === oldRect.height) return;
+                  var zoom = (_this5$_graph$zoom = (_this5$_graph = _this5._graph) === null || _this5$_graph === void 0 ? void 0 : _this5$_graph.zoom()) !== null && _this5$_graph$zoom !== void 0 ? _this5$_graph$zoom : 1;
+                  var width = rect.width / zoom;
+                  var height = rect.height / zoom;
 
-                if (width === oldWidth && height === oldHeight) return;
-                node.data({
-                  width: width,
-                  height: height
+                  var _node$data = node.data(),
+                      oldWidth = _node$data.width,
+                      oldHeight = _node$data.height;
+
+                  if (width === oldWidth && height === oldHeight) return;
+                  node.data({
+                    width: width,
+                    height: height
+                  });
+                };
+
+                watchRect(nodeEl, onRectChanged);
+                node.on('remove', function () {
+                  watch_rect_unwatchRect(nodeEl, onRectChanged);
                 });
-              };
-
-              watchRect(nodeEl, onRectChanged);
-              node.on('remove', function () {
-                unwatchRect(nodeEl, onRectChanged);
               });
             });
-          });
 
-          if (elements.length) {
-            graph.one('render', function () {
-              elements.data('hidden', false);
+            if (!runLayout) {
+              graph.one('render', function () {
+                elements.data('hidden', false);
+              });
+            } else {
+              graph.one('layoutstart', function () {
+                elements.data('hidden', false);
+              });
 
               _this5.runLayout(animateLayout);
-            });
-          }
-        });
-        nodes.on('click', function (event) {
-          _this5.$emit('clickEntity', event.target.data('entity'));
-        });
-        edges.on('click', function (event) {
-          _this5.$emit('clickRelation', event.target.data('relation'));
-        });
-        elements.on('select', function (event) {
-          event.target.data('selected', true);
-          if (event.target.isNode()) _this5.$emit('selectEntity', event.target.data('entity'));else if (event.target.isEdge()) _this5.$emit('selectRelation', event.target.data('relation'));
-        });
-        elements.on('unselect', function (event) {
-          event.target.removeData('selected');
-          if (event.target.isNode()) _this5.$emit('unselectEntity', event.target.data('entity'));else if (event.target.isEdge()) _this5.$emit('unselectRelation', event.target.data('relation'));
-        });
+            }
+          });
+          nodes.on('click', function (event) {
+            _this5.$emit('clickEntity', event.target.data('entity'));
+          });
+          edges.on('click', function (event) {
+            _this5.$emit('clickRelation', event.target.data('relation'));
+          });
+          elements.on('select', function (event) {
+            event.target.data('selected', true);
+            if (event.target.isNode()) _this5.$emit('selectEntity', event.target.data('entity'));else if (event.target.isEdge()) _this5.$emit('selectRelation', event.target.data('relation'));
+          });
+          elements.on('unselect', function (event) {
+            event.target.removeData('selected');
+            if (event.target.isNode()) _this5.$emit('unselectEntity', event.target.data('entity'));else if (event.target.isEdge()) _this5.$emit('unselectRelation', event.target.data('relation'));
+          });
+        }
       });
     }
   }, {
     key: "runLayout",
     value: function runLayout() {
-      var _this6 = this;
-
       var animate = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : true;
+      var graph = this._graph;
+      if (!graph) return;
+      var layout = this.diagram.activeDiagram.settings.activeLayout;
       return new Promise(function (resolve) {
-        var graph = _this6._graph;
-        if (!graph) return;
-        var directed = false;
-        var inverted = true; // TODO:
-        // if (this.mainLassoId.indexOf("CVR-1") === 0) {
-        //   // company
-        //   if (this.graphSettings.variant == 1) {
-        //     directed = true
-        //     inverted = false
-        //   } else if (this.graphSettings.variant == 2) {
-        //     directed = false
-        //     inverted = true
-        //   }
-        // } else {
-        //   // person
-        //   if (this.graphSettings.variant == 1) {
-        //     directed = true
-        //     inverted = false
-        //   } else if (this.graphSettings.variant == 2) {
-        //     directed = false
-        //     inverted = false
-        //   }
-        // }
+        var _layout$directed, _layout$grid, _layout$spacingFactor, _layout$maximal, _layout$animate, _layout$animationDura, _layout$animationEasi;
 
-        graph.layout(_objectSpread2(_objectSpread2({
+        graph.layout({
           name: 'breadthfirst',
           fit: true,
-          directed: directed,
           padding: 32,
-          spacingFactor: 1.3,
+          directed: (_layout$directed = layout === null || layout === void 0 ? void 0 : layout.directed) !== null && _layout$directed !== void 0 ? _layout$directed : false,
+          grid: (_layout$grid = layout === null || layout === void 0 ? void 0 : layout.grid) !== null && _layout$grid !== void 0 ? _layout$grid : false,
+          spacingFactor: (_layout$spacingFactor = layout === null || layout === void 0 ? void 0 : layout.spacingFactor) !== null && _layout$spacingFactor !== void 0 ? _layout$spacingFactor : 1.3,
+          maximal: (_layout$maximal = layout === null || layout === void 0 ? void 0 : layout.maximal) !== null && _layout$maximal !== void 0 ? _layout$maximal : false,
           avoidOverlap: true,
-          animate: animate,
-          animationDuration: 1000,
-          animationEasing: 'cubic-bezier(0,0,.58,1)'
-        }, {
-          transform: function transform(node, position) {
-            return inverted ? {
-              x: -position.x,
-              y: -position.y
-            } : position;
-          }
-        }), {}, {
+          animate: animate && ((_layout$animate = layout === null || layout === void 0 ? void 0 : layout.animate) !== null && _layout$animate !== void 0 ? _layout$animate : true),
+          animationDuration: (_layout$animationDura = layout === null || layout === void 0 ? void 0 : layout.animationDuration) !== null && _layout$animationDura !== void 0 ? _layout$animationDura : 1000,
+          animationEasing: (_layout$animationEasi = layout === null || layout === void 0 ? void 0 : layout.animationEasing) !== null && _layout$animationEasi !== void 0 ? _layout$animationEasi : 'ease-out',
+          transform: layout !== null && layout !== void 0 && layout.inverted ? function (_, pos) {
+            return {
+              x: -pos.x,
+              y: -pos.y
+            };
+          } : undefined,
           stop: function stop() {
-            resolve();
+            return resolve();
           }
-        })).run();
+        }).run();
       });
     }
   }, {
@@ -54653,8 +58266,8 @@ var Graphvue_type_style_index_0_lang_scss_ = __webpack_require__("2a3c");
 
 var Graph_component = normalizeComponent(
   components_Graphvue_type_script_lang_ts_,
-  Graphvue_type_template_id_277a4792_render,
-  Graphvue_type_template_id_277a4792_staticRenderFns,
+  Graphvue_type_template_id_670c5142_render,
+  Graphvue_type_template_id_670c5142_staticRenderFns,
   false,
   null,
   null,
@@ -54663,26 +58276,26 @@ var Graph_component = normalizeComponent(
 )
 
 /* harmony default export */ var components_Graph = (Graph_component.exports);
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"73fd892e-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/Customizer.vue?vue&type=template&id=4f25ccdc&
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"1c2f91b6-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/Customizer.vue?vue&type=template&id=4f25ccdc&
 var Customizervue_type_template_id_4f25ccdc_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"lassox-diagram__Customizer"},[_c('div',{staticClass:"lassox-diagram__Customizer_fields"},_vm._l((_vm.diagram.fieldGroups),function(fieldGroup){return _c('CustomizerFieldGroup',{key:fieldGroup.id,attrs:{"diagram":_vm.diagram,"fieldGroup":fieldGroup}})}),1)])}
 var Customizervue_type_template_id_4f25ccdc_staticRenderFns = []
 
 
 // CONCATENATED MODULE: ./src/components/Customizer.vue?vue&type=template&id=4f25ccdc&
 
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"73fd892e-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/CustomizerFieldGroup.vue?vue&type=template&id=9cb73a02&
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"1c2f91b6-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/CustomizerFieldGroup.vue?vue&type=template&id=9cb73a02&
 var CustomizerFieldGroupvue_type_template_id_9cb73a02_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"lassox-diagram__CustomizerFieldGroup"},[_c('CustomizerFieldGroupDropdownButton',{attrs:{"diagram":_vm.diagram,"fieldGroup":_vm.fieldGroup}}),(_vm.activeFields.length)?_c('div',{staticClass:"lassox-diagram__CustomizerFieldGroup_fields"},_vm._l((_vm.activeFields),function(field){return _c('div',{key:field.id,staticClass:"lassox-diagram__CustomizerFieldGroup_field"},[_c('div',{staticClass:"lassox-diagram__CustomizerFieldGroup_field-legend-color",style:({ backgroundColor: field.legendColor })}),_c('div',{staticClass:"lassox-diagram__CustomizerFieldGroup_field-title",domProps:{"textContent":_vm._s(field.title)}})])}),0):_vm._e()],1)}
 var CustomizerFieldGroupvue_type_template_id_9cb73a02_staticRenderFns = []
 
 
 // CONCATENATED MODULE: ./src/components/CustomizerFieldGroup.vue?vue&type=template&id=9cb73a02&
 
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"73fd892e-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/CustomizerFieldGroupDropdownButton.vue?vue&type=template&id=f77ed164&
-var CustomizerFieldGroupDropdownButtonvue_type_template_id_f77ed164_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"lassox-diagram__CustomizerFieldGroupDropdownButton"},[_c('BaseButton',{ref:"button",staticClass:"lassox-diagram__CustomizerFieldGroupDropdownButton_button",attrs:{"label":_vm.fieldGroup.title,"trailingIcon":_vm.showDropdownMenu ? 'expand_less' : 'expand_more'},on:{"click":function () { return _vm.showDropdownMenu = !_vm.showDropdownMenu; },"focusout":_vm.onFocusOut}}),_c('div',{directives:[{name:"show",rawName:"v-show",value:(_vm.showDropdownMenu),expression:"showDropdownMenu"}],ref:"dropdownMenuEl",staticClass:"lassox-diagram__CustomizerFieldGroupDropdownButton_dropdown-menu",style:(_vm.dropdownStyle),attrs:{"tabindex":"-1"},on:{"focusout":_vm.onFocusOut}},_vm._l((_vm.fields),function(field){return _c('BaseButton',{key:field.id,staticClass:"lassox-diagram__CustomizerFieldGroupDropdownButton_dropdown-menu-item",attrs:{"label":field.title,"icon":field.active ? 'check_box' : 'check_box_outline_blank'},on:{"click":function () { return field.active = !field.active; }}})}),1),_c('div',{ref:"boundsEl",staticClass:"lassox-diagram__CustomizerFieldGroupDropdownButton_dropdown-menu-bounds"})],1)}
-var CustomizerFieldGroupDropdownButtonvue_type_template_id_f77ed164_staticRenderFns = []
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"1c2f91b6-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/CustomizerFieldGroupDropdownButton.vue?vue&type=template&id=75ae99b2&
+var CustomizerFieldGroupDropdownButtonvue_type_template_id_75ae99b2_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"lassox-diagram__CustomizerFieldGroupDropdownButton"},[_c('BaseButton',{ref:"button",staticClass:"lassox-diagram__CustomizerFieldGroupDropdownButton_button",attrs:{"label":_vm.fieldGroup.title,"trailingIcon":_vm.showDropdownMenu ? 'expand_less' : 'expand_more'},on:{"click":function () { return _vm.showDropdownMenu = !_vm.showDropdownMenu; },"focusout":_vm.onFocusOut}}),_c('div',{directives:[{name:"show",rawName:"v-show",value:(_vm.showDropdownMenu),expression:"showDropdownMenu"}],ref:"dropdownMenuEl",staticClass:"lassox-diagram__CustomizerFieldGroupDropdownButton_dropdown-menu",style:(_vm.dropdownStyle),attrs:{"tabindex":"-1"},on:{"focusout":_vm.onFocusOut}},_vm._l((_vm.fields),function(field){return _c('BaseButton',{key:field.id,staticClass:"lassox-diagram__CustomizerFieldGroupDropdownButton_dropdown-menu-item",attrs:{"label":field.title,"icon":field.active ? 'check_box' : 'check_box_outline_blank'},on:{"click":function () { return field.active = !field.active; }}})}),1),_c('div',{ref:"boundsEl",staticClass:"lassox-diagram__CustomizerFieldGroupDropdownButton_dropdown-menu-bounds"})],1)}
+var CustomizerFieldGroupDropdownButtonvue_type_template_id_75ae99b2_staticRenderFns = []
 
 
-// CONCATENATED MODULE: ./src/components/CustomizerFieldGroupDropdownButton.vue?vue&type=template&id=f77ed164&
+// CONCATENATED MODULE: ./src/components/CustomizerFieldGroupDropdownButton.vue?vue&type=template&id=75ae99b2&
 
 // CONCATENATED MODULE: ./node_modules/babel-loader/lib!./node_modules/ts-loader??ref--14-1!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/CustomizerFieldGroupDropdownButton.vue?vue&type=script&lang=ts&
 
@@ -54785,8 +58398,8 @@ var CustomizerFieldGroupDropdownButtonvue_type_script_lang_ts_CustomizerFieldGro
         watchRect(buttonEl, this.updateButtonRect);
         watchRect(boundsEl, this.updateBoundsRect);
       } else {
-        unwatchRect(buttonEl, this.updateButtonRect);
-        unwatchRect(boundsEl, this.updateBoundsRect);
+        watch_rect_unwatchRect(buttonEl, this.updateButtonRect);
+        watch_rect_unwatchRect(boundsEl, this.updateBoundsRect);
       }
     }
   }]);
@@ -54830,8 +58443,8 @@ var CustomizerFieldGroupDropdownButtonvue_type_style_index_0_lang_scss_ = __webp
 
 var CustomizerFieldGroupDropdownButton_component = normalizeComponent(
   components_CustomizerFieldGroupDropdownButtonvue_type_script_lang_ts_,
-  CustomizerFieldGroupDropdownButtonvue_type_template_id_f77ed164_render,
-  CustomizerFieldGroupDropdownButtonvue_type_template_id_f77ed164_staticRenderFns,
+  CustomizerFieldGroupDropdownButtonvue_type_template_id_75ae99b2_render,
+  CustomizerFieldGroupDropdownButtonvue_type_template_id_75ae99b2_staticRenderFns,
   false,
   null,
   null,
@@ -54978,121 +58591,70 @@ var Customizer_component = normalizeComponent(
 )
 
 /* harmony default export */ var components_Customizer = (Customizer_component.exports);
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"73fd892e-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/Editor.vue?vue&type=template&id=c7f8b144&
-var Editorvue_type_template_id_c7f8b144_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"lassox-diagram__Editor"},[_c('header',{staticClass:"lassox-diagram__Editor_header"},[_c('div',{staticClass:"lassox-diagram__Editor_header-title-bar"},[_c('div',{staticClass:"lassox-diagram__Editor_header-title-bar-title",domProps:{"textContent":_vm._s(("Rediger " + _vm.label))}}),_c('IconButton',{attrs:{"icon":"close"},on:{"click":function () { return _vm.close(); }}})],1),_c('div',{staticClass:"lassox-diagram__Editor_header-description",domProps:{"textContent":_vm._s('Rediger staminformation, nøgletal og tilføj relationer, så det fremgår som ønsket i diagrammet.')}}),_c('div',{staticClass:"lassox-diagram__Editor_header-actions"},[_c('ButtonGroup',[(_vm.object.isEntity)?_c('Button',{ref:"addDropdownButton",attrs:{"label":"Tilføj","trailingIcon":_vm.showAddDropdownMenu ? 'expand_less' : 'expand_more'},on:{"click":function () { return _vm.showAddDropdownMenu = !_vm.showAddDropdownMenu; }}}):_vm._e(),_c('Button',{attrs:{"label":"Fjern"}}),(_vm.object.isEntity)?_c('Button',{attrs:{"label":"Vis oplysninger"}}):_vm._e()],1),(_vm.object.isEntity)?_c('DropdownMenu',{attrs:{"buttonEl":_vm.showAddDropdownMenu ? _vm.$refs.addDropdownButton.$el : null,"close":function () { return _vm.showAddDropdownMenu = false; }}},[_vm._l((_vm.addMenuItems.new),function(item){return _c('DropdownMenuItem',{key:item.key,attrs:{"label":item.label},on:{"click":item.onClick}})}),_c('DropdownMenuDivider'),_vm._l((_vm.addMenuItems.existing),function(item){return _c('DropdownMenuItem',{key:item.key,attrs:{"label":item.label},on:{"click":item.onClick}})})],2):_vm._e()],1)]),_c('div',{staticClass:"lassox-diagram__Editor_body"},_vm._l((_vm.fieldGroups),function(fieldGroup){return _c('div',{key:fieldGroup.id,staticClass:"lassox-diagram__Editor_body-field-group"},[_c('div',{staticClass:"lassox-diagram__Editor_body-field-group-title",domProps:{"textContent":_vm._s(fieldGroup.title)}}),_c('div',{staticClass:"lassox-diagram__Editor_body-field-group-fields"},_vm._l((fieldGroup.fields),function(field){return _c('div',{key:field.id,staticClass:"lassox-diagram__Editor_body-field-group-field"},[_c('TextField',{attrs:{"label":field.label,"name":field.name,"value":("" + (field.value)),"helperText":field.value != field.originalValue ? ("Ændret fra '" + (field.originalValue) + "'") : ''},on:{"input":function (e) { return field.value = e.target.value; }}})],1)}),0)])}),0),_c('footer',{staticClass:"lassox-diagram__Editor_footer"},[_c('ButtonGroup',{attrs:{"align":"right"}},[_c('Button',{attrs:{"label":"Luk"},on:{"click":function () { return _vm.close(); }}}),_c('Button',{attrs:{"type":"primary","label":"Gem ændringer","disabled":!_vm.hasChanges},on:{"click":function () { return _vm.saveChanges(); }}})],1)],1)])}
-var Editorvue_type_template_id_c7f8b144_staticRenderFns = []
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"1c2f91b6-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/Editor.vue?vue&type=template&id=e71f11fc&
+var Editorvue_type_template_id_e71f11fc_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"lassox-diagram__Editor"},[_c('header',{staticClass:"lassox-diagram__Editor_header"},[_c('div',{staticClass:"lassox-diagram__Editor_header-title-bar"},[_c('div',{staticClass:"lassox-diagram__Editor_header-title-bar-title",domProps:{"textContent":_vm._s(("Rediger " + _vm.label))}}),_c('IconButton',{attrs:{"icon":"close"},on:{"click":function () { return _vm.close(); }}})],1),_c('div',{staticClass:"lassox-diagram__Editor_header-description",domProps:{"textContent":_vm._s('Rediger staminformation, nøgletal og tilføj relationer, så det fremgår som ønsket i diagrammet.')}}),_c('div',{staticClass:"lassox-diagram__Editor_header-actions"},[_c('ButtonGroup',[_c('Button',{attrs:{"label":"Fjern","disabled":_vm.object.isEntity && _vm.object.isMainEntity},on:{"click":_vm.remove}})],1),(_vm.addMenuItems)?_c('DropdownMenu',{attrs:{"buttonEl":_vm.showAddDropdownMenu ? _vm.$refs.addDropdownButton.$el : null,"close":function () { return _vm.showAddDropdownMenu = false; }}},[_vm._l((_vm.addMenuItems),function(items,i){return [(i)?_c('DropdownMenuDivider',{key:("group-" + i + "-divider")}):_vm._e(),_vm._l((items),function(item){return _c('DropdownMenuItem',{key:("group-" + i + "-item-" + (item.key)),attrs:{"label":item.label},on:{"click":item.onClick}})})]})],2):_vm._e()],1)]),_c('div',{staticClass:"lassox-diagram__Editor_body-wrapper"},[_c('div',{staticClass:"lassox-diagram__Editor_body"},_vm._l((_vm.fieldGroups),function(fieldGroup){return _c('div',{key:fieldGroup.id,staticClass:"lassox-diagram__Editor_body-field-group"},[_c('div',{staticClass:"lassox-diagram__Editor_body-field-group-title",domProps:{"textContent":_vm._s(fieldGroup.title)}}),_c('div',{staticClass:"lassox-diagram__Editor_body-field-group-fields"},_vm._l((fieldGroup.fields),function(field){return _c('div',{key:field.id,staticClass:"lassox-diagram__Editor_body-field-group-field"},[_c('FieldContainer',{attrs:{"label":field.title},scopedSlots:_vm._u([(field.value != field.initialValue || (field.value !== undefined && field.styleKey))?{key:"helper-text",fn:function(){return [(field.value != field.initialValue)?[[_vm._v("Ændret")],(field.initialValueLabel)?[_vm._v(" fra '"+_vm._s(field.initialValueLabel)+"'")]:_vm._e()]:_vm._e(),(field.value !== field.resetValue)?[(field.value !== field.initialValue)?[_vm._v(". ")]:_vm._e(),_c('a',{staticClass:"lassox-diagram__Editor_body-field-group-field-reset-button",attrs:{"href":"#"},domProps:{"textContent":_vm._s('Nulstil')},on:{"click":function($event){$event.preventDefault();return (function () { return field.value = field.resetValue; }).apply(null, arguments)}}})]:_vm._e()]},proxy:true}:null],null,true)},[(field.type === 'text')?_c('TextField',{attrs:{"autocomplete":"off","name":field.id,"value":field.value !== undefined ? field.value : ''},on:{"input":function (e) { return field.value = e.target.value; }}}):(field.type === 'number')?_c('TextField',{attrs:{"autocomplete":"off","name":field.id,"type":"number","value":field.value !== undefined ? field.value : ''},on:{"keydown":function (e) {
+                  if (e.key == '.' || e.key == ',') { e.preventDefault() }
+                },"input":function (e) {
+                  var value = e.target.value
+
+                  if (value) {
+                    var reg = /[^0-9]+/
+                    if (reg.test(value)) {
+                      value = value.replace(reg, '')
+                      e.target.value = value
+                    }
+
+                    var number = e.target.valueAsNumber
+                    field.value = isNaN(number) ? undefined : number
+                  } else {
+                    field.value = undefined
+                  }
+                }}}):(field.type === 'radio-buttons')?_c('RadioField',{attrs:{"name":field.id,"options":field.options,"value":field.value},on:{"change":function (value) { return field.value = value; }}}):(field.type === 'color')?_c('ColorField',{attrs:{"name":field.id,"value":field.value},on:{"change":function (value) { return field.value = value; }}}):_vm._e()],1)],1)}),0)])}),0)]),_c('footer',{staticClass:"lassox-diagram__Editor_footer"},[_c('ButtonGroup',{attrs:{"align":"right"}},[_c('Button',{attrs:{"label":"Luk"},on:{"click":function () { return _vm.close(); }}}),_c('Button',{attrs:{"type":"primary","label":"Gem ændringer","disabled":!_vm.hasChanges},on:{"click":function () { return _vm.saveChanges(); }}})],1)],1)])}
+var Editorvue_type_template_id_e71f11fc_staticRenderFns = []
 
 
-// CONCATENATED MODULE: ./src/components/Editor.vue?vue&type=template&id=c7f8b144&
+// CONCATENATED MODULE: ./src/components/Editor.vue?vue&type=template&id=e71f11fc&
 
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"73fd892e-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/IconButton.vue?vue&type=template&id=2fdbaffc&
-var IconButtonvue_type_template_id_2fdbaffc_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"lassox-diagram__IconButton",style:({
-    width: (_vm.finalIconSize + "px"),
-    height: (_vm.finalIconSize + "px"),
-  })},[_c('BaseButton',_vm._g({staticClass:"lassox-diagram__IconButton_button",style:({
-      width: (_vm.finalButtonSize + "px"),
-      height: (_vm.finalButtonSize + "px"),
-    })},_vm.$listeners),[_c('Icon',{staticClass:"lassox-diagram__IconButton_button-icon",style:({
-        fontSize: (_vm.finalIconSize + "px"),
-      }),attrs:{"icon":_vm.icon}})],1)],1)}
-var IconButtonvue_type_template_id_2fdbaffc_staticRenderFns = []
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"1c2f91b6-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/FieldContainer.vue?vue&type=template&id=5fa84d30&
+var FieldContainervue_type_template_id_5fa84d30_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"lassox-diagram__FieldContainer"},[_c('div',{staticClass:"lassox-diagram__FieldContainer_label",domProps:{"textContent":_vm._s(_vm.label)}}),_vm._t("default"),(_vm.helperText || _vm.$slots['helper-text'])?_c('div',{staticClass:"lassox-diagram__FieldContainer_helper-text"},[_vm._t("helper-text",function(){return [_vm._v(_vm._s(_vm.helperText))]})],2):_vm._e()],2)}
+var FieldContainervue_type_template_id_5fa84d30_staticRenderFns = []
 
 
-// CONCATENATED MODULE: ./src/components/IconButton.vue?vue&type=template&id=2fdbaffc&
+// CONCATENATED MODULE: ./src/components/FieldContainer.vue?vue&type=template&id=5fa84d30&
 
-// EXTERNAL MODULE: ./node_modules/core-js/modules/es.number.constructor.js
-var es_number_constructor = __webpack_require__("a9e3");
-
-// CONCATENATED MODULE: ./node_modules/babel-loader/lib!./node_modules/ts-loader??ref--14-1!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/IconButton.vue?vue&type=script&lang=ts&
+// CONCATENATED MODULE: ./node_modules/babel-loader/lib!./node_modules/ts-loader??ref--14-1!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/FieldContainer.vue?vue&type=script&lang=ts&
 
 
 
 
 
 
+var FieldContainervue_type_script_lang_ts_FieldContainer = /*#__PURE__*/function (_Vue) {
+  _inherits(FieldContainer, _Vue);
 
+  var _super = _createSuper(FieldContainer);
 
-
-var sizes = {
-  small: {
-    iconSize: 18,
-    buttonSize: 32
-  },
-  normal: {
-    iconSize: 24,
-    buttonSize: 40
-  }
-};
-
-var IconButtonvue_type_script_lang_ts_IconButton = /*#__PURE__*/function (_Vue) {
-  _inherits(IconButton, _Vue);
-
-  var _super = _createSuper(IconButton);
-
-  function IconButton() {
-    _classCallCheck(this, IconButton);
+  function FieldContainer() {
+    _classCallCheck(this, FieldContainer);
 
     return _super.apply(this, arguments);
   }
 
-  _createClass(IconButton, [{
-    key: "finalSize",
-    get: function get() {
-      return sizes[this.size];
-    }
-  }, {
-    key: "finalIconSize",
-    get: function get() {
-      var _this$iconSize;
-
-      return (_this$iconSize = this.iconSize) !== null && _this$iconSize !== void 0 ? _this$iconSize : this.finalSize.iconSize;
-    }
-  }, {
-    key: "finalButtonSize",
-    get: function get() {
-      var _this$buttonSize;
-
-      return (_this$buttonSize = this.buttonSize) !== null && _this$buttonSize !== void 0 ? _this$buttonSize : this.finalSize.buttonSize;
-    }
-  }]);
-
-  return IconButton;
+  return FieldContainer;
 }(external_commonjs_vue_commonjs2_vue_root_Vue_default.a);
 
-__decorate([Prop({
-  type: String,
-  required: true
-})], IconButtonvue_type_script_lang_ts_IconButton.prototype, "icon", void 0);
+__decorate([Prop(String)], FieldContainervue_type_script_lang_ts_FieldContainer.prototype, "label", void 0);
 
-__decorate([Prop({
-  type: String,
-  default: 'normal',
-  validator: function validator(preset) {
-    return preset in sizes;
-  }
-})], IconButtonvue_type_script_lang_ts_IconButton.prototype, "size", void 0);
+__decorate([Prop(String)], FieldContainervue_type_script_lang_ts_FieldContainer.prototype, "helperText", void 0);
 
-__decorate([Prop({
-  type: Number
-})], IconButtonvue_type_script_lang_ts_IconButton.prototype, "iconSize", void 0);
+FieldContainervue_type_script_lang_ts_FieldContainer = __decorate([vue_class_component_esm({})], FieldContainervue_type_script_lang_ts_FieldContainer);
+/* harmony default export */ var FieldContainervue_type_script_lang_ts_ = (FieldContainervue_type_script_lang_ts_FieldContainer);
+// CONCATENATED MODULE: ./src/components/FieldContainer.vue?vue&type=script&lang=ts&
+ /* harmony default export */ var components_FieldContainervue_type_script_lang_ts_ = (FieldContainervue_type_script_lang_ts_); 
+// EXTERNAL MODULE: ./src/components/FieldContainer.vue?vue&type=style&index=0&lang=scss&
+var FieldContainervue_type_style_index_0_lang_scss_ = __webpack_require__("1319");
 
-__decorate([Prop({
-  type: Number
-})], IconButtonvue_type_script_lang_ts_IconButton.prototype, "buttonSize", void 0);
-
-IconButtonvue_type_script_lang_ts_IconButton = __decorate([vue_class_component_esm({
-  components: {
-    BaseButton: components_BaseButton,
-    Icon: components_Icon
-  }
-})], IconButtonvue_type_script_lang_ts_IconButton);
-/* harmony default export */ var IconButtonvue_type_script_lang_ts_ = (IconButtonvue_type_script_lang_ts_IconButton);
-// CONCATENATED MODULE: ./src/components/IconButton.vue?vue&type=script&lang=ts&
- /* harmony default export */ var components_IconButtonvue_type_script_lang_ts_ = (IconButtonvue_type_script_lang_ts_); 
-// EXTERNAL MODULE: ./src/components/IconButton.vue?vue&type=style&index=0&lang=scss&
-var IconButtonvue_type_style_index_0_lang_scss_ = __webpack_require__("e4aa");
-
-// CONCATENATED MODULE: ./src/components/IconButton.vue
+// CONCATENATED MODULE: ./src/components/FieldContainer.vue
 
 
 
@@ -55101,10 +58663,10 @@ var IconButtonvue_type_style_index_0_lang_scss_ = __webpack_require__("e4aa");
 
 /* normalize component */
 
-var IconButton_component = normalizeComponent(
-  components_IconButtonvue_type_script_lang_ts_,
-  IconButtonvue_type_template_id_2fdbaffc_render,
-  IconButtonvue_type_template_id_2fdbaffc_staticRenderFns,
+var FieldContainer_component = normalizeComponent(
+  components_FieldContainervue_type_script_lang_ts_,
+  FieldContainervue_type_template_id_5fa84d30_render,
+  FieldContainervue_type_template_id_5fa84d30_staticRenderFns,
   false,
   null,
   null,
@@ -55112,15 +58674,27 @@ var IconButton_component = normalizeComponent(
   
 )
 
-/* harmony default export */ var components_IconButton = (IconButton_component.exports);
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"73fd892e-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/TextField.vue?vue&type=template&id=2cd04c33&
-var TextFieldvue_type_template_id_2cd04c33_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{class:[
+/* harmony default export */ var components_FieldContainer = (FieldContainer_component.exports);
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"1c2f91b6-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/TextField.vue?vue&type=template&id=4aa4f6fc&
+var TextFieldvue_type_template_id_4aa4f6fc_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{class:[
     'lassox-diagram__TextField',
-    _vm.focused && 'lassox-diagram__TextField--is-focused' ]},[_c('div',{staticClass:"lassox-diagram__TextField_label",domProps:{"textContent":_vm._s(_vm.label)}}),_c('div',{staticClass:"lassox-diagram__TextField_container"},[_c('div',{staticClass:"lassox-diagram__TextField_container-outline"}),_c('input',_vm._g({ref:"inputEl",staticClass:"lassox-diagram__TextField_container-input",attrs:{"name":_vm.name,"type":_vm.type,"autocomplete":_vm.autocomplete},domProps:{"value":_vm.value},on:{"focus":function($event){_vm.focused = true},"blur":function($event){_vm.focused = false}}},_vm.$listeners))]),(_vm.helperText)?_c('div',{staticClass:"lassox-diagram__TextField_helper-text",domProps:{"textContent":_vm._s(_vm.helperText)}}):_vm._e()])}
-var TextFieldvue_type_template_id_2cd04c33_staticRenderFns = []
+    _vm.focused && 'lassox-diagram__TextField--is-focused' ]},[_c('div',{staticClass:"lassox-diagram__TextField-outline"}),_c('input',_vm._g({ref:"inputEl",staticClass:"lassox-diagram__TextField-input",attrs:{"name":_vm.name,"type":_vm.type,"autocomplete":_vm.autocomplete},domProps:{"value":_vm.value}},Object.assign({}, _vm.$listeners,
+      {focus: [
+        function (e) {
+          _vm.focused = true
+          if (_vm.$listeners.focus) { _vm.$listeners.focus(e) }
+        }
+      ],
+      blur: [
+        function (e) {
+          _vm.focused = false
+          if (_vm.$listeners.blur) { _vm.$listeners.blur(e) }
+        }
+      ]})))])}
+var TextFieldvue_type_template_id_4aa4f6fc_staticRenderFns = []
 
 
-// CONCATENATED MODULE: ./src/components/TextField.vue?vue&type=template&id=2cd04c33&
+// CONCATENATED MODULE: ./src/components/TextField.vue?vue&type=template&id=4aa4f6fc&
 
 // CONCATENATED MODULE: ./node_modules/babel-loader/lib!./node_modules/ts-loader??ref--14-1!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/TextField.vue?vue&type=script&lang=ts&
 
@@ -55159,8 +58733,6 @@ var TextFieldvue_type_script_lang_ts_TextField = /*#__PURE__*/function (_Vue) {
 
 __decorate([Prop(Boolean)], TextFieldvue_type_script_lang_ts_TextField.prototype, "autofocus", void 0);
 
-__decorate([Prop(String)], TextFieldvue_type_script_lang_ts_TextField.prototype, "label", void 0);
-
 __decorate([Prop(String)], TextFieldvue_type_script_lang_ts_TextField.prototype, "name", void 0);
 
 __decorate([Prop({
@@ -55170,12 +58742,7 @@ __decorate([Prop({
 
 __decorate([Prop(String)], TextFieldvue_type_script_lang_ts_TextField.prototype, "autocomplete", void 0);
 
-__decorate([Prop(String)], TextFieldvue_type_script_lang_ts_TextField.prototype, "helperText", void 0);
-
-__decorate([Model('input', {
-  type: String,
-  default: ''
-})], TextFieldvue_type_script_lang_ts_TextField.prototype, "value", void 0);
+__decorate([Model('input')], TextFieldvue_type_script_lang_ts_TextField.prototype, "value", void 0);
 
 __decorate([Ref()], TextFieldvue_type_script_lang_ts_TextField.prototype, "inputEl", void 0);
 
@@ -55202,8 +58769,8 @@ var TextFieldvue_type_style_index_0_lang_scss_ = __webpack_require__("2b23");
 
 var TextField_component = normalizeComponent(
   components_TextFieldvue_type_script_lang_ts_,
-  TextFieldvue_type_template_id_2cd04c33_render,
-  TextFieldvue_type_template_id_2cd04c33_staticRenderFns,
+  TextFieldvue_type_template_id_4aa4f6fc_render,
+  TextFieldvue_type_template_id_4aa4f6fc_staticRenderFns,
   false,
   null,
   null,
@@ -55212,6 +58779,763 @@ var TextField_component = normalizeComponent(
 )
 
 /* harmony default export */ var components_TextField = (TextField_component.exports);
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"1c2f91b6-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/RadioField.vue?vue&type=template&id=438b0aa1&
+var RadioFieldvue_type_template_id_438b0aa1_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"lassox-diagram__RadioField"},_vm._l((_vm.finalOptions),function(option,i){return _c('label',{key:i,class:[
+      'lassox-diagram__RadioField-option',
+      option.focused && 'lassox-diagram__RadioField-option--focused',
+      option.value === _vm.value && 'lassox-diagram__RadioField-option--checked' ]},[_c('input',{staticClass:"lassox-diagram__RadioField-option-input",attrs:{"type":"radio","name":_vm.name},domProps:{"value":option.value,"checked":option.value === _vm.value},on:{"focus":function($event){option.focused = true},"blur":function($event){option.focused = false},"change":function () { return _vm.$emit('change', option.value); }}}),_c('div',{staticClass:"lassox-diagram__RadioField-option-icon-wrapper"},[_c('Icon',{staticClass:"lassox-diagram__RadioField-option-icon",attrs:{"icon":"radio_button_unchecked"}}),_c('Icon',{staticClass:"lassox-diagram__RadioField-option-icon lassox-diagram__RadioField-option-icon--checked",attrs:{"icon":"radio_button_checked"}})],1),_c('div',{staticClass:"lassox-diagram__RadioField-option-label"},[_vm._v(_vm._s(option.label))])])}),0)}
+var RadioFieldvue_type_template_id_438b0aa1_staticRenderFns = []
+
+
+// CONCATENATED MODULE: ./src/components/RadioField.vue?vue&type=template&id=438b0aa1&
+
+// CONCATENATED MODULE: ./node_modules/babel-loader/lib!./node_modules/ts-loader??ref--14-1!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/RadioField.vue?vue&type=script&lang=ts&
+
+
+
+
+
+
+
+
+
+var RadioFieldvue_type_script_lang_ts_RadioField = /*#__PURE__*/function (_Vue) {
+  _inherits(RadioField, _Vue);
+
+  var _super = _createSuper(RadioField);
+
+  function RadioField() {
+    var _this;
+
+    _classCallCheck(this, RadioField);
+
+    _this = _super.apply(this, arguments);
+    _this.finalOptions = [];
+    return _this;
+  }
+
+  _createClass(RadioField, [{
+    key: "onOptionsChanged",
+    value: function onOptionsChanged() {
+      this.finalOptions = this.options.map(function (o) {
+        return {
+          label: o.label,
+
+          get value() {
+            return o.value;
+          },
+
+          set value(value) {
+            o.value = value;
+          },
+
+          focused: false
+        };
+      });
+    }
+  }]);
+
+  return RadioField;
+}(external_commonjs_vue_commonjs2_vue_root_Vue_default.a);
+
+__decorate([Prop(String)], RadioFieldvue_type_script_lang_ts_RadioField.prototype, "name", void 0);
+
+__decorate([Prop({
+  type: Array,
+  required: true
+})], RadioFieldvue_type_script_lang_ts_RadioField.prototype, "options", void 0);
+
+__decorate([Model('change')], RadioFieldvue_type_script_lang_ts_RadioField.prototype, "value", void 0);
+
+__decorate([Watch('options', {
+  immediate: true
+})], RadioFieldvue_type_script_lang_ts_RadioField.prototype, "onOptionsChanged", null);
+
+RadioFieldvue_type_script_lang_ts_RadioField = __decorate([vue_class_component_esm({
+  components: {
+    Icon: components_Icon
+  }
+})], RadioFieldvue_type_script_lang_ts_RadioField);
+/* harmony default export */ var RadioFieldvue_type_script_lang_ts_ = (RadioFieldvue_type_script_lang_ts_RadioField);
+// CONCATENATED MODULE: ./src/components/RadioField.vue?vue&type=script&lang=ts&
+ /* harmony default export */ var components_RadioFieldvue_type_script_lang_ts_ = (RadioFieldvue_type_script_lang_ts_); 
+// EXTERNAL MODULE: ./src/components/RadioField.vue?vue&type=style&index=0&lang=scss&
+var RadioFieldvue_type_style_index_0_lang_scss_ = __webpack_require__("6bbf");
+
+// CONCATENATED MODULE: ./src/components/RadioField.vue
+
+
+
+
+
+
+/* normalize component */
+
+var RadioField_component = normalizeComponent(
+  components_RadioFieldvue_type_script_lang_ts_,
+  RadioFieldvue_type_template_id_438b0aa1_render,
+  RadioFieldvue_type_template_id_438b0aa1_staticRenderFns,
+  false,
+  null,
+  null,
+  null
+  
+)
+
+/* harmony default export */ var components_RadioField = (RadioField_component.exports);
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"1c2f91b6-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/ColorField.vue?vue&type=template&id=8f20354c&
+var ColorFieldvue_type_template_id_8f20354c_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"lassox-diagram__ColorField"},[_c('DropdownButton',{staticClass:"lassox-diagram__ColorField-dropdown-button",scopedSlots:_vm._u([{key:"default",fn:function(ref){
+var onClick = ref.onClick;
+return [_c('BaseButton',{staticClass:"lassox-diagram__ColorField-button",on:{"click":onClick}},[_c('div',{staticClass:"lassox-diagram__ColorField-button-color",style:({ backgroundColor: _vm.color.rgbaString })}),_c('div',{staticClass:"lassox-diagram__ColorField-button-hex"},[_vm._v(_vm._s(_vm.color.hexString))])])]}},{key:"dropdown-menu",fn:function(ref){
+var close = ref.close;
+return [_c('ColorPicker',{attrs:{"color":_vm.color},on:{"change":_vm.onColorChanged,"close":close}})]}}])})],1)}
+var ColorFieldvue_type_template_id_8f20354c_staticRenderFns = []
+
+
+// CONCATENATED MODULE: ./src/components/ColorField.vue?vue&type=template&id=8f20354c&
+
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"1c2f91b6-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/DropdownButton.vue?vue&type=template&id=2947e75a&
+var DropdownButtonvue_type_template_id_2947e75a_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"lassox-diagram__DropdownButton"},[_vm._t("default",null,null,{ isOpen: _vm.isOpen, onClick: _vm.onClick, close: _vm.close }),_c('DropdownMenu',{attrs:{"buttonEl":_vm.buttonEl,"close":_vm.close}},[_vm._t("dropdown-menu",null,null,{ isOpen: _vm.isOpen, onClick: _vm.onClick, close: _vm.close })],2)],2)}
+var DropdownButtonvue_type_template_id_2947e75a_staticRenderFns = []
+
+
+// CONCATENATED MODULE: ./src/components/DropdownButton.vue?vue&type=template&id=2947e75a&
+
+// CONCATENATED MODULE: ./node_modules/babel-loader/lib!./node_modules/ts-loader??ref--14-1!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/DropdownButton.vue?vue&type=script&lang=ts&
+
+
+
+
+
+
+
+
+
+var DropdownButtonvue_type_script_lang_ts_DropdownButton = /*#__PURE__*/function (_Vue) {
+  _inherits(DropdownButton, _Vue);
+
+  var _super = _createSuper(DropdownButton);
+
+  function DropdownButton() {
+    var _this;
+
+    _classCallCheck(this, DropdownButton);
+
+    _this = _super.apply(this, arguments);
+    _this.buttonEl = null;
+    return _this;
+  }
+
+  _createClass(DropdownButton, [{
+    key: "isOpen",
+    get: function get() {
+      return !!this.buttonEl;
+    }
+  }, {
+    key: "onClick",
+    value: function onClick(event) {
+      var buttonEl = event.currentTarget instanceof HTMLElement ? event.currentTarget : null;
+
+      if (this.buttonEl == buttonEl) {
+        this.buttonEl = null;
+        return;
+      }
+
+      this.buttonEl = buttonEl;
+    }
+  }, {
+    key: "close",
+    value: function close() {
+      this.buttonEl = null;
+    }
+  }]);
+
+  return DropdownButton;
+}(external_commonjs_vue_commonjs2_vue_root_Vue_default.a);
+
+DropdownButtonvue_type_script_lang_ts_DropdownButton = __decorate([vue_class_component_esm({
+  components: {
+    Button: components_Button,
+    DropdownMenu: components_DropdownMenu
+  }
+})], DropdownButtonvue_type_script_lang_ts_DropdownButton);
+/* harmony default export */ var DropdownButtonvue_type_script_lang_ts_ = (DropdownButtonvue_type_script_lang_ts_DropdownButton);
+// CONCATENATED MODULE: ./src/components/DropdownButton.vue?vue&type=script&lang=ts&
+ /* harmony default export */ var components_DropdownButtonvue_type_script_lang_ts_ = (DropdownButtonvue_type_script_lang_ts_); 
+// EXTERNAL MODULE: ./src/components/DropdownButton.vue?vue&type=style&index=0&lang=scss&
+var DropdownButtonvue_type_style_index_0_lang_scss_ = __webpack_require__("dda3");
+
+// CONCATENATED MODULE: ./src/components/DropdownButton.vue
+
+
+
+
+
+
+/* normalize component */
+
+var DropdownButton_component = normalizeComponent(
+  components_DropdownButtonvue_type_script_lang_ts_,
+  DropdownButtonvue_type_template_id_2947e75a_render,
+  DropdownButtonvue_type_template_id_2947e75a_staticRenderFns,
+  false,
+  null,
+  null,
+  null
+  
+)
+
+/* harmony default export */ var components_DropdownButton = (DropdownButton_component.exports);
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"1c2f91b6-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/ColorPicker.vue?vue&type=template&id=b77e58b8&
+var ColorPickervue_type_template_id_b77e58b8_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"lassox-diagram__ColorPicker"},[_c('div',{ref:"iroEl",staticClass:"lassox-diagram__ColorPicker-iro"}),_c('div',{staticClass:"lassox-diagram__ColorPicker-input"},[_c('BaseButton',{staticClass:"lassox-diagram__ColorPicker-input-type-button",attrs:{"label":_vm.inputType},on:{"click":_vm.switchInputType}}),_c('div',{staticClass:"lassox-diagram__ColorPicker-input-fields"},_vm._l((_vm.inputFields),function(field){return _c('div',{key:field.name,staticClass:"lassox-diagram__ColorPicker-input-field"},[_c('TextField',{staticClass:"lassox-diagram__ColorPicker-input-field-input",attrs:{"name":field.name,"type":"text","autocomplete":"off","value":field.value},on:{"focus":function($event){_vm.inputFocused = true},"blur":function($event){_vm.inputFocused = false},"input":function (event) {
+            var ref = event.target;
+            var value = ref.value;
+            field.value = value
+            if (field.setter) { field.setter(value) }
+          }}})],1)}),0),_c('BaseButton',{staticClass:"lassox-diagram__ColorPicker-input-close-button",attrs:{"label":"luk"},on:{"click":function () { return _vm.$emit('close'); }}})],1)])}
+var ColorPickervue_type_template_id_b77e58b8_staticRenderFns = []
+
+
+// CONCATENATED MODULE: ./src/components/ColorPicker.vue?vue&type=template&id=b77e58b8&
+
+// EXTERNAL MODULE: ./node_modules/core-js/modules/es.object.assign.js
+var es_object_assign = __webpack_require__("cca6");
+
+// CONCATENATED MODULE: ./node_modules/babel-loader/lib!./node_modules/ts-loader??ref--14-1!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/ColorPicker.vue?vue&type=script&lang=ts&
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var ColorPickervue_type_script_lang_ts_ColorPicker = /*#__PURE__*/function (_Vue) {
+  _inherits(ColorPicker, _Vue);
+
+  var _super = _createSuper(ColorPicker);
+
+  function ColorPicker() {
+    var _this;
+
+    _classCallCheck(this, ColorPicker);
+
+    _this = _super.apply(this, arguments);
+    _this.inputFocused = false;
+    _this.inputTypes = ['hex', 'rgb', 'hsl'];
+    _this.inputFields = [];
+    return _this;
+  }
+
+  _createClass(ColorPicker, [{
+    key: "inputType",
+    get: function get() {
+      return this.inputTypes[0];
+    }
+  }, {
+    key: "mounted",
+    value: function mounted() {
+      var _this2 = this;
+
+      var width = 0;
+
+      var _watchRect = watchRect(this.iroEl, function (rect) {
+        width = rect.width;
+        if (colorPicker) colorPicker.resize(width);
+      }),
+          unwatchRect = _watchRect.unwatch;
+
+      var colorPicker = iro_es.ColorPicker(this.iroEl, {
+        width: width,
+        color: this.color,
+        padding: 0,
+        margin: 8,
+        handleRadius: 7,
+        sliderSize: 12,
+        layout: [{
+          component: iro_es.ui.Box,
+          options: {
+            boxHeight: 100
+          }
+        }, {
+          component: iro_es.ui.Slider,
+          options: {
+            sliderType: 'hue'
+          }
+        }]
+      });
+      this.$watch(function () {
+        return _this2.color;
+      }, function () {
+        if (colorPicker.color.hslaString !== _this2.color.hslaString) colorPicker.color.set(_this2.color);
+        if (!_this2.inputFocused) _this2.updateInputFields();
+      });
+      colorPicker.on('color:change', function (color) {
+        _this2.$emit('change', color);
+      });
+      this.$watch(function () {
+        return _this2.inputFocused;
+      }, function () {
+        if (!_this2.inputFocused) window.requestAnimationFrame(function () {
+          if (!_this2.inputFocused) {
+            _this2.updateInputFields();
+          }
+        });
+      });
+      this.updateInputFields();
+
+      this.destroy = function () {
+        unwatchRect();
+        if (colorPicker.base) _this2.iroEl.removeChild(colorPicker.base);
+        Object.assign(colorPicker, {
+          el: null
+        });
+      };
+    }
+  }, {
+    key: "beforeDestroy",
+    value: function beforeDestroy() {
+      var _this$destroy;
+
+      (_this$destroy = this.destroy) === null || _this$destroy === void 0 ? void 0 : _this$destroy.call(this);
+    }
+  }, {
+    key: "switchInputType",
+    value: function switchInputType() {
+      this.inputTypes = [].concat(toConsumableArray_toConsumableArray(this.inputTypes.slice(1)), [this.inputType]);
+      this.updateInputFields();
+    }
+  }, {
+    key: "updateInputFields",
+    value: function updateInputFields() {
+      var _this3 = this;
+
+      var fields = [];
+
+      var parseNumber = function parseNumber(value) {
+        var int = parseInt(value);
+        if (isNaN(int)) return 0;
+        return int;
+      };
+
+      switch (this.inputType) {
+        case 'hex':
+          {
+            fields.push({
+              name: 'hex',
+              value: this.color.hexString.slice(1),
+              setter: function setter(value) {
+                return new iro_es.Color(value);
+              },
+              on: {}
+            });
+            break;
+          }
+
+        case 'rgb':
+          {
+            fields.push({
+              name: 'r',
+              value: this.color.rgb.r,
+              setter: function setter(value) {
+                var color = _this3.color.clone();
+
+                color.setChannel('rgb', 'r', parseNumber(value));
+                return color;
+              },
+              on: {}
+            }, {
+              name: 'g',
+              value: this.color.rgb.g,
+              setter: function setter(value) {
+                var color = _this3.color.clone();
+
+                color.setChannel('rgb', 'g', parseNumber(value));
+                return color;
+              },
+              on: {}
+            }, {
+              name: 'b',
+              value: this.color.rgb.b,
+              setter: function setter(value) {
+                var color = _this3.color.clone();
+
+                color.setChannel('rgb', 'b', parseNumber(value));
+                return color;
+              },
+              on: {}
+            });
+            break;
+          }
+
+        case 'hsl':
+          {
+            fields.push({
+              name: 'h',
+              value: this.color.hsl.h,
+              setter: function setter(value) {
+                var color = _this3.color.clone();
+
+                color.setChannel('hsl', 'h', parseNumber(value));
+                return color;
+              },
+              on: {}
+            }, {
+              name: 's',
+              value: this.color.hsl.s,
+              setter: function setter(value) {
+                var color = _this3.color.clone();
+
+                color.setChannel('hsl', 's', parseNumber(value));
+                return color;
+              },
+              on: {}
+            }, {
+              name: 'l',
+              value: this.color.hsl.l,
+              setter: function setter(value) {
+                var color = _this3.color.clone();
+
+                color.setChannel('hsl', 'l', parseNumber(value));
+                return color;
+              },
+              on: {}
+            });
+            break;
+          }
+      }
+
+      for (var _i = 0, _fields = fields; _i < _fields.length; _i++) {
+        var field = _fields[_i];
+
+        if (field.setter) {
+          (function () {
+            var setter = field.setter;
+
+            field.setter = function (value) {
+              try {
+                var color = setter(value);
+
+                _this3.$emit('change', color);
+
+                return color;
+              } catch (_unused) {
+                return _this3.color;
+              }
+            };
+          })();
+        }
+      }
+
+      this.inputFields = fields;
+    }
+  }]);
+
+  return ColorPicker;
+}(external_commonjs_vue_commonjs2_vue_root_Vue_default.a);
+
+__decorate([Model('change', {
+  type: iro_es.Color,
+  required: true
+})], ColorPickervue_type_script_lang_ts_ColorPicker.prototype, "color", void 0);
+
+__decorate([Ref()], ColorPickervue_type_script_lang_ts_ColorPicker.prototype, "iroEl", void 0);
+
+ColorPickervue_type_script_lang_ts_ColorPicker = __decorate([vue_class_component_esm({
+  components: {
+    BaseButton: components_BaseButton,
+    TextField: components_TextField
+  }
+})], ColorPickervue_type_script_lang_ts_ColorPicker);
+/* harmony default export */ var ColorPickervue_type_script_lang_ts_ = (ColorPickervue_type_script_lang_ts_ColorPicker);
+// CONCATENATED MODULE: ./src/components/ColorPicker.vue?vue&type=script&lang=ts&
+ /* harmony default export */ var components_ColorPickervue_type_script_lang_ts_ = (ColorPickervue_type_script_lang_ts_); 
+// EXTERNAL MODULE: ./src/components/ColorPicker.vue?vue&type=style&index=0&lang=scss&
+var ColorPickervue_type_style_index_0_lang_scss_ = __webpack_require__("3585");
+
+// CONCATENATED MODULE: ./src/components/ColorPicker.vue
+
+
+
+
+
+
+/* normalize component */
+
+var ColorPicker_component = normalizeComponent(
+  components_ColorPickervue_type_script_lang_ts_,
+  ColorPickervue_type_template_id_b77e58b8_render,
+  ColorPickervue_type_template_id_b77e58b8_staticRenderFns,
+  false,
+  null,
+  null,
+  null
+  
+)
+
+/* harmony default export */ var components_ColorPicker = (ColorPicker_component.exports);
+// CONCATENATED MODULE: ./node_modules/babel-loader/lib!./node_modules/ts-loader??ref--14-1!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/ColorField.vue?vue&type=script&lang=ts&
+
+
+
+
+
+
+
+
+
+
+
+var ColorFieldvue_type_script_lang_ts_ColorField = /*#__PURE__*/function (_Vue) {
+  _inherits(ColorField, _Vue);
+
+  var _super = _createSuper(ColorField);
+
+  function ColorField() {
+    var _this;
+
+    _classCallCheck(this, ColorField);
+
+    _this = _super.apply(this, arguments);
+    _this.inputText = '';
+    return _this;
+  }
+
+  _createClass(ColorField, [{
+    key: "color",
+    get: function get() {
+      return new iro_es.Color(this.value);
+    }
+  }, {
+    key: "onColorChanged",
+    value: function onColorChanged(color) {
+      this.$emit('change', color.hexString);
+    }
+  }]);
+
+  return ColorField;
+}(external_commonjs_vue_commonjs2_vue_root_Vue_default.a);
+
+__decorate([Prop(String)], ColorFieldvue_type_script_lang_ts_ColorField.prototype, "name", void 0);
+
+__decorate([Model('change')], ColorFieldvue_type_script_lang_ts_ColorField.prototype, "value", void 0);
+
+ColorFieldvue_type_script_lang_ts_ColorField = __decorate([vue_class_component_esm({
+  components: {
+    DropdownButton: components_DropdownButton,
+    BaseButton: components_BaseButton,
+    ColorPicker: components_ColorPicker
+  }
+})], ColorFieldvue_type_script_lang_ts_ColorField);
+/* harmony default export */ var ColorFieldvue_type_script_lang_ts_ = (ColorFieldvue_type_script_lang_ts_ColorField);
+// CONCATENATED MODULE: ./src/components/ColorField.vue?vue&type=script&lang=ts&
+ /* harmony default export */ var components_ColorFieldvue_type_script_lang_ts_ = (ColorFieldvue_type_script_lang_ts_); 
+// EXTERNAL MODULE: ./src/components/ColorField.vue?vue&type=style&index=0&lang=scss&
+var ColorFieldvue_type_style_index_0_lang_scss_ = __webpack_require__("18da");
+
+// CONCATENATED MODULE: ./src/components/ColorField.vue
+
+
+
+
+
+
+/* normalize component */
+
+var ColorField_component = normalizeComponent(
+  components_ColorFieldvue_type_script_lang_ts_,
+  ColorFieldvue_type_template_id_8f20354c_render,
+  ColorFieldvue_type_template_id_8f20354c_staticRenderFns,
+  false,
+  null,
+  null,
+  null
+  
+)
+
+/* harmony default export */ var components_ColorField = (ColorField_component.exports);
+// EXTERNAL MODULE: ./node_modules/lodash.set/index.js
+var lodash_set = __webpack_require__("f4c4");
+var lodash_set_default = /*#__PURE__*/__webpack_require__.n(lodash_set);
+
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"1c2f91b6-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/ConfirmAdditionDialog.vue?vue&type=template&id=1859d47c&
+var ConfirmAdditionDialogvue_type_template_id_1859d47c_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('Dialog',{staticClass:"lassox-diagram__ConfirmAdditionDialog",attrs:{"dismissable":true,"title":"Bekræft ændringer","content":_vm.content,"onClose":_vm.dismiss},scopedSlots:_vm._u([{key:"actions",fn:function(){return [_c('ButtonGroup',{attrs:{"align":"right"}},[_c('Button',{attrs:{"label":"Fortryd"},on:{"click":_vm.dismiss}}),_c('Button',{attrs:{"label":"Tilføj","type":"primary"},on:{"click":_vm.confirm}})],1)]},proxy:true}])})}
+var ConfirmAdditionDialogvue_type_template_id_1859d47c_staticRenderFns = []
+
+
+// CONCATENATED MODULE: ./src/components/ConfirmAdditionDialog.vue?vue&type=template&id=1859d47c&
+
+// CONCATENATED MODULE: ./node_modules/babel-loader/lib!./node_modules/ts-loader??ref--14-1!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/ConfirmAdditionDialog.vue?vue&type=script&lang=ts&
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var ConfirmAdditionDialogvue_type_script_lang_ts_ConfirmAdditionDialog = /*#__PURE__*/function (_Vue) {
+  _inherits(ConfirmAdditionDialog, _Vue);
+
+  var _super = _createSuper(ConfirmAdditionDialog);
+
+  function ConfirmAdditionDialog() {
+    _classCallCheck(this, ConfirmAdditionDialog);
+
+    return _super.apply(this, arguments);
+  }
+
+  _createClass(ConfirmAdditionDialog, [{
+    key: "diagram",
+    get: function get() {
+      return this.diagramVm.diagram;
+    }
+  }, {
+    key: "activeDiagram",
+    get: function get() {
+      return this.diagram.activeDiagram;
+    }
+  }, {
+    key: "content",
+    get: function get() {
+      var _this$data$entities$l, _this$data$entities, _this$data$relations;
+
+      var typeCounts = new Map();
+
+      var _iterator = _createForOfIteratorHelper((_this$data$relations = this.data.relations) !== null && _this$data$relations !== void 0 ? _this$data$relations : []),
+          _step;
+
+      try {
+        for (_iterator.s(); !(_step = _iterator.n()).done;) {
+          var _typeCounts$get;
+
+          var relation = _step.value;
+          var _type = relation.type;
+          typeCounts.set(_type, ((_typeCounts$get = typeCounts.get(_type)) !== null && _typeCounts$get !== void 0 ? _typeCounts$get : 0) + 1);
+        }
+      } catch (err) {
+        _iterator.e(err);
+      } finally {
+        _iterator.f();
+      }
+
+      if (typeCounts.size) {
+        var typeCountsString = '';
+        var i = 0;
+
+        var _iterator2 = _createForOfIteratorHelper(typeCounts),
+            _step2;
+
+        try {
+          for (_iterator2.s(); !(_step2 = _iterator2.n()).done;) {
+            var _step2$value = _slicedToArray(_step2.value, 2),
+                typeId = _step2$value[0],
+                count = _step2$value[1];
+
+            i++;
+            var type = this.diagram.relationTypes.get(typeId);
+
+            if (typeCountsString) {
+              typeCountsString += i == typeCounts.size ? ' og ' : ', ';
+            }
+
+            typeCountsString += "".concat(count, " ").concat(type.labels[count == 1 ? 'singular' : 'plural'].toLowerCase());
+          }
+        } catch (err) {
+          _iterator2.e(err);
+        } finally {
+          _iterator2.f();
+        }
+
+        return "Der vil blive tilf\xF8jet ".concat(typeCountsString, " til diagrammet. Vil du forst\xE6tte?");
+      }
+
+      return "Der vil blive tilf\xF8jet ".concat((_this$data$entities$l = (_this$data$entities = this.data.entities) === null || _this$data$entities === void 0 ? void 0 : _this$data$entities.length) !== null && _this$data$entities$l !== void 0 ? _this$data$entities$l : 0, " entiteter til diagrammet. Vil du forts\xE6tte?");
+    }
+  }, {
+    key: "close",
+    value: function close() {
+      this.$emit('close');
+    }
+  }, {
+    key: "confirm",
+    value: function confirm() {
+      var _this$onConfirm;
+
+      this.close();
+      (_this$onConfirm = this.onConfirm) === null || _this$onConfirm === void 0 ? void 0 : _this$onConfirm.call(this);
+    }
+  }, {
+    key: "dismiss",
+    value: function dismiss() {
+      var _this$onDismiss;
+
+      this.close();
+      (_this$onDismiss = this.onDismiss) === null || _this$onDismiss === void 0 ? void 0 : _this$onDismiss.call(this);
+    }
+  }]);
+
+  return ConfirmAdditionDialog;
+}(external_commonjs_vue_commonjs2_vue_root_Vue_default.a);
+
+__decorate([Inject()], ConfirmAdditionDialogvue_type_script_lang_ts_ConfirmAdditionDialog.prototype, "diagramVm", void 0);
+
+__decorate([Prop({
+  type: Object,
+  required: true
+})], ConfirmAdditionDialogvue_type_script_lang_ts_ConfirmAdditionDialog.prototype, "data", void 0);
+
+__decorate([Prop(Function)], ConfirmAdditionDialogvue_type_script_lang_ts_ConfirmAdditionDialog.prototype, "onConfirm", void 0);
+
+__decorate([Prop(Function)], ConfirmAdditionDialogvue_type_script_lang_ts_ConfirmAdditionDialog.prototype, "onDismiss", void 0);
+
+ConfirmAdditionDialogvue_type_script_lang_ts_ConfirmAdditionDialog = __decorate([vue_class_component_esm({
+  components: {
+    Dialog: components_Dialog,
+    ButtonGroup: components_ButtonGroup,
+    Button: components_Button
+  }
+})], ConfirmAdditionDialogvue_type_script_lang_ts_ConfirmAdditionDialog);
+/* harmony default export */ var ConfirmAdditionDialogvue_type_script_lang_ts_ = (ConfirmAdditionDialogvue_type_script_lang_ts_ConfirmAdditionDialog);
+// CONCATENATED MODULE: ./src/components/ConfirmAdditionDialog.vue?vue&type=script&lang=ts&
+ /* harmony default export */ var components_ConfirmAdditionDialogvue_type_script_lang_ts_ = (ConfirmAdditionDialogvue_type_script_lang_ts_); 
+// CONCATENATED MODULE: ./src/components/ConfirmAdditionDialog.vue
+
+
+
+
+
+/* normalize component */
+
+var ConfirmAdditionDialog_component = normalizeComponent(
+  components_ConfirmAdditionDialogvue_type_script_lang_ts_,
+  ConfirmAdditionDialogvue_type_template_id_1859d47c_render,
+  ConfirmAdditionDialogvue_type_template_id_1859d47c_staticRenderFns,
+  false,
+  null,
+  null,
+  null
+  
+)
+
+/* harmony default export */ var components_ConfirmAdditionDialog = (ConfirmAdditionDialog_component.exports);
 // CONCATENATED MODULE: ./node_modules/babel-loader/lib!./node_modules/ts-loader??ref--14-1!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/Editor.vue?vue&type=script&lang=ts&
 
 
@@ -55233,6 +59557,25 @@ var TextField_component = normalizeComponent(
 
 
 
+
+
+
+
+
+var filterOutExistingData = function filterOutExistingData(diagram, data) {
+  var _data$entities, _data$relations;
+
+  var activeData = diagram.activeDiagram.data;
+  return {
+    entities: (_data$entities = data.entities) === null || _data$entities === void 0 ? void 0 : _data$entities.filter(function (e) {
+      return !activeData.entitiesMap.has(e.id);
+    }),
+    relations: (_data$relations = data.relations) === null || _data$relations === void 0 ? void 0 : _data$relations.filter(function (r) {
+      return !activeData.relationsMap.has(r.id);
+    })
+  };
+};
+
 var Editorvue_type_script_lang_ts_Editor = /*#__PURE__*/function (_Vue) {
   _inherits(Editor, _Vue);
 
@@ -55252,9 +59595,9 @@ var Editorvue_type_script_lang_ts_Editor = /*#__PURE__*/function (_Vue) {
   _createClass(Editor, [{
     key: "label",
     get: function get() {
-      var _this$object$type$lab, _this$object$type$lab2, _this$object$type$lab3, _this$object$type$lab4, _this$object$type$lab5;
+      var _this$object$type$lab, _this$object$type$lab2, _this$object$type$lab3;
 
-      return this.object.isEntity ? (_this$object$type$lab = (_this$object$type$lab2 = this.object.type.labels).editorLabel) === null || _this$object$type$lab === void 0 ? void 0 : _this$object$type$lab.call(_this$object$type$lab2, this.object) : (_this$object$type$lab3 = (_this$object$type$lab4 = (_this$object$type$lab5 = this.object.type.labels).editorLabel) === null || _this$object$type$lab4 === void 0 ? void 0 : _this$object$type$lab4.call(_this$object$type$lab5, this.object)) !== null && _this$object$type$lab3 !== void 0 ? _this$object$type$lab3 : this.object.type.labels.singular.toLowerCase();
+      return (_this$object$type$lab = (_this$object$type$lab2 = (_this$object$type$lab3 = this.object.type.labels).editorLabel) === null || _this$object$type$lab2 === void 0 ? void 0 : _this$object$type$lab2.call(_this$object$type$lab3, this.object.data)) !== null && _this$object$type$lab !== void 0 ? _this$object$type$lab : this.object.type.labels.singular.toLowerCase();
     }
   }, {
     key: "addMenuItems",
@@ -55274,13 +59617,13 @@ var Editorvue_type_script_lang_ts_Editor = /*#__PURE__*/function (_Vue) {
             supportsChild = options.supportsChild;
 
         if (supportsParent) {
-          var _type$labels$newParen, _type$labels$existing;
+          var _type$labels$existing;
 
-          items.new.push({
-            key: "new-".concat(type.id, "-parent"),
-            label: (_type$labels$newParen = type.labels.newParent) !== null && _type$labels$newParen !== void 0 ? _type$labels$newParen : 'Ny(t)' + (type.labels.singularFrom || type.labels.singular).toLowerCase(),
-            onClick: function onClick() {}
-          });
+          // items.new.push({
+          //   key: `new-${type.id}-parent`,
+          //   label: type.labels.newParent ?? 'Ny(t)' + (type.labels.singularFrom || type.labels.singular).toLowerCase(),
+          //   onClick: () => {},
+          // })
           items.existing.push({
             key: "existing-".concat(type.id, "-parents"),
             label: (_type$labels$existing = type.labels.existingParents) !== null && _type$labels$existing !== void 0 ? _type$labels$existing : 'Eksisterende ' + (type.labels.pluralFrom || type.labels.plural).toLowerCase(),
@@ -55292,20 +59635,33 @@ var Editorvue_type_script_lang_ts_Editor = /*#__PURE__*/function (_Vue) {
                 relationTypes: [type.id],
                 parents: 1,
                 children: 0
-              }).then(function (data) {// this.diagram.mergeData(data)
+              }).then(function (data) {
+                var _data$entities2, _data$relations2;
+
+                data = filterOutExistingData(_this2.diagram, data);
+
+                if ((_data$entities2 = data.entities) !== null && _data$entities2 !== void 0 && _data$entities2.length || (_data$relations2 = data.relations) !== null && _data$relations2 !== void 0 && _data$relations2.length) {
+                  _this2.diagramVm.showDialog(components_ConfirmAdditionDialog, {
+                    data: data,
+                    onConfirm: function onConfirm() {
+                      return _this2.diagram.activeDiagram.data.add(data);
+                    }
+                  });
+                } else {// TODO: Toast?
+                }
               });
             }
           });
         }
 
         if (supportsChild) {
-          var _type$labels$newChild, _type$labels$existing2;
+          var _type$labels$existing2;
 
-          items.new.push({
-            key: "new-".concat(type.id, "-child"),
-            label: (_type$labels$newChild = type.labels.newChild) !== null && _type$labels$newChild !== void 0 ? _type$labels$newChild : 'Ny(t)' + (type.labels.singularTo || type.labels.singular).toLowerCase(),
-            onClick: function onClick() {}
-          });
+          // items.new.push({
+          //   key: `new-${type.id}-child`,
+          //   label: type.labels.newChild ?? 'Ny(t)' + (type.labels.singularTo || type.labels.singular).toLowerCase(),
+          //   onClick: () => {},
+          // })
           items.existing.push({
             key: "existing-".concat(type.id, "-children"),
             label: (_type$labels$existing2 = type.labels.existingChildren) !== null && _type$labels$existing2 !== void 0 ? _type$labels$existing2 : 'Eksisterende ' + (type.labels.pluralTo || type.labels.plural).toLowerCase(),
@@ -55317,7 +59673,20 @@ var Editorvue_type_script_lang_ts_Editor = /*#__PURE__*/function (_Vue) {
                 relationTypes: [type.id],
                 parents: 0,
                 children: 1
-              }).then(function (data) {// this.diagram.mergeData(data)
+              }).then(function (data) {
+                var _data$entities3, _data$relations3;
+
+                data = filterOutExistingData(_this2.diagram, data);
+
+                if ((_data$entities3 = data.entities) !== null && _data$entities3 !== void 0 && _data$entities3.length || (_data$relations3 = data.relations) !== null && _data$relations3 !== void 0 && _data$relations3.length) {
+                  _this2.diagramVm.showDialog(components_ConfirmAdditionDialog, {
+                    data: data,
+                    onConfirm: function onConfirm() {
+                      return _this2.diagram.activeDiagram.data.add(data);
+                    }
+                  });
+                } else {// TODO: Toast?
+                }
               });
             }
           });
@@ -55361,7 +59730,10 @@ var Editorvue_type_script_lang_ts_Editor = /*#__PURE__*/function (_Vue) {
         _iterator.f();
       }
 
-      return items;
+      if (!items.new.length && !items.existing.length) return null;
+      return [items.new, items.existing].filter(function (items) {
+        return items.length;
+      });
     }
   }, {
     key: "changedFieldGroups",
@@ -55369,7 +59741,7 @@ var Editorvue_type_script_lang_ts_Editor = /*#__PURE__*/function (_Vue) {
       return this.fieldGroups.map(function (fieldGroup) {
         return _objectSpread2(_objectSpread2({}, fieldGroup), {}, {
           fields: fieldGroup.fields.filter(function (field) {
-            return field.value != field.originalValue;
+            return field.value != field.initialValue;
           })
         });
       }).filter(function (fieldGroup) {
@@ -55379,13 +59751,36 @@ var Editorvue_type_script_lang_ts_Editor = /*#__PURE__*/function (_Vue) {
   }, {
     key: "hasChanges",
     get: function get() {
-      return this.changedFieldGroups.length;
+      return !!this.changedFieldGroups.length;
+    }
+  }, {
+    key: "remove",
+    value: function remove() {
+      if (this.object.isEntity) {
+        var entityId = this.object.id;
+        var connectedRelationIds = this.diagram.activeDiagram.data.relations.filter(function (relation) {
+          return relation.from == entityId || relation.to == entityId;
+        }).map(function (relation) {
+          return relation.id;
+        });
+        this.diagram.activeDiagram.data.remove({
+          entityIds: [entityId],
+          relationIds: connectedRelationIds
+        });
+      } else {
+        this.diagram.activeDiagram.data.remove({
+          relationIds: [this.object.id]
+        });
+      }
+
+      this.close();
     }
   }, {
     key: "saveChanges",
     value: function saveChanges() {
       var id = this.object.id;
       var newData = {};
+      var newStyle = {};
 
       var _iterator3 = _createForOfIteratorHelper(this.changedFieldGroups),
           _step3;
@@ -55400,7 +59795,7 @@ var Editorvue_type_script_lang_ts_Editor = /*#__PURE__*/function (_Vue) {
           try {
             for (_iterator4.s(); !(_step4 = _iterator4.n()).done;) {
               var field = _step4.value;
-              newData[field.dataKey] = field.value;
+              if (field.dataKey) lodash_set_default()(newData, field.dataKey, field.value);else if (field.styleKey) lodash_set_default()(newStyle, field.styleKey, field.value);
             }
           } catch (err) {
             _iterator4.e(err);
@@ -55419,7 +59814,8 @@ var Editorvue_type_script_lang_ts_Editor = /*#__PURE__*/function (_Vue) {
           type: 'edit',
           entities: [{
             id: id,
-            data: newData
+            data: newData,
+            style: newStyle
           }]
         });
       } else {
@@ -55427,7 +59823,8 @@ var Editorvue_type_script_lang_ts_Editor = /*#__PURE__*/function (_Vue) {
           type: 'edit',
           relations: [{
             id: id,
-            data: newData
+            data: newData,
+            style: newStyle
           }]
         });
       }
@@ -55439,36 +59836,236 @@ var Editorvue_type_script_lang_ts_Editor = /*#__PURE__*/function (_Vue) {
     value: function onObjectChanged() {
       var diagram = this.diagram,
           object = this.object;
-      this.fieldGroups = diagram.fieldGroups.map(function (fieldGroup) {
-        return _objectSpread2(_objectSpread2({}, fieldGroup), {}, {
-          fields: fieldGroup.fields.filter(function (field) {
-            if (!field.active) return false;
-            if (object.isEntity) return field.entityTypes.has(object.type);
-            if (object.isRelation) return field.relationTypes.has(object.type);
-            return true;
-          }).map(function (field) {
-            var _object$data$field$da;
 
-            var value = (_object$data$field$da = object.data[field.dataKey]) !== null && _object$data$field$da !== void 0 ? _object$data$field$da : ''; // field.getter(object)
+      var createField = function createField(options) {
+        var _options$initialValue, _options$initialValue2, _options$value;
 
-            return {
-              id: field.id,
-              label: field.title,
-              dataKey: field.dataKey,
-              name: "".concat(fieldGroup.id, ".").concat(field.id),
-              originalValue: value,
-              value: value
-            };
-          })
+        return {
+          id: options.id,
+          title: options.title,
+          dataKey: options.dataKey,
+          styleKey: options.styleKey,
+          initialValue: (_options$initialValue = options.initialValue) !== null && _options$initialValue !== void 0 ? _options$initialValue : options.value,
+          initialValueLabel: (_options$initialValue2 = options.initialValueLabel) !== null && _options$initialValue2 !== void 0 ? _options$initialValue2 : "".concat((_options$value = options.value) !== null && _options$value !== void 0 ? _options$value : ''),
+          value: options.value,
+          resetValue: options.resetValue
+        };
+      };
+
+      var createTextField = function createTextField(options) {
+        return _objectSpread2(_objectSpread2({}, createField(options)), {}, {
+          type: 'text'
         });
-      }).filter(function (fieldGroup) {
-        return fieldGroup.fields.length;
+      };
+
+      var createNumberField = function createNumberField(options) {
+        return _objectSpread2(_objectSpread2({}, createField(options)), {}, {
+          type: 'number'
+        });
+      };
+
+      var createRadioField = function createRadioField(options) {
+        var _options$initialValue3, _options$options$find;
+
+        return _objectSpread2(_objectSpread2({}, createField(options)), {}, {
+          type: 'radio-buttons',
+          options: options.options,
+          initialValueLabel: (_options$initialValue3 = options.initialValueLabel) !== null && _options$initialValue3 !== void 0 ? _options$initialValue3 : (_options$options$find = options.options.find(function (o) {
+            return o.value === options.value;
+          })) === null || _options$options$find === void 0 ? void 0 : _options$options$find.label
+        });
+      };
+
+      var createBooleanField = function createBooleanField(options) {
+        return createRadioField(_objectSpread2(_objectSpread2({}, options), {}, {
+          options: [{
+            label: 'Ja',
+            value: true
+          }, {
+            label: 'Nej',
+            value: false
+          }]
+        }));
+      };
+
+      var createColorField = function createColorField(options) {
+        return _objectSpread2(_objectSpread2({}, createField(options)), {}, {
+          type: 'color'
+        });
+      };
+
+      var fieldGroups = [];
+
+      var _iterator5 = _createForOfIteratorHelper(diagram.fieldGroups),
+          _step5;
+
+      try {
+        for (_iterator5.s(); !(_step5 = _iterator5.n()).done;) {
+          var _fieldGroup = _step5.value;
+          var fields = [];
+
+          var _iterator7 = _createForOfIteratorHelper(_fieldGroup.fields),
+              _step7;
+
+          try {
+            for (_iterator7.s(); !(_step7 = _iterator7.n()).done;) {
+              var _field = _step7.value;
+              if (!_field.active) continue;
+              if (object.isEntity && !_field.entityTypes.has(object.type)) continue;
+              if (object.isRelation && !_field.relationTypes.has(object.type)) continue;
+              var baseField = {
+                id: _field.fullId,
+                title: _field.title,
+                dataKey: _field.dataKey,
+                value: object.getFieldValue(_field)
+              };
+              var newField = void 0;
+
+              switch (_field.type) {
+                case 'text':
+                  {
+                    newField = createTextField(baseField);
+                    break;
+                  }
+
+                case 'boolean':
+                  {
+                    newField = createBooleanField(baseField);
+                    break;
+                  }
+
+                case 'radio-buttons':
+                  {
+                    // TODO
+                    newField = createRadioField(_objectSpread2(_objectSpread2({}, baseField), {}, {
+                      options: []
+                    }));
+                    break;
+                  }
+              }
+
+              fields.push(newField);
+            }
+          } catch (err) {
+            _iterator7.e(err);
+          } finally {
+            _iterator7.f();
+          }
+
+          if (!fields.length) continue;
+          fieldGroups.push({
+            id: "fg-".concat(_fieldGroup.id),
+            title: _fieldGroup.title,
+            fields: fields
+          });
+        }
+      } catch (err) {
+        _iterator5.e(err);
+      } finally {
+        _iterator5.f();
+      }
+
+      var styleFields = [];
+
+      function getStyleValues(object, prop) {
+        var _object$style$prop;
+
+        return {
+          value: (_object$style$prop = object.style[prop]) !== null && _object$style$prop !== void 0 ? _object$style$prop : object.type.style[prop],
+          resetValue: object.type.style[prop]
+        };
+      }
+
+      if (object.isEntity) {
+        styleFields.push(createColorField(_objectSpread2({
+          id: 'labelsBackgroundColor',
+          title: 'Top baggrundsfarve',
+          styleKey: 'labelsBackgroundColor'
+        }, getStyleValues(object, 'labelsBackgroundColor'))), createColorField(_objectSpread2({
+          id: 'backgroundColor',
+          title: 'Baggrundsfarve',
+          styleKey: 'backgroundColor'
+        }, getStyleValues(object, 'backgroundColor'))), createColorField(_objectSpread2({
+          id: 'borderColor',
+          title: 'Kantfarve',
+          styleKey: 'borderColor'
+        }, getStyleValues(object, 'borderColor'))), createRadioField(_objectSpread2({
+          id: 'borderStyle',
+          title: 'Kanttype',
+          styleKey: 'borderStyle',
+          options: [{
+            label: 'Solid',
+            value: 'solid'
+          }, {
+            label: 'Prikket',
+            value: 'dotted'
+          }, {
+            label: 'Stiplet',
+            value: 'dashed'
+          }]
+        }, getStyleValues(object, 'borderStyle'))), createNumberField(_objectSpread2({
+          id: 'borderWidth',
+          title: 'Kantbredde',
+          styleKey: 'borderWidth'
+        }, getStyleValues(object, 'borderWidth'))));
+      } else {
+        styleFields.push(createBooleanField(_objectSpread2({
+          id: 'arrowFrom',
+          title: 'Vis pil fra',
+          styleKey: 'arrowFrom'
+        }, getStyleValues(object, 'arrowFrom'))), createBooleanField(_objectSpread2({
+          id: 'arrowTo',
+          title: 'Vis pil til',
+          styleKey: 'arrowTo'
+        }, getStyleValues(object, 'arrowTo'))), createRadioField(_objectSpread2({
+          id: 'lineStyle',
+          title: 'Linjetype',
+          styleKey: 'lineStyle',
+          options: [{
+            label: 'Solid',
+            value: 'solid'
+          }, {
+            label: 'Prikket',
+            value: 'dotted'
+          }, {
+            label: 'Stiplet',
+            value: 'dashed'
+          }]
+        }, getStyleValues(object, 'lineStyle'))));
+      }
+
+      if (styleFields.length) fieldGroups.push({
+        id: 'style',
+        title: 'Udseende',
+        fields: styleFields
       });
+
+      for (var _i = 0, _fieldGroups = fieldGroups; _i < _fieldGroups.length; _i++) {
+        var fieldGroup = _fieldGroups[_i];
+
+        var _iterator6 = _createForOfIteratorHelper(fieldGroup.fields),
+            _step6;
+
+        try {
+          for (_iterator6.s(); !(_step6 = _iterator6.n()).done;) {
+            var field = _step6.value;
+            field.initialValue = field.value;
+          }
+        } catch (err) {
+          _iterator6.e(err);
+        } finally {
+          _iterator6.f();
+        }
+      }
+
+      this.fieldGroups = fieldGroups;
     }
   }]);
 
   return Editor;
 }(external_commonjs_vue_commonjs2_vue_root_Vue_default.a);
+
+__decorate([Inject()], Editorvue_type_script_lang_ts_Editor.prototype, "diagramVm", void 0);
 
 __decorate([Prop({
   type: diagram_Diagram,
@@ -55497,7 +60094,10 @@ Editorvue_type_script_lang_ts_Editor = __decorate([vue_class_component_esm({
     DropdownMenu: components_DropdownMenu,
     DropdownMenuItem: components_DropdownMenuItem,
     DropdownMenuDivider: components_DropdownMenuDivider,
-    TextField: components_TextField
+    FieldContainer: components_FieldContainer,
+    TextField: components_TextField,
+    RadioField: components_RadioField,
+    ColorField: components_ColorField
   }
 })], Editorvue_type_script_lang_ts_Editor);
 /* harmony default export */ var Editorvue_type_script_lang_ts_ = (Editorvue_type_script_lang_ts_Editor);
@@ -55517,8 +60117,8 @@ var Editorvue_type_style_index_0_lang_scss_ = __webpack_require__("58d3");
 
 var Editor_component = normalizeComponent(
   components_Editorvue_type_script_lang_ts_,
-  Editorvue_type_template_id_c7f8b144_render,
-  Editorvue_type_template_id_c7f8b144_staticRenderFns,
+  Editorvue_type_template_id_e71f11fc_render,
+  Editorvue_type_template_id_e71f11fc_staticRenderFns,
   false,
   null,
   null,
@@ -55555,40 +60155,24 @@ var Diagramvue_type_script_lang_ts_DiagramVue = /*#__PURE__*/function (_Vue) {
       show: false,
       object: null
     };
+    _this.dialogs = [];
     return _this;
   }
 
   _createClass(DiagramVue, [{
+    key: "diagramVm",
+    get: function get() {
+      return this;
+    }
+  }, {
     key: "mounted",
     value: function mounted() {
-      var _this2 = this;
-
-      this.$watch(function () {
-        return _this2.diagram.activeDiagram.settings.activeFields;
-      }, function () {
-        _this2.diagram.eventBus.emit({
-          name: 'activeFieldsChanged'
-        });
-
-        _this2.diagram.eventBus.emit({
-          name: 'settingsChanged'
-        });
-      }, {
-        deep: true
-      });
-      this.$watch(function () {
-        return _this2.diagram.activeDiagram.settings.activeFilters;
-      }, function () {
-        _this2.diagram.eventBus.emit({
-          name: 'activeFiltersChanged'
-        });
-
-        _this2.diagram.eventBus.emit({
-          name: 'settingsChanged'
-        });
-      }, {
-        deep: true
-      });
+      this.diagram.eventBus.on('dataUpdated', this.hideEditor);
+    }
+  }, {
+    key: "beforeDestroy",
+    value: function beforeDestroy() {
+      this.diagram.eventBus.off('dataUpdated', this.hideEditor);
     }
   }, {
     key: "showEditor",
@@ -55606,10 +60190,20 @@ var Diagramvue_type_script_lang_ts_DiagramVue = /*#__PURE__*/function (_Vue) {
         object: null
       };
     }
+  }, {
+    key: "showDialog",
+    value: function showDialog(component, props) {
+      this.dialogs.push({
+        component: component,
+        props: props
+      });
+    }
   }]);
 
   return DiagramVue;
 }(external_commonjs_vue_commonjs2_vue_root_Vue_default.a);
+
+__decorate([Provide('diagramVm')], Diagramvue_type_script_lang_ts_DiagramVue.prototype, "diagramVm", null);
 
 __decorate([Prop({
   type: diagram_Diagram,
@@ -55641,7 +60235,7 @@ var Diagramvue_type_style_index_0_lang_scss_ = __webpack_require__("034b");
 
 var Diagram_component = normalizeComponent(
   components_Diagramvue_type_script_lang_ts_,
-  Diagramvue_type_template_id_3720d18b_render,
+  Diagramvue_type_template_id_048e8898_render,
   staticRenderFns,
   false,
   null,
@@ -55651,7 +60245,64 @@ var Diagram_component = normalizeComponent(
 )
 
 /* harmony default export */ var components_Diagram = (Diagram_component.exports);
+// CONCATENATED MODULE: ./src/util/revertible-object-manipulation.ts
+
+
+function isObject(value) {
+  var type = _typeof(value);
+
+  return value != null && (type === 'object' || type === 'function');
+}
+/**
+ * Merges source object into target object and returns a revert function.
+ */
+
+
+function merge(target, source) {
+  if (!isObject(target)) throw Error("target (".concat(target, ") is not an object"));
+  if (!isObject(source)) throw Error("source (".concat(source, ") is not an object"));
+  if (target === source) return function () {};
+  var reverters = [];
+
+  var commit = function commit(revert) {
+    return reverters.unshift(revert);
+  };
+
+  for (var key in source) {
+    var targetValue = target[key];
+    var sourceValue = source[key];
+
+    if (isObject(sourceValue)) {
+      if (isObject(targetValue)) {
+        commit(merge(targetValue, sourceValue));
+      } else {
+        commit(set(target, key, sourceValue));
+      }
+    } else {
+      commit(set(target, key, sourceValue));
+    }
+  }
+
+  return function () {
+    return reverters.forEach(function (revert) {
+      return revert();
+    });
+  };
+}
+/**
+ * Sets the value of an object property and returns a revert function.
+ */
+
+function set(object, key, value) {
+  if (!isObject(object)) throw Error("(".concat(object, ") is not an object"));
+  var oldValue = object[key];
+  object[key] = value;
+  return function () {
+    return object[key] = oldValue;
+  };
+}
 // CONCATENATED MODULE: ./src/types/DiagramData.ts
+
 
 
 
@@ -55696,7 +60347,31 @@ var DiagramData_DiagramData = /*#__PURE__*/function () {
         })) !== null && _options$data$relatio !== void 0 ? _options$data$relatio : [],
         changes: (_options$changes = options.changes) !== null && _options$changes !== void 0 ? _options$changes : []
       };
-      this.reset();
+      this.entitiesMap.clear();
+
+      this._addEntities(this.initialData.entities);
+
+      this.relationsMap.clear();
+
+      this._addRelations(this.initialData.relations);
+
+      var _iterator = _createForOfIteratorHelper(this.initialData.changes),
+          _step;
+
+      try {
+        for (_iterator.s(); !(_step = _iterator.n()).done;) {
+          var change = _step.value;
+          this.commitChange(change, true);
+        }
+      } catch (err) {
+        _iterator.e(err);
+      } finally {
+        _iterator.f();
+      }
+
+      this.diagram.eventBus.emit({
+        name: 'dataUpdated'
+      });
     }
   }
 
@@ -55713,15 +60388,12 @@ var DiagramData_DiagramData = /*#__PURE__*/function () {
   }, {
     key: "reset",
     value: function reset() {
+      while (this.canUndo) {
+        this.undo();
+      }
+
       this.changes = [];
       this.undoneChanges = [];
-      this.entitiesMap.clear();
-
-      this._addEntities(this.initialData.entities);
-
-      this.relationsMap.clear();
-
-      this._addRelations(this.initialData.relations);
     }
   }, {
     key: "add",
@@ -55730,25 +60402,6 @@ var DiagramData_DiagramData = /*#__PURE__*/function () {
         type: 'addition',
         entities: options.entities,
         relations: options.relations
-      });
-    }
-  }, {
-    key: "addUnique",
-    value: function addUnique(options) {
-      var _options$entities,
-          _this2 = this,
-          _options$relations;
-
-      this.commitChange({
-        type: 'addition',
-        entities: (_options$entities = options.entities) === null || _options$entities === void 0 ? void 0 : _options$entities.filter(function (e) {
-          return !_this2.entitiesMap.has(e.id);
-        }),
-        relations: (_options$relations = options.relations) === null || _options$relations === void 0 ? void 0 : _options$relations.filter(function (r) {
-          // TODO: I think we need an ID on Relations that isn't just autogenerated like now...
-          // return !this.relationsMap.has(r.id)
-          return true;
-        })
       });
     }
   }, {
@@ -55761,83 +60414,139 @@ var DiagramData_DiagramData = /*#__PURE__*/function () {
       });
     }
   }, {
+    key: "edit",
+    value: function edit(options) {
+      this.commitChange({
+        type: 'edit',
+        entities: options.entities,
+        relations: options.relations
+      });
+    }
+  }, {
     key: "commitChange",
     value: function commitChange(change) {
-      var _this3 = this;
+      var isInitial = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
 
-      this.undoneChanges = [];
-      var _apply = null;
+      var compiledChange = this._compileChange(change, !isInitial);
+
+      if (compiledChange.apply() == false) return;
+
+      if (!isInitial) {
+        this.changes.push(compiledChange);
+        this.undoneChanges = [];
+      }
+    }
+  }, {
+    key: "undo",
+    value: function undo() {
+      var lastChange = this.changes.pop();
+      if (!lastChange) return;
+      lastChange.revert();
+      this.undoneChanges.push(lastChange);
+      this.diagram.eventBus.emit({
+        name: 'undo'
+      });
+    }
+  }, {
+    key: "redo",
+    value: function redo() {
+      var lastUndoneChange = this.undoneChanges.pop();
+      if (!lastUndoneChange) return;
+      lastUndoneChange.apply();
+      this.changes.push(lastUndoneChange);
+      this.diagram.eventBus.emit({
+        name: 'redo'
+      });
+    }
+  }, {
+    key: "parseEntities",
+    value: function parseEntities(entities) {
+      var parsed = [];
+
+      var _iterator2 = _createForOfIteratorHelper(entities),
+          _step2;
+
+      try {
+        for (_iterator2.s(); !(_step2 = _iterator2.n()).done;) {
+          var e = _step2.value;
+
+          try {
+            parsed.push(new diagram_Entity(this.diagram, e));
+          } catch (err) {
+            console.error('Could not parse entity. Entity:', e, 'Error:', err);
+          }
+        }
+      } catch (err) {
+        _iterator2.e(err);
+      } finally {
+        _iterator2.f();
+      }
+
+      return parsed;
+    }
+  }, {
+    key: "parseRelations",
+    value: function parseRelations(relations) {
+      var parsed = [];
+
+      var _iterator3 = _createForOfIteratorHelper(relations),
+          _step3;
+
+      try {
+        for (_iterator3.s(); !(_step3 = _iterator3.n()).done;) {
+          var r = _step3.value;
+
+          try {
+            parsed.push(new diagram_Relation(this.diagram, r));
+          } catch (err) {
+            console.error('Could not parse relation. Relation:', r, 'Error:', err);
+          }
+        }
+      } catch (err) {
+        _iterator3.e(err);
+      } finally {
+        _iterator3.f();
+      }
+
+      return parsed;
+    }
+  }, {
+    key: "_compileChange",
+    value: function _compileChange(change) {
+      var _this2 = this;
+
+      var trackEvents = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : true;
+      var applied = false;
+
+      var _apply;
+
       var _revert = null;
 
       switch (change.type) {
         case 'addition':
           {
             _apply = function apply() {
-              var _change$entities, _change$relations;
+              var _change$entities, _change$relations, _change$entities2, _change$relations2;
 
-              var entities = (_change$entities = change.entities) === null || _change$entities === void 0 ? void 0 : _change$entities.map(function (e) {
-                var after = new diagram_Entity(_this3.diagram, e);
-
-                var before = _this3.entitiesMap.get(after.id);
-
-                return {
-                  before: before,
-                  after: after
-                };
+              change.entities = (_change$entities = change.entities) === null || _change$entities === void 0 ? void 0 : _change$entities.filter(function (e) {
+                return !_this2.entitiesMap.has(e.id);
               });
-              var relations = (_change$relations = change.relations) === null || _change$relations === void 0 ? void 0 : _change$relations.map(function (r) {
-                var after = new diagram_Relation(_this3.diagram, r);
-
-                var before = _this3.relationsMap.get(after.id);
-
-                return {
-                  before: before,
-                  after: after
-                };
+              change.relations = (_change$relations = change.relations) === null || _change$relations === void 0 ? void 0 : _change$relations.filter(function (r) {
+                return !_this2.relationsMap.has(r.id);
               });
-              if (entities) _this3._addEntities(entities.map(function (e) {
-                return e.after;
-              }));
-              if (relations) _this3._addRelations(relations.map(function (r) {
-                return r.after;
-              }));
+
+              var entities = _this2.parseEntities((_change$entities2 = change.entities) !== null && _change$entities2 !== void 0 ? _change$entities2 : []);
+
+              var relations = _this2.parseRelations((_change$relations2 = change.relations) !== null && _change$relations2 !== void 0 ? _change$relations2 : []); // Cancel if nothing to add
+
+
+              if (!entities.length && !relations.length) return false;
+              if (entities.length) _this2._addEntities(entities);
+              if (relations.length) _this2._addRelations(relations);
 
               _revert = function revert() {
-                if (entities) {
-                  var _iterator = _createForOfIteratorHelper(entities),
-                      _step;
-
-                  try {
-                    for (_iterator.s(); !(_step = _iterator.n()).done;) {
-                      var entity = _step.value;
-                      if (entity.before) _this3.entitiesMap.set(entity.before.id, entity.before);else _this3.entitiesMap.delete(entity.after.id);
-                    }
-                  } catch (err) {
-                    _iterator.e(err);
-                  } finally {
-                    _iterator.f();
-                  }
-
-                  _this3._updateEntitiesArray();
-                }
-
-                if (relations) {
-                  var _iterator2 = _createForOfIteratorHelper(relations),
-                      _step2;
-
-                  try {
-                    for (_iterator2.s(); !(_step2 = _iterator2.n()).done;) {
-                      var relation = _step2.value;
-                      if (relation.before) _this3.relationsMap.set(relation.before.id, relation.before);else _this3.relationsMap.delete(relation.after.id);
-                    }
-                  } catch (err) {
-                    _iterator2.e(err);
-                  } finally {
-                    _iterator2.f();
-                  }
-
-                  _this3._updateRelationsArray();
-                }
+                if (entities.length) _this2._removeEntities(entities);
+                if (relations.length) _this2._removeRelations(relations);
               };
             };
 
@@ -55852,33 +60561,18 @@ var DiagramData_DiagramData = /*#__PURE__*/function () {
               var entities = [];
               var relations = [];
 
-              var _iterator3 = _createForOfIteratorHelper((_change$entityIds = change.entityIds) !== null && _change$entityIds !== void 0 ? _change$entityIds : []),
-                  _step3;
-
-              try {
-                for (_iterator3.s(); !(_step3 = _iterator3.n()).done;) {
-                  var id = _step3.value;
-
-                  var entity = _this3.entitiesMap.get(id);
-
-                  if (entity) entities.push(entity);
-                }
-              } catch (err) {
-                _iterator3.e(err);
-              } finally {
-                _iterator3.f();
-              }
-
-              var _iterator4 = _createForOfIteratorHelper((_change$relationIds = change.relationIds) !== null && _change$relationIds !== void 0 ? _change$relationIds : []),
+              var _iterator4 = _createForOfIteratorHelper((_change$entityIds = change.entityIds) !== null && _change$entityIds !== void 0 ? _change$entityIds : []),
                   _step4;
 
               try {
                 for (_iterator4.s(); !(_step4 = _iterator4.n()).done;) {
-                  var _id = _step4.value;
+                  var id = _step4.value;
 
-                  var relation = _this3.relationsMap.get(_id);
+                  var entity = _this2.entitiesMap.get(id);
 
-                  if (relation) relations.push(relation);
+                  if (entity) {
+                    entities.push(entity);
+                  }
                 }
               } catch (err) {
                 _iterator4.e(err);
@@ -55886,12 +60580,39 @@ var DiagramData_DiagramData = /*#__PURE__*/function () {
                 _iterator4.f();
               }
 
-              if (entities.length) _this3._removeEntities(entities);
-              if (relations.length) _this3._removeRelations(relations);
+              var _iterator5 = _createForOfIteratorHelper((_change$relationIds = change.relationIds) !== null && _change$relationIds !== void 0 ? _change$relationIds : []),
+                  _step5;
+
+              try {
+                for (_iterator5.s(); !(_step5 = _iterator5.n()).done;) {
+                  var _id = _step5.value;
+
+                  var relation = _this2.relationsMap.get(_id);
+
+                  if (relation) {
+                    relations.push(relation);
+                  }
+                }
+              } catch (err) {
+                _iterator5.e(err);
+              } finally {
+                _iterator5.f();
+              }
+
+              change.entityIds = change.entityIds && entities.map(function (e) {
+                return e.id;
+              });
+              change.relationIds = change.relationIds && relations.map(function (r) {
+                return r.id;
+              }); // Cancel if nothing to remove
+
+              if (!entities.length && !relations.length) return false;
+              if (entities.length) _this2._removeEntities(entities);
+              if (relations.length) _this2._removeRelations(relations);
 
               _revert = function revert() {
-                if (entities.length) _this3._addEntities(entities);
-                if (relations.length) _this3._addRelations(relations);
+                if (entities.length) _this2._addEntities(entities);
+                if (relations.length) _this2._addRelations(relations);
               };
             };
 
@@ -55900,162 +60621,132 @@ var DiagramData_DiagramData = /*#__PURE__*/function () {
 
         case 'edit':
           {
-            var entities = new Map();
-            var relations = new Map();
+            _apply = function apply() {
+              var _change$entities3, _change$relations3;
 
-            if (change.entities) {
-              var _iterator5 = _createForOfIteratorHelper(change.entities),
-                  _step5;
+              // These will replace change.entities and change.relations, so unused edits are removed
+              var entityEdits = change.entities && [];
+              var relationEdits = change.relations && [];
+              var reverters = [];
 
-              try {
-                for (_iterator5.s(); !(_step5 = _iterator5.n()).done;) {
-                  var e = _step5.value;
-                  var entity = this.entitiesMap.get(e.id);
-                  if (entity) entities.set(entity.id, entity);
-                }
-              } catch (err) {
-                _iterator5.e(err);
-              } finally {
-                _iterator5.f();
-              }
-            }
-
-            if (change.relations) {
-              var _iterator6 = _createForOfIteratorHelper(change.relations),
+              var _iterator6 = _createForOfIteratorHelper((_change$entities3 = change.entities) !== null && _change$entities3 !== void 0 ? _change$entities3 : []),
                   _step6;
 
               try {
                 for (_iterator6.s(); !(_step6 = _iterator6.n()).done;) {
-                  var r = _step6.value;
-                  var relation = this.relationsMap.get(r.id);
-                  if (relation) relations.set(relation.id, relation);
+                  var _edit$data, _edit$style;
+
+                  var edit = _step6.value;
+
+                  var entity = _this2.entitiesMap.get(edit.id);
+
+                  if (!entity) continue;
+                  entityEdits === null || entityEdits === void 0 ? void 0 : entityEdits.push(edit);
+                  reverters.push(merge(entity, {
+                    data: (_edit$data = edit.data) !== null && _edit$data !== void 0 ? _edit$data : {},
+                    style: (_edit$style = edit.style) !== null && _edit$style !== void 0 ? _edit$style : {}
+                  }));
                 }
               } catch (err) {
                 _iterator6.e(err);
               } finally {
                 _iterator6.f();
               }
-            }
 
-            _apply = function apply() {
-              var editedEntities = [];
-              var editedRelations = [];
+              var _iterator7 = _createForOfIteratorHelper((_change$relations3 = change.relations) !== null && _change$relations3 !== void 0 ? _change$relations3 : []),
+                  _step7;
 
-              if (change.entities) {
-                var _iterator7 = _createForOfIteratorHelper(change.entities),
-                    _step7;
+              try {
+                for (_iterator7.s(); !(_step7 = _iterator7.n()).done;) {
+                  var _edit$data2, _edit$style2;
 
-                try {
-                  for (_iterator7.s(); !(_step7 = _iterator7.n()).done;) {
-                    var _entities$get;
+                  var _edit = _step7.value;
 
-                    var edit = _step7.value;
+                  var relation = _this2.relationsMap.get(_edit.id);
 
-                    var _entity = (_entities$get = entities.get(edit.id)) === null || _entities$get === void 0 ? void 0 : _entities$get.clone();
-
-                    if (_entity) {
-                      _entity.merge(edit);
-
-                      editedEntities.push(_entity);
-                    }
-                  }
-                } catch (err) {
-                  _iterator7.e(err);
-                } finally {
-                  _iterator7.f();
+                  if (!relation) continue;
+                  relationEdits === null || relationEdits === void 0 ? void 0 : relationEdits.push(_edit);
+                  reverters.push(merge(relation, {
+                    data: (_edit$data2 = _edit.data) !== null && _edit$data2 !== void 0 ? _edit$data2 : {},
+                    style: (_edit$style2 = _edit.style) !== null && _edit$style2 !== void 0 ? _edit$style2 : {}
+                  }));
                 }
+              } catch (err) {
+                _iterator7.e(err);
+              } finally {
+                _iterator7.f();
               }
 
-              if (change.relations) {
-                var _iterator8 = _createForOfIteratorHelper(change.relations),
-                    _step8;
+              change.entities = entityEdits;
+              change.relations = relationEdits; // Cancel if nothing was edited
 
-                try {
-                  for (_iterator8.s(); !(_step8 = _iterator8.n()).done;) {
-                    var _relations$get;
+              if (!reverters.length) return false;
 
-                    var _edit = _step8.value;
-
-                    var _relation = (_relations$get = relations.get(_edit.id)) === null || _relations$get === void 0 ? void 0 : _relations$get.clone();
-
-                    if (_relation) {
-                      _relation.merge(_edit);
-
-                      editedRelations.push(_relation);
-                    }
-                  }
-                } catch (err) {
-                  _iterator8.e(err);
-                } finally {
-                  _iterator8.f();
-                }
-              }
-
-              if (editedEntities.length) _this3._addEntities(editedEntities);
-              if (editedRelations.length) _this3._addRelations(editedRelations);
-            };
-
-            _revert = function revert() {
-              if (entities.size) _this3._addEntities(toConsumableArray_toConsumableArray(entities.values()));
-              if (relations.size) _this3._addRelations(toConsumableArray_toConsumableArray(relations.values()));
+              _revert = function revert() {
+                return reverters.forEach(function (revert) {
+                  return revert();
+                });
+              };
             };
 
             break;
           }
       }
 
-      var compiledChange = {
+      return {
         change: change,
         apply: function apply() {
-          var _apply2;
+          if (applied) {
+            console.warn('change.apply() was called after change was already applied');
+            return;
+          }
 
-          return (_apply2 = _apply) === null || _apply2 === void 0 ? void 0 : _apply2();
+          applied = true;
+
+          var result = _apply();
+
+          if (trackEvents) _this2.diagram.eventBus.emit({
+            name: 'dataUpdated'
+          });
+          return result;
         },
         revert: function revert() {
           if (!_revert) {
+            console.warn('change.revert() was called before it was defined');
+            return;
+          }
+
+          if (!applied) {
             console.warn('change.revert() was called before change was applied');
             return;
           }
 
-          _revert();
+          applied = false;
 
-          _revert = null;
+          var result = _revert();
+
+          if (trackEvents) _this2.diagram.eventBus.emit({
+            name: 'dataUpdated'
+          });
+          return result;
         }
       };
-      compiledChange.apply();
-      this.changes.push(compiledChange);
-    }
-  }, {
-    key: "undo",
-    value: function undo() {
-      var lastChange = this.changes.pop();
-      if (!lastChange) return;
-      lastChange.revert();
-      this.undoneChanges.push(lastChange);
-    }
-  }, {
-    key: "redo",
-    value: function redo() {
-      var lastUndoneChange = this.undoneChanges.pop();
-      if (!lastUndoneChange) return;
-      lastUndoneChange.apply();
-      this.changes.push(lastUndoneChange);
     }
   }, {
     key: "_addEntities",
     value: function _addEntities(entities) {
-      var _iterator9 = _createForOfIteratorHelper(entities),
-          _step9;
+      var _iterator8 = _createForOfIteratorHelper(entities),
+          _step8;
 
       try {
-        for (_iterator9.s(); !(_step9 = _iterator9.n()).done;) {
-          var entity = _step9.value;
-          this.entitiesMap.set(entity.id, entity.clone());
+        for (_iterator8.s(); !(_step8 = _iterator8.n()).done;) {
+          var entity = _step8.value;
+          this.entitiesMap.set(entity.id, entity);
         }
       } catch (err) {
-        _iterator9.e(err);
+        _iterator8.e(err);
       } finally {
-        _iterator9.f();
+        _iterator8.f();
       }
 
       this._updateEntitiesArray();
@@ -56063,18 +60754,18 @@ var DiagramData_DiagramData = /*#__PURE__*/function () {
   }, {
     key: "_addRelations",
     value: function _addRelations(relations) {
-      var _iterator10 = _createForOfIteratorHelper(relations),
-          _step10;
+      var _iterator9 = _createForOfIteratorHelper(relations),
+          _step9;
 
       try {
-        for (_iterator10.s(); !(_step10 = _iterator10.n()).done;) {
-          var relation = _step10.value;
-          this.relationsMap.set(relation.id, relation.clone());
+        for (_iterator9.s(); !(_step9 = _iterator9.n()).done;) {
+          var relation = _step9.value;
+          this.relationsMap.set(relation.id, relation);
         }
       } catch (err) {
-        _iterator10.e(err);
+        _iterator9.e(err);
       } finally {
-        _iterator10.f();
+        _iterator9.f();
       }
 
       this._updateRelationsArray();
@@ -56082,18 +60773,18 @@ var DiagramData_DiagramData = /*#__PURE__*/function () {
   }, {
     key: "_removeEntities",
     value: function _removeEntities(entities) {
-      var _iterator11 = _createForOfIteratorHelper(entities),
-          _step11;
+      var _iterator10 = _createForOfIteratorHelper(entities),
+          _step10;
 
       try {
-        for (_iterator11.s(); !(_step11 = _iterator11.n()).done;) {
-          var entity = _step11.value;
+        for (_iterator10.s(); !(_step10 = _iterator10.n()).done;) {
+          var entity = _step10.value;
           this.entitiesMap.delete(entity.id);
         }
       } catch (err) {
-        _iterator11.e(err);
+        _iterator10.e(err);
       } finally {
-        _iterator11.f();
+        _iterator10.f();
       }
 
       this._updateEntitiesArray();
@@ -56101,18 +60792,18 @@ var DiagramData_DiagramData = /*#__PURE__*/function () {
   }, {
     key: "_removeRelations",
     value: function _removeRelations(relations) {
-      var _iterator12 = _createForOfIteratorHelper(relations),
-          _step12;
+      var _iterator11 = _createForOfIteratorHelper(relations),
+          _step11;
 
       try {
-        for (_iterator12.s(); !(_step12 = _iterator12.n()).done;) {
-          var relation = _step12.value;
+        for (_iterator11.s(); !(_step11 = _iterator11.n()).done;) {
+          var relation = _step11.value;
           this.relationsMap.delete(relation.id);
         }
       } catch (err) {
-        _iterator12.e(err);
+        _iterator11.e(err);
       } finally {
-        _iterator12.f();
+        _iterator11.f();
       }
 
       this._updateRelationsArray();
@@ -56133,21 +60824,70 @@ var DiagramData_DiagramData = /*#__PURE__*/function () {
 }();
 
 
+// EXTERNAL MODULE: ./node_modules/core-js/modules/es.string.split.js
+var es_string_split = __webpack_require__("1276");
+
+// CONCATENATED MODULE: ./src/util/get-deep-property.ts
+
+
+
+
+
+
+function parsePath(path) {
+  if (typeof path == 'string') {
+    path = path // Convert indexes to properties
+    .replace(/\[(\w+)\]/g, '.$1') // Split by .
+    .split('.');
+  }
+
+  if (!path.length) throw Error("Invalid path: ".concat(path.join('.')));
+  return path;
+}
+function getDeep(obj, path) {
+  path = parsePath(path);
+  var curr = obj;
+
+  var _iterator = _createForOfIteratorHelper(path),
+      _step;
+
+  try {
+    for (_iterator.s(); !(_step = _iterator.n()).done;) {
+      var prop = _step.value;
+      if (prop in curr) curr = curr[prop];else return undefined;
+    }
+  } catch (err) {
+    _iterator.e(err);
+  } finally {
+    _iterator.f();
+  }
+
+  return curr;
+}
+function setDeep(obj, path, value) {
+  path = parsePath(path);
+  var targetParent = path.length == 1 ? obj : getDeep(obj, path.slice(0, -1));
+  if (!targetParent) return;
+  var targetProp = path[path.length - 1];
+  targetParent[targetProp] = value;
+}
 // CONCATENATED MODULE: ./src/example.ts
 
 
 
+var mainEntityId = 'company-1';
 var exampleConfig = {
-  mainEntityId: 'company-1',
+  mainEntityId: mainEntityId,
   // Entity types
   entityTypes: [{
     id: 'company',
+    icon: 'business',
     labels: {
       singular: 'Firma',
       plural: 'Firmaer',
       // (Optional) Custom label to use in the editor
-      editorLabel: function editorLabel(company) {
-        return company.data.name;
+      editorLabel: function editorLabel(data) {
+        return data.name;
       }
     }
   }, {
@@ -56157,15 +60897,21 @@ var exampleConfig = {
       singular: 'Person',
       plural: 'Personer',
       // (Optional) Custom label to use in the editor
-      editorLabel: function editorLabel(person) {
-        return person.data.name;
+      editorLabel: function editorLabel(data) {
+        return data.name;
       }
     },
     style: {
       labelsBackgroundColor: '#f8f8f8'
     }
+  }, {
+    id: 'unknownOwners',
+    icon: 'help_outline',
+    labels: {
+      singular: 'Ukendte ejere',
+      plural: 'Ukendte ejere'
+    }
   }],
-  // TODO: style?
   // Relation types
   relationTypes: [{
     id: 'ownership',
@@ -56173,6 +60919,8 @@ var exampleConfig = {
       singular: 'Ejerskab',
       plural: 'Ejerskaber',
       // (Optional) Custom labels
+      singularFrom: 'Ejer',
+      pluralFrom: 'Ejere',
       newParent: 'Ny ejer',
       newChild: 'Nyt ejerskab',
       existingParents: 'Eksisterende ejere',
@@ -56221,14 +60969,78 @@ var exampleConfig = {
       isEntityLabel: true,
       startActive: true
     }, {
-      id: 'employeeCount',
-      title: 'Antal ansatte',
+      id: 'note',
+      title: 'Note',
       entityTypes: ['company'],
-      dataKey: 'employeeCount',
+      dataKey: 'note',
+      isEntityLabel: true,
+      startActive: false
+    }, // Fields for if the main entity is a person.
+    // {
+    //   id: 'trueOwnership',
+    //   title: 'Reelt ejerskab',
+    //   entityTypes: ['company'],
+    //   dataKey: 'trueOwnership',
+    //   type: 'boolean',
+    //   getInitialValue: data => !!data.trueOwnersPercentage?.[mainEntityId],
+    //   formatter: value => value ? 'Reelt ejerskab' : '',
+    //   isEntityLabel: true,
+    //   startActive: true,
+    // },
+    // {
+    //   id: 'trueOwnershipOwnerShare',
+    //   title: 'Reelle ejerandele',
+    //   entityTypes: ['company'],
+    //   dataKey: 'trueOwnershipOwnerShare',
+    //   getInitialValue: data => data.trueOwnersPercentage?.[mainEntityId],
+    //   addToLegend: true,
+    //   legendColor: '#17bebb',
+    //   startActive: true,
+    // },
+    // {
+    //   id: 'trueOwnershipVotingShare',
+    //   title: 'Reelle stemmeandele',
+    //   entityTypes: ['company'],
+    //   dataKey: 'trueOwnershipVotingShare',
+    //   getInitialValue: data => data.trueOwnersVotePercentage?.[mainEntityId],
+    //   addToLegend: true,
+    //   legendColor: '#cd4b3d',
+    //   startActive: true,
+    // },
+    {
+      id: 'employees',
+      title: 'Antal medarbejdere',
+      entityTypes: ['company'],
+      dataKey: 'employees',
       // (Optional) Add to legend
       addToLegend: true,
       // (Optional) Set color in legend
-      legendColor: '#007fff'
+      legendColor: 'teal',
+      startActive: false
+    }, {
+      id: 'fte',
+      title: 'Antal årsværk',
+      entityTypes: ['company'],
+      dataKey: 'fte',
+      addToLegend: true,
+      legendColor: '#bdb76b',
+      startActive: false
+    }, {
+      id: 'industryCode',
+      title: 'Branchekode',
+      entityTypes: ['company'],
+      dataKey: 'industryCode',
+      addToLegend: true,
+      legendColor: 'khaki',
+      startActive: false
+    }, {
+      id: 'status',
+      title: 'Status',
+      entityTypes: ['company'],
+      dataKey: 'status',
+      addToLegend: true,
+      legendColor: '#2274a5',
+      startActive: false
     }]
   }, {
     id: 'personInfo',
@@ -56239,8 +61051,153 @@ var exampleConfig = {
       entityTypes: ['person'],
       dataKey: 'name',
       isEntityLabel: true,
-      startActive: true,
-      display: true
+      startActive: true
+    }, {
+      id: 'note',
+      title: 'Note',
+      entityTypes: ['person'],
+      dataKey: 'note',
+      isEntityLabel: true,
+      startActive: false
+    }, // Fields for if the main entity is a company.
+    {
+      id: 'trueOwner',
+      title: 'Reel ejer',
+      entityTypes: ['person'],
+      dataKey: 'trueOwner',
+      type: 'boolean',
+      getInitialValue: function getInitialValue(data) {
+        var _data$trueOwnersPerce;
+
+        return !!((_data$trueOwnersPerce = data.trueOwnersPercentage) !== null && _data$trueOwnersPerce !== void 0 && _data$trueOwnersPerce[mainEntityId]);
+      },
+      formatter: function formatter(value) {
+        return value ? 'Reel ejer' : '';
+      },
+      isEntityLabel: true,
+      startActive: true
+    }, {
+      id: 'trueOwnerOwnerShare',
+      title: 'Reelle ejerandele',
+      entityTypes: ['person'],
+      dataKey: 'trueOwnerOwnerShare',
+      getInitialValue: function getInitialValue(data) {
+        var _data$trueOwnersPerce2;
+
+        return (_data$trueOwnersPerce2 = data.trueOwnersPercentage) === null || _data$trueOwnersPerce2 === void 0 ? void 0 : _data$trueOwnersPerce2[mainEntityId];
+      },
+      addToLegend: true,
+      legendColor: '#17bebb',
+      startActive: true
+    }, {
+      id: 'trueOwnerVotingShare',
+      title: 'Reelle stemmeandele',
+      entityTypes: ['person'],
+      dataKey: 'trueOwnerVotingShare',
+      getInitialValue: function getInitialValue(data) {
+        var _data$trueOwnersVoteP;
+
+        return (_data$trueOwnersVoteP = data.trueOwnersVotePercentage) === null || _data$trueOwnersVoteP === void 0 ? void 0 : _data$trueOwnersVoteP[mainEntityId];
+      },
+      addToLegend: true,
+      legendColor: '#cd4b3d',
+      startActive: true
+    }]
+  }, {
+    id: 'accountingFigures',
+    title: 'Regnskabstal',
+    fields: [{
+      id: 'balanceDate',
+      title: 'Balancedag',
+      entityTypes: ['company'],
+      dataKey: 'report.balanceDate',
+      addToLegend: true,
+      legendColor: '#556b2f',
+      startActive: false
+    }, {
+      id: 'liabilitiesAndEquity',
+      title: 'Balance',
+      entityTypes: ['company'],
+      dataKey: 'report.liabilitiesAndEquity',
+      addToLegend: true,
+      legendColor: '#fbceb1',
+      startActive: false
+    }, {
+      id: 'grossResult',
+      title: 'Bruttofortjeneste',
+      entityTypes: ['company'],
+      dataKey: 'report.grossResult',
+      addToLegend: true,
+      legendColor: '#62466b',
+      startActive: false
+    }, {
+      id: 'equity',
+      title: 'Egenkapital',
+      entityTypes: ['company'],
+      dataKey: 'report.equity',
+      addToLegend: true,
+      legendColor: '#e08e45',
+      startActive: true
+    }, {
+      id: 'equityExcludingDividend',
+      title: 'Egenkapital fratr. udbytte',
+      entityTypes: ['company'],
+      dataKey: 'report.equityExcludingDividend',
+      addToLegend: true,
+      legendColor: 'gold',
+      startActive: false
+    }, {
+      id: 'result',
+      title: 'Årets resultat',
+      entityTypes: ['company'],
+      dataKey: 'report.result',
+      addToLegend: true,
+      legendColor: '#ffc914',
+      startActive: true
+    }]
+  }, {
+    id: 'keyFigures',
+    title: 'Nøgletal',
+    fields: [{
+      id: 'roi',
+      title: 'Afkastningsgrad',
+      entityTypes: ['company'],
+      dataKey: 'report.roi',
+      addToLegend: true,
+      legendColor: 'black',
+      startActive: false
+    }, {
+      id: 'coverage',
+      title: 'Dækningsgrad',
+      entityTypes: ['company'],
+      dataKey: 'report.coverage',
+      addToLegend: true,
+      legendColor: '#702963',
+      startActive: false
+    }, {
+      id: 'ebitda',
+      title: 'EBITDA',
+      entityTypes: ['company'],
+      dataKey: 'report.ebitda',
+      addToLegend: true,
+      legendColor: 'violet',
+      startActive: false
+    }, {
+      id: 'solvencyRatio',
+      title: 'Soliditetsgrad',
+      entityTypes: ['company'],
+      dataKey: 'report.solvencyRatio',
+      addToLegend: true,
+      legendColor: '#007fff',
+      startActive: true
+    }, {
+      id: 'solvencyRatioExcludingDividend',
+      title: 'Soliditetsgrad fratr. udbytte',
+      entityTypes: ['company'],
+      dataKey: 'report.solvencyRatioExcludingDividend',
+      addToLegend: true,
+      legendColor: '#4682b4',
+      startActive: false
     }]
   }, {
     id: 'ownerships',
@@ -56253,6 +61210,17 @@ var exampleConfig = {
       isRelationLabel: true,
       startActive: true
     }]
+  }],
+  layouts: [// Layouts for if the main entity is a company
+  {
+    id: 'company-layout-1',
+    name: 'Layout 1',
+    default: true,
+    directed: true
+  }, {
+    id: 'company-layout-2',
+    name: 'Layout 2',
+    inverted: true
   }],
   methods: {
     // Normally this would fetch data from an API, but we'll just return the example data.
@@ -56283,262 +61251,580 @@ var exampleConfig = {
   saveSettingsToLocalStorage: true
 };
 var exampleData = {
-  entities: [{
-    type: 'company',
-    id: 'company-1',
-    data: {
-      cvr: '1',
-      name: 'FIRMA #1'
+  "relations": [{
+    "id": "ownership-from-CVR-1-28484909-to-CVR-1-34580820",
+    "type": "ownership",
+    "from": "CVR-1-28484909",
+    "to": "CVR-1-34580820",
+    "data": {
+      "ownershipPercentage": "5-9,99%"
     }
   }, {
-    type: 'company',
-    id: 'company-2',
-    data: {
-      cvr: '2',
-      name: 'FIRMA #2'
+    "id": "ownership-from-person-1-to-CVR-1-28484909",
+    "type": "ownership",
+    "from": "person-1",
+    "to": "CVR-1-28484909",
+    "data": {
+      "ownershipPercentage": "A, C: 10-14,99%"
     }
   }, {
-    type: 'person',
-    id: 'person-1',
-    data: {
-      name: 'PERSON #1'
+    "id": "ownership-from-person-2-to-CVR-1-28484909",
+    "type": "ownership",
+    "from": "person-2",
+    "to": "CVR-1-28484909",
+    "data": {
+      "ownershipPercentage": "B: 33,33-49,99%"
     }
   }, {
-    type: 'company',
-    id: 'company-3',
-    data: {
-      cvr: '3',
-      name: 'FIRMA #3'
+    "id": "ownership-from-person-3-to-CVR-1-28484909",
+    "type": "ownership",
+    "from": "person-3",
+    "to": "CVR-1-28484909",
+    "data": {
+      "ownershipPercentage": "B: 33,33-49,99%"
     }
   }, {
-    type: 'person',
-    id: 'person-2',
-    data: {
-      name: 'PERSON #2'
+    "id": "ownership-from-CVR-1-31479304-to-CVR-1-34580820",
+    "type": "ownership",
+    "from": "CVR-1-31479304",
+    "to": "CVR-1-34580820",
+    "data": {
+      "ownershipPercentage": "5-9,99%"
     }
   }, {
-    type: 'company',
-    id: 'company-4',
-    data: {
-      cvr: '4',
-      name: 'FIRMA #4'
+    "id": "ownership-from-person-4-to-CVR-1-31479304",
+    "type": "ownership",
+    "from": "person-4",
+    "to": "CVR-1-31479304",
+    "data": {
+      "ownershipPercentage": "100%"
     }
   }, {
-    type: 'person',
-    id: 'person-3',
-    data: {
-      name: 'PERSON #3'
+    "id": "ownership-from-CVR-1-31479282-to-CVR-1-34580820",
+    "type": "ownership",
+    "from": "CVR-1-31479282",
+    "to": "CVR-1-34580820",
+    "data": {
+      "ownershipPercentage": "20-24,99%"
     }
   }, {
-    type: 'company',
-    id: 'company-5',
-    data: {
-      cvr: '5',
-      name: 'FIRMA #5'
+    "id": "ownership-from-person-5-to-CVR-1-31479282",
+    "type": "ownership",
+    "from": "person-5",
+    "to": "CVR-1-31479282",
+    "data": {
+      "ownershipPercentage": "100%"
     }
   }, {
-    type: 'person',
-    id: 'person-4',
-    data: {
-      name: 'PERSON #4'
+    "id": "ownership-from-CVR-1-26933676-to-CVR-1-34580820",
+    "type": "ownership",
+    "from": "CVR-1-26933676",
+    "to": "CVR-1-34580820",
+    "data": {
+      "ownershipPercentage": "25-33,32%"
     }
   }, {
-    type: 'person',
-    id: 'person-5',
-    data: {
-      name: 'PERSON #5'
+    "id": "ownership-from-CVR-1-57001615-to-CVR-1-26933676",
+    "type": "ownership",
+    "from": "CVR-1-57001615",
+    "to": "CVR-1-26933676",
+    "data": {
+      "ownershipPercentage": "50-66,66%"
     }
   }, {
-    type: 'person',
-    id: 'person-6',
-    data: {
-      name: 'PERSON #6'
+    "id": "ownership-from-CVR-1-11606792-to-CVR-1-57001615",
+    "type": "ownership",
+    "from": "CVR-1-11606792",
+    "to": "CVR-1-57001615",
+    "data": {
+      "ownershipPercentage": "A, C: 90-99,99%"
     }
   }, {
-    type: 'company',
-    id: 'company-6',
-    data: {
-      cvr: '6',
-      name: 'FIRMA #6'
+    "id": "ownership-from-CVR-1-76162719-to-CVR-1-57001615",
+    "type": "ownership",
+    "from": "CVR-1-76162719",
+    "to": "CVR-1-57001615",
+    "data": {
+      "ownershipPercentage": "A, B: 0-4,99%"
     }
   }, {
-    type: 'company',
-    id: 'company-7',
-    data: {
-      cvr: '7',
-      name: 'FIRMA #7'
-    },
-    style: {
-      backgroundColor: 'pink',
-      borderColor: 'green',
-      borderStyle: 'dashed',
-      borderWidth: 4
+    "id": "ownership-from-CVR-1-35947817-to-CVR-1-26933676",
+    "type": "ownership",
+    "from": "CVR-1-35947817",
+    "to": "CVR-1-26933676",
+    "data": {
+      "ownershipPercentage": "50-66,66%"
     }
   }, {
-    type: 'company',
-    id: 'company-8',
-    data: {
-      cvr: '8',
-      name: 'FIRMA #8'
+    "id": "ownership-from-CVR-1-38762915-to-CVR-1-35947817",
+    "type": "ownership",
+    "from": "CVR-1-38762915",
+    "to": "CVR-1-35947817",
+    "data": {
+      "ownershipPercentage": "100%"
     }
   }, {
-    type: 'company',
-    id: 'company-9',
-    data: {
-      cvr: '9',
-      name: 'FIRMA #9'
+    "id": "ownership-from-CVR-1-32343554-to-CVR-1-34580820",
+    "type": "ownership",
+    "from": "CVR-1-32343554",
+    "to": "CVR-1-34580820",
+    "data": {
+      "ownershipPercentage": "20-24,99%"
     }
   }, {
-    type: 'company',
-    id: 'company-10',
-    data: {
-      cvr: '10',
-      name: 'FIRMA #10'
+    "id": "ownership-from-person-6-to-CVR-1-32343554",
+    "type": "ownership",
+    "from": "person-6",
+    "to": "CVR-1-32343554",
+    "data": {
+      "ownershipPercentage": "100%"
     }
   }, {
-    type: 'company',
-    id: 'company-11',
-    data: {
-      cvr: '11',
-      name: 'FIRMA #11'
+    "id": "ownership-from-CVR-1-34580820_UNKNOWN-to-CVR-1-34580820",
+    "type": "ownership",
+    "from": "CVR-1-34580820_UNKNOWN",
+    "to": "CVR-1-34580820",
+    "data": {
+      "ownershipPercentage": "0-25%"
     }
   }],
-  relations: [{
-    type: 'ownership',
-    id: 'ownership-from-company-2-to-company-1',
-    from: 'company-2',
-    to: 'company-1',
-    data: {
-      ownershipPercentage: '20-24,99%'
+  "entities": [{
+    "id": "CVR-1-34580820",
+    "type": "company",
+    "data": {
+      "name": "LASSO X A/S",
+      "lassoId": "CVR-1-34580820",
+      "cvr": 34580820,
+      "companyType": "Aktieselskab",
+      "type": "Company",
+      "status": "Normal",
+      "employees": 13,
+      "fte": "12",
+      "industryCode": "631100",
+      "report": {
+        "ebitda": "2.234' DKK",
+        "equity": "88' DKK",
+        "equityExcludingDividend": null,
+        "result": "255' DKK",
+        "grossResult": "6.539' DKK",
+        "liabilitiesAndEquity": "12.964' DKK",
+        "solvencyRatio": "0,68%",
+        "solvencyRatioExcludingDividend": null,
+        "roi": "4,89%",
+        "coverage": null,
+        "balanceDate": "31.12.2020"
+      }
     }
   }, {
-    type: 'ownership',
-    id: 'ownership-from-person-1-to-company-2',
-    from: 'person-1',
-    to: 'company-2',
-    data: {
-      ownershipPercentage: '100%'
+    "id": "CVR-1-28484909",
+    "type": "company",
+    "data": {
+      "name": "EGGERT HOLDING ApS",
+      "lassoId": "CVR-1-28484909",
+      "cvr": 28484909,
+      "companyType": "Anpartsselskab",
+      "type": "Company",
+      "status": "Normal",
+      "employees": null,
+      "fte": null,
+      "industryCode": "642020",
+      "trueOwnersPercentage": {
+        "person-1": "12%",
+        "person-2": "44%",
+        "person-3": "44%"
+      },
+      "trueOwnersVotePercentage": {
+        "person-1": "100%",
+        "person-2": null,
+        "person-3": null
+      },
+      "report": {
+        "ebitda": "791' DKK",
+        "equity": "31.282' DKK",
+        "equityExcludingDividend": "31.226' DKK",
+        "result": "6.375' DKK",
+        "grossResult": "791' DKK",
+        "liabilitiesAndEquity": "49.935' DKK",
+        "solvencyRatio": "62,65%",
+        "solvencyRatioExcludingDividend": "62,53%",
+        "roi": "1,06%",
+        "coverage": null,
+        "balanceDate": "31.12.2020"
+      }
     }
   }, {
-    type: 'ownership',
-    id: 'ownership-from-company-3-to-company-1',
-    from: 'company-3',
-    to: 'company-1',
-    data: {
-      ownershipPercentage: '5-10%'
-    },
-    style: {
-      arrowFrom: true,
-      arrowTo: true,
-      lineStyle: 'dotted'
+    "id": "person-1",
+    "type": "person",
+    "data": {
+      "name": "Person #1",
+      "ultimateOwnership": {
+        "CVR-1-34580820": "0,5-1,49%"
+      },
+      "trueOwnersPercentage": {
+        "CVR-1-28484909": "12%"
+      },
+      "trueOwnersVotePercentage": {
+        "CVR-1-28484909": "100%"
+      },
+      "lassoId": "person-1",
+      "type": "Person"
     }
   }, {
-    type: 'ownership',
-    id: 'ownership-from-person-2-to-company-3',
-    from: 'person-2',
-    to: 'company-3',
-    data: {
-      ownershipPercentage: '100%'
+    "id": "person-2",
+    "type": "person",
+    "data": {
+      "name": "Person #2",
+      "ultimateOwnership": {
+        "CVR-1-34580820": "1,66-4,99%"
+      },
+      "trueOwnersPercentage": {
+        "CVR-1-28484909": "44%"
+      },
+      "trueOwnersVotePercentage": {
+        "CVR-1-28484909": null
+      },
+      "lassoId": "person-2",
+      "type": "Person"
     }
   }, {
-    type: 'ownership',
-    id: 'ownership-from-company-4-to-company-1',
-    from: 'company-4',
-    to: 'company-1',
-    data: {
-      ownershipPercentage: '20-24,99%'
+    "id": "person-3",
+    "type": "person",
+    "data": {
+      "name": "Person #3",
+      "ultimateOwnership": {
+        "CVR-1-34580820": "1,66-4,99%"
+      },
+      "trueOwnersPercentage": {
+        "CVR-1-28484909": "44%"
+      },
+      "trueOwnersVotePercentage": {
+        "CVR-1-28484909": null
+      },
+      "lassoId": "person-3",
+      "type": "Person"
     }
   }, {
-    type: 'ownership',
-    id: 'ownership-from-person-3-to-company-4',
-    from: 'person-3',
-    to: 'company-4',
-    data: {
-      ownershipPercentage: '100%'
+    "id": "CVR-1-31479304",
+    "type": "company",
+    "data": {
+      "name": "WEIS INVEST ApS",
+      "lassoId": "CVR-1-31479304",
+      "cvr": 31479304,
+      "companyType": "Anpartsselskab",
+      "type": "Company",
+      "status": "Normal",
+      "employees": null,
+      "fte": null,
+      "industryCode": "642020",
+      "trueOwnersPercentage": {
+        "person-4": "100%"
+      },
+      "trueOwnersVotePercentage": {
+        "person-4": "100%"
+      },
+      "report": {
+        "ebitda": null,
+        "equity": "6.426' DKK",
+        "equityExcludingDividend": "6.426' DKK",
+        "result": "790' DKK",
+        "grossResult": "-23' DKK",
+        "liabilitiesAndEquity": "6.514' DKK",
+        "solvencyRatio": "98,66%",
+        "solvencyRatioExcludingDividend": "98,66%",
+        "roi": null,
+        "coverage": null,
+        "balanceDate": "30.09.2020"
+      }
     }
   }, {
-    type: 'ownership',
-    id: 'ownership-from-company-5-to-company-1',
-    from: 'company-5',
-    to: 'company-1',
-    data: {
-      ownershipPercentage: '5-10%'
+    "id": "person-4",
+    "type": "person",
+    "data": {
+      "name": "Person #4",
+      "ultimateOwnership": {
+        "CVR-1-34580820": "5-9,99%"
+      },
+      "trueOwnersPercentage": {
+        "CVR-1-31479304": "100%"
+      },
+      "trueOwnersVotePercentage": {
+        "CVR-1-31479304": "100%"
+      },
+      "lassoId": "person-4",
+      "type": "Person"
     }
   }, {
-    type: 'ownership',
-    id: 'ownership-from-person-4-to-company-5',
-    from: 'person-4',
-    to: 'company-5',
-    data: {
-      ownershipPercentage: 'B: 33,33-49,99%'
+    "id": "CVR-1-31479282",
+    "type": "company",
+    "data": {
+      "name": "BENEDIKTSON HOLDING ApS",
+      "lassoId": "CVR-1-31479282",
+      "cvr": 31479282,
+      "companyType": "Anpartsselskab",
+      "type": "Company",
+      "status": "Normal",
+      "employees": null,
+      "fte": null,
+      "industryCode": "642020",
+      "trueOwnersPercentage": {
+        "person-5": "100%"
+      },
+      "trueOwnersVotePercentage": {
+        "person-5": "100%"
+      },
+      "report": {
+        "ebitda": null,
+        "equity": "704' DKK",
+        "equityExcludingDividend": "704' DKK",
+        "result": "4' DKK",
+        "grossResult": "4' DKK",
+        "liabilitiesAndEquity": "704' DKK",
+        "solvencyRatio": "99,98%",
+        "solvencyRatioExcludingDividend": "99,98%",
+        "roi": "0,6%",
+        "coverage": null,
+        "balanceDate": "31.12.2020"
+      }
     }
   }, {
-    type: 'ownership',
-    id: 'ownership-from-person-5-to-company-5',
-    from: 'person-5',
-    to: 'company-5',
-    data: {
-      ownershipPercentage: 'B: 33,33-49,99%'
+    "id": "person-5",
+    "type": "person",
+    "data": {
+      "name": "Person #5",
+      "ultimateOwnership": {
+        "CVR-1-34580820": "20-24,99%"
+      },
+      "trueOwnersPercentage": {
+        "CVR-1-31479282": "100%"
+      },
+      "trueOwnersVotePercentage": {
+        "CVR-1-31479282": "100%"
+      },
+      "lassoId": "person-5",
+      "type": "Person"
     }
   }, {
-    type: 'ownership',
-    id: 'ownership-from-person-6-to-company-5',
-    from: 'person-6',
-    to: 'company-5',
-    data: {
-      ownershipPercentage: 'A, C: 10-14,99%'
+    "id": "CVR-1-26933676",
+    "type": "company",
+    "data": {
+      "name": "JP/POLITIKENS HUS A/S",
+      "lassoId": "CVR-1-26933676",
+      "cvr": 26933676,
+      "companyType": "Aktieselskab",
+      "type": "Company",
+      "status": "Normal",
+      "employees": 1523,
+      "fte": "1.242",
+      "industryCode": "581300",
+      "trueOwnersPercentage": {},
+      "trueOwnersVotePercentage": {},
+      "report": {
+        "ebitda": "159.880' DKK",
+        "equity": "2.974.726' DKK",
+        "equityExcludingDividend": "2.960.726' DKK",
+        "result": "209.238' DKK",
+        "grossResult": "871.645' DKK",
+        "liabilitiesAndEquity": "3.812.550' DKK",
+        "solvencyRatio": "78,02%",
+        "solvencyRatioExcludingDividend": "77,66%",
+        "roi": "3,48%",
+        "coverage": "50,12%",
+        "balanceDate": "31.12.2020"
+      }
     }
   }, {
-    type: 'ownership',
-    id: 'ownership-from-company-6-to-company-1',
-    from: 'company-6',
-    to: 'company-1',
-    data: {
-      ownershipPercentage: '25-33,32%'
+    "id": "CVR-1-57001615",
+    "type": "company",
+    "data": {
+      "name": "A/S POLITIKEN HOLDING",
+      "lassoId": "CVR-1-57001615",
+      "cvr": 57001615,
+      "companyType": "Aktieselskab",
+      "type": "Company",
+      "status": "Normal",
+      "employees": 1,
+      "fte": "0,6",
+      "industryCode": "642020",
+      "trueOwnersPercentage": {},
+      "trueOwnersVotePercentage": {},
+      "report": {
+        "ebitda": "-2.009' DKK",
+        "equity": "1.781.832' DKK",
+        "equityExcludingDividend": "1.774.794' DKK",
+        "result": "118.294' DKK",
+        "grossResult": "-292' DKK",
+        "liabilitiesAndEquity": "1.782.767' DKK",
+        "solvencyRatio": "99,95%",
+        "solvencyRatioExcludingDividend": "99,55%",
+        "roi": "-0,11%",
+        "coverage": null,
+        "balanceDate": "31.12.2020"
+      }
     }
   }, {
-    type: 'ownership',
-    id: 'ownership-from-company-7-to-company-6',
-    from: 'company-7',
-    to: 'company-6',
-    data: {
-      ownershipPercentage: '50-66,66%'
+    "id": "CVR-1-11606792",
+    "type": "company",
+    "data": {
+      "name": "POLITIKEN-FONDEN",
+      "ultimateOwnership": {
+        "CVR-1-34580820": "11,25-22,2%"
+      },
+      "lassoId": "CVR-1-11606792",
+      "cvr": 11606792,
+      "companyType": "Erhvervsdrivende fond",
+      "type": "Company",
+      "status": "Normal",
+      "employees": 27,
+      "fte": "1,72",
+      "industryCode": "889910",
+      "report": {
+        "ebitda": null,
+        "equity": "132.440' DKK",
+        "equityExcludingDividend": null,
+        "result": "9.270' DKK",
+        "grossResult": "-1.692' DKK",
+        "liabilitiesAndEquity": "135.320' DKK",
+        "solvencyRatio": "97,87%",
+        "solvencyRatioExcludingDividend": null,
+        "roi": null,
+        "coverage": null,
+        "balanceDate": "31.12.2020"
+      }
     }
   }, {
-    type: 'ownership',
-    id: 'ownership-from-company-8-to-company-7',
-    from: 'company-8',
-    to: 'company-7',
-    data: {
-      ownershipPercentage: 'A, B: 0-5%'
+    "id": "CVR-1-76162719",
+    "type": "company",
+    "data": {
+      "name": "ELLEN HØRUPS FOND",
+      "ultimateOwnership": {
+        "CVR-1-34580820": "0-1,11%"
+      },
+      "lassoId": "CVR-1-76162719",
+      "cvr": 76162719,
+      "companyType": "Fonde og andre selvejende institutioner",
+      "type": "Company",
+      "status": "Aktiv",
+      "employees": null,
+      "fte": null,
+      "industryCode": "889910"
     }
   }, {
-    type: 'ownership',
-    id: 'ownership-from-company-9-to-company-7',
-    from: 'company-9',
-    to: 'company-7',
-    data: {
-      ownershipPercentage: 'A, B: 66,67-89,99%'
+    "id": "CVR-1-35947817",
+    "type": "company",
+    "data": {
+      "name": "JYLLANDS-POSTEN HOLDING A/S",
+      "lassoId": "CVR-1-35947817",
+      "cvr": 35947817,
+      "companyType": "Aktieselskab",
+      "type": "Company",
+      "status": "Normal",
+      "employees": 1,
+      "fte": "0,08",
+      "industryCode": "642020",
+      "report": {
+        "ebitda": "-1.487' DKK",
+        "equity": "1.509.100' DKK",
+        "equityExcludingDividend": "1.504.100' DKK",
+        "result": "104.502' DKK",
+        "grossResult": "-324' DKK",
+        "liabilitiesAndEquity": "1.510.303' DKK",
+        "solvencyRatio": "99,92%",
+        "solvencyRatioExcludingDividend": "99,59%",
+        "roi": "-0,1%",
+        "coverage": null,
+        "balanceDate": "31.12.2020"
+      }
     }
   }, {
-    type: 'ownership',
-    id: 'ownership-from-company-10-to-company-6',
-    from: 'company-10',
-    to: 'company-6',
-    data: {
-      ownershipPercentage: '50-66,66%'
+    "id": "CVR-1-38762915",
+    "type": "company",
+    "data": {
+      "name": "JYLLANDS-POSTENS FOND",
+      "ultimateOwnership": {
+        "CVR-1-34580820": "12,5-22,21%"
+      },
+      "lassoId": "CVR-1-38762915",
+      "cvr": 38762915,
+      "companyType": "Erhvervsdrivende fond",
+      "type": "Company",
+      "status": "Normal",
+      "employees": 1,
+      "fte": "0,09",
+      "industryCode": "889910",
+      "report": {
+        "ebitda": null,
+        "equity": "47.558' DKK",
+        "equityExcludingDividend": "43.058' DKK",
+        "result": "3.416' DKK",
+        "grossResult": "-1.571' DKK",
+        "liabilitiesAndEquity": "49.553' DKK",
+        "solvencyRatio": "95,97%",
+        "solvencyRatioExcludingDividend": "86,89%",
+        "roi": null,
+        "coverage": null,
+        "balanceDate": "31.12.2020"
+      }
     }
   }, {
-    type: 'ownership',
-    id: 'ownership-from-company-11-to-company-10',
-    from: 'company-11',
-    to: 'company-10',
-    data: {
-      ownershipPercentage: '100%'
+    "id": "CVR-1-32343554",
+    "type": "company",
+    "data": {
+      "name": "JEBEMA HOLDING ApS",
+      "lassoId": "CVR-1-32343554",
+      "cvr": 32343554,
+      "companyType": "Anpartsselskab",
+      "type": "Company",
+      "status": "Normal",
+      "employees": null,
+      "fte": null,
+      "industryCode": "642020",
+      "trueOwnersPercentage": {
+        "person-6": "100%"
+      },
+      "trueOwnersVotePercentage": {
+        "person-6": "100%"
+      },
+      "report": {
+        "ebitda": null,
+        "equity": "88' DKK",
+        "equityExcludingDividend": null,
+        "result": "8' DKK",
+        "grossResult": "-9' DKK",
+        "liabilitiesAndEquity": "92' DKK",
+        "solvencyRatio": "96,6%",
+        "solvencyRatioExcludingDividend": null,
+        "roi": "-10,68%",
+        "coverage": null,
+        "balanceDate": "31.12.2020"
+      }
+    }
+  }, {
+    "id": "person-6",
+    "type": "person",
+    "data": {
+      "name": "Person #6",
+      "ultimateOwnership": {
+        "CVR-1-34580820": "20-24,99%"
+      },
+      "trueOwnersPercentage": {
+        "CVR-1-32343554": "100%"
+      },
+      "trueOwnersVotePercentage": {
+        "CVR-1-32343554": "100%"
+      },
+      "lassoId": "person-6",
+      "type": "Person"
+    }
+  }, {
+    "id": "CVR-1-34580820_UNKNOWN",
+    "type": "unknownOwners",
+    "data": {
+      "name": "Unknown Owner(s)"
     }
   }]
 };
 // CONCATENATED MODULE: ./src/diagram.ts
+
 
 
 
@@ -56573,6 +61859,7 @@ var diagram_Diagram = /*#__PURE__*/function () {
         _this = this,
         _config$filters$map,
         _config$filters,
+        _config$layouts,
         _config$methods,
         _config$saveSettingsT,
         _this$methods$getEnti,
@@ -56593,6 +61880,7 @@ var diagram_Diagram = /*#__PURE__*/function () {
     this.filters = (_config$filters$map = (_config$filters = config.filters) === null || _config$filters === void 0 ? void 0 : _config$filters.map(function (f) {
       return new diagram_Filter(_this, f);
     })) !== null && _config$filters$map !== void 0 ? _config$filters$map : [];
+    this.layouts = (_config$layouts = config.layouts) !== null && _config$layouts !== void 0 ? _config$layouts : [];
     this.methods = {
       getEntityData: (_config$methods = config.methods) === null || _config$methods === void 0 ? void 0 : _config$methods.getEntityData
     };
@@ -56607,6 +61895,10 @@ var diagram_Diagram = /*#__PURE__*/function () {
       children: 10
     }).then(function (data) {
       _this.activeDiagram = new diagram_ActiveDiagram(_this, data);
+
+      _this.eventBus.emit({
+        name: 'dataUpdated'
+      });
     });
   }
 
@@ -56663,10 +61955,9 @@ var diagram_ActiveDiagram = /*#__PURE__*/function () {
     key: "expand",
     value: function () {
       var _expand = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee() {
-        var _this$diagram$methods, _this$diagram$methods2, _data$entities;
+        var _this$diagram$methods, _this$diagram$methods2;
 
-        var data, _iterator, _step, entity;
-
+        var data;
         return regeneratorRuntime.wrap(function _callee$(_context) {
           while (1) {
             switch (_context.prev = _context.next) {
@@ -56694,56 +61985,14 @@ var diagram_ActiveDiagram = /*#__PURE__*/function () {
                 return _context.abrupt("return");
 
               case 5:
-                _iterator = _createForOfIteratorHelper((_data$entities = data.entities) !== null && _data$entities !== void 0 ? _data$entities : []);
-                _context.prev = 6;
+                this.data.add(data);
 
-                _iterator.s();
-
-              case 8:
-                if ((_step = _iterator.n()).done) {
-                  _context.next = 15;
-                  break;
-                }
-
-                entity = _step.value;
-
-                if (!this.data.entitiesMap.has(entity.id)) {
-                  _context.next = 12;
-                  break;
-                }
-
-                return _context.abrupt("continue", 13);
-
-              case 12:
-                this.data;
-
-              case 13:
-                _context.next = 8;
-                break;
-
-              case 15:
-                _context.next = 20;
-                break;
-
-              case 17:
-                _context.prev = 17;
-                _context.t0 = _context["catch"](6);
-
-                _iterator.e(_context.t0);
-
-              case 20:
-                _context.prev = 20;
-
-                _iterator.f();
-
-                return _context.finish(20);
-
-              case 23:
+              case 6:
               case "end":
                 return _context.stop();
             }
           }
-        }, _callee, this, [[6, 17, 20, 23]]);
+        }, _callee, this);
       }));
 
       function expand() {
@@ -56848,23 +62097,33 @@ var diagram_RelationTypes = /*#__PURE__*/function () {
   return RelationTypes;
 }();
 var diagram_EntityType = function EntityType(options) {
-  var _options$icon, _options$style;
+  var _options$icon, _options$style$backgr, _options$style, _options$style$border, _options$style2, _options$style$border2, _options$style3, _options$style$border3, _options$style4, _options$style$labels, _options$style5;
 
   _classCallCheck(this, EntityType);
 
   this.id = options.id;
   this.icon = (_options$icon = options.icon) !== null && _options$icon !== void 0 ? _options$icon : undefined;
   this.labels = options.labels;
-  this.style = (_options$style = options.style) !== null && _options$style !== void 0 ? _options$style : {};
+  this.style = {
+    backgroundColor: (_options$style$backgr = (_options$style = options.style) === null || _options$style === void 0 ? void 0 : _options$style.backgroundColor) !== null && _options$style$backgr !== void 0 ? _options$style$backgr : '#ffffff',
+    borderColor: (_options$style$border = (_options$style2 = options.style) === null || _options$style2 === void 0 ? void 0 : _options$style2.borderColor) !== null && _options$style$border !== void 0 ? _options$style$border : '#e0e0e0',
+    borderStyle: (_options$style$border2 = (_options$style3 = options.style) === null || _options$style3 === void 0 ? void 0 : _options$style3.borderStyle) !== null && _options$style$border2 !== void 0 ? _options$style$border2 : 'solid',
+    borderWidth: (_options$style$border3 = (_options$style4 = options.style) === null || _options$style4 === void 0 ? void 0 : _options$style4.borderWidth) !== null && _options$style$border3 !== void 0 ? _options$style$border3 : 2,
+    labelsBackgroundColor: (_options$style$labels = (_options$style5 = options.style) === null || _options$style5 === void 0 ? void 0 : _options$style5.labelsBackgroundColor) !== null && _options$style$labels !== void 0 ? _options$style$labels : '#ffffff'
+  };
 };
 var diagram_RelationType = function RelationType(options) {
-  var _options$style2;
+  var _options$style$arrowF, _options$style6, _options$style$arrowT, _options$style7, _options$style$lineSt, _options$style8;
 
   _classCallCheck(this, RelationType);
 
   this.id = options.id;
   this.labels = options.labels;
-  this.style = (_options$style2 = options.style) !== null && _options$style2 !== void 0 ? _options$style2 : {};
+  this.style = {
+    arrowFrom: (_options$style$arrowF = (_options$style6 = options.style) === null || _options$style6 === void 0 ? void 0 : _options$style6.arrowFrom) !== null && _options$style$arrowF !== void 0 ? _options$style$arrowF : false,
+    arrowTo: (_options$style$arrowT = (_options$style7 = options.style) === null || _options$style7 === void 0 ? void 0 : _options$style7.arrowTo) !== null && _options$style$arrowT !== void 0 ? _options$style$arrowT : true,
+    lineStyle: (_options$style$lineSt = (_options$style8 = options.style) === null || _options$style8 === void 0 ? void 0 : _options$style8.lineStyle) !== null && _options$style$lineSt !== void 0 ? _options$style$lineSt : 'solid'
+  };
   this.supports = options.supports.map(function (r) {
     return new diagram_RelationTypeSupport(r);
   });
@@ -56880,7 +62139,7 @@ var diagram_RelationTypeSupport = function RelationTypeSupport(options) {
 };
 var diagram_Entity = /*#__PURE__*/function () {
   function Entity(diagram, options) {
-    var _options$data, _options$style3;
+    var _options$data, _options$style9;
 
     _classCallCheck(this, Entity);
 
@@ -56891,7 +62150,7 @@ var diagram_Entity = /*#__PURE__*/function () {
     this.id = options.id;
     this.position = options.position ? _objectSpread2({}, options.position) : null;
     this.data = _objectSpread2({}, (_options$data = options.data) !== null && _options$data !== void 0 ? _options$data : {});
-    this.style = _objectSpread2({}, (_options$style3 = options.style) !== null && _options$style3 !== void 0 ? _options$style3 : {});
+    this.style = _objectSpread2({}, (_options$style9 = options.style) !== null && _options$style9 !== void 0 ? _options$style9 : {});
   }
 
   _createClass(Entity, [{
@@ -56900,40 +62159,18 @@ var diagram_Entity = /*#__PURE__*/function () {
       return this.id == this.diagram.mainEntityId;
     }
   }, {
-    key: "merge",
-    value: function merge(options) {
-      var merge = function merge(a, b, keys) {
-        var mergeProp = function mergeProp(key) {
-          return a[key] = b[key];
-        };
+    key: "getFieldValue",
+    value: function getFieldValue(field) {
+      var value = getDeep(this.data, field.dataKey);
 
-        var _iterator2 = _createForOfIteratorHelper(keys),
-            _step2;
+      if (value === undefined || value === null) {
+        var _field$getInitialValu;
 
-        try {
-          for (_iterator2.s(); !(_step2 = _iterator2.n()).done;) {
-            var key = _step2.value;
-            if (key in b) mergeProp(key);
-          }
-        } catch (err) {
-          _iterator2.e(err);
-        } finally {
-          _iterator2.f();
-        }
-      };
+        value = (_field$getInitialValu = field.getInitialValue) === null || _field$getInitialValu === void 0 ? void 0 : _field$getInitialValu.call(field, this.data);
+        setDeep(this.data, field.dataKey, value);
+      }
 
-      if (options.data) merge(this.data, options.data, Object.keys(options.data));
-      if (options.style) merge(this.style, options.style, ['backgroundColor', 'borderColor', 'borderStyle', 'borderWidth', 'labelsBackgroundColor']);
-    }
-  }, {
-    key: "clone",
-    value: function clone() {
-      var _this$position;
-
-      return new Entity(this.diagram, _objectSpread2(_objectSpread2({}, this), {}, {
-        type: this.type.id,
-        position: (_this$position = this.position) !== null && _this$position !== void 0 ? _this$position : undefined
-      }));
+      return value;
     }
   }]);
 
@@ -56941,7 +62178,7 @@ var diagram_Entity = /*#__PURE__*/function () {
 }();
 var diagram_Relation = /*#__PURE__*/function () {
   function Relation(diagram, options) {
-    var _options$data2, _options$style4;
+    var _options$data2, _options$style10;
 
     _classCallCheck(this, Relation);
 
@@ -56953,41 +62190,22 @@ var diagram_Relation = /*#__PURE__*/function () {
     this.from = options.from;
     this.to = options.to;
     this.data = _objectSpread2({}, (_options$data2 = options.data) !== null && _options$data2 !== void 0 ? _options$data2 : {});
-    this.style = _objectSpread2({}, (_options$style4 = options.style) !== null && _options$style4 !== void 0 ? _options$style4 : {});
+    this.style = _objectSpread2({}, (_options$style10 = options.style) !== null && _options$style10 !== void 0 ? _options$style10 : {});
   }
 
   _createClass(Relation, [{
-    key: "merge",
-    value: function merge(options) {
-      var merge = function merge(a, b, keys) {
-        var mergeProp = function mergeProp(key) {
-          return a[key] = b[key];
-        };
+    key: "getFieldValue",
+    value: function getFieldValue(field) {
+      var value = getDeep(this.data, field.dataKey);
 
-        var _iterator3 = _createForOfIteratorHelper(keys),
-            _step3;
+      if (value === undefined || value === null) {
+        var _field$getInitialValu2;
 
-        try {
-          for (_iterator3.s(); !(_step3 = _iterator3.n()).done;) {
-            var key = _step3.value;
-            if (key in b) mergeProp(key);
-          }
-        } catch (err) {
-          _iterator3.e(err);
-        } finally {
-          _iterator3.f();
-        }
-      };
+        value = (_field$getInitialValu2 = field.getInitialValue) === null || _field$getInitialValu2 === void 0 ? void 0 : _field$getInitialValu2.call(field, this.data);
+        setDeep(this.data, field.dataKey, value);
+      }
 
-      if (options.data) merge(this.data, options.data, Object.keys(options.data));
-      if (options.style) merge(this.style, options.style, ['arrowFrom', 'arrowTo', 'lineStyle']);
-    }
-  }, {
-    key: "clone",
-    value: function clone() {
-      return new Relation(this.diagram, _objectSpread2(_objectSpread2({}, this), {}, {
-        type: this.type.id
-      }));
+      return value;
     }
   }]);
 
@@ -57006,7 +62224,7 @@ var diagram_FieldGroup = function FieldGroup(diagram, options) {
 };
 var diagram_Field = /*#__PURE__*/function () {
   function Field(diagram, fieldGroup, options) {
-    var _options$entityTypes, _options$relationType, _options$isEntityLabe, _options$isRelationLa, _options$addToLegend, _options$legendColor, _options$startActive, _options$display;
+    var _options$type, _options$entityTypes, _options$relationType, _options$isEntityLabe, _options$isRelationLa, _options$addToLegend, _options$legendColor, _options$startActive, _options$display;
 
     _classCallCheck(this, Field);
 
@@ -57014,10 +62232,12 @@ var diagram_Field = /*#__PURE__*/function () {
     this.fieldGroup = fieldGroup;
     this.id = options.id;
     this.fullId = "".concat(fieldGroup.id, ".").concat(this.id);
+    this.type = (_options$type = options.type) !== null && _options$type !== void 0 ? _options$type : 'text';
     this.title = options.title;
     this.entityTypes = diagram.entityTypes.pick((_options$entityTypes = options.entityTypes) !== null && _options$entityTypes !== void 0 ? _options$entityTypes : []);
     this.relationTypes = diagram.relationTypes.pick((_options$relationType = options.relationTypes) !== null && _options$relationType !== void 0 ? _options$relationType : []);
     this.dataKey = options.dataKey;
+    this.getInitialValue = options.getInitialValue;
     this.formatter = options.formatter;
     this.isEntityLabel = (_options$isEntityLabe = options.isEntityLabel) !== null && _options$isEntityLabe !== void 0 ? _options$isEntityLabe : false;
     this.isRelationLabel = (_options$isRelationLa = options.isRelationLabel) !== null && _options$isRelationLa !== void 0 ? _options$isRelationLa : false;
@@ -57035,7 +62255,14 @@ var diagram_Field = /*#__PURE__*/function () {
       return (_this$diagram$activeD = this.diagram.activeDiagram.settings.activeFields[this.fullId]) !== null && _this$diagram$activeD !== void 0 ? _this$diagram$activeD : this.startActive;
     },
     set: function set(active) {
+      if (this.diagram.activeDiagram.settings.activeFields[this.fullId] === active) return;
       this.diagram.activeDiagram.settings.activeFields[this.fullId] = active;
+      this.diagram.eventBus.emit({
+        name: 'settingsChanged'
+      });
+      this.diagram.eventBus.emit({
+        name: 'activeFieldsChanged'
+      });
     }
   }]);
 
@@ -57043,14 +62270,14 @@ var diagram_Field = /*#__PURE__*/function () {
 }();
 var diagram_Filter = /*#__PURE__*/function () {
   function Filter(diagram, options) {
-    var _options$type, _options$filter, _options$startActive2;
+    var _options$type2, _options$filter, _options$startActive2;
 
     _classCallCheck(this, Filter);
 
     this.diagram = diagram;
     this.id = options.id;
     this.title = options.title;
-    this.type = (_options$type = options.type) !== null && _options$type !== void 0 ? _options$type : null;
+    this.type = (_options$type2 = options.type) !== null && _options$type2 !== void 0 ? _options$type2 : null;
     this.filter = (_options$filter = options.filter) !== null && _options$filter !== void 0 ? _options$filter : function () {
       return true;
     };
@@ -57065,7 +62292,14 @@ var diagram_Filter = /*#__PURE__*/function () {
       return (_this$diagram$activeD2 = this.diagram.activeDiagram.settings.activeFilters[this.id]) !== null && _this$diagram$activeD2 !== void 0 ? _this$diagram$activeD2 : this.startActive;
     },
     set: function set(active) {
+      if (this.diagram.activeDiagram.settings.activeFilters[this.id] === active) return;
       this.diagram.activeDiagram.settings.activeFilters[this.id] = active;
+      this.diagram.eventBus.emit({
+        name: 'settingsChanged'
+      });
+      this.diagram.eventBus.emit({
+        name: 'activeFiltersChanged'
+      });
     }
   }]);
 
@@ -57079,6 +62313,7 @@ var diagram_Settings = /*#__PURE__*/function () {
 
     this.activeFields = {};
     this.activeFilters = {};
+    this.activeLayout = null;
     this.diagram = diagram;
     this.reset();
     this.diagram.eventBus.on('settingsChanged', function () {
@@ -57089,37 +62324,42 @@ var diagram_Settings = /*#__PURE__*/function () {
   _createClass(Settings, [{
     key: "reset",
     value: function reset() {
+      var _ref, _this$diagram$layouts;
+
       this.activeFields = {};
       this.activeFilters = {};
 
-      var _iterator4 = _createForOfIteratorHelper(this.diagram.fields),
-          _step4;
+      var _iterator = _createForOfIteratorHelper(this.diagram.fields),
+          _step;
 
       try {
-        for (_iterator4.s(); !(_step4 = _iterator4.n()).done;) {
-          var field = _step4.value;
+        for (_iterator.s(); !(_step = _iterator.n()).done;) {
+          var field = _step.value;
           this.activeFields[field.fullId] = field.startActive;
         }
       } catch (err) {
-        _iterator4.e(err);
+        _iterator.e(err);
       } finally {
-        _iterator4.f();
+        _iterator.f();
       }
 
-      var _iterator5 = _createForOfIteratorHelper(this.diagram.filters),
-          _step5;
+      var _iterator2 = _createForOfIteratorHelper(this.diagram.filters),
+          _step2;
 
       try {
-        for (_iterator5.s(); !(_step5 = _iterator5.n()).done;) {
-          var filter = _step5.value;
+        for (_iterator2.s(); !(_step2 = _iterator2.n()).done;) {
+          var filter = _step2.value;
           this.activeFilters[filter.id] = filter.startActive;
         }
       } catch (err) {
-        _iterator5.e(err);
+        _iterator2.e(err);
       } finally {
-        _iterator5.f();
+        _iterator2.f();
       }
 
+      this.activeLayout = (_ref = (_this$diagram$layouts = this.diagram.layouts.find(function (l) {
+        return l.default;
+      })) !== null && _this$diagram$layouts !== void 0 ? _this$diagram$layouts : this.diagram.layouts[0]) !== null && _ref !== void 0 ? _ref : null;
       this.loadFromLocalStorage();
       this.saveToLocalStorage();
     }
@@ -57134,37 +62374,48 @@ var diagram_Settings = /*#__PURE__*/function () {
         var settings = JSON.parse(json);
         if (!diagram_isRecord(settings)) return;
         var activeFields = settings.activeFields,
-            activeFilters = settings.activeFilters;
-        if (!diagram_isRecord(activeFields) || !diagram_isRecord(activeFilters)) return;
+            activeFilters = settings.activeFilters,
+            activeLayout = settings.activeLayout;
 
-        var _iterator6 = _createForOfIteratorHelper(this.diagram.fields),
-            _step6;
+        if (diagram_isRecord(activeFields)) {
+          var _iterator3 = _createForOfIteratorHelper(this.diagram.fields),
+              _step3;
 
-        try {
-          for (_iterator6.s(); !(_step6 = _iterator6.n()).done;) {
-            var field = _step6.value;
-            var active = activeFields[field.fullId];
-            if (typeof active == 'boolean') this.activeFields[field.fullId] = active;
+          try {
+            for (_iterator3.s(); !(_step3 = _iterator3.n()).done;) {
+              var field = _step3.value;
+              var active = activeFields[field.fullId];
+              if (typeof active == 'boolean') this.activeFields[field.fullId] = active;
+            }
+          } catch (err) {
+            _iterator3.e(err);
+          } finally {
+            _iterator3.f();
           }
-        } catch (err) {
-          _iterator6.e(err);
-        } finally {
-          _iterator6.f();
         }
 
-        var _iterator7 = _createForOfIteratorHelper(this.diagram.filters),
-            _step7;
+        if (diagram_isRecord(activeFilters)) {
+          var _iterator4 = _createForOfIteratorHelper(this.diagram.filters),
+              _step4;
 
-        try {
-          for (_iterator7.s(); !(_step7 = _iterator7.n()).done;) {
-            var filter = _step7.value;
-            var _active = activeFilters[filter.id];
-            if (typeof _active == 'boolean') this.activeFilters[filter.id] = _active;
+          try {
+            for (_iterator4.s(); !(_step4 = _iterator4.n()).done;) {
+              var filter = _step4.value;
+              var _active = activeFilters[filter.id];
+              if (typeof _active == 'boolean') this.activeFilters[filter.id] = _active;
+            }
+          } catch (err) {
+            _iterator4.e(err);
+          } finally {
+            _iterator4.f();
           }
-        } catch (err) {
-          _iterator7.e(err);
-        } finally {
-          _iterator7.f();
+        }
+
+        if (typeof activeLayout === 'string') {
+          var layout = this.diagram.layouts.find(function (l) {
+            return l.id == activeLayout;
+          });
+          if (layout) this.activeLayout = layout;
         }
       } catch (_unused) {
         return;
@@ -57176,9 +62427,12 @@ var diagram_Settings = /*#__PURE__*/function () {
       if (!this.diagram.saveSettingsToLocalStorage) return;
 
       try {
+        var _this$activeLayout;
+
         localStorage.setItem('lassox-diagram/settings', JSON.stringify({
           activeFields: this.activeFields,
-          activeFilters: this.activeFilters
+          activeFilters: this.activeFilters,
+          activeLayout: (_this$activeLayout = this.activeLayout) === null || _this$activeLayout === void 0 ? void 0 : _this$activeLayout.id
         }));
       } catch (_unused2) {
         return;
@@ -57207,6 +62461,7 @@ var LassoDiagram = {
   }
 };
 /* harmony default export */ var lasso_diagram = (LassoDiagram);
+
 
 // CONCATENATED MODULE: ./node_modules/@vue/cli-service/lib/commands/build/entry-lib.js
 
@@ -57365,6 +62620,13 @@ var global = __webpack_require__("da84");
 
 module.exports = global.Promise;
 
+
+/***/ }),
+
+/***/ "fed5":
+/***/ (function(module, exports, __webpack_require__) {
+
+// extracted by mini-css-extract-plugin
 
 /***/ }),
 

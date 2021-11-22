@@ -7,7 +7,6 @@ export default class ConfirmAdditionDialog extends Vue {
     readonly onConfirm?: () => void;
     readonly onDismiss?: () => void;
     get diagram(): import("../diagram").default;
-    get activeDiagram(): import("../diagram").ActiveDiagram;
     get content(): string;
     close(): void;
     confirm(): void;

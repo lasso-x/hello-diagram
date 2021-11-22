@@ -18,13 +18,13 @@ export default class DiagramData {
     relations: Relation[];
     get canUndo(): boolean;
     get canRedo(): boolean;
-    reset(): void;
     add(options: Omit<AdditionChange, 'type'>): void;
     remove(options: Omit<RemovalChange, 'type'>): void;
     edit(options: Omit<EditChange, 'type'>): void;
     commitChange(change: Change, isInitial?: boolean): void;
-    undo(): void;
-    redo(): void;
+    undo(trackEvents?: boolean): void;
+    redo(trackEvents?: boolean): void;
+    reset(): void;
     parseEntities(entities: EntityDefinition[]): Entity[];
     parseRelations(relations: RelationDefinition[]): Relation[];
     private _compileChange;
@@ -41,8 +41,8 @@ export interface DiagramDataDefinition {
 }
 export interface CompiledChange {
     change: Change;
-    apply: () => void | false;
-    revert: () => void;
+    apply: (trackEvents?: boolean) => void | false;
+    revert: (trackEvents?: boolean) => void;
 }
 export declare type Change = (AdditionChange | RemovalChange | EditChange);
 export interface AdditionChange {

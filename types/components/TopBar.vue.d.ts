@@ -10,8 +10,10 @@ export default class TopBar extends Vue {
     showEditDropdownMenu: boolean;
     get canUndo(): boolean;
     get canRedo(): boolean;
+    save(): void;
     expand(): void;
     undo(): void;
     redo(): void;
     reset(): void;
+    showSaveLoadDialog(): void;
 }

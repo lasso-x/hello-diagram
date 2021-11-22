@@ -1,6 +1,7 @@
 import Vue from 'vue';
 import DiagramEventBus from './types/DiagramEventBus';
 import DiagramData, { DiagramDataDefinition } from './types/DiagramData';
+import SavedDiagram from './types/SavedDiagram';
 export default class Diagram {
     static init(config: DiagramConfig): Diagram;
     container?: HTMLElement;
@@ -14,18 +15,20 @@ export default class Diagram {
     fields: Field[];
     filters: Filter[];
     layouts: LayoutDefinition[];
-    methods: {
-        getEntityData?: (options: {
-            ids: string[];
-            relationTypes: string[];
-            parents: number;
-            children: number;
-        }) => Promise<DiagramDataDefinition>;
-    };
+    methods: Pick<DiagramConfigMethods, ('saveDiagram' | 'getEntityData')>;
+    enableEditing: boolean;
+    enableSaving: boolean;
+    enableSharing: boolean;
     saveSettingsToLocalStorage: boolean;
     activeDiagram: ActiveDiagram;
+    hasUnsavedChanges: boolean;
+    isSaving: boolean;
     constructor(config: DiagramConfig);
     render(container: Element): HTMLDivElement;
+    setActiveDiagram(activeDiagram: ActiveDiagram): void;
+    save(): Promise<void>;
+    load(savedDiagram: SavedDiagram): void;
+    reset(): void;
 }
 export interface DiagramConfig {
     mainEntityId: string;
@@ -34,25 +37,25 @@ export interface DiagramConfig {
     fieldGroups?: FieldGroupDefinition[];
     filters?: FilterDefinition[];
     layouts?: LayoutDefinition[];
-    methods?: {
-        onBeforePrint?: () => void;
-        onAfterPrint?: () => void;
-        getSavedDiagrams?: () => Promise<unknown>;
-        saveDiagram?: (savedDiagram: unknown) => Promise<void>;
-        deleteSavedDiagram?: (savedDiagram: unknown) => Promise<void>;
-        downloadPdf?: (blob: Blob) => Promise<void>;
-        getEntityData?: (options: {
-            ids: string[];
-            relationTypes: string[];
-            parents: number;
-            children: number;
-        }) => Promise<DiagramDataDefinition>;
-    };
-    savedDiagram?: unknown[];
+    methods?: DiagramConfigMethods;
+    enableEditing?: boolean;
     enableSaving?: boolean;
     enableSharing?: boolean;
-    enableEditing?: boolean;
     saveSettingsToLocalStorage?: boolean;
+}
+export interface DiagramConfigMethods {
+    onBeforePrint?: () => void;
+    onAfterPrint?: () => void;
+    getSavedDiagrams?: () => Promise<SavedDiagram[]>;
+    saveDiagram?: (savedDiagram: SavedDiagram) => Promise<void>;
+    deleteSavedDiagram?: (savedDiagram: SavedDiagram) => Promise<void>;
+    downloadPdf?: (blob: Blob) => Promise<void>;
+    getEntityData?: (options: {
+        ids: string[];
+        relationTypes: string[];
+        parents: number;
+        children: number;
+    }) => Promise<DiagramDataDefinition>;
 }
 export declare class ActiveDiagram {
     constructor(diagram: Diagram, data?: DiagramDataDefinition);
@@ -64,7 +67,6 @@ export declare class ActiveDiagram {
     data: DiagramData;
     settings: Settings;
     expand(): Promise<void>;
-    setData(data: DiagramDataDefinition): void;
 }
 export declare class EntityTypes {
     constructor(items: EntityTypeDefinition[]);
@@ -93,6 +95,8 @@ export declare class EntityType {
         editorLabel?: (data: Record<string, any>) => string;
     };
     style: EntityStyle;
+    fieldGroups: FieldGroup[];
+    fields: Field[];
     constructor(options: EntityTypeDefinition);
 }
 export interface EntityTypeDefinition {
@@ -122,6 +126,8 @@ export declare class RelationType {
     };
     style: RelationStyle;
     supports: RelationTypeSupport[];
+    fieldGroups: FieldGroup[];
+    fields: Field[];
     constructor(options: RelationTypeDefinition);
 }
 export declare type RelationTypeDefinition = {
@@ -129,15 +135,15 @@ export declare type RelationTypeDefinition = {
     labels: {
         singular: string;
         plural: string;
-        newParent?: string;
-        newChild?: string;
-        existingParents?: string;
-        existingChildren?: string;
         singularFrom?: string;
         pluralFrom?: string;
         singularTo?: string;
         pluralTo?: string;
         editorLabel?: (data: Record<string, any>) => string;
+        newParent?: string;
+        newChild?: string;
+        existingParents?: string;
+        existingChildren?: string;
     };
     style?: RelationStyle;
     supports: RelationTypeSupportDefinition[];
@@ -159,24 +165,25 @@ export declare class Entity {
     readonly isRelation = false;
     type: EntityType;
     id: string;
-    data: Record<string, any>;
-    position: {
+    position?: {
         x: number;
         y: number;
-    } | null;
+    };
+    data: Record<string, any>;
     style: EntityStyle;
     constructor(diagram: Diagram, options: EntityDefinition);
     get isMainEntity(): boolean;
+    get fieldGroups(): FieldGroup[];
     getFieldValue(field: Field): any;
 }
 export interface EntityDefinition {
     type: string;
     id: string;
-    data?: Record<string, any>;
     position?: {
         x: number;
         y: number;
     };
+    data?: Record<string, any>;
     style?: EntityStyle;
 }
 export interface EntityStyle {
@@ -197,6 +204,7 @@ export declare class Relation {
     data: Record<string, any>;
     style: RelationStyle;
     constructor(diagram: Diagram, options: RelationDefinition);
+    get fieldGroups(): FieldGroup[];
     getFieldValue(field: Field): any;
 }
 export interface RelationDefinition {
@@ -216,7 +224,11 @@ export declare class FieldGroup {
     id: string;
     title: string;
     fields: Field[];
-    constructor(diagram: Diagram, options: FieldGroupDefinition);
+    constructor(diagram: Diagram, options: {
+        id: string;
+        title: string;
+        fields: (Field | FieldDefinition)[];
+    });
 }
 export interface FieldGroupDefinition {
     id: string;
@@ -228,7 +240,7 @@ export declare class Field {
     fieldGroup: FieldGroup;
     id: string;
     fullId: string;
-    type: 'text' | 'boolean' | 'radio-buttons';
+    type: 'text' | 'boolean';
     title: string;
     entityTypes: EntityTypes;
     relationTypes: RelationTypes;

@@ -7,7 +7,6 @@ export default class Graph extends Vue {
     readonly graphContainerEl: HTMLElement;
     _graph?: cytoscape.Core;
     addedItems: Map<string, Entity | Relation>;
-    activeDiagramChanged: boolean;
     onDestroy?: () => void;
     get el(): HTMLElement;
     mounted(): void;
@@ -16,6 +15,7 @@ export default class Graph extends Vue {
     onKeyDown(event: KeyboardEvent): void;
     onResize(): void;
     initialize(): void;
+    clearElements(): void;
     updateElements(): void;
     runLayout(animate?: boolean): Promise<void> | undefined;
     fitInGraph(): void;

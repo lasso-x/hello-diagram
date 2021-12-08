@@ -1,16 +1,11 @@
-export default class Collection<K, T> {
-    constructor(keyGetter: KeyGetter<K, T>, ...items: T[]);
-    private _getItemKey;
-    private _itemsMap;
-    private _items;
-    get items(): readonly T[];
-    private _updateItemsArray;
-    replace(...items: T[]): void;
-    add(...items: T[]): void;
-    has(key: K): boolean;
-    get(key: K): T | undefined;
-    remove(key: K): void;
-    pick(keys: K[]): Collection<K, T>;
+export default class Collection<T extends {
+    id: string;
+}> {
+    constructor(items?: T[]);
+    items: readonly T[];
+    add: (...items: T[]) => void;
+    has: (target: string | T) => boolean;
+    get: (id: string) => T | undefined;
+    pick: (ids: string[]) => Collection<T>;
+    remove: (...targets: (string | T)[]) => void;
 }
-declare type KeyGetter<K, T> = (item: T) => K;
-export {};

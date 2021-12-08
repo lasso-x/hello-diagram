@@ -1,5 +1,5 @@
 import { Vue } from 'vue-property-decorator';
-import Diagram, { Entity, Relation } from '@/diagram';
+import Diagram, { Entity, LayoutDefinition, Relation } from '@/diagram';
 import cytoscape from 'cytoscape';
 import 'cytoscape-panzoom/cytoscape.js-panzoom.css';
 export default class Graph extends Vue {
@@ -17,6 +17,6 @@ export default class Graph extends Vue {
     initialize(): void;
     clearElements(): void;
     updateElements(): void;
-    runLayout(animate?: boolean): Promise<void> | undefined;
-    fitInGraph(): void;
+    layout(layout?: LayoutDefinition | null, animate?: boolean): Promise<void> | undefined;
+    fit(): void;
 }

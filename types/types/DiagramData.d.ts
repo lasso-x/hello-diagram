@@ -18,15 +18,13 @@ export default class DiagramData {
     relations: Relation[];
     get canUndo(): boolean;
     get canRedo(): boolean;
-    add(options: Omit<AdditionChange, 'type'>): void;
-    remove(options: Omit<RemovalChange, 'type'>): void;
-    edit(options: Omit<EditChange, 'type'>): void;
+    add(options: Exclude<Change['add'], undefined>): void;
+    remove(options: Exclude<Change['remove'], undefined>): void;
+    edit(options: Exclude<Change['edit'], undefined>): void;
     commitChange(change: Change, isInitial?: boolean): void;
     undo(trackEvents?: boolean): void;
     redo(trackEvents?: boolean): void;
     reset(): void;
-    parseEntities(entities: EntityDefinition[]): Entity[];
-    parseRelations(relations: RelationDefinition[]): Relation[];
     private _compileChange;
     private _addEntities;
     private _addRelations;
@@ -41,30 +39,37 @@ export interface DiagramDataDefinition {
 }
 export interface CompiledChange {
     change: Change;
-    apply: (trackEvents?: boolean) => void | false;
+    apply: (trackEvents?: boolean) => boolean;
     revert: (trackEvents?: boolean) => void;
 }
-export declare type Change = (AdditionChange | RemovalChange | EditChange);
-export interface AdditionChange {
-    type: 'addition';
-    entities?: EntityDefinition[];
-    relations?: RelationDefinition[];
+export interface Change {
+    add?: {
+        entities?: EntityDefinition[];
+        relations?: RelationDefinition[];
+    };
+    remove?: {
+        entities?: string[];
+        relations?: string[];
+    };
+    edit?: {
+        entities?: EntityEdit[];
+        relations?: RelationEdit[];
+    };
+    layout?: string;
+    moveEntities?: EntityMove[];
 }
-export interface RemovalChange {
-    type: 'removal';
-    entityIds?: string[];
-    relationIds?: string[];
+export interface EntityEdit {
+    id: string;
+    data?: Record<string, any>;
+    style?: EntityStyle;
 }
-export interface EditChange {
-    type: 'edit';
-    entities?: ({
-        id: string;
-        data?: Record<string, any>;
-        style?: EntityStyle;
-    })[];
-    relations?: ({
-        id: string;
-        data?: Record<string, any>;
-        style?: RelationStyle;
-    })[];
+export interface RelationEdit {
+    id: string;
+    data?: Record<string, any>;
+    style?: RelationStyle;
+}
+export interface EntityMove {
+    id: string;
+    x: number;
+    y: number;
 }

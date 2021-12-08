@@ -5,9 +5,17 @@ export default class Dialog extends Vue {
     readonly content?: string;
     readonly size: string | number;
     readonly onClose?: () => void;
+    contentEl?: HTMLElement;
+    contentInnerEl?: HTMLElement;
+    scrollable: boolean;
     get maxWidth(): number;
-    close(): void;
     get slotProps(): {
         close: () => void;
     };
+    mounted(): void;
+    updated(): void;
+    beforeDestroy(): void;
+    updateRefs(): void;
+    onContentInnerElResize(rect: DOMRect): void;
+    close(): void;
 }

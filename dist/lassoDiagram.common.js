@@ -46536,6 +46536,35 @@ module.exports = !$assign || fails(function () {
 
 /***/ }),
 
+/***/ "62e4":
+/***/ (function(module, exports) {
+
+module.exports = function(module) {
+	if (!module.webpackPolyfill) {
+		module.deprecate = function() {};
+		module.paths = [];
+		// module.parent = undefined by default
+		if (!module.children) module.children = [];
+		Object.defineProperty(module, "loaded", {
+			enumerable: true,
+			get: function() {
+				return module.l;
+			}
+		});
+		Object.defineProperty(module, "id", {
+			enumerable: true,
+			get: function() {
+				return module.i;
+			}
+		});
+		module.webpackPolyfill = 1;
+	}
+	return module;
+};
+
+
+/***/ }),
+
 /***/ "636b":
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
@@ -48875,6 +48904,82 @@ module.exports = flattenIntoArray;
 
 /***/ }),
 
+/***/ "a434":
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+var $ = __webpack_require__("23e7");
+var toAbsoluteIndex = __webpack_require__("23cb");
+var toInteger = __webpack_require__("a691");
+var toLength = __webpack_require__("50c4");
+var toObject = __webpack_require__("7b0b");
+var arraySpeciesCreate = __webpack_require__("65f0");
+var createProperty = __webpack_require__("8418");
+var arrayMethodHasSpeciesSupport = __webpack_require__("1dde");
+
+var HAS_SPECIES_SUPPORT = arrayMethodHasSpeciesSupport('splice');
+
+var max = Math.max;
+var min = Math.min;
+var MAX_SAFE_INTEGER = 0x1FFFFFFFFFFFFF;
+var MAXIMUM_ALLOWED_LENGTH_EXCEEDED = 'Maximum allowed length exceeded';
+
+// `Array.prototype.splice` method
+// https://tc39.es/ecma262/#sec-array.prototype.splice
+// with adding support of @@species
+$({ target: 'Array', proto: true, forced: !HAS_SPECIES_SUPPORT }, {
+  splice: function splice(start, deleteCount /* , ...items */) {
+    var O = toObject(this);
+    var len = toLength(O.length);
+    var actualStart = toAbsoluteIndex(start, len);
+    var argumentsLength = arguments.length;
+    var insertCount, actualDeleteCount, A, k, from, to;
+    if (argumentsLength === 0) {
+      insertCount = actualDeleteCount = 0;
+    } else if (argumentsLength === 1) {
+      insertCount = 0;
+      actualDeleteCount = len - actualStart;
+    } else {
+      insertCount = argumentsLength - 2;
+      actualDeleteCount = min(max(toInteger(deleteCount), 0), len - actualStart);
+    }
+    if (len + insertCount - actualDeleteCount > MAX_SAFE_INTEGER) {
+      throw TypeError(MAXIMUM_ALLOWED_LENGTH_EXCEEDED);
+    }
+    A = arraySpeciesCreate(O, actualDeleteCount);
+    for (k = 0; k < actualDeleteCount; k++) {
+      from = actualStart + k;
+      if (from in O) createProperty(A, k, O[from]);
+    }
+    A.length = actualDeleteCount;
+    if (insertCount < actualDeleteCount) {
+      for (k = actualStart; k < len - actualDeleteCount; k++) {
+        from = k + actualDeleteCount;
+        to = k + insertCount;
+        if (from in O) O[to] = O[from];
+        else delete O[to];
+      }
+      for (k = len; k > len - actualDeleteCount + insertCount; k--) delete O[k - 1];
+    } else if (insertCount > actualDeleteCount) {
+      for (k = len - actualDeleteCount; k > actualStart; k--) {
+        from = k + actualDeleteCount - 1;
+        to = k + insertCount - 1;
+        if (from in O) O[to] = O[from];
+        else delete O[to];
+      }
+    }
+    for (k = 0; k < insertCount; k++) {
+      O[k + actualStart] = arguments[k + 2];
+    }
+    O.length = len - actualDeleteCount + insertCount;
+    return A;
+  }
+});
+
+
+/***/ }),
+
 /***/ "a4b4":
 /***/ (function(module, exports, __webpack_require__) {
 
@@ -50278,6 +50383,1762 @@ $({ target: 'Object', stat: true, forced: Object.assign !== assign }, {
   assign: assign
 });
 
+
+/***/ }),
+
+/***/ "cd3f":
+/***/ (function(module, exports, __webpack_require__) {
+
+/* WEBPACK VAR INJECTION */(function(global, module) {/**
+ * lodash (Custom Build) <https://lodash.com/>
+ * Build: `lodash modularize exports="npm" -o ./`
+ * Copyright jQuery Foundation and other contributors <https://jquery.org/>
+ * Released under MIT license <https://lodash.com/license>
+ * Based on Underscore.js 1.8.3 <http://underscorejs.org/LICENSE>
+ * Copyright Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
+ */
+
+/** Used as the size to enable large array optimizations. */
+var LARGE_ARRAY_SIZE = 200;
+
+/** Used to stand-in for `undefined` hash values. */
+var HASH_UNDEFINED = '__lodash_hash_undefined__';
+
+/** Used as references for various `Number` constants. */
+var MAX_SAFE_INTEGER = 9007199254740991;
+
+/** `Object#toString` result references. */
+var argsTag = '[object Arguments]',
+    arrayTag = '[object Array]',
+    boolTag = '[object Boolean]',
+    dateTag = '[object Date]',
+    errorTag = '[object Error]',
+    funcTag = '[object Function]',
+    genTag = '[object GeneratorFunction]',
+    mapTag = '[object Map]',
+    numberTag = '[object Number]',
+    objectTag = '[object Object]',
+    promiseTag = '[object Promise]',
+    regexpTag = '[object RegExp]',
+    setTag = '[object Set]',
+    stringTag = '[object String]',
+    symbolTag = '[object Symbol]',
+    weakMapTag = '[object WeakMap]';
+
+var arrayBufferTag = '[object ArrayBuffer]',
+    dataViewTag = '[object DataView]',
+    float32Tag = '[object Float32Array]',
+    float64Tag = '[object Float64Array]',
+    int8Tag = '[object Int8Array]',
+    int16Tag = '[object Int16Array]',
+    int32Tag = '[object Int32Array]',
+    uint8Tag = '[object Uint8Array]',
+    uint8ClampedTag = '[object Uint8ClampedArray]',
+    uint16Tag = '[object Uint16Array]',
+    uint32Tag = '[object Uint32Array]';
+
+/**
+ * Used to match `RegExp`
+ * [syntax characters](http://ecma-international.org/ecma-262/7.0/#sec-patterns).
+ */
+var reRegExpChar = /[\\^$.*+?()[\]{}|]/g;
+
+/** Used to match `RegExp` flags from their coerced string values. */
+var reFlags = /\w*$/;
+
+/** Used to detect host constructors (Safari). */
+var reIsHostCtor = /^\[object .+?Constructor\]$/;
+
+/** Used to detect unsigned integer values. */
+var reIsUint = /^(?:0|[1-9]\d*)$/;
+
+/** Used to identify `toStringTag` values supported by `_.clone`. */
+var cloneableTags = {};
+cloneableTags[argsTag] = cloneableTags[arrayTag] =
+cloneableTags[arrayBufferTag] = cloneableTags[dataViewTag] =
+cloneableTags[boolTag] = cloneableTags[dateTag] =
+cloneableTags[float32Tag] = cloneableTags[float64Tag] =
+cloneableTags[int8Tag] = cloneableTags[int16Tag] =
+cloneableTags[int32Tag] = cloneableTags[mapTag] =
+cloneableTags[numberTag] = cloneableTags[objectTag] =
+cloneableTags[regexpTag] = cloneableTags[setTag] =
+cloneableTags[stringTag] = cloneableTags[symbolTag] =
+cloneableTags[uint8Tag] = cloneableTags[uint8ClampedTag] =
+cloneableTags[uint16Tag] = cloneableTags[uint32Tag] = true;
+cloneableTags[errorTag] = cloneableTags[funcTag] =
+cloneableTags[weakMapTag] = false;
+
+/** Detect free variable `global` from Node.js. */
+var freeGlobal = typeof global == 'object' && global && global.Object === Object && global;
+
+/** Detect free variable `self`. */
+var freeSelf = typeof self == 'object' && self && self.Object === Object && self;
+
+/** Used as a reference to the global object. */
+var root = freeGlobal || freeSelf || Function('return this')();
+
+/** Detect free variable `exports`. */
+var freeExports =  true && exports && !exports.nodeType && exports;
+
+/** Detect free variable `module`. */
+var freeModule = freeExports && typeof module == 'object' && module && !module.nodeType && module;
+
+/** Detect the popular CommonJS extension `module.exports`. */
+var moduleExports = freeModule && freeModule.exports === freeExports;
+
+/**
+ * Adds the key-value `pair` to `map`.
+ *
+ * @private
+ * @param {Object} map The map to modify.
+ * @param {Array} pair The key-value pair to add.
+ * @returns {Object} Returns `map`.
+ */
+function addMapEntry(map, pair) {
+  // Don't return `map.set` because it's not chainable in IE 11.
+  map.set(pair[0], pair[1]);
+  return map;
+}
+
+/**
+ * Adds `value` to `set`.
+ *
+ * @private
+ * @param {Object} set The set to modify.
+ * @param {*} value The value to add.
+ * @returns {Object} Returns `set`.
+ */
+function addSetEntry(set, value) {
+  // Don't return `set.add` because it's not chainable in IE 11.
+  set.add(value);
+  return set;
+}
+
+/**
+ * A specialized version of `_.forEach` for arrays without support for
+ * iteratee shorthands.
+ *
+ * @private
+ * @param {Array} [array] The array to iterate over.
+ * @param {Function} iteratee The function invoked per iteration.
+ * @returns {Array} Returns `array`.
+ */
+function arrayEach(array, iteratee) {
+  var index = -1,
+      length = array ? array.length : 0;
+
+  while (++index < length) {
+    if (iteratee(array[index], index, array) === false) {
+      break;
+    }
+  }
+  return array;
+}
+
+/**
+ * Appends the elements of `values` to `array`.
+ *
+ * @private
+ * @param {Array} array The array to modify.
+ * @param {Array} values The values to append.
+ * @returns {Array} Returns `array`.
+ */
+function arrayPush(array, values) {
+  var index = -1,
+      length = values.length,
+      offset = array.length;
+
+  while (++index < length) {
+    array[offset + index] = values[index];
+  }
+  return array;
+}
+
+/**
+ * A specialized version of `_.reduce` for arrays without support for
+ * iteratee shorthands.
+ *
+ * @private
+ * @param {Array} [array] The array to iterate over.
+ * @param {Function} iteratee The function invoked per iteration.
+ * @param {*} [accumulator] The initial value.
+ * @param {boolean} [initAccum] Specify using the first element of `array` as
+ *  the initial value.
+ * @returns {*} Returns the accumulated value.
+ */
+function arrayReduce(array, iteratee, accumulator, initAccum) {
+  var index = -1,
+      length = array ? array.length : 0;
+
+  if (initAccum && length) {
+    accumulator = array[++index];
+  }
+  while (++index < length) {
+    accumulator = iteratee(accumulator, array[index], index, array);
+  }
+  return accumulator;
+}
+
+/**
+ * The base implementation of `_.times` without support for iteratee shorthands
+ * or max array length checks.
+ *
+ * @private
+ * @param {number} n The number of times to invoke `iteratee`.
+ * @param {Function} iteratee The function invoked per iteration.
+ * @returns {Array} Returns the array of results.
+ */
+function baseTimes(n, iteratee) {
+  var index = -1,
+      result = Array(n);
+
+  while (++index < n) {
+    result[index] = iteratee(index);
+  }
+  return result;
+}
+
+/**
+ * Gets the value at `key` of `object`.
+ *
+ * @private
+ * @param {Object} [object] The object to query.
+ * @param {string} key The key of the property to get.
+ * @returns {*} Returns the property value.
+ */
+function getValue(object, key) {
+  return object == null ? undefined : object[key];
+}
+
+/**
+ * Checks if `value` is a host object in IE < 9.
+ *
+ * @private
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if `value` is a host object, else `false`.
+ */
+function isHostObject(value) {
+  // Many host objects are `Object` objects that can coerce to strings
+  // despite having improperly defined `toString` methods.
+  var result = false;
+  if (value != null && typeof value.toString != 'function') {
+    try {
+      result = !!(value + '');
+    } catch (e) {}
+  }
+  return result;
+}
+
+/**
+ * Converts `map` to its key-value pairs.
+ *
+ * @private
+ * @param {Object} map The map to convert.
+ * @returns {Array} Returns the key-value pairs.
+ */
+function mapToArray(map) {
+  var index = -1,
+      result = Array(map.size);
+
+  map.forEach(function(value, key) {
+    result[++index] = [key, value];
+  });
+  return result;
+}
+
+/**
+ * Creates a unary function that invokes `func` with its argument transformed.
+ *
+ * @private
+ * @param {Function} func The function to wrap.
+ * @param {Function} transform The argument transform.
+ * @returns {Function} Returns the new function.
+ */
+function overArg(func, transform) {
+  return function(arg) {
+    return func(transform(arg));
+  };
+}
+
+/**
+ * Converts `set` to an array of its values.
+ *
+ * @private
+ * @param {Object} set The set to convert.
+ * @returns {Array} Returns the values.
+ */
+function setToArray(set) {
+  var index = -1,
+      result = Array(set.size);
+
+  set.forEach(function(value) {
+    result[++index] = value;
+  });
+  return result;
+}
+
+/** Used for built-in method references. */
+var arrayProto = Array.prototype,
+    funcProto = Function.prototype,
+    objectProto = Object.prototype;
+
+/** Used to detect overreaching core-js shims. */
+var coreJsData = root['__core-js_shared__'];
+
+/** Used to detect methods masquerading as native. */
+var maskSrcKey = (function() {
+  var uid = /[^.]+$/.exec(coreJsData && coreJsData.keys && coreJsData.keys.IE_PROTO || '');
+  return uid ? ('Symbol(src)_1.' + uid) : '';
+}());
+
+/** Used to resolve the decompiled source of functions. */
+var funcToString = funcProto.toString;
+
+/** Used to check objects for own properties. */
+var hasOwnProperty = objectProto.hasOwnProperty;
+
+/**
+ * Used to resolve the
+ * [`toStringTag`](http://ecma-international.org/ecma-262/7.0/#sec-object.prototype.tostring)
+ * of values.
+ */
+var objectToString = objectProto.toString;
+
+/** Used to detect if a method is native. */
+var reIsNative = RegExp('^' +
+  funcToString.call(hasOwnProperty).replace(reRegExpChar, '\\$&')
+  .replace(/hasOwnProperty|(function).*?(?=\\\()| for .+?(?=\\\])/g, '$1.*?') + '$'
+);
+
+/** Built-in value references. */
+var Buffer = moduleExports ? root.Buffer : undefined,
+    Symbol = root.Symbol,
+    Uint8Array = root.Uint8Array,
+    getPrototype = overArg(Object.getPrototypeOf, Object),
+    objectCreate = Object.create,
+    propertyIsEnumerable = objectProto.propertyIsEnumerable,
+    splice = arrayProto.splice;
+
+/* Built-in method references for those with the same name as other `lodash` methods. */
+var nativeGetSymbols = Object.getOwnPropertySymbols,
+    nativeIsBuffer = Buffer ? Buffer.isBuffer : undefined,
+    nativeKeys = overArg(Object.keys, Object);
+
+/* Built-in method references that are verified to be native. */
+var DataView = getNative(root, 'DataView'),
+    Map = getNative(root, 'Map'),
+    Promise = getNative(root, 'Promise'),
+    Set = getNative(root, 'Set'),
+    WeakMap = getNative(root, 'WeakMap'),
+    nativeCreate = getNative(Object, 'create');
+
+/** Used to detect maps, sets, and weakmaps. */
+var dataViewCtorString = toSource(DataView),
+    mapCtorString = toSource(Map),
+    promiseCtorString = toSource(Promise),
+    setCtorString = toSource(Set),
+    weakMapCtorString = toSource(WeakMap);
+
+/** Used to convert symbols to primitives and strings. */
+var symbolProto = Symbol ? Symbol.prototype : undefined,
+    symbolValueOf = symbolProto ? symbolProto.valueOf : undefined;
+
+/**
+ * Creates a hash object.
+ *
+ * @private
+ * @constructor
+ * @param {Array} [entries] The key-value pairs to cache.
+ */
+function Hash(entries) {
+  var index = -1,
+      length = entries ? entries.length : 0;
+
+  this.clear();
+  while (++index < length) {
+    var entry = entries[index];
+    this.set(entry[0], entry[1]);
+  }
+}
+
+/**
+ * Removes all key-value entries from the hash.
+ *
+ * @private
+ * @name clear
+ * @memberOf Hash
+ */
+function hashClear() {
+  this.__data__ = nativeCreate ? nativeCreate(null) : {};
+}
+
+/**
+ * Removes `key` and its value from the hash.
+ *
+ * @private
+ * @name delete
+ * @memberOf Hash
+ * @param {Object} hash The hash to modify.
+ * @param {string} key The key of the value to remove.
+ * @returns {boolean} Returns `true` if the entry was removed, else `false`.
+ */
+function hashDelete(key) {
+  return this.has(key) && delete this.__data__[key];
+}
+
+/**
+ * Gets the hash value for `key`.
+ *
+ * @private
+ * @name get
+ * @memberOf Hash
+ * @param {string} key The key of the value to get.
+ * @returns {*} Returns the entry value.
+ */
+function hashGet(key) {
+  var data = this.__data__;
+  if (nativeCreate) {
+    var result = data[key];
+    return result === HASH_UNDEFINED ? undefined : result;
+  }
+  return hasOwnProperty.call(data, key) ? data[key] : undefined;
+}
+
+/**
+ * Checks if a hash value for `key` exists.
+ *
+ * @private
+ * @name has
+ * @memberOf Hash
+ * @param {string} key The key of the entry to check.
+ * @returns {boolean} Returns `true` if an entry for `key` exists, else `false`.
+ */
+function hashHas(key) {
+  var data = this.__data__;
+  return nativeCreate ? data[key] !== undefined : hasOwnProperty.call(data, key);
+}
+
+/**
+ * Sets the hash `key` to `value`.
+ *
+ * @private
+ * @name set
+ * @memberOf Hash
+ * @param {string} key The key of the value to set.
+ * @param {*} value The value to set.
+ * @returns {Object} Returns the hash instance.
+ */
+function hashSet(key, value) {
+  var data = this.__data__;
+  data[key] = (nativeCreate && value === undefined) ? HASH_UNDEFINED : value;
+  return this;
+}
+
+// Add methods to `Hash`.
+Hash.prototype.clear = hashClear;
+Hash.prototype['delete'] = hashDelete;
+Hash.prototype.get = hashGet;
+Hash.prototype.has = hashHas;
+Hash.prototype.set = hashSet;
+
+/**
+ * Creates an list cache object.
+ *
+ * @private
+ * @constructor
+ * @param {Array} [entries] The key-value pairs to cache.
+ */
+function ListCache(entries) {
+  var index = -1,
+      length = entries ? entries.length : 0;
+
+  this.clear();
+  while (++index < length) {
+    var entry = entries[index];
+    this.set(entry[0], entry[1]);
+  }
+}
+
+/**
+ * Removes all key-value entries from the list cache.
+ *
+ * @private
+ * @name clear
+ * @memberOf ListCache
+ */
+function listCacheClear() {
+  this.__data__ = [];
+}
+
+/**
+ * Removes `key` and its value from the list cache.
+ *
+ * @private
+ * @name delete
+ * @memberOf ListCache
+ * @param {string} key The key of the value to remove.
+ * @returns {boolean} Returns `true` if the entry was removed, else `false`.
+ */
+function listCacheDelete(key) {
+  var data = this.__data__,
+      index = assocIndexOf(data, key);
+
+  if (index < 0) {
+    return false;
+  }
+  var lastIndex = data.length - 1;
+  if (index == lastIndex) {
+    data.pop();
+  } else {
+    splice.call(data, index, 1);
+  }
+  return true;
+}
+
+/**
+ * Gets the list cache value for `key`.
+ *
+ * @private
+ * @name get
+ * @memberOf ListCache
+ * @param {string} key The key of the value to get.
+ * @returns {*} Returns the entry value.
+ */
+function listCacheGet(key) {
+  var data = this.__data__,
+      index = assocIndexOf(data, key);
+
+  return index < 0 ? undefined : data[index][1];
+}
+
+/**
+ * Checks if a list cache value for `key` exists.
+ *
+ * @private
+ * @name has
+ * @memberOf ListCache
+ * @param {string} key The key of the entry to check.
+ * @returns {boolean} Returns `true` if an entry for `key` exists, else `false`.
+ */
+function listCacheHas(key) {
+  return assocIndexOf(this.__data__, key) > -1;
+}
+
+/**
+ * Sets the list cache `key` to `value`.
+ *
+ * @private
+ * @name set
+ * @memberOf ListCache
+ * @param {string} key The key of the value to set.
+ * @param {*} value The value to set.
+ * @returns {Object} Returns the list cache instance.
+ */
+function listCacheSet(key, value) {
+  var data = this.__data__,
+      index = assocIndexOf(data, key);
+
+  if (index < 0) {
+    data.push([key, value]);
+  } else {
+    data[index][1] = value;
+  }
+  return this;
+}
+
+// Add methods to `ListCache`.
+ListCache.prototype.clear = listCacheClear;
+ListCache.prototype['delete'] = listCacheDelete;
+ListCache.prototype.get = listCacheGet;
+ListCache.prototype.has = listCacheHas;
+ListCache.prototype.set = listCacheSet;
+
+/**
+ * Creates a map cache object to store key-value pairs.
+ *
+ * @private
+ * @constructor
+ * @param {Array} [entries] The key-value pairs to cache.
+ */
+function MapCache(entries) {
+  var index = -1,
+      length = entries ? entries.length : 0;
+
+  this.clear();
+  while (++index < length) {
+    var entry = entries[index];
+    this.set(entry[0], entry[1]);
+  }
+}
+
+/**
+ * Removes all key-value entries from the map.
+ *
+ * @private
+ * @name clear
+ * @memberOf MapCache
+ */
+function mapCacheClear() {
+  this.__data__ = {
+    'hash': new Hash,
+    'map': new (Map || ListCache),
+    'string': new Hash
+  };
+}
+
+/**
+ * Removes `key` and its value from the map.
+ *
+ * @private
+ * @name delete
+ * @memberOf MapCache
+ * @param {string} key The key of the value to remove.
+ * @returns {boolean} Returns `true` if the entry was removed, else `false`.
+ */
+function mapCacheDelete(key) {
+  return getMapData(this, key)['delete'](key);
+}
+
+/**
+ * Gets the map value for `key`.
+ *
+ * @private
+ * @name get
+ * @memberOf MapCache
+ * @param {string} key The key of the value to get.
+ * @returns {*} Returns the entry value.
+ */
+function mapCacheGet(key) {
+  return getMapData(this, key).get(key);
+}
+
+/**
+ * Checks if a map value for `key` exists.
+ *
+ * @private
+ * @name has
+ * @memberOf MapCache
+ * @param {string} key The key of the entry to check.
+ * @returns {boolean} Returns `true` if an entry for `key` exists, else `false`.
+ */
+function mapCacheHas(key) {
+  return getMapData(this, key).has(key);
+}
+
+/**
+ * Sets the map `key` to `value`.
+ *
+ * @private
+ * @name set
+ * @memberOf MapCache
+ * @param {string} key The key of the value to set.
+ * @param {*} value The value to set.
+ * @returns {Object} Returns the map cache instance.
+ */
+function mapCacheSet(key, value) {
+  getMapData(this, key).set(key, value);
+  return this;
+}
+
+// Add methods to `MapCache`.
+MapCache.prototype.clear = mapCacheClear;
+MapCache.prototype['delete'] = mapCacheDelete;
+MapCache.prototype.get = mapCacheGet;
+MapCache.prototype.has = mapCacheHas;
+MapCache.prototype.set = mapCacheSet;
+
+/**
+ * Creates a stack cache object to store key-value pairs.
+ *
+ * @private
+ * @constructor
+ * @param {Array} [entries] The key-value pairs to cache.
+ */
+function Stack(entries) {
+  this.__data__ = new ListCache(entries);
+}
+
+/**
+ * Removes all key-value entries from the stack.
+ *
+ * @private
+ * @name clear
+ * @memberOf Stack
+ */
+function stackClear() {
+  this.__data__ = new ListCache;
+}
+
+/**
+ * Removes `key` and its value from the stack.
+ *
+ * @private
+ * @name delete
+ * @memberOf Stack
+ * @param {string} key The key of the value to remove.
+ * @returns {boolean} Returns `true` if the entry was removed, else `false`.
+ */
+function stackDelete(key) {
+  return this.__data__['delete'](key);
+}
+
+/**
+ * Gets the stack value for `key`.
+ *
+ * @private
+ * @name get
+ * @memberOf Stack
+ * @param {string} key The key of the value to get.
+ * @returns {*} Returns the entry value.
+ */
+function stackGet(key) {
+  return this.__data__.get(key);
+}
+
+/**
+ * Checks if a stack value for `key` exists.
+ *
+ * @private
+ * @name has
+ * @memberOf Stack
+ * @param {string} key The key of the entry to check.
+ * @returns {boolean} Returns `true` if an entry for `key` exists, else `false`.
+ */
+function stackHas(key) {
+  return this.__data__.has(key);
+}
+
+/**
+ * Sets the stack `key` to `value`.
+ *
+ * @private
+ * @name set
+ * @memberOf Stack
+ * @param {string} key The key of the value to set.
+ * @param {*} value The value to set.
+ * @returns {Object} Returns the stack cache instance.
+ */
+function stackSet(key, value) {
+  var cache = this.__data__;
+  if (cache instanceof ListCache) {
+    var pairs = cache.__data__;
+    if (!Map || (pairs.length < LARGE_ARRAY_SIZE - 1)) {
+      pairs.push([key, value]);
+      return this;
+    }
+    cache = this.__data__ = new MapCache(pairs);
+  }
+  cache.set(key, value);
+  return this;
+}
+
+// Add methods to `Stack`.
+Stack.prototype.clear = stackClear;
+Stack.prototype['delete'] = stackDelete;
+Stack.prototype.get = stackGet;
+Stack.prototype.has = stackHas;
+Stack.prototype.set = stackSet;
+
+/**
+ * Creates an array of the enumerable property names of the array-like `value`.
+ *
+ * @private
+ * @param {*} value The value to query.
+ * @param {boolean} inherited Specify returning inherited property names.
+ * @returns {Array} Returns the array of property names.
+ */
+function arrayLikeKeys(value, inherited) {
+  // Safari 8.1 makes `arguments.callee` enumerable in strict mode.
+  // Safari 9 makes `arguments.length` enumerable in strict mode.
+  var result = (isArray(value) || isArguments(value))
+    ? baseTimes(value.length, String)
+    : [];
+
+  var length = result.length,
+      skipIndexes = !!length;
+
+  for (var key in value) {
+    if ((inherited || hasOwnProperty.call(value, key)) &&
+        !(skipIndexes && (key == 'length' || isIndex(key, length)))) {
+      result.push(key);
+    }
+  }
+  return result;
+}
+
+/**
+ * Assigns `value` to `key` of `object` if the existing value is not equivalent
+ * using [`SameValueZero`](http://ecma-international.org/ecma-262/7.0/#sec-samevaluezero)
+ * for equality comparisons.
+ *
+ * @private
+ * @param {Object} object The object to modify.
+ * @param {string} key The key of the property to assign.
+ * @param {*} value The value to assign.
+ */
+function assignValue(object, key, value) {
+  var objValue = object[key];
+  if (!(hasOwnProperty.call(object, key) && eq(objValue, value)) ||
+      (value === undefined && !(key in object))) {
+    object[key] = value;
+  }
+}
+
+/**
+ * Gets the index at which the `key` is found in `array` of key-value pairs.
+ *
+ * @private
+ * @param {Array} array The array to inspect.
+ * @param {*} key The key to search for.
+ * @returns {number} Returns the index of the matched value, else `-1`.
+ */
+function assocIndexOf(array, key) {
+  var length = array.length;
+  while (length--) {
+    if (eq(array[length][0], key)) {
+      return length;
+    }
+  }
+  return -1;
+}
+
+/**
+ * The base implementation of `_.assign` without support for multiple sources
+ * or `customizer` functions.
+ *
+ * @private
+ * @param {Object} object The destination object.
+ * @param {Object} source The source object.
+ * @returns {Object} Returns `object`.
+ */
+function baseAssign(object, source) {
+  return object && copyObject(source, keys(source), object);
+}
+
+/**
+ * The base implementation of `_.clone` and `_.cloneDeep` which tracks
+ * traversed objects.
+ *
+ * @private
+ * @param {*} value The value to clone.
+ * @param {boolean} [isDeep] Specify a deep clone.
+ * @param {boolean} [isFull] Specify a clone including symbols.
+ * @param {Function} [customizer] The function to customize cloning.
+ * @param {string} [key] The key of `value`.
+ * @param {Object} [object] The parent object of `value`.
+ * @param {Object} [stack] Tracks traversed objects and their clone counterparts.
+ * @returns {*} Returns the cloned value.
+ */
+function baseClone(value, isDeep, isFull, customizer, key, object, stack) {
+  var result;
+  if (customizer) {
+    result = object ? customizer(value, key, object, stack) : customizer(value);
+  }
+  if (result !== undefined) {
+    return result;
+  }
+  if (!isObject(value)) {
+    return value;
+  }
+  var isArr = isArray(value);
+  if (isArr) {
+    result = initCloneArray(value);
+    if (!isDeep) {
+      return copyArray(value, result);
+    }
+  } else {
+    var tag = getTag(value),
+        isFunc = tag == funcTag || tag == genTag;
+
+    if (isBuffer(value)) {
+      return cloneBuffer(value, isDeep);
+    }
+    if (tag == objectTag || tag == argsTag || (isFunc && !object)) {
+      if (isHostObject(value)) {
+        return object ? value : {};
+      }
+      result = initCloneObject(isFunc ? {} : value);
+      if (!isDeep) {
+        return copySymbols(value, baseAssign(result, value));
+      }
+    } else {
+      if (!cloneableTags[tag]) {
+        return object ? value : {};
+      }
+      result = initCloneByTag(value, tag, baseClone, isDeep);
+    }
+  }
+  // Check for circular references and return its corresponding clone.
+  stack || (stack = new Stack);
+  var stacked = stack.get(value);
+  if (stacked) {
+    return stacked;
+  }
+  stack.set(value, result);
+
+  if (!isArr) {
+    var props = isFull ? getAllKeys(value) : keys(value);
+  }
+  arrayEach(props || value, function(subValue, key) {
+    if (props) {
+      key = subValue;
+      subValue = value[key];
+    }
+    // Recursively populate clone (susceptible to call stack limits).
+    assignValue(result, key, baseClone(subValue, isDeep, isFull, customizer, key, value, stack));
+  });
+  return result;
+}
+
+/**
+ * The base implementation of `_.create` without support for assigning
+ * properties to the created object.
+ *
+ * @private
+ * @param {Object} prototype The object to inherit from.
+ * @returns {Object} Returns the new object.
+ */
+function baseCreate(proto) {
+  return isObject(proto) ? objectCreate(proto) : {};
+}
+
+/**
+ * The base implementation of `getAllKeys` and `getAllKeysIn` which uses
+ * `keysFunc` and `symbolsFunc` to get the enumerable property names and
+ * symbols of `object`.
+ *
+ * @private
+ * @param {Object} object The object to query.
+ * @param {Function} keysFunc The function to get the keys of `object`.
+ * @param {Function} symbolsFunc The function to get the symbols of `object`.
+ * @returns {Array} Returns the array of property names and symbols.
+ */
+function baseGetAllKeys(object, keysFunc, symbolsFunc) {
+  var result = keysFunc(object);
+  return isArray(object) ? result : arrayPush(result, symbolsFunc(object));
+}
+
+/**
+ * The base implementation of `getTag`.
+ *
+ * @private
+ * @param {*} value The value to query.
+ * @returns {string} Returns the `toStringTag`.
+ */
+function baseGetTag(value) {
+  return objectToString.call(value);
+}
+
+/**
+ * The base implementation of `_.isNative` without bad shim checks.
+ *
+ * @private
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if `value` is a native function,
+ *  else `false`.
+ */
+function baseIsNative(value) {
+  if (!isObject(value) || isMasked(value)) {
+    return false;
+  }
+  var pattern = (isFunction(value) || isHostObject(value)) ? reIsNative : reIsHostCtor;
+  return pattern.test(toSource(value));
+}
+
+/**
+ * The base implementation of `_.keys` which doesn't treat sparse arrays as dense.
+ *
+ * @private
+ * @param {Object} object The object to query.
+ * @returns {Array} Returns the array of property names.
+ */
+function baseKeys(object) {
+  if (!isPrototype(object)) {
+    return nativeKeys(object);
+  }
+  var result = [];
+  for (var key in Object(object)) {
+    if (hasOwnProperty.call(object, key) && key != 'constructor') {
+      result.push(key);
+    }
+  }
+  return result;
+}
+
+/**
+ * Creates a clone of  `buffer`.
+ *
+ * @private
+ * @param {Buffer} buffer The buffer to clone.
+ * @param {boolean} [isDeep] Specify a deep clone.
+ * @returns {Buffer} Returns the cloned buffer.
+ */
+function cloneBuffer(buffer, isDeep) {
+  if (isDeep) {
+    return buffer.slice();
+  }
+  var result = new buffer.constructor(buffer.length);
+  buffer.copy(result);
+  return result;
+}
+
+/**
+ * Creates a clone of `arrayBuffer`.
+ *
+ * @private
+ * @param {ArrayBuffer} arrayBuffer The array buffer to clone.
+ * @returns {ArrayBuffer} Returns the cloned array buffer.
+ */
+function cloneArrayBuffer(arrayBuffer) {
+  var result = new arrayBuffer.constructor(arrayBuffer.byteLength);
+  new Uint8Array(result).set(new Uint8Array(arrayBuffer));
+  return result;
+}
+
+/**
+ * Creates a clone of `dataView`.
+ *
+ * @private
+ * @param {Object} dataView The data view to clone.
+ * @param {boolean} [isDeep] Specify a deep clone.
+ * @returns {Object} Returns the cloned data view.
+ */
+function cloneDataView(dataView, isDeep) {
+  var buffer = isDeep ? cloneArrayBuffer(dataView.buffer) : dataView.buffer;
+  return new dataView.constructor(buffer, dataView.byteOffset, dataView.byteLength);
+}
+
+/**
+ * Creates a clone of `map`.
+ *
+ * @private
+ * @param {Object} map The map to clone.
+ * @param {Function} cloneFunc The function to clone values.
+ * @param {boolean} [isDeep] Specify a deep clone.
+ * @returns {Object} Returns the cloned map.
+ */
+function cloneMap(map, isDeep, cloneFunc) {
+  var array = isDeep ? cloneFunc(mapToArray(map), true) : mapToArray(map);
+  return arrayReduce(array, addMapEntry, new map.constructor);
+}
+
+/**
+ * Creates a clone of `regexp`.
+ *
+ * @private
+ * @param {Object} regexp The regexp to clone.
+ * @returns {Object} Returns the cloned regexp.
+ */
+function cloneRegExp(regexp) {
+  var result = new regexp.constructor(regexp.source, reFlags.exec(regexp));
+  result.lastIndex = regexp.lastIndex;
+  return result;
+}
+
+/**
+ * Creates a clone of `set`.
+ *
+ * @private
+ * @param {Object} set The set to clone.
+ * @param {Function} cloneFunc The function to clone values.
+ * @param {boolean} [isDeep] Specify a deep clone.
+ * @returns {Object} Returns the cloned set.
+ */
+function cloneSet(set, isDeep, cloneFunc) {
+  var array = isDeep ? cloneFunc(setToArray(set), true) : setToArray(set);
+  return arrayReduce(array, addSetEntry, new set.constructor);
+}
+
+/**
+ * Creates a clone of the `symbol` object.
+ *
+ * @private
+ * @param {Object} symbol The symbol object to clone.
+ * @returns {Object} Returns the cloned symbol object.
+ */
+function cloneSymbol(symbol) {
+  return symbolValueOf ? Object(symbolValueOf.call(symbol)) : {};
+}
+
+/**
+ * Creates a clone of `typedArray`.
+ *
+ * @private
+ * @param {Object} typedArray The typed array to clone.
+ * @param {boolean} [isDeep] Specify a deep clone.
+ * @returns {Object} Returns the cloned typed array.
+ */
+function cloneTypedArray(typedArray, isDeep) {
+  var buffer = isDeep ? cloneArrayBuffer(typedArray.buffer) : typedArray.buffer;
+  return new typedArray.constructor(buffer, typedArray.byteOffset, typedArray.length);
+}
+
+/**
+ * Copies the values of `source` to `array`.
+ *
+ * @private
+ * @param {Array} source The array to copy values from.
+ * @param {Array} [array=[]] The array to copy values to.
+ * @returns {Array} Returns `array`.
+ */
+function copyArray(source, array) {
+  var index = -1,
+      length = source.length;
+
+  array || (array = Array(length));
+  while (++index < length) {
+    array[index] = source[index];
+  }
+  return array;
+}
+
+/**
+ * Copies properties of `source` to `object`.
+ *
+ * @private
+ * @param {Object} source The object to copy properties from.
+ * @param {Array} props The property identifiers to copy.
+ * @param {Object} [object={}] The object to copy properties to.
+ * @param {Function} [customizer] The function to customize copied values.
+ * @returns {Object} Returns `object`.
+ */
+function copyObject(source, props, object, customizer) {
+  object || (object = {});
+
+  var index = -1,
+      length = props.length;
+
+  while (++index < length) {
+    var key = props[index];
+
+    var newValue = customizer
+      ? customizer(object[key], source[key], key, object, source)
+      : undefined;
+
+    assignValue(object, key, newValue === undefined ? source[key] : newValue);
+  }
+  return object;
+}
+
+/**
+ * Copies own symbol properties of `source` to `object`.
+ *
+ * @private
+ * @param {Object} source The object to copy symbols from.
+ * @param {Object} [object={}] The object to copy symbols to.
+ * @returns {Object} Returns `object`.
+ */
+function copySymbols(source, object) {
+  return copyObject(source, getSymbols(source), object);
+}
+
+/**
+ * Creates an array of own enumerable property names and symbols of `object`.
+ *
+ * @private
+ * @param {Object} object The object to query.
+ * @returns {Array} Returns the array of property names and symbols.
+ */
+function getAllKeys(object) {
+  return baseGetAllKeys(object, keys, getSymbols);
+}
+
+/**
+ * Gets the data for `map`.
+ *
+ * @private
+ * @param {Object} map The map to query.
+ * @param {string} key The reference key.
+ * @returns {*} Returns the map data.
+ */
+function getMapData(map, key) {
+  var data = map.__data__;
+  return isKeyable(key)
+    ? data[typeof key == 'string' ? 'string' : 'hash']
+    : data.map;
+}
+
+/**
+ * Gets the native function at `key` of `object`.
+ *
+ * @private
+ * @param {Object} object The object to query.
+ * @param {string} key The key of the method to get.
+ * @returns {*} Returns the function if it's native, else `undefined`.
+ */
+function getNative(object, key) {
+  var value = getValue(object, key);
+  return baseIsNative(value) ? value : undefined;
+}
+
+/**
+ * Creates an array of the own enumerable symbol properties of `object`.
+ *
+ * @private
+ * @param {Object} object The object to query.
+ * @returns {Array} Returns the array of symbols.
+ */
+var getSymbols = nativeGetSymbols ? overArg(nativeGetSymbols, Object) : stubArray;
+
+/**
+ * Gets the `toStringTag` of `value`.
+ *
+ * @private
+ * @param {*} value The value to query.
+ * @returns {string} Returns the `toStringTag`.
+ */
+var getTag = baseGetTag;
+
+// Fallback for data views, maps, sets, and weak maps in IE 11,
+// for data views in Edge < 14, and promises in Node.js.
+if ((DataView && getTag(new DataView(new ArrayBuffer(1))) != dataViewTag) ||
+    (Map && getTag(new Map) != mapTag) ||
+    (Promise && getTag(Promise.resolve()) != promiseTag) ||
+    (Set && getTag(new Set) != setTag) ||
+    (WeakMap && getTag(new WeakMap) != weakMapTag)) {
+  getTag = function(value) {
+    var result = objectToString.call(value),
+        Ctor = result == objectTag ? value.constructor : undefined,
+        ctorString = Ctor ? toSource(Ctor) : undefined;
+
+    if (ctorString) {
+      switch (ctorString) {
+        case dataViewCtorString: return dataViewTag;
+        case mapCtorString: return mapTag;
+        case promiseCtorString: return promiseTag;
+        case setCtorString: return setTag;
+        case weakMapCtorString: return weakMapTag;
+      }
+    }
+    return result;
+  };
+}
+
+/**
+ * Initializes an array clone.
+ *
+ * @private
+ * @param {Array} array The array to clone.
+ * @returns {Array} Returns the initialized clone.
+ */
+function initCloneArray(array) {
+  var length = array.length,
+      result = array.constructor(length);
+
+  // Add properties assigned by `RegExp#exec`.
+  if (length && typeof array[0] == 'string' && hasOwnProperty.call(array, 'index')) {
+    result.index = array.index;
+    result.input = array.input;
+  }
+  return result;
+}
+
+/**
+ * Initializes an object clone.
+ *
+ * @private
+ * @param {Object} object The object to clone.
+ * @returns {Object} Returns the initialized clone.
+ */
+function initCloneObject(object) {
+  return (typeof object.constructor == 'function' && !isPrototype(object))
+    ? baseCreate(getPrototype(object))
+    : {};
+}
+
+/**
+ * Initializes an object clone based on its `toStringTag`.
+ *
+ * **Note:** This function only supports cloning values with tags of
+ * `Boolean`, `Date`, `Error`, `Number`, `RegExp`, or `String`.
+ *
+ * @private
+ * @param {Object} object The object to clone.
+ * @param {string} tag The `toStringTag` of the object to clone.
+ * @param {Function} cloneFunc The function to clone values.
+ * @param {boolean} [isDeep] Specify a deep clone.
+ * @returns {Object} Returns the initialized clone.
+ */
+function initCloneByTag(object, tag, cloneFunc, isDeep) {
+  var Ctor = object.constructor;
+  switch (tag) {
+    case arrayBufferTag:
+      return cloneArrayBuffer(object);
+
+    case boolTag:
+    case dateTag:
+      return new Ctor(+object);
+
+    case dataViewTag:
+      return cloneDataView(object, isDeep);
+
+    case float32Tag: case float64Tag:
+    case int8Tag: case int16Tag: case int32Tag:
+    case uint8Tag: case uint8ClampedTag: case uint16Tag: case uint32Tag:
+      return cloneTypedArray(object, isDeep);
+
+    case mapTag:
+      return cloneMap(object, isDeep, cloneFunc);
+
+    case numberTag:
+    case stringTag:
+      return new Ctor(object);
+
+    case regexpTag:
+      return cloneRegExp(object);
+
+    case setTag:
+      return cloneSet(object, isDeep, cloneFunc);
+
+    case symbolTag:
+      return cloneSymbol(object);
+  }
+}
+
+/**
+ * Checks if `value` is a valid array-like index.
+ *
+ * @private
+ * @param {*} value The value to check.
+ * @param {number} [length=MAX_SAFE_INTEGER] The upper bounds of a valid index.
+ * @returns {boolean} Returns `true` if `value` is a valid index, else `false`.
+ */
+function isIndex(value, length) {
+  length = length == null ? MAX_SAFE_INTEGER : length;
+  return !!length &&
+    (typeof value == 'number' || reIsUint.test(value)) &&
+    (value > -1 && value % 1 == 0 && value < length);
+}
+
+/**
+ * Checks if `value` is suitable for use as unique object key.
+ *
+ * @private
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if `value` is suitable, else `false`.
+ */
+function isKeyable(value) {
+  var type = typeof value;
+  return (type == 'string' || type == 'number' || type == 'symbol' || type == 'boolean')
+    ? (value !== '__proto__')
+    : (value === null);
+}
+
+/**
+ * Checks if `func` has its source masked.
+ *
+ * @private
+ * @param {Function} func The function to check.
+ * @returns {boolean} Returns `true` if `func` is masked, else `false`.
+ */
+function isMasked(func) {
+  return !!maskSrcKey && (maskSrcKey in func);
+}
+
+/**
+ * Checks if `value` is likely a prototype object.
+ *
+ * @private
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if `value` is a prototype, else `false`.
+ */
+function isPrototype(value) {
+  var Ctor = value && value.constructor,
+      proto = (typeof Ctor == 'function' && Ctor.prototype) || objectProto;
+
+  return value === proto;
+}
+
+/**
+ * Converts `func` to its source code.
+ *
+ * @private
+ * @param {Function} func The function to process.
+ * @returns {string} Returns the source code.
+ */
+function toSource(func) {
+  if (func != null) {
+    try {
+      return funcToString.call(func);
+    } catch (e) {}
+    try {
+      return (func + '');
+    } catch (e) {}
+  }
+  return '';
+}
+
+/**
+ * This method is like `_.clone` except that it recursively clones `value`.
+ *
+ * @static
+ * @memberOf _
+ * @since 1.0.0
+ * @category Lang
+ * @param {*} value The value to recursively clone.
+ * @returns {*} Returns the deep cloned value.
+ * @see _.clone
+ * @example
+ *
+ * var objects = [{ 'a': 1 }, { 'b': 2 }];
+ *
+ * var deep = _.cloneDeep(objects);
+ * console.log(deep[0] === objects[0]);
+ * // => false
+ */
+function cloneDeep(value) {
+  return baseClone(value, true, true);
+}
+
+/**
+ * Performs a
+ * [`SameValueZero`](http://ecma-international.org/ecma-262/7.0/#sec-samevaluezero)
+ * comparison between two values to determine if they are equivalent.
+ *
+ * @static
+ * @memberOf _
+ * @since 4.0.0
+ * @category Lang
+ * @param {*} value The value to compare.
+ * @param {*} other The other value to compare.
+ * @returns {boolean} Returns `true` if the values are equivalent, else `false`.
+ * @example
+ *
+ * var object = { 'a': 1 };
+ * var other = { 'a': 1 };
+ *
+ * _.eq(object, object);
+ * // => true
+ *
+ * _.eq(object, other);
+ * // => false
+ *
+ * _.eq('a', 'a');
+ * // => true
+ *
+ * _.eq('a', Object('a'));
+ * // => false
+ *
+ * _.eq(NaN, NaN);
+ * // => true
+ */
+function eq(value, other) {
+  return value === other || (value !== value && other !== other);
+}
+
+/**
+ * Checks if `value` is likely an `arguments` object.
+ *
+ * @static
+ * @memberOf _
+ * @since 0.1.0
+ * @category Lang
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if `value` is an `arguments` object,
+ *  else `false`.
+ * @example
+ *
+ * _.isArguments(function() { return arguments; }());
+ * // => true
+ *
+ * _.isArguments([1, 2, 3]);
+ * // => false
+ */
+function isArguments(value) {
+  // Safari 8.1 makes `arguments.callee` enumerable in strict mode.
+  return isArrayLikeObject(value) && hasOwnProperty.call(value, 'callee') &&
+    (!propertyIsEnumerable.call(value, 'callee') || objectToString.call(value) == argsTag);
+}
+
+/**
+ * Checks if `value` is classified as an `Array` object.
+ *
+ * @static
+ * @memberOf _
+ * @since 0.1.0
+ * @category Lang
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if `value` is an array, else `false`.
+ * @example
+ *
+ * _.isArray([1, 2, 3]);
+ * // => true
+ *
+ * _.isArray(document.body.children);
+ * // => false
+ *
+ * _.isArray('abc');
+ * // => false
+ *
+ * _.isArray(_.noop);
+ * // => false
+ */
+var isArray = Array.isArray;
+
+/**
+ * Checks if `value` is array-like. A value is considered array-like if it's
+ * not a function and has a `value.length` that's an integer greater than or
+ * equal to `0` and less than or equal to `Number.MAX_SAFE_INTEGER`.
+ *
+ * @static
+ * @memberOf _
+ * @since 4.0.0
+ * @category Lang
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if `value` is array-like, else `false`.
+ * @example
+ *
+ * _.isArrayLike([1, 2, 3]);
+ * // => true
+ *
+ * _.isArrayLike(document.body.children);
+ * // => true
+ *
+ * _.isArrayLike('abc');
+ * // => true
+ *
+ * _.isArrayLike(_.noop);
+ * // => false
+ */
+function isArrayLike(value) {
+  return value != null && isLength(value.length) && !isFunction(value);
+}
+
+/**
+ * This method is like `_.isArrayLike` except that it also checks if `value`
+ * is an object.
+ *
+ * @static
+ * @memberOf _
+ * @since 4.0.0
+ * @category Lang
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if `value` is an array-like object,
+ *  else `false`.
+ * @example
+ *
+ * _.isArrayLikeObject([1, 2, 3]);
+ * // => true
+ *
+ * _.isArrayLikeObject(document.body.children);
+ * // => true
+ *
+ * _.isArrayLikeObject('abc');
+ * // => false
+ *
+ * _.isArrayLikeObject(_.noop);
+ * // => false
+ */
+function isArrayLikeObject(value) {
+  return isObjectLike(value) && isArrayLike(value);
+}
+
+/**
+ * Checks if `value` is a buffer.
+ *
+ * @static
+ * @memberOf _
+ * @since 4.3.0
+ * @category Lang
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if `value` is a buffer, else `false`.
+ * @example
+ *
+ * _.isBuffer(new Buffer(2));
+ * // => true
+ *
+ * _.isBuffer(new Uint8Array(2));
+ * // => false
+ */
+var isBuffer = nativeIsBuffer || stubFalse;
+
+/**
+ * Checks if `value` is classified as a `Function` object.
+ *
+ * @static
+ * @memberOf _
+ * @since 0.1.0
+ * @category Lang
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if `value` is a function, else `false`.
+ * @example
+ *
+ * _.isFunction(_);
+ * // => true
+ *
+ * _.isFunction(/abc/);
+ * // => false
+ */
+function isFunction(value) {
+  // The use of `Object#toString` avoids issues with the `typeof` operator
+  // in Safari 8-9 which returns 'object' for typed array and other constructors.
+  var tag = isObject(value) ? objectToString.call(value) : '';
+  return tag == funcTag || tag == genTag;
+}
+
+/**
+ * Checks if `value` is a valid array-like length.
+ *
+ * **Note:** This method is loosely based on
+ * [`ToLength`](http://ecma-international.org/ecma-262/7.0/#sec-tolength).
+ *
+ * @static
+ * @memberOf _
+ * @since 4.0.0
+ * @category Lang
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if `value` is a valid length, else `false`.
+ * @example
+ *
+ * _.isLength(3);
+ * // => true
+ *
+ * _.isLength(Number.MIN_VALUE);
+ * // => false
+ *
+ * _.isLength(Infinity);
+ * // => false
+ *
+ * _.isLength('3');
+ * // => false
+ */
+function isLength(value) {
+  return typeof value == 'number' &&
+    value > -1 && value % 1 == 0 && value <= MAX_SAFE_INTEGER;
+}
+
+/**
+ * Checks if `value` is the
+ * [language type](http://www.ecma-international.org/ecma-262/7.0/#sec-ecmascript-language-types)
+ * of `Object`. (e.g. arrays, functions, objects, regexes, `new Number(0)`, and `new String('')`)
+ *
+ * @static
+ * @memberOf _
+ * @since 0.1.0
+ * @category Lang
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if `value` is an object, else `false`.
+ * @example
+ *
+ * _.isObject({});
+ * // => true
+ *
+ * _.isObject([1, 2, 3]);
+ * // => true
+ *
+ * _.isObject(_.noop);
+ * // => true
+ *
+ * _.isObject(null);
+ * // => false
+ */
+function isObject(value) {
+  var type = typeof value;
+  return !!value && (type == 'object' || type == 'function');
+}
+
+/**
+ * Checks if `value` is object-like. A value is object-like if it's not `null`
+ * and has a `typeof` result of "object".
+ *
+ * @static
+ * @memberOf _
+ * @since 4.0.0
+ * @category Lang
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if `value` is object-like, else `false`.
+ * @example
+ *
+ * _.isObjectLike({});
+ * // => true
+ *
+ * _.isObjectLike([1, 2, 3]);
+ * // => true
+ *
+ * _.isObjectLike(_.noop);
+ * // => false
+ *
+ * _.isObjectLike(null);
+ * // => false
+ */
+function isObjectLike(value) {
+  return !!value && typeof value == 'object';
+}
+
+/**
+ * Creates an array of the own enumerable property names of `object`.
+ *
+ * **Note:** Non-object values are coerced to objects. See the
+ * [ES spec](http://ecma-international.org/ecma-262/7.0/#sec-object.keys)
+ * for more details.
+ *
+ * @static
+ * @since 0.1.0
+ * @memberOf _
+ * @category Object
+ * @param {Object} object The object to query.
+ * @returns {Array} Returns the array of property names.
+ * @example
+ *
+ * function Foo() {
+ *   this.a = 1;
+ *   this.b = 2;
+ * }
+ *
+ * Foo.prototype.c = 3;
+ *
+ * _.keys(new Foo);
+ * // => ['a', 'b'] (iteration order is not guaranteed)
+ *
+ * _.keys('hi');
+ * // => ['0', '1']
+ */
+function keys(object) {
+  return isArrayLike(object) ? arrayLikeKeys(object) : baseKeys(object);
+}
+
+/**
+ * This method returns a new empty array.
+ *
+ * @static
+ * @memberOf _
+ * @since 4.13.0
+ * @category Util
+ * @returns {Array} Returns the new empty array.
+ * @example
+ *
+ * var arrays = _.times(2, _.stubArray);
+ *
+ * console.log(arrays);
+ * // => [[], []]
+ *
+ * console.log(arrays[0] === arrays[1]);
+ * // => false
+ */
+function stubArray() {
+  return [];
+}
+
+/**
+ * This method returns `false`.
+ *
+ * @static
+ * @memberOf _
+ * @since 4.13.0
+ * @category Util
+ * @returns {boolean} Returns `false`.
+ * @example
+ *
+ * _.times(2, _.stubFalse);
+ * // => [false, false]
+ */
+function stubFalse() {
+  return false;
+}
+
+module.exports = cloneDeep;
+
+/* WEBPACK VAR INJECTION */}.call(this, __webpack_require__("c8ba"), __webpack_require__("62e4")(module)))
 
 /***/ }),
 
@@ -53409,6 +55270,13 @@ var es_array_concat = __webpack_require__("99af");
 var external_commonjs_vue_commonjs2_vue_root_Vue_ = __webpack_require__("8bbf");
 var external_commonjs_vue_commonjs2_vue_root_Vue_default = /*#__PURE__*/__webpack_require__.n(external_commonjs_vue_commonjs2_vue_root_Vue_);
 
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"77807189-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/Diagram.vue?vue&type=template&id=00667149&
+var Diagramvue_type_template_id_00667149_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"lassox-diagram__Diagram"},[_c('TopBar',{attrs:{"diagram":_vm.diagram}}),_c('div',{staticClass:"lassox-diagram__Diagram_graph-columns"},[_c('Graph',{attrs:{"diagram":_vm.diagram,"data":_vm.diagram.data}}),_c('Customizer',{attrs:{"diagram":_vm.diagram}}),(_vm.editorTarget)?_c('Editor',{attrs:{"object":_vm.editorTarget,"close":function () { return _vm.editorTarget = null; }}}):_vm._e()],1),_c('div',{staticClass:"lassox-diagram__Diagram_dialogs"},_vm._l((_vm.dialogs),function(dialog,i){return _c(dialog.component,_vm._b({key:i,tag:"component",on:{"close":function($event){return _vm.dialogs.splice(i, 1)}}},'component',dialog.props,false))}),1)],1)}
+var staticRenderFns = []
+
+
+// CONCATENATED MODULE: ./src/components/Diagram.vue?vue&type=template&id=00667149&
+
 // CONCATENATED MODULE: ./node_modules/@babel/runtime/helpers/esm/setPrototypeOf.js
 function _setPrototypeOf(o, p) {
   _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf(o, p) {
@@ -53507,127 +55375,6 @@ function _createSuper(Derived) {
     return _possibleConstructorReturn(this, result);
   };
 }
-// EXTERNAL MODULE: ./node_modules/core-js/modules/es.set.js
-var es_set = __webpack_require__("6062");
-
-// CONCATENATED MODULE: ./src/types/EventBus.ts
-
-
-
-
-
-
-
-
-
-
-var EventBus_EventBus = /*#__PURE__*/function () {
-  function EventBus() {
-    _classCallCheck(this, EventBus);
-
-    this.handlers = {};
-  }
-
-  _createClass(EventBus, [{
-    key: "getHandlers",
-    value: function getHandlers(name) {
-      var _this$handlers, _this$handlers$name;
-
-      return (_this$handlers$name = (_this$handlers = this.handlers)[name]) !== null && _this$handlers$name !== void 0 ? _this$handlers$name : _this$handlers[name] = new Set();
-    }
-  }, {
-    key: "on",
-    value: function on(names, handler) {
-      var _this = this;
-
-      var _iterator = _createForOfIteratorHelper(Array.isArray(names) ? names : [names]),
-          _step;
-
-      try {
-        for (_iterator.s(); !(_step = _iterator.n()).done;) {
-          var name = _step.value;
-          this.getHandlers(name).add(handler);
-        }
-      } catch (err) {
-        _iterator.e(err);
-      } finally {
-        _iterator.f();
-      }
-
-      return function () {
-        return _this.off(names, handler);
-      };
-    }
-  }, {
-    key: "off",
-    value: function off(names, handler) {
-      var _iterator2 = _createForOfIteratorHelper(Array.isArray(names) ? names : [names]),
-          _step2;
-
-      try {
-        for (_iterator2.s(); !(_step2 = _iterator2.n()).done;) {
-          var name = _step2.value;
-          this.getHandlers(name).delete(handler);
-        }
-      } catch (err) {
-        _iterator2.e(err);
-      } finally {
-        _iterator2.f();
-      }
-    }
-  }, {
-    key: "emit",
-    value: function emit(event) {
-      console.log("Emitted event: ".concat(event.name));
-
-      var _iterator3 = _createForOfIteratorHelper(this.getHandlers(event.name)),
-          _step3;
-
-      try {
-        for (_iterator3.s(); !(_step3 = _iterator3.n()).done;) {
-          var handler = _step3.value;
-          handler(event);
-        }
-      } catch (err) {
-        _iterator3.e(err);
-      } finally {
-        _iterator3.f();
-      }
-    }
-  }]);
-
-  return EventBus;
-}();
-
-/* harmony default export */ var types_EventBus = (EventBus_EventBus);
-// CONCATENATED MODULE: ./src/types/DiagramEventBus.ts
-
-
-
-
-
-var DiagramEventBus_DiagramEventBus = /*#__PURE__*/function (_EventBus) {
-  _inherits(DiagramEventBus, _EventBus);
-
-  var _super = _createSuper(DiagramEventBus);
-
-  function DiagramEventBus() {
-    _classCallCheck(this, DiagramEventBus);
-
-    return _super.apply(this, arguments);
-  }
-
-  return DiagramEventBus;
-}(types_EventBus);
-
-
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"15a880ee-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/Diagram.vue?vue&type=template&id=78bf0c58&
-var Diagramvue_type_template_id_78bf0c58_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"lassox-diagram__Diagram"},[_c('TopBar',{attrs:{"diagram":_vm.diagram}}),_c('div',{staticClass:"lassox-diagram__Diagram_graph-columns"},[_c('Graph',{attrs:{"diagram":_vm.diagram,"data":_vm.diagram.data},on:{"clickEntity":function (entity) { return _vm.showEditor(entity); },"clickRelation":function (relation) { return _vm.showEditor(relation); }}}),_c('Customizer',{attrs:{"diagram":_vm.diagram}}),(_vm.editor.show)?_c('Editor',{attrs:{"diagram":_vm.diagram,"object":_vm.editor.object,"close":function () { return _vm.hideEditor(); }}}):_vm._e()],1),_c('div',{staticClass:"lassox-diagram__Diagram_dialogs"},_vm._l((_vm.dialogs),function(dialog,i){return _c(dialog.component,_vm._b({key:i,tag:"component",on:{"close":function($event){return _vm.dialogs.splice(i, 1)}}},'component',dialog.props,false))}),1)],1)}
-var staticRenderFns = []
-
-
-// CONCATENATED MODULE: ./src/components/Diagram.vue?vue&type=template&id=78bf0c58&
-
 // CONCATENATED MODULE: ./node_modules/tslib/tslib.es6.js
 /*! *****************************************************************************
 Copyright (c) Microsoft Corporation.
@@ -54554,18 +56301,14 @@ function Watch(path, options) {
 
 
 
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"15a880ee-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/TopBar.vue?vue&type=template&id=06796866&
-var TopBarvue_type_template_id_06796866_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"lassox-diagram__TopBar"},[(_vm.diagram.enableSaving)?[_c('ButtonGroup',[(_vm.diagram.enableSaving)?_c('Button',{attrs:{"label":"Gem"},on:{"click":_vm.save}}):_vm._e()],1),_c('div',{staticStyle:{"width":"16px"}}),_c('div',{staticClass:"lassox-diagram__TopBar_active-diagram"},[(_vm.diagram.activeDiagram.title)?_c('div',{staticClass:"lassox-diagram__TopBar_active-diagram-name",domProps:{"textContent":_vm._s(_vm.diagram.activeDiagram.title)}}):_vm._e(),(_vm.diagram.activeDiagram.title && _vm.diagram.enableSharing)?_c('div',{staticStyle:{"width":"12px"}}):_vm._e(),(_vm.diagram.enableSharing)?_c('IconButton',{staticClass:"lassox-diagram__TopBar_active-diagram-shared-icon",attrs:{"icon":_vm.diagram.activeDiagram.shared ? 'lock_open' : 'lock'}}):_vm._e(),((_vm.diagram.activeDiagram.title || _vm.diagram.enableSharing) && _vm.diagram.hasUnsavedChanges)?_c('div',{staticStyle:{"width":"12px"}}):_vm._e(),(_vm.diagram.hasUnsavedChanges)?_c('div',{staticClass:"lassox-diagram__TopBar_active-diagram-unsaved-changes"},[(_vm.diagram.activeDiagram.title || _vm.diagram.enableSharing)?_c('div',{staticStyle:{"margin-right":"12px"}},[_vm._v("—")]):_vm._e(),(_vm.diagram.isSaving)?_c('div',{domProps:{"textContent":_vm._s('Gemmer...')}}):_c('a',{attrs:{"href":"#"},domProps:{"textContent":_vm._s('Gem ændringer')},on:{"click":function($event){$event.preventDefault();return _vm.save.apply(null, arguments)}}})]):_vm._e()],1),_c('div',{staticStyle:{"width":"16px"}})]:_vm._e(),_c('ButtonGroup',{staticStyle:{"margin-left":"auto"}},[(_vm.diagram.layouts.length)?_c('Button',{ref:"layoutDropdownButton",attrs:{"label":"Layout","trailingIcon":_vm.showLayoutDropdownMenu ? 'expand_less' : 'expand_more'},on:{"click":function () { return _vm.showLayoutDropdownMenu = !_vm.showLayoutDropdownMenu; }}}):_vm._e(),(_vm.diagram.enableEditing)?_c('Button',{ref:"editDropdownButton",attrs:{"label":"Rediger","trailingIcon":_vm.showEditDropdownMenu ? 'expand_less' : 'expand_more'},on:{"click":function () { return _vm.showEditDropdownMenu = !_vm.showEditDropdownMenu; }}}):_vm._e()],1),(_vm.diagram.layouts.length)?_c('DropdownMenu',{attrs:{"buttonEl":_vm.showLayoutDropdownMenu ? _vm.$refs.layoutDropdownButton.$el : null,"close":function () { return _vm.showLayoutDropdownMenu = false; }}},_vm._l((_vm.diagram.layouts),function(layout){return _c('DropdownMenuItem',{key:layout.id,attrs:{"label":layout.name,"icon":layout == _vm.diagram.activeDiagram.settings.activeLayout ? 'check' : ' '},on:{"click":function () {
-        _vm.diagram.activeDiagram.settings.activeLayout = layout
-        _vm.diagram.eventBus.emit({ name: 'settingsChanged' })
-        _vm.diagram.eventBus.emit({ name: 'activeLayoutChanged' })
-      }}})}),1):_vm._e(),_c('DropdownMenu',{attrs:{"buttonEl":_vm.showEditDropdownMenu ? _vm.$refs.editDropdownButton.$el : null,"close":function () { return _vm.showEditDropdownMenu = false; }}},[_c('DropdownMenuItem',{attrs:{"label":"Fortryd","icon":"undo","disabled":!_vm.canUndo},on:{"click":_vm.undo}}),_c('DropdownMenuItem',{attrs:{"label":"Annuller fortryd","icon":"redo","disabled":!_vm.canRedo},on:{"click":_vm.redo}}),_c('DropdownMenuItem',{attrs:{"label":"Nulstil","icon":"replay"},on:{"click":_vm.reset}})],1)],2)}
-var TopBarvue_type_template_id_06796866_staticRenderFns = []
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"77807189-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/TopBar.vue?vue&type=template&id=8091cf5a&
+var TopBarvue_type_template_id_8091cf5a_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"lassox-diagram__TopBar"},[(_vm.diagram.enableSaving)?[_c('ButtonGroup',[(_vm.diagram.enableSaving)?_c('Button',{attrs:{"label":"Gem"},on:{"click":_vm.save}}):_vm._e()],1),_c('div',{staticStyle:{"width":"16px"}}),_c('div',{staticClass:"lassox-diagram__TopBar_active-diagram"},[(_vm.diagram.activeDiagram.title)?_c('div',{staticClass:"lassox-diagram__TopBar_active-diagram-name",domProps:{"textContent":_vm._s(_vm.diagram.activeDiagram.title)}}):_vm._e(),(_vm.diagram.activeDiagram.title && _vm.diagram.enableSharing)?_c('div',{staticStyle:{"width":"12px"}}):_vm._e(),(_vm.diagram.enableSharing)?_c('IconButton',{staticClass:"lassox-diagram__TopBar_active-diagram-shared-icon",attrs:{"icon":_vm.diagram.activeDiagram.shared ? 'lock_open' : 'lock'}}):_vm._e(),((_vm.diagram.activeDiagram.title || _vm.diagram.enableSharing) && _vm.diagram.hasUnsavedChanges)?_c('div',{staticStyle:{"width":"12px"}}):_vm._e(),(_vm.diagram.hasUnsavedChanges)?_c('div',{staticClass:"lassox-diagram__TopBar_active-diagram-unsaved-changes"},[(_vm.diagram.activeDiagram.title || _vm.diagram.enableSharing)?_c('div',{staticStyle:{"margin-right":"12px"}},[_vm._v("—")]):_vm._e(),(_vm.diagram.isSaving)?_c('div',{domProps:{"textContent":_vm._s('Gemmer...')}}):_c('a',{attrs:{"href":"#"},domProps:{"textContent":_vm._s('Gem ændringer')},on:{"click":function($event){$event.preventDefault();return _vm.save.apply(null, arguments)}}})]):_vm._e()],1),_c('div',{staticStyle:{"width":"16px"}})]:_vm._e(),_c('ButtonGroup',{staticStyle:{"margin-left":"auto"}},[(_vm.diagram.layouts.length)?_c('Button',{ref:"layoutDropdownButton",attrs:{"label":"Layout","trailingIcon":_vm.showLayoutDropdownMenu ? 'expand_less' : 'expand_more'},on:{"click":function () { return _vm.showLayoutDropdownMenu = !_vm.showLayoutDropdownMenu; }}}):_vm._e(),(_vm.diagram.enableEditing)?_c('Button',{ref:"editDropdownButton",attrs:{"label":"Rediger","trailingIcon":_vm.showEditDropdownMenu ? 'expand_less' : 'expand_more'},on:{"click":function () { return _vm.showEditDropdownMenu = !_vm.showEditDropdownMenu; }}}):_vm._e()],1),(_vm.diagram.layouts.length)?_c('DropdownMenu',{attrs:{"buttonEl":_vm.showLayoutDropdownMenu ? _vm.$refs.layoutDropdownButton.$el : null,"close":function () { return _vm.showLayoutDropdownMenu = false; }}},_vm._l((_vm.diagram.layouts),function(layout){return _c('DropdownMenuItem',{key:layout.id,attrs:{"label":layout.name,"icon":layout == _vm.diagram.activeDiagram.settings.activeLayout ? 'check' : ' '},on:{"click":function () { return _vm.diagram.eventBus.emit({ name: 'graph.layout', layout: layout }); }}})}),1):_vm._e(),_c('DropdownMenu',{attrs:{"buttonEl":_vm.showEditDropdownMenu ? _vm.$refs.editDropdownButton.$el : null,"close":function () { return _vm.showEditDropdownMenu = false; }}},[_c('DropdownMenuItem',{attrs:{"label":"Fortryd","icon":"undo","disabled":!_vm.canUndo},on:{"click":_vm.undo}}),_c('DropdownMenuItem',{attrs:{"label":"Annuller fortryd","icon":"redo","disabled":!_vm.canRedo},on:{"click":_vm.redo}}),_c('DropdownMenuItem',{attrs:{"label":"Nulstil","icon":"replay"},on:{"click":_vm.reset}})],1)],2)}
+var TopBarvue_type_template_id_8091cf5a_staticRenderFns = []
 
 
-// CONCATENATED MODULE: ./src/components/TopBar.vue?vue&type=template&id=06796866&
+// CONCATENATED MODULE: ./src/components/TopBar.vue?vue&type=template&id=8091cf5a&
 
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"15a880ee-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/ButtonGroup.vue?vue&type=template&id=10ce107b&
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"77807189-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/ButtonGroup.vue?vue&type=template&id=10ce107b&
 var ButtonGroupvue_type_template_id_10ce107b_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{class:[
     'lassox-diagram__ButtonGroup',
     ("lassox-diagram__ButtonGroup--align-" + _vm.align) ]},[_vm._t("default")],2)}
@@ -54728,7 +56471,7 @@ var component = normalizeComponent(
 )
 
 /* harmony default export */ var components_ButtonGroup = (component.exports);
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"15a880ee-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/Button.vue?vue&type=template&id=6c8546b3&
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"77807189-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/Button.vue?vue&type=template&id=6c8546b3&
 var Buttonvue_type_template_id_6c8546b3_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('BaseButton',_vm._g(_vm._b({class:[
     'lassox-diagram__Button',
     ("lassox-diagram__Button--type-" + _vm.type) ]},'BaseButton',{ label: _vm.label, icon: _vm.icon, leadingIcon: _vm.leadingIcon, trailingIcon: _vm.trailingIcon, disabled: _vm.disabled },false),_vm.$listeners))}
@@ -54737,7 +56480,10 @@ var Buttonvue_type_template_id_6c8546b3_staticRenderFns = []
 
 // CONCATENATED MODULE: ./src/components/Button.vue?vue&type=template&id=6c8546b3&
 
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"15a880ee-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/BaseButton.vue?vue&type=template&id=20ab1ea2&
+// EXTERNAL MODULE: ./node_modules/core-js/modules/es.set.js
+var es_set = __webpack_require__("6062");
+
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"77807189-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/BaseButton.vue?vue&type=template&id=20ab1ea2&
 var BaseButtonvue_type_template_id_20ab1ea2_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('button',_vm._g({class:[
     'lassox-diagram__BaseButton',
     _vm.disabled && 'lassox-diagram__BaseButton--disabled' ],attrs:{"disabled":_vm.disabled}},Object.assign({}, _vm.$listeners,
@@ -54747,7 +56493,7 @@ var BaseButtonvue_type_template_id_20ab1ea2_staticRenderFns = []
 
 // CONCATENATED MODULE: ./src/components/BaseButton.vue?vue&type=template&id=20ab1ea2&
 
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"15a880ee-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/Icon.vue?vue&type=template&id=38dc3431&
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"77807189-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/Icon.vue?vue&type=template&id=38dc3431&
 var Iconvue_type_template_id_38dc3431_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"lassox-diagram__Icon",style:({ fontSize: (_vm.size + "px") })},[(_vm.icon && _vm.icon != ' ')?_c('span',{staticClass:"material-icons-outlined",domProps:{"textContent":_vm._s(_vm.icon)}}):_vm._e()])}
 var Iconvue_type_template_id_38dc3431_staticRenderFns = []
 
@@ -54998,7 +56744,7 @@ var Button_component = normalizeComponent(
 )
 
 /* harmony default export */ var components_Button = (Button_component.exports);
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"15a880ee-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/IconButton.vue?vue&type=template&id=3ac45bf4&
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"77807189-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/IconButton.vue?vue&type=template&id=3ac45bf4&
 var IconButtonvue_type_template_id_3ac45bf4_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"lassox-diagram__IconButton",style:({
     width: (_vm.finalIconSize + "px"),
     height: (_vm.finalIconSize + "px"),
@@ -55121,7 +56867,7 @@ var IconButton_component = normalizeComponent(
 )
 
 /* harmony default export */ var components_IconButton = (IconButton_component.exports);
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"15a880ee-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/DropdownMenu.vue?vue&type=template&id=d376f59a&
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"77807189-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/DropdownMenu.vue?vue&type=template&id=d376f59a&
 var DropdownMenuvue_type_template_id_d376f59a_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"lassox-diagram__DropdownMenu"},[_c('div',{ref:"boundsEl",staticClass:"lassox-diagram__DropdownMenu_bounds"}),_c('div',{ref:"dropdownMenuEl",staticClass:"lassox-diagram__DropdownMenu_dropdown-menu",style:([
       !_vm.buttonEl ? { visibility: 'hidden' } : null,
       _vm.dropdownMenuStyle ]),attrs:{"tabindex":"-1"}},[_vm._t("default")],2)])}
@@ -55500,7 +57246,7 @@ var DropdownMenu_component = normalizeComponent(
 )
 
 /* harmony default export */ var components_DropdownMenu = (DropdownMenu_component.exports);
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"15a880ee-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/DropdownMenuItem.vue?vue&type=template&id=5446e124&
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"77807189-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/DropdownMenuItem.vue?vue&type=template&id=5446e124&
 var DropdownMenuItemvue_type_template_id_5446e124_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('BaseButton',_vm._g({staticClass:"lassox-diagram__DropdownMenuItem",attrs:{"icon":_vm.icon,"label":_vm.label,"disabled":_vm.disabled,"tabindex":"0"}},Object.assign({}, _vm.$listeners,
     {click: function (e) {
       _vm.$emit('click', e)
@@ -55579,7 +57325,7 @@ var DropdownMenuItem_component = normalizeComponent(
 )
 
 /* harmony default export */ var components_DropdownMenuItem = (DropdownMenuItem_component.exports);
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"15a880ee-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/DropdownMenuDivider.vue?vue&type=template&id=17d44d15&
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"77807189-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/DropdownMenuDivider.vue?vue&type=template&id=17d44d15&
 var DropdownMenuDividervue_type_template_id_17d44d15_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"lassox-diagram__DropdownMenuDivider"})}
 var DropdownMenuDividervue_type_template_id_17d44d15_staticRenderFns = []
 
@@ -55635,21 +57381,24 @@ var DropdownMenuDivider_component = normalizeComponent(
 )
 
 /* harmony default export */ var components_DropdownMenuDivider = (DropdownMenuDivider_component.exports);
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"15a880ee-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/ConfirmResetDialog.vue?vue&type=template&id=4a86d982&
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"77807189-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/ConfirmResetDialog.vue?vue&type=template&id=4a86d982&
 var ConfirmResetDialogvue_type_template_id_4a86d982_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('Dialog',{staticClass:"lassox-diagram__ConfirmAdditionDialog",attrs:{"dismissable":true,"title":"Nulstil diagrammet?","content":"Dette vil fjerne eventuelle ændringer og nulstille dine indstillinger. Vil du fortsætte?","onClose":_vm.dismiss},scopedSlots:_vm._u([{key:"actions",fn:function(){return [_c('ButtonGroup',{attrs:{"align":"right"}},[_c('Button',{attrs:{"label":"Fortryd"},on:{"click":_vm.dismiss}}),_c('Button',{attrs:{"label":"Fortsæt","type":"primary"},on:{"click":_vm.confirm}})],1)]},proxy:true}])})}
 var ConfirmResetDialogvue_type_template_id_4a86d982_staticRenderFns = []
 
 
 // CONCATENATED MODULE: ./src/components/ConfirmResetDialog.vue?vue&type=template&id=4a86d982&
 
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"15a880ee-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/Dialog.vue?vue&type=template&id=60d29003&
-var Dialogvue_type_template_id_60d29003_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"lassox-diagram__Dialog"},[_c('div',{staticClass:"lassox-diagram__Dialog-backdrop",on:{"click":function () { return _vm.dismissable && _vm.close(); }}}),_c('div',{staticClass:"lassox-diagram__Dialog-box",style:({ maxWidth: (_vm.maxWidth + "px") })},[(_vm.title || _vm.dismissable || _vm.$slots['header'] || _vm.$slots['title'])?_c('div',{staticClass:"lassox-diagram__Dialog-header"},[_vm._t("header",function(){return [(_vm.title)?_c('div',{staticClass:"lassox-diagram__Dialog-title"},[_vm._t("title",function(){return [(_vm.title)?_c('div',{domProps:{"textContent":_vm._s(_vm.title)}}):_vm._e()]},null,_vm.slotProps)],2):_vm._e(),(_vm.dismissable)?_c('IconButton',{staticClass:"lassox-diagram__Dialog-close-button",attrs:{"icon":"close","size":"normal"},on:{"click":_vm.close}}):_vm._e()]},null,_vm.slotProps)],2):_vm._e(),(_vm.content || _vm.$slots['content'])?_c('div',{staticClass:"lassox-diagram__Dialog-content"},[_vm._t("content",function(){return [(_vm.content)?_c('div',{domProps:{"textContent":_vm._s(_vm.content)}}):_vm._e()]},null,_vm.slotProps)],2):_vm._e(),(_vm.$slots['actions'])?_c('div',{staticClass:"lassox-diagram__Dialog-actions"},[_vm._t("actions",null,null,_vm.slotProps)],2):_vm._e()])])}
-var Dialogvue_type_template_id_60d29003_staticRenderFns = []
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"77807189-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/Dialog.vue?vue&type=template&id=51a60bdc&
+var Dialogvue_type_template_id_51a60bdc_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{class:[
+    'lassox-diagram__Dialog',
+    _vm.scrollable && 'lassox-diagram__Dialog--scrollable' ]},[_c('div',{staticClass:"lassox-diagram__Dialog-backdrop",on:{"click":function () { return _vm.dismissable && _vm.close(); }}}),_c('div',{staticClass:"lassox-diagram__Dialog-box",style:({ maxWidth: (_vm.maxWidth + "px") })},[(_vm.title || _vm.dismissable || _vm.$slots['header'] || _vm.$slots['title'])?_c('div',{staticClass:"lassox-diagram__Dialog-header"},[_vm._t("header",function(){return [(_vm.title)?_c('div',{staticClass:"lassox-diagram__Dialog-title"},[_vm._t("title",function(){return [(_vm.title)?_c('div',{domProps:{"textContent":_vm._s(_vm.title)}}):_vm._e()]},null,_vm.slotProps)],2):_vm._e(),(_vm.dismissable)?_c('IconButton',{staticClass:"lassox-diagram__Dialog-close-button",attrs:{"icon":"close","size":"normal"},on:{"click":_vm.close}}):_vm._e()]},null,_vm.slotProps)],2):_vm._e(),(_vm.content || _vm.$slots['content'])?_c('div',{ref:"contentEl",staticClass:"lassox-diagram__Dialog-content"},[_c('div',{ref:"contentInnerEl",staticClass:"lassox-diagram__Dialog-content-inner"},[_vm._t("content",function(){return [(_vm.content)?_c('div',{domProps:{"textContent":_vm._s(_vm.content)}}):_vm._e()]},null,_vm.slotProps)],2)]):_vm._e(),(_vm.$slots['actions'])?_c('div',{staticClass:"lassox-diagram__Dialog-actions"},[_vm._t("actions",null,null,_vm.slotProps)],2):_vm._e()])])}
+var Dialogvue_type_template_id_51a60bdc_staticRenderFns = []
 
 
-// CONCATENATED MODULE: ./src/components/Dialog.vue?vue&type=template&id=60d29003&
+// CONCATENATED MODULE: ./src/components/Dialog.vue?vue&type=template&id=51a60bdc&
 
 // CONCATENATED MODULE: ./node_modules/babel-loader/lib!./node_modules/ts-loader??ref--14-1!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/Dialog.vue?vue&type=script&lang=ts&
+
 
 
 
@@ -55672,9 +57421,15 @@ var Dialogvue_type_script_lang_ts_Dialog = /*#__PURE__*/function (_Vue) {
   var _super = _createSuper(Dialog);
 
   function Dialog() {
+    var _this;
+
     _classCallCheck(this, Dialog);
 
-    return _super.apply(this, arguments);
+    _this = _super.apply(this, arguments);
+    _this.contentEl = undefined;
+    _this.contentInnerEl = undefined;
+    _this.scrollable = false;
+    return _this;
   }
 
   _createClass(Dialog, [{
@@ -55685,19 +57440,60 @@ var Dialogvue_type_script_lang_ts_Dialog = /*#__PURE__*/function (_Vue) {
       return Dialogvue_type_script_lang_ts_sizes['1x'];
     }
   }, {
+    key: "slotProps",
+    get: function get() {
+      return {
+        close: this.close
+      };
+    }
+  }, {
+    key: "mounted",
+    value: function mounted() {
+      var _this2 = this;
+
+      this.updateRefs();
+      this.$watch(function () {
+        return _this2.contentInnerEl;
+      }, function (contentInnerEl, oldContentInnerEl) {
+        _this2.scrollable = false;
+        if (oldContentInnerEl) watch_rect_unwatchRect(oldContentInnerEl, _this2.onContentInnerElResize);
+        if (contentInnerEl) watchRect(contentInnerEl, _this2.onContentInnerElResize);
+      }, {
+        immediate: true
+      });
+    }
+  }, {
+    key: "updated",
+    value: function updated() {
+      this.updateRefs();
+    }
+  }, {
+    key: "beforeDestroy",
+    value: function beforeDestroy() {
+      this.contentEl = undefined;
+      this.contentInnerEl = undefined;
+    }
+  }, {
+    key: "updateRefs",
+    value: function updateRefs() {
+      this.contentEl = this.$refs.contentEl;
+      this.contentInnerEl = this.$refs.contentInnerEl;
+    }
+  }, {
+    key: "onContentInnerElResize",
+    value: function onContentInnerElResize(rect) {
+      var contentEl = this.contentEl,
+          contentInnerEl = this.contentInnerEl;
+      if (!contentEl || !contentInnerEl) return;
+      this.scrollable = rect.height > contentEl.getBoundingClientRect().height;
+    }
+  }, {
     key: "close",
     value: function close() {
       var _this$onClose;
 
       this.$emit('close');
       (_this$onClose = this.onClose) === null || _this$onClose === void 0 ? void 0 : _this$onClose.call(this);
-    }
-  }, {
-    key: "slotProps",
-    get: function get() {
-      return {
-        close: this.close
-      };
     }
   }]);
 
@@ -55739,8 +57535,8 @@ var Dialogvue_type_style_index_0_lang_scss_ = __webpack_require__("33fd");
 
 var Dialog_component = normalizeComponent(
   components_Dialogvue_type_script_lang_ts_,
-  Dialogvue_type_template_id_60d29003_render,
-  Dialogvue_type_template_id_60d29003_staticRenderFns,
+  Dialogvue_type_template_id_51a60bdc_render,
+  Dialogvue_type_template_id_51a60bdc_staticRenderFns,
   false,
   null,
   null,
@@ -55831,15 +57627,15 @@ var ConfirmResetDialog_component = normalizeComponent(
 )
 
 /* harmony default export */ var components_ConfirmResetDialog = (ConfirmResetDialog_component.exports);
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"15a880ee-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/SaveLoadDialog.vue?vue&type=template&id=1d75fbfe&
-var SaveLoadDialogvue_type_template_id_1d75fbfe_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('Dialog',{staticClass:"lassox-diagram__SaveLoadDialog",attrs:{"dismissable":true,"title":"Gem/Indlæs","size":"5x","onClose":_vm.close},scopedSlots:_vm._u([{key:"content",fn:function(){return [_c('textarea',{directives:[{name:"model",rawName:"v-model",value:(_vm.textareaText),expression:"textareaText"}],staticClass:"lassox-diagram__SaveLoadDialog_textarea",attrs:{"rows":"10"},domProps:{"value":(_vm.textareaText)},on:{"input":function($event){if($event.target.composing){ return; }_vm.textareaText=$event.target.value}}})]},proxy:true},{key:"actions",fn:function(){return [_c('ButtonGroup',{attrs:{"align":"center"}},[_c('Button',{attrs:{"label":"Gem"},on:{"click":_vm.save}}),_c('Button',{attrs:{"label":"Indlæs"},on:{"click":_vm.load}})],1)]},proxy:true}])})}
-var SaveLoadDialogvue_type_template_id_1d75fbfe_staticRenderFns = []
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"77807189-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/SaveLoadDialog.vue?vue&type=template&id=3f26a93e&
+var SaveLoadDialogvue_type_template_id_3f26a93e_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('Dialog',{staticClass:"lassox-diagram__SaveLoadDialog",attrs:{"dismissable":true,"title":"Gem/Indlæs","size":"5x","onClose":_vm.close},scopedSlots:_vm._u([{key:"content",fn:function(){return [_c('textarea',{directives:[{name:"model",rawName:"v-model",value:(_vm.textareaText),expression:"textareaText"}],staticClass:"lassox-diagram__SaveLoadDialog_textarea",attrs:{"rows":"10"},domProps:{"value":(_vm.textareaText)},on:{"input":function($event){if($event.target.composing){ return; }_vm.textareaText=$event.target.value}}})]},proxy:true},{key:"actions",fn:function(){return [_c('ButtonGroup',{attrs:{"align":"center"}},[_c('Button',{attrs:{"label":"Gem"},on:{"click":_vm.save}}),_c('Button',{attrs:{"label":"Indlæs"},on:{"click":_vm.load}})],1)]},proxy:true}])})}
+var SaveLoadDialogvue_type_template_id_3f26a93e_staticRenderFns = []
 
 
-// CONCATENATED MODULE: ./src/components/SaveLoadDialog.vue?vue&type=template&id=1d75fbfe&
+// CONCATENATED MODULE: ./src/components/SaveLoadDialog.vue?vue&type=template&id=3f26a93e&
 
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"15a880ee-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/EditorField.vue?vue&type=template&id=3dc79443&
-var EditorFieldvue_type_template_id_3dc79443_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('FieldContainer',{staticClass:"lassox-diagram__EditorField",attrs:{"label":_vm.title},scopedSlots:_vm._u([(_vm.showChangedFrom || _vm.showReset)?{key:"helper-text",fn:function(){return [(_vm.showChangedFrom)?[[_vm._v("Ændret")],(_vm.initialValueLabel)?[_vm._v(" fra '"+_vm._s(_vm.initialValueLabel)+"'")]:_vm._e()]:_vm._e(),(_vm.showReset)?[(_vm.showChangedFrom)?[_vm._v(". ")]:_vm._e(),_c('a',{staticClass:"lassox-diagram__EditorField_reset-button",attrs:{"href":"#"},domProps:{"textContent":_vm._s('Nulstil')},on:{"click":function($event){$event.preventDefault();return (function () { return _vm.$emit('change', _vm.resetValue); }).apply(null, arguments)}}})]:_vm._e()]},proxy:true}:null],null,true)},[[(_vm.finalType === 'text')?_c('TextField',{attrs:{"autocomplete":"off","name":_vm.id,"value":_vm.value !== undefined ? _vm.value : ''},on:{"input":function (e) { return _vm.$emit('change', e.target.value); }}}):(_vm.finalType === 'number')?_c('TextField',{attrs:{"autocomplete":"off","name":_vm.id,"type":"number","value":_vm.value !== undefined ? _vm.value : ''},on:{"keydown":function (e) {
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"77807189-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/EditorField.vue?vue&type=template&id=5f2e0a7a&
+var EditorFieldvue_type_template_id_5f2e0a7a_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('FieldContainer',{staticClass:"lassox-diagram__EditorField",attrs:{"label":_vm.title},scopedSlots:_vm._u([(_vm.showChangedFrom || _vm.showReset)?{key:"helper-text",fn:function(){return [(_vm.showChangedFrom)?[[_vm._v("Ændret")],(_vm.initialValueLabel)?[_vm._v(" fra '"+_vm._s(_vm.initialValueLabel)+"'")]:_vm._e()]:_vm._e(),(_vm.showReset)?[(_vm.showChangedFrom)?[_vm._v(". ")]:_vm._e(),_c('a',{staticClass:"lassox-diagram__EditorField_reset-button",attrs:{"href":"#"},domProps:{"textContent":_vm._s('Nulstil')},on:{"click":function($event){$event.preventDefault();return (function () { return _vm.$emit('change', _vm.resetValue); }).apply(null, arguments)}}})]:_vm._e()]},proxy:true}:null],null,true)},[[(_vm.finalType === 'text')?_c('TextField',{attrs:{"autocomplete":"off","name":_vm.id,"value":_vm.value !== undefined ? _vm.value : ''},on:{"input":function (e) { return _vm.$emit('change', e.target.value); }}}):(_vm.finalType === 'number')?_c('TextField',{attrs:{"autocomplete":"off","name":_vm.id,"type":"number","value":_vm.value !== undefined ? _vm.value : ''},on:{"keydown":function (e) {
         if (e.key == '.' || e.key == ',') { e.preventDefault() }
       },"input":function (e) {
         var value = e.target.value
@@ -55857,12 +57653,12 @@ var EditorFieldvue_type_template_id_3dc79443_render = function () {var _vm=this;
           _vm.$emit('change', undefined)
         }
       }}}):(_vm.finalType === 'radio-buttons')?_c('RadioField',{attrs:{"name":_vm.id,"options":_vm.finalOptions,"value":_vm.value},on:{"change":function (value) { return _vm.$emit('change', value); }}}):(_vm.finalType === 'color')?_c('ColorField',{attrs:{"name":_vm.id,"value":_vm.value},on:{"change":function (value) { return _vm.$emit('change', value); }}}):_vm._e()]],2)}
-var EditorFieldvue_type_template_id_3dc79443_staticRenderFns = []
+var EditorFieldvue_type_template_id_5f2e0a7a_staticRenderFns = []
 
 
-// CONCATENATED MODULE: ./src/components/EditorField.vue?vue&type=template&id=3dc79443&
+// CONCATENATED MODULE: ./src/components/EditorField.vue?vue&type=template&id=5f2e0a7a&
 
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"15a880ee-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/FieldContainer.vue?vue&type=template&id=5833240d&
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"77807189-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/FieldContainer.vue?vue&type=template&id=5833240d&
 var FieldContainervue_type_template_id_5833240d_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"lassox-diagram__FieldContainer"},[(_vm.label)?_c('div',{staticClass:"lassox-diagram__FieldContainer_label",domProps:{"textContent":_vm._s(_vm.label)}}):_vm._e(),_vm._t("default"),(_vm.helperText || _vm.$slots['helper-text'])?_c('div',{staticClass:"lassox-diagram__FieldContainer_helper-text"},[_vm._t("helper-text",function(){return [_vm._v(_vm._s(_vm.helperText))]})],2):_vm._e()],2)}
 var FieldContainervue_type_template_id_5833240d_staticRenderFns = []
 
@@ -55922,7 +57718,7 @@ var FieldContainer_component = normalizeComponent(
 )
 
 /* harmony default export */ var components_FieldContainer = (FieldContainer_component.exports);
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"15a880ee-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/TextField.vue?vue&type=template&id=e4b802d8&
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"77807189-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/TextField.vue?vue&type=template&id=e4b802d8&
 var TextFieldvue_type_template_id_e4b802d8_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{class:[
     'lassox-diagram__TextField',
     _vm.leadingIcon ? 'lassox-diagram__TextField--has-leading-icon' : '',
@@ -56034,7 +57830,7 @@ var TextField_component = normalizeComponent(
 )
 
 /* harmony default export */ var components_TextField = (TextField_component.exports);
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"15a880ee-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/RadioField.vue?vue&type=template&id=438b0aa1&
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"77807189-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/RadioField.vue?vue&type=template&id=438b0aa1&
 var RadioFieldvue_type_template_id_438b0aa1_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"lassox-diagram__RadioField"},_vm._l((_vm.finalOptions),function(option,i){return _c('label',{key:i,class:[
       'lassox-diagram__RadioField-option',
       option.focused && 'lassox-diagram__RadioField-option--focused',
@@ -56138,7 +57934,7 @@ var RadioField_component = normalizeComponent(
 )
 
 /* harmony default export */ var components_RadioField = (RadioField_component.exports);
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"15a880ee-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/ColorField.vue?vue&type=template&id=8f20354c&
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"77807189-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/ColorField.vue?vue&type=template&id=8f20354c&
 var ColorFieldvue_type_template_id_8f20354c_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"lassox-diagram__ColorField"},[_c('DropdownButton',{staticClass:"lassox-diagram__ColorField-dropdown-button",scopedSlots:_vm._u([{key:"default",fn:function(ref){
 var onClick = ref.onClick;
 return [_c('BaseButton',{staticClass:"lassox-diagram__ColorField-button",on:{"click":onClick}},[_c('div',{staticClass:"lassox-diagram__ColorField-button-color",style:({ backgroundColor: _vm.color.rgbaString })}),_c('div',{staticClass:"lassox-diagram__ColorField-button-hex"},[_vm._v(_vm._s(_vm.color.hexString))])])]}},{key:"dropdown-menu",fn:function(ref){
@@ -56149,7 +57945,7 @@ var ColorFieldvue_type_template_id_8f20354c_staticRenderFns = []
 
 // CONCATENATED MODULE: ./src/components/ColorField.vue?vue&type=template&id=8f20354c&
 
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"15a880ee-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/DropdownButton.vue?vue&type=template&id=2947e75a&
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"77807189-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/DropdownButton.vue?vue&type=template&id=2947e75a&
 var DropdownButtonvue_type_template_id_2947e75a_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"lassox-diagram__DropdownButton"},[_vm._t("default",null,null,{ isOpen: _vm.isOpen, onClick: _vm.onClick, close: _vm.close }),_c('DropdownMenu',{attrs:{"buttonEl":_vm.buttonEl,"close":_vm.close}},[_vm._t("dropdown-menu",null,null,{ isOpen: _vm.isOpen, onClick: _vm.onClick, close: _vm.close })],2)],2)}
 var DropdownButtonvue_type_template_id_2947e75a_staticRenderFns = []
 
@@ -56241,7 +58037,7 @@ var DropdownButton_component = normalizeComponent(
 )
 
 /* harmony default export */ var components_DropdownButton = (DropdownButton_component.exports);
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"15a880ee-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/ColorPicker.vue?vue&type=template&id=b77e58b8&
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"77807189-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/ColorPicker.vue?vue&type=template&id=b77e58b8&
 var ColorPickervue_type_template_id_b77e58b8_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"lassox-diagram__ColorPicker"},[_c('div',{ref:"iroEl",staticClass:"lassox-diagram__ColorPicker-iro"}),_c('div',{staticClass:"lassox-diagram__ColorPicker-input"},[_c('BaseButton',{staticClass:"lassox-diagram__ColorPicker-input-type-button",attrs:{"label":_vm.inputType},on:{"click":_vm.switchInputType}}),_c('div',{staticClass:"lassox-diagram__ColorPicker-input-fields"},_vm._l((_vm.inputFields),function(field){return _c('div',{key:field.name,staticClass:"lassox-diagram__ColorPicker-input-field"},[_c('TextField',{staticClass:"lassox-diagram__ColorPicker-input-field-input",attrs:{"name":field.name,"type":"text","autocomplete":"off","value":field.value},on:{"focus":function($event){_vm.inputFocused = true},"blur":function($event){_vm.inputFocused = false},"input":function (event) {
             var ref = event.target;
             var value = ref.value;
@@ -56293,7 +58089,7 @@ var es_object_assign = __webpack_require__("cca6");
  * github.com/jaames/iro.js
  */
 
-var iro_es_n,u,t,iro_es_i,iro_es_r,iro_es_o,f={},iro_es_e=[],c=/acit|ex(?:s|g|n|p|$)|rph|grid|ows|mnc|ntw|ine[ch]|zoo|^ord|^--/i;function s(n,l){for(var u in l){ n[u]=l[u]; }return n}function a(n){var l=n.parentNode;l&&l.removeChild(n);}function iro_es_h(n,l,u){var t,i,r,o,f=arguments;if(l=s({},l),arguments.length>3){ for(u=[u],t=3;t<arguments.length;t++){ u.push(f[t]); } }if(null!=u&&(l.children=u),null!=n&&null!=n.defaultProps){ for(i in n.defaultProps){ void 0===l[i]&&(l[i]=n.defaultProps[i]); } }return o=l.key,null!=(r=l.ref)&&delete l.ref,null!=o&&delete l.key,iro_es_v(n,l,o,r)}function iro_es_v(l,u,t,i){var r={type:l,props:u,key:t,ref:i,__k:null,__p:null,__b:0,__e:null,l:null,__c:null,constructor:void 0};return iro_es_n.vnode&&iro_es_n.vnode(r),r}function d(n){return n.children}function y(n){if(null==n||"boolean"==typeof n){ return null; }if("string"==typeof n||"number"==typeof n){ return iro_es_v(null,n,null,null); }if(null!=n.__e||null!=n.__c){var l=iro_es_v(n.type,n.props,n.key,null);return l.__e=n.__e,l}return n}function m(n,l){this.props=n,this.context=l;}function w(n,l){if(null==l){ return n.__p?w(n.__p,n.__p.__k.indexOf(n)+1):null; }for(var u;l<n.__k.length;l++){ if(null!=(u=n.__k[l])&&null!=u.__e){ return u.__e; } }return "function"==typeof n.type?w(n):null}function g(n){var l,u;if(null!=(n=n.__p)&&null!=n.__c){for(n.__e=n.__c.base=null,l=0;l<n.__k.length;l++){ if(null!=(u=n.__k[l])&&null!=u.__e){n.__e=n.__c.base=u.__e;break} }return g(n)}}function iro_es_k(l){(!l.__d&&(l.__d=!0)&&1===u.push(l)||iro_es_i!==iro_es_n.debounceRendering)&&(iro_es_i=iro_es_n.debounceRendering,(iro_es_n.debounceRendering||t)(_));}function _(){var n,l,t,i,r,o,f,e;for(u.sort(function(n,l){return l.__v.__b-n.__v.__b});n=u.pop();){ n.__d&&(t=void 0,i=void 0,o=(r=(l=n).__v).__e,f=l.__P,e=l.u,l.u=!1,f&&(t=[],i=$(f,r,s({},r),l.__n,void 0!==f.ownerSVGElement,null,t,e,null==o?w(r):o),j(t,r),i!=o&&g(r))); }}function b(n,l,u,t,i,r,o,c,s){var h,v,p,d,y,m,g,k=u&&u.__k||iro_es_e,_=k.length;if(c==f&&(c=null!=r?r[0]:_?w(u,0):null),h=0,l.__k=x(l.__k,function(u){if(null!=u){if(u.__p=l,u.__b=l.__b+1,null===(p=k[h])||p&&u.key==p.key&&u.type===p.type){ k[h]=void 0; }else { for(v=0;v<_;v++){if((p=k[v])&&u.key==p.key&&u.type===p.type){k[v]=void 0;break}p=null;} }if(d=$(n,u,p=p||f,t,i,r,o,null,c,s),(v=u.ref)&&p.ref!=v&&(g||(g=[])).push(v,u.__c||d,u),null!=d){if(null==m&&(m=d),null!=u.l){ d=u.l,u.l=null; }else if(r==p||d!=c||null==d.parentNode){n:if(null==c||c.parentNode!==n){ n.appendChild(d); }else{for(y=c,v=0;(y=y.nextSibling)&&v<_;v+=2){ if(y==d){ break n; } }n.insertBefore(d,c);}"option"==l.type&&(n.value="");}c=d.nextSibling,"function"==typeof l.type&&(l.l=d);}}return h++,u}),l.__e=m,null!=r&&"function"!=typeof l.type){ for(h=r.length;h--;){ null!=r[h]&&a(r[h]); } }for(h=_;h--;){ null!=k[h]&&D(k[h],k[h]); }if(g){ for(h=0;h<g.length;h++){ A(g[h],g[++h],g[++h]); } }}function x(n,l,u){if(null==u&&(u=[]),null==n||"boolean"==typeof n){ l&&u.push(l(null)); }else if(Array.isArray(n)){ for(var t=0;t<n.length;t++){ x(n[t],l,u); } }else { u.push(l?l(y(n)):n); }return u}function C(n,l,u,t,i){var r;for(r in u){ r in l||N(n,r,null,u[r],t); }for(r in l){ i&&"function"!=typeof l[r]||"value"===r||"checked"===r||u[r]===l[r]||N(n,r,l[r],u[r],t); }}function P(n,l,u){"-"===l[0]?n.setProperty(l,u):n[l]="number"==typeof u&&!1===c.test(l)?u+"px":null==u?"":u;}function N(n,l,u,t,i){var r,o,f,e,c;if("key"===(l=i?"className"===l?"class":l:"class"===l?"className":l)||"children"===l);else if("style"===l){ if(r=n.style,"string"==typeof u){ r.cssText=u; }else{if("string"==typeof t&&(r.cssText="",t=null),t){ for(o in t){ u&&o in u||P(r,o,""); } }if(u){ for(f in u){ t&&u[f]===t[f]||P(r,f,u[f]); } }} }else{ "o"===l[0]&&"n"===l[1]?(e=l!==(l=l.replace(/Capture$/,"")),c=l.toLowerCase(),l=(c in n?c:l).slice(2),u?(t||n.addEventListener(l,T,e),(n.t||(n.t={}))[l]=u):n.removeEventListener(l,T,e)):"list"!==l&&"tagName"!==l&&"form"!==l&&!i&&l in n?n[l]=null==u?"":u:"function"!=typeof u&&"dangerouslySetInnerHTML"!==l&&(l!==(l=l.replace(/^xlink:?/,""))?null==u||!1===u?n.removeAttributeNS("http://www.w3.org/1999/xlink",l.toLowerCase()):n.setAttributeNS("http://www.w3.org/1999/xlink",l.toLowerCase(),u):null==u||!1===u?n.removeAttribute(l):n.setAttribute(l,u)); }}function T(l){return this.t[l.type](iro_es_n.event?iro_es_n.event(l):l)}function $(l,u,t,i,r,o,f,e,c,a){var h,v,p,y,w,g,k,_,C,P,N=u.type;if(void 0!==u.constructor){ return null; }(h=iro_es_n.__b)&&h(u);try{n:if("function"==typeof N){if(_=u.props,C=(h=N.contextType)&&i[h.__c],P=h?C?C.props.value:h.__p:i,t.__c?k=(v=u.__c=t.__c).__p=v.__E:("prototype"in N&&N.prototype.render?u.__c=v=new N(_,P):(u.__c=v=new m(_,P),v.constructor=N,v.render=H),C&&C.sub(v),v.props=_,v.state||(v.state={}),v.context=P,v.__n=i,p=v.__d=!0,v.__h=[]),null==v.__s&&(v.__s=v.state),null!=N.getDerivedStateFromProps&&s(v.__s==v.state?v.__s=s({},v.__s):v.__s,N.getDerivedStateFromProps(_,v.__s)),p){ null==N.getDerivedStateFromProps&&null!=v.componentWillMount&&v.componentWillMount(),null!=v.componentDidMount&&f.push(v); }else{if(null==N.getDerivedStateFromProps&&null==e&&null!=v.componentWillReceiveProps&&v.componentWillReceiveProps(_,P),!e&&null!=v.shouldComponentUpdate&&!1===v.shouldComponentUpdate(_,v.__s,P)){for(v.props=_,v.state=v.__s,v.__d=!1,v.__v=u,u.__e=null!=c?c!==t.__e?c:t.__e:null,u.__k=t.__k,h=0;h<u.__k.length;h++){ u.__k[h]&&(u.__k[h].__p=u); }break n}null!=v.componentWillUpdate&&v.componentWillUpdate(_,v.__s,P);}for(y=v.props,w=v.state,v.context=P,v.props=_,v.state=v.__s,(h=iro_es_n.__r)&&h(u),v.__d=!1,v.__v=u,v.__P=l,h=v.render(v.props,v.state,v.context),u.__k=x(null!=h&&h.type==d&&null==h.key?h.props.children:h),null!=v.getChildContext&&(i=s(s({},i),v.getChildContext())),p||null==v.getSnapshotBeforeUpdate||(g=v.getSnapshotBeforeUpdate(y,w)),b(l,u,t,i,r,o,f,c,a),v.base=u.__e;h=v.__h.pop();){ v.__s&&(v.state=v.__s),h.call(v); }p||null==y||null==v.componentDidUpdate||v.componentDidUpdate(y,w,g),k&&(v.__E=v.__p=null);}else { u.__e=z(t.__e,u,t,i,r,o,f,a); }(h=iro_es_n.diffed)&&h(u);}catch(l){iro_es_n.__e(l,u,t);}return u.__e}function j(l,u){for(var t;t=l.pop();){ try{t.componentDidMount();}catch(l){iro_es_n.__e(l,t.__v);} }iro_es_n.__c&&iro_es_n.__c(u);}function z(n,l,u,t,i,r,o,c){var s,a,h,v,p=u.props,d=l.props;if(i="svg"===l.type||i,null==n&&null!=r){ for(s=0;s<r.length;s++){ if(null!=(a=r[s])&&(null===l.type?3===a.nodeType:a.localName===l.type)){n=a,r[s]=null;break} } }if(null==n){if(null===l.type){ return document.createTextNode(d); }n=i?document.createElementNS("http://www.w3.org/2000/svg",l.type):document.createElement(l.type),r=null;}return null===l.type?p!==d&&(null!=r&&(r[r.indexOf(n)]=null),n.data=d):l!==u&&(null!=r&&(r=iro_es_e.slice.call(n.childNodes)),h=(p=u.props||f).dangerouslySetInnerHTML,v=d.dangerouslySetInnerHTML,c||(v||h)&&(v&&h&&v.__html==h.__html||(n.innerHTML=v&&v.__html||"")),C(n,d,p,i,c),l.__k=l.props.children,v||b(n,l,u,t,"foreignObject"!==l.type&&i,r,o,f,c),c||("value"in d&&void 0!==d.value&&d.value!==n.value&&(n.value=null==d.value?"":d.value),"checked"in d&&void 0!==d.checked&&d.checked!==n.checked&&(n.checked=d.checked))),n}function A(l,u,t){try{"function"==typeof l?l(u):l.current=u;}catch(l){iro_es_n.__e(l,t);}}function D(l,u,t){var i,r,o;if(iro_es_n.unmount&&iro_es_n.unmount(l),(i=l.ref)&&A(i,null,u),t||"function"==typeof l.type||(t=null!=(r=l.__e)),l.__e=l.l=null,null!=(i=l.__c)){if(i.componentWillUnmount){ try{i.componentWillUnmount();}catch(l){iro_es_n.__e(l,u);} }i.base=i.__P=null;}if(i=l.__k){ for(o=0;o<i.length;o++){ i[o]&&D(i[o],u,t); } }null!=r&&a(r);}function H(n,l,u){return this.constructor(n,u)}function I(l,u,t){var i,o,c;iro_es_n.__p&&iro_es_n.__p(l,u),o=(i=t===iro_es_r)?null:t&&t.__k||u.__k,l=iro_es_h(d,null,[l]),c=[],$(u,i?u.__k=l:(t||u).__k=l,o||f,f,void 0!==u.ownerSVGElement,t&&!i?[t]:o?null:iro_es_e.slice.call(u.childNodes),c,!1,t||f,i),j(c,l);}iro_es_n={},m.prototype.setState=function(n,l){var u=this.__s!==this.state&&this.__s||(this.__s=s({},this.state));("function"!=typeof n||(n=n(u,this.props)))&&s(u,n),null!=n&&this.__v&&(this.u=!1,l&&this.__h.push(l),iro_es_k(this));},m.prototype.forceUpdate=function(n){this.__v&&(n&&this.__h.push(n),this.u=!0,iro_es_k(this));},m.prototype.render=d,u=[],t="function"==typeof Promise?Promise.prototype.then.bind(Promise.resolve()):setTimeout,iro_es_i=iro_es_n.debounceRendering,iro_es_n.__e=function(n,l,u){for(var t;l=l.__p;){ if((t=l.__c)&&!t.__p){ try{if(t.constructor&&null!=t.constructor.getDerivedStateFromError){ t.setState(t.constructor.getDerivedStateFromError(n)); }else{if(null==t.componentDidCatch){ continue; }t.componentDidCatch(n);}return iro_es_k(t.__E=t)}catch(l){n=l;} } }throw n},iro_es_r=f,iro_es_o=0;
+var iro_es_n,u,t,iro_es_i,iro_es_r,iro_es_o,f={},iro_es_e=[],c=/acit|ex(?:s|g|n|p|$)|rph|grid|ows|mnc|ntw|ine[ch]|zoo|^ord|^--/i;function s(n,l){for(var u in l){ n[u]=l[u]; }return n}function a(n){var l=n.parentNode;l&&l.removeChild(n);}function iro_es_h(n,l,u){var t,i,r,o,f=arguments;if(l=s({},l),arguments.length>3){ for(u=[u],t=3;t<arguments.length;t++){ u.push(f[t]); } }if(null!=u&&(l.children=u),null!=n&&null!=n.defaultProps){ for(i in n.defaultProps){ void 0===l[i]&&(l[i]=n.defaultProps[i]); } }return o=l.key,null!=(r=l.ref)&&delete l.ref,null!=o&&delete l.key,iro_es_v(n,l,o,r)}function iro_es_v(l,u,t,i){var r={type:l,props:u,key:t,ref:i,__k:null,__p:null,__b:0,__e:null,l:null,__c:null,constructor:void 0};return iro_es_n.vnode&&iro_es_n.vnode(r),r}function d(n){return n.children}function iro_es_y(n){if(null==n||"boolean"==typeof n){ return null; }if("string"==typeof n||"number"==typeof n){ return iro_es_v(null,n,null,null); }if(null!=n.__e||null!=n.__c){var l=iro_es_v(n.type,n.props,n.key,null);return l.__e=n.__e,l}return n}function m(n,l){this.props=n,this.context=l;}function w(n,l){if(null==l){ return n.__p?w(n.__p,n.__p.__k.indexOf(n)+1):null; }for(var u;l<n.__k.length;l++){ if(null!=(u=n.__k[l])&&null!=u.__e){ return u.__e; } }return "function"==typeof n.type?w(n):null}function g(n){var l,u;if(null!=(n=n.__p)&&null!=n.__c){for(n.__e=n.__c.base=null,l=0;l<n.__k.length;l++){ if(null!=(u=n.__k[l])&&null!=u.__e){n.__e=n.__c.base=u.__e;break} }return g(n)}}function iro_es_k(l){(!l.__d&&(l.__d=!0)&&1===u.push(l)||iro_es_i!==iro_es_n.debounceRendering)&&(iro_es_i=iro_es_n.debounceRendering,(iro_es_n.debounceRendering||t)(_));}function _(){var n,l,t,i,r,o,f,e;for(u.sort(function(n,l){return l.__v.__b-n.__v.__b});n=u.pop();){ n.__d&&(t=void 0,i=void 0,o=(r=(l=n).__v).__e,f=l.__P,e=l.u,l.u=!1,f&&(t=[],i=$(f,r,s({},r),l.__n,void 0!==f.ownerSVGElement,null,t,e,null==o?w(r):o),j(t,r),i!=o&&g(r))); }}function b(n,l,u,t,i,r,o,c,s){var h,v,p,d,y,m,g,k=u&&u.__k||iro_es_e,_=k.length;if(c==f&&(c=null!=r?r[0]:_?w(u,0):null),h=0,l.__k=iro_es_x(l.__k,function(u){if(null!=u){if(u.__p=l,u.__b=l.__b+1,null===(p=k[h])||p&&u.key==p.key&&u.type===p.type){ k[h]=void 0; }else { for(v=0;v<_;v++){if((p=k[v])&&u.key==p.key&&u.type===p.type){k[v]=void 0;break}p=null;} }if(d=$(n,u,p=p||f,t,i,r,o,null,c,s),(v=u.ref)&&p.ref!=v&&(g||(g=[])).push(v,u.__c||d,u),null!=d){if(null==m&&(m=d),null!=u.l){ d=u.l,u.l=null; }else if(r==p||d!=c||null==d.parentNode){n:if(null==c||c.parentNode!==n){ n.appendChild(d); }else{for(y=c,v=0;(y=y.nextSibling)&&v<_;v+=2){ if(y==d){ break n; } }n.insertBefore(d,c);}"option"==l.type&&(n.value="");}c=d.nextSibling,"function"==typeof l.type&&(l.l=d);}}return h++,u}),l.__e=m,null!=r&&"function"!=typeof l.type){ for(h=r.length;h--;){ null!=r[h]&&a(r[h]); } }for(h=_;h--;){ null!=k[h]&&D(k[h],k[h]); }if(g){ for(h=0;h<g.length;h++){ A(g[h],g[++h],g[++h]); } }}function iro_es_x(n,l,u){if(null==u&&(u=[]),null==n||"boolean"==typeof n){ l&&u.push(l(null)); }else if(Array.isArray(n)){ for(var t=0;t<n.length;t++){ iro_es_x(n[t],l,u); } }else { u.push(l?l(iro_es_y(n)):n); }return u}function C(n,l,u,t,i){var r;for(r in u){ r in l||N(n,r,null,u[r],t); }for(r in l){ i&&"function"!=typeof l[r]||"value"===r||"checked"===r||u[r]===l[r]||N(n,r,l[r],u[r],t); }}function P(n,l,u){"-"===l[0]?n.setProperty(l,u):n[l]="number"==typeof u&&!1===c.test(l)?u+"px":null==u?"":u;}function N(n,l,u,t,i){var r,o,f,e,c;if("key"===(l=i?"className"===l?"class":l:"class"===l?"className":l)||"children"===l);else if("style"===l){ if(r=n.style,"string"==typeof u){ r.cssText=u; }else{if("string"==typeof t&&(r.cssText="",t=null),t){ for(o in t){ u&&o in u||P(r,o,""); } }if(u){ for(f in u){ t&&u[f]===t[f]||P(r,f,u[f]); } }} }else{ "o"===l[0]&&"n"===l[1]?(e=l!==(l=l.replace(/Capture$/,"")),c=l.toLowerCase(),l=(c in n?c:l).slice(2),u?(t||n.addEventListener(l,T,e),(n.t||(n.t={}))[l]=u):n.removeEventListener(l,T,e)):"list"!==l&&"tagName"!==l&&"form"!==l&&!i&&l in n?n[l]=null==u?"":u:"function"!=typeof u&&"dangerouslySetInnerHTML"!==l&&(l!==(l=l.replace(/^xlink:?/,""))?null==u||!1===u?n.removeAttributeNS("http://www.w3.org/1999/xlink",l.toLowerCase()):n.setAttributeNS("http://www.w3.org/1999/xlink",l.toLowerCase(),u):null==u||!1===u?n.removeAttribute(l):n.setAttribute(l,u)); }}function T(l){return this.t[l.type](iro_es_n.event?iro_es_n.event(l):l)}function $(l,u,t,i,r,o,f,e,c,a){var h,v,p,y,w,g,k,_,C,P,N=u.type;if(void 0!==u.constructor){ return null; }(h=iro_es_n.__b)&&h(u);try{n:if("function"==typeof N){if(_=u.props,C=(h=N.contextType)&&i[h.__c],P=h?C?C.props.value:h.__p:i,t.__c?k=(v=u.__c=t.__c).__p=v.__E:("prototype"in N&&N.prototype.render?u.__c=v=new N(_,P):(u.__c=v=new m(_,P),v.constructor=N,v.render=H),C&&C.sub(v),v.props=_,v.state||(v.state={}),v.context=P,v.__n=i,p=v.__d=!0,v.__h=[]),null==v.__s&&(v.__s=v.state),null!=N.getDerivedStateFromProps&&s(v.__s==v.state?v.__s=s({},v.__s):v.__s,N.getDerivedStateFromProps(_,v.__s)),p){ null==N.getDerivedStateFromProps&&null!=v.componentWillMount&&v.componentWillMount(),null!=v.componentDidMount&&f.push(v); }else{if(null==N.getDerivedStateFromProps&&null==e&&null!=v.componentWillReceiveProps&&v.componentWillReceiveProps(_,P),!e&&null!=v.shouldComponentUpdate&&!1===v.shouldComponentUpdate(_,v.__s,P)){for(v.props=_,v.state=v.__s,v.__d=!1,v.__v=u,u.__e=null!=c?c!==t.__e?c:t.__e:null,u.__k=t.__k,h=0;h<u.__k.length;h++){ u.__k[h]&&(u.__k[h].__p=u); }break n}null!=v.componentWillUpdate&&v.componentWillUpdate(_,v.__s,P);}for(y=v.props,w=v.state,v.context=P,v.props=_,v.state=v.__s,(h=iro_es_n.__r)&&h(u),v.__d=!1,v.__v=u,v.__P=l,h=v.render(v.props,v.state,v.context),u.__k=iro_es_x(null!=h&&h.type==d&&null==h.key?h.props.children:h),null!=v.getChildContext&&(i=s(s({},i),v.getChildContext())),p||null==v.getSnapshotBeforeUpdate||(g=v.getSnapshotBeforeUpdate(y,w)),b(l,u,t,i,r,o,f,c,a),v.base=u.__e;h=v.__h.pop();){ v.__s&&(v.state=v.__s),h.call(v); }p||null==y||null==v.componentDidUpdate||v.componentDidUpdate(y,w,g),k&&(v.__E=v.__p=null);}else { u.__e=z(t.__e,u,t,i,r,o,f,a); }(h=iro_es_n.diffed)&&h(u);}catch(l){iro_es_n.__e(l,u,t);}return u.__e}function j(l,u){for(var t;t=l.pop();){ try{t.componentDidMount();}catch(l){iro_es_n.__e(l,t.__v);} }iro_es_n.__c&&iro_es_n.__c(u);}function z(n,l,u,t,i,r,o,c){var s,a,h,v,p=u.props,d=l.props;if(i="svg"===l.type||i,null==n&&null!=r){ for(s=0;s<r.length;s++){ if(null!=(a=r[s])&&(null===l.type?3===a.nodeType:a.localName===l.type)){n=a,r[s]=null;break} } }if(null==n){if(null===l.type){ return document.createTextNode(d); }n=i?document.createElementNS("http://www.w3.org/2000/svg",l.type):document.createElement(l.type),r=null;}return null===l.type?p!==d&&(null!=r&&(r[r.indexOf(n)]=null),n.data=d):l!==u&&(null!=r&&(r=iro_es_e.slice.call(n.childNodes)),h=(p=u.props||f).dangerouslySetInnerHTML,v=d.dangerouslySetInnerHTML,c||(v||h)&&(v&&h&&v.__html==h.__html||(n.innerHTML=v&&v.__html||"")),C(n,d,p,i,c),l.__k=l.props.children,v||b(n,l,u,t,"foreignObject"!==l.type&&i,r,o,f,c),c||("value"in d&&void 0!==d.value&&d.value!==n.value&&(n.value=null==d.value?"":d.value),"checked"in d&&void 0!==d.checked&&d.checked!==n.checked&&(n.checked=d.checked))),n}function A(l,u,t){try{"function"==typeof l?l(u):l.current=u;}catch(l){iro_es_n.__e(l,t);}}function D(l,u,t){var i,r,o;if(iro_es_n.unmount&&iro_es_n.unmount(l),(i=l.ref)&&A(i,null,u),t||"function"==typeof l.type||(t=null!=(r=l.__e)),l.__e=l.l=null,null!=(i=l.__c)){if(i.componentWillUnmount){ try{i.componentWillUnmount();}catch(l){iro_es_n.__e(l,u);} }i.base=i.__P=null;}if(i=l.__k){ for(o=0;o<i.length;o++){ i[o]&&D(i[o],u,t); } }null!=r&&a(r);}function H(n,l,u){return this.constructor(n,u)}function I(l,u,t){var i,o,c;iro_es_n.__p&&iro_es_n.__p(l,u),o=(i=t===iro_es_r)?null:t&&t.__k||u.__k,l=iro_es_h(d,null,[l]),c=[],$(u,i?u.__k=l:(t||u).__k=l,o||f,f,void 0!==u.ownerSVGElement,t&&!i?[t]:o?null:iro_es_e.slice.call(u.childNodes),c,!1,t||f,i),j(c,l);}iro_es_n={},m.prototype.setState=function(n,l){var u=this.__s!==this.state&&this.__s||(this.__s=s({},this.state));("function"!=typeof n||(n=n(u,this.props)))&&s(u,n),null!=n&&this.__v&&(this.u=!1,l&&this.__h.push(l),iro_es_k(this));},m.prototype.forceUpdate=function(n){this.__v&&(n&&this.__h.push(n),this.u=!0,iro_es_k(this));},m.prototype.render=d,u=[],t="function"==typeof Promise?Promise.prototype.then.bind(Promise.resolve()):setTimeout,iro_es_i=iro_es_n.debounceRendering,iro_es_n.__e=function(n,l,u){for(var t;l=l.__p;){ if((t=l.__c)&&!t.__p){ try{if(t.constructor&&null!=t.constructor.getDerivedStateFromError){ t.setState(t.constructor.getDerivedStateFromError(n)); }else{if(null==t.componentDidCatch){ continue; }t.componentDidCatch(n);}return iro_es_k(t.__E=t)}catch(l){n=l;} } }throw n},iro_es_r=f,iro_es_o=0;
 
 function iro_es_defineProperties(target, props) {
   for (var i = 0; i < props.length; i++) {
@@ -58569,13 +60365,17 @@ __decorate([Prop(String)], EditorFieldvue_type_script_lang_ts_EditorField.protot
 __decorate([Prop(Array)], EditorFieldvue_type_script_lang_ts_EditorField.prototype, "options", void 0);
 
 __decorate([Prop({
-  default: notSet
+  default: function _default() {
+    return notSet;
+  }
 })], EditorFieldvue_type_script_lang_ts_EditorField.prototype, "initialValue", void 0);
 
 __decorate([Prop(String)], EditorFieldvue_type_script_lang_ts_EditorField.prototype, "initialValueLabel", void 0);
 
 __decorate([Prop({
-  default: notSet
+  default: function _default() {
+    return notSet;
+  }
 })], EditorFieldvue_type_script_lang_ts_EditorField.prototype, "resetValue", void 0);
 
 __decorate([Model('change')], EditorFieldvue_type_script_lang_ts_EditorField.prototype, "value", void 0);
@@ -58601,8 +60401,8 @@ EditorFieldvue_type_script_lang_ts_EditorField = __decorate([vue_class_component
 
 var EditorField_component = normalizeComponent(
   components_EditorFieldvue_type_script_lang_ts_,
-  EditorFieldvue_type_template_id_3dc79443_render,
-  EditorFieldvue_type_template_id_3dc79443_staticRenderFns,
+  EditorFieldvue_type_template_id_5f2e0a7a_render,
+  EditorFieldvue_type_template_id_5f2e0a7a_staticRenderFns,
   false,
   null,
   null,
@@ -58629,34 +60429,30 @@ var es_string_includes = __webpack_require__("2532");
 
 
 
+
 var SavedDiagram_createSavedDiagram = function createSavedDiagram(diagram) {
   var _diagram$activeDiagra;
 
   return {
     id: 'saved-diagram-test',
-    // title: '',
-    // description: '',
-    // shared: false,
+    title: diagram.activeDiagram.title,
+    description: diagram.activeDiagram.description,
+    shared: diagram.activeDiagram.shared,
     mainEntityId: diagram.mainEntityId,
     data: {
       entities: diagram.activeDiagram.data.initialData.entities.map(function (e) {
-        return {
+        return _objectSpread2({
           type: e.type.id,
-          id: e.id,
-          data: e.data,
-          style: e.style,
-          position: e.position
-        };
+          id: e.id
+        }, e.initialState);
       }),
       relations: diagram.activeDiagram.data.initialData.relations.map(function (r) {
-        return {
+        return _objectSpread2({
           type: r.type.id,
           id: r.id,
           from: r.from,
-          to: r.to,
-          data: r.data,
-          style: r.style
-        };
+          to: r.to
+        }, r.initialState);
       })
     },
     changes: [].concat(toConsumableArray_toConsumableArray(diagram.activeDiagram.data.initialData.changes), toConsumableArray_toConsumableArray(diagram.activeDiagram.data.changes.map(function (c) {
@@ -58722,86 +60518,105 @@ var SavedDiagram_parseChanges = function parseChanges(v) {
     var _loop = function _loop() {
       var change = _step.value;
       if (!SavedDiagram_isRecord(change)) return "continue";
+      var parsedChange = {};
 
-      switch (change.type) {
-        case 'addition':
-          {
-            changes.push({
-              type: 'addition',
-              entities: SavedDiagram_parseEntities(change.entities),
-              relations: SavedDiagram_parseRelations(change.relations)
-            });
-            break;
-          }
-
-        case 'removal':
-          {
-            changes.push({
-              type: 'removal',
-              entityIds: SavedDiagram_parseStringArray(change.entityIds),
-              relationIds: SavedDiagram_parseStringArray(change.relationIds)
-            });
-            break;
-          }
-
-        case 'edit':
-          {
-            changes.push({
-              type: 'edit',
-              entities: function () {
-                if (!isArray(change.entities)) return;
-                var entities = [];
-
-                var _iterator2 = _createForOfIteratorHelper(change.entities),
-                    _step2;
-
-                try {
-                  for (_iterator2.s(); !(_step2 = _iterator2.n()).done;) {
-                    var entity = _step2.value;
-                    if (!SavedDiagram_isRecord(entity) || !isString(entity.id)) continue;
-                    entities.push({
-                      id: entity.id,
-                      data: parseRecord(entity.data),
-                      style: parseEntityStyle(entity.style)
-                    });
-                  }
-                } catch (err) {
-                  _iterator2.e(err);
-                } finally {
-                  _iterator2.f();
-                }
-
-                return entities;
-              }(),
-              relations: function () {
-                if (!isArray(change.relations)) return;
-                var relations = [];
-
-                var _iterator3 = _createForOfIteratorHelper(change.relations),
-                    _step3;
-
-                try {
-                  for (_iterator3.s(); !(_step3 = _iterator3.n()).done;) {
-                    var relation = _step3.value;
-                    if (!SavedDiagram_isRecord(relation) || !isString(relation.id)) continue;
-                    relations.push({
-                      id: relation.id,
-                      data: parseRecord(relation.data),
-                      style: parseRelationStyle(relation.style)
-                    });
-                  }
-                } catch (err) {
-                  _iterator3.e(err);
-                } finally {
-                  _iterator3.f();
-                }
-
-                return relations;
-              }()
-            });
-            break;
-          }
+      if (SavedDiagram_isRecord(change.add)) {
+        parsedChange.add = {
+          entities: SavedDiagram_parseEntities(change.add.entities),
+          relations: SavedDiagram_parseRelations(change.add.relations)
+        };
       }
+
+      if (SavedDiagram_isRecord(change.remove)) {
+        parsedChange.remove = {
+          entities: SavedDiagram_parseStringArray(change.remove.entities),
+          relations: SavedDiagram_parseStringArray(change.remove.relations)
+        };
+      }
+
+      if (SavedDiagram_isRecord(change.edit)) {
+        parsedChange.edit = {
+          entities: function () {
+            if (!isArray(change.edit.entities)) return;
+            var entities = [];
+
+            var _iterator2 = _createForOfIteratorHelper(change.edit.entities),
+                _step2;
+
+            try {
+              for (_iterator2.s(); !(_step2 = _iterator2.n()).done;) {
+                var entity = _step2.value;
+                if (!SavedDiagram_isRecord(entity) || !isString(entity.id)) continue;
+                entities.push({
+                  id: entity.id,
+                  data: parseRecord(entity.data),
+                  style: parseEntityStyle(entity.style)
+                });
+              }
+            } catch (err) {
+              _iterator2.e(err);
+            } finally {
+              _iterator2.f();
+            }
+
+            return entities;
+          }(),
+          relations: function () {
+            if (!isArray(change.edit.relations)) return;
+            var relations = [];
+
+            var _iterator3 = _createForOfIteratorHelper(change.edit.relations),
+                _step3;
+
+            try {
+              for (_iterator3.s(); !(_step3 = _iterator3.n()).done;) {
+                var relation = _step3.value;
+                if (!SavedDiagram_isRecord(relation) || !isString(relation.id)) continue;
+                relations.push({
+                  id: relation.id,
+                  data: parseRecord(relation.data),
+                  style: parseRelationStyle(relation.style)
+                });
+              }
+            } catch (err) {
+              _iterator3.e(err);
+            } finally {
+              _iterator3.f();
+            }
+
+            return relations;
+          }()
+        };
+      }
+
+      if (isString(change.layout)) {
+        parsedChange.layout = change.layout;
+      }
+
+      if (isArray(change.moveEntities)) {
+        parsedChange.moveEntities = [];
+
+        var _iterator4 = _createForOfIteratorHelper(change.moveEntities),
+            _step4;
+
+        try {
+          for (_iterator4.s(); !(_step4 = _iterator4.n()).done;) {
+            var moveEntity = _step4.value;
+            if (!SavedDiagram_isRecord(moveEntity) || !isString(moveEntity.id) || !isNumber(moveEntity.x) || !isNumber(moveEntity.y)) continue;
+            parsedChange.moveEntities.push({
+              id: moveEntity.id,
+              x: moveEntity.x,
+              y: moveEntity.y
+            });
+          }
+        } catch (err) {
+          _iterator4.e(err);
+        } finally {
+          _iterator4.f();
+        }
+      }
+
+      changes.push(parsedChange);
     };
 
     for (_iterator.s(); !(_step = _iterator.n()).done;) {
@@ -58822,19 +60637,19 @@ var SavedDiagram_parseEntities = function parseEntities(v) {
   if (!isArray(v)) return;
   var entities = [];
 
-  var _iterator4 = _createForOfIteratorHelper(v),
-      _step4;
+  var _iterator5 = _createForOfIteratorHelper(v),
+      _step5;
 
   try {
-    for (_iterator4.s(); !(_step4 = _iterator4.n()).done;) {
-      var e = _step4.value;
+    for (_iterator5.s(); !(_step5 = _iterator5.n()).done;) {
+      var e = _step5.value;
       var entity = parseEntity(e);
       if (entity) entities.push(entity);
     }
   } catch (err) {
-    _iterator4.e(err);
+    _iterator5.e(err);
   } finally {
-    _iterator4.f();
+    _iterator5.f();
   }
 
   return entities;
@@ -58844,19 +60659,19 @@ var SavedDiagram_parseRelations = function parseRelations(v) {
   if (!isArray(v)) return;
   var relations = [];
 
-  var _iterator5 = _createForOfIteratorHelper(v),
-      _step5;
+  var _iterator6 = _createForOfIteratorHelper(v),
+      _step6;
 
   try {
-    for (_iterator5.s(); !(_step5 = _iterator5.n()).done;) {
-      var r = _step5.value;
+    for (_iterator6.s(); !(_step6 = _iterator6.n()).done;) {
+      var r = _step6.value;
       var relation = parseRelation(r);
       if (relation) relations.push(relation);
     }
   } catch (err) {
-    _iterator5.e(err);
+    _iterator6.e(err);
   } finally {
-    _iterator5.f();
+    _iterator6.f();
   }
 
   return relations;
@@ -58915,7 +60730,10 @@ var parseRelationStyle = function parseRelationStyle(v) {
   var style = {};
   if (isBoolean(v.arrowFrom)) style.arrowFrom = v.arrowFrom;
   if (isBoolean(v.arrowTo)) style.arrowTo = v.arrowTo;
+  if (isNumber(v.arrowSize)) style.arrowSize = v.arrowSize;
+  if (isNumber(v.lineWidth)) style.lineWidth = v.lineWidth;
   if (isEnum(v.lineStyle, ['solid', 'dotted', 'dashed'])) style.lineStyle = v.lineStyle;
+  if (isString(v.lineColor)) style.lineColor = v.lineColor;
   return style;
 };
 
@@ -58931,36 +60749,36 @@ var SavedDiagram_parseSettings = function parseSettings(v) {
   if (isArray(v.activeFields)) {
     settings.activeFields = [];
 
-    var _iterator6 = _createForOfIteratorHelper(v.activeFields),
-        _step6;
+    var _iterator7 = _createForOfIteratorHelper(v.activeFields),
+        _step7;
 
     try {
-      for (_iterator6.s(); !(_step6 = _iterator6.n()).done;) {
-        var id = _step6.value;
+      for (_iterator7.s(); !(_step7 = _iterator7.n()).done;) {
+        var id = _step7.value;
         if (isString(id)) settings.activeFields.push(id);
       }
     } catch (err) {
-      _iterator6.e(err);
+      _iterator7.e(err);
     } finally {
-      _iterator6.f();
+      _iterator7.f();
     }
   }
 
   if (isArray(v.activeFilters)) {
     settings.activeFilters = [];
 
-    var _iterator7 = _createForOfIteratorHelper(v.activeFilters),
-        _step7;
+    var _iterator8 = _createForOfIteratorHelper(v.activeFilters),
+        _step8;
 
     try {
-      for (_iterator7.s(); !(_step7 = _iterator7.n()).done;) {
-        var _id = _step7.value;
+      for (_iterator8.s(); !(_step8 = _iterator8.n()).done;) {
+        var _id = _step8.value;
         if (isString(_id)) settings.activeFilters.push(_id);
       }
     } catch (err) {
-      _iterator7.e(err);
+      _iterator8.e(err);
     } finally {
-      _iterator7.f();
+      _iterator8.f();
     }
   }
 
@@ -58975,18 +60793,18 @@ var SavedDiagram_parseStringArray = function parseStringArray(v) {
   if (!isArray(v)) return;
   var array = [];
 
-  var _iterator8 = _createForOfIteratorHelper(v),
-      _step8;
+  var _iterator9 = _createForOfIteratorHelper(v),
+      _step9;
 
   try {
-    for (_iterator8.s(); !(_step8 = _iterator8.n()).done;) {
-      var item = _step8.value;
+    for (_iterator9.s(); !(_step9 = _iterator9.n()).done;) {
+      var item = _step9.value;
       if (isString(item)) array.push(item);
     }
   } catch (err) {
-    _iterator8.e(err);
+    _iterator9.e(err);
   } finally {
-    _iterator8.f();
+    _iterator9.f();
   }
 
   return array;
@@ -59019,593 +60837,7 @@ var SavedDiagram_isRecord = function isRecord(v) {
 var isArray = function isArray(v) {
   return Array.isArray(v);
 };
-// CONCATENATED MODULE: ./src/util/revertible-object-manipulation.ts
-
-
-function isObject(value) {
-  var type = _typeof(value);
-
-  return value != null && (type === 'object' || type === 'function');
-}
-/**
- * Merges source object into target object and returns a revert function.
- */
-
-
-function merge(target, source) {
-  if (!isObject(target)) throw Error("target (".concat(target, ") is not an object"));
-  if (!isObject(source)) throw Error("source (".concat(source, ") is not an object"));
-  if (target === source) return function () {};
-  var reverters = [];
-
-  var commit = function commit(revert) {
-    return reverters.unshift(revert);
-  };
-
-  for (var key in source) {
-    var targetValue = target[key];
-    var sourceValue = source[key];
-
-    if (isObject(sourceValue)) {
-      if (isObject(targetValue)) {
-        commit(merge(targetValue, sourceValue));
-      } else {
-        commit(set(target, key, sourceValue));
-      }
-    } else {
-      commit(set(target, key, sourceValue));
-    }
-  }
-
-  return function () {
-    return reverters.forEach(function (revert) {
-      return revert();
-    });
-  };
-}
-/**
- * Sets the value of an object property and returns a revert function.
- */
-
-function set(object, key, value) {
-  if (!isObject(object)) throw Error("(".concat(object, ") is not an object"));
-  var oldValue = object[key];
-  object[key] = value;
-  return function () {
-    return object[key] = oldValue;
-  };
-}
-// CONCATENATED MODULE: ./src/types/DiagramData.ts
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-var DiagramData_DiagramData = /*#__PURE__*/function () {
-  function DiagramData(diagram, options) {
-    var _this = this;
-
-    _classCallCheck(this, DiagramData);
-
-    this.initialData = {
-      entities: [],
-      relations: [],
-      changes: []
-    };
-    this.changes = [];
-    this.undoneChanges = [];
-    this.entitiesMap = new Map();
-    this.entities = [];
-    this.relationsMap = new Map();
-    this.relations = [];
-    this.diagram = diagram;
-
-    if (options) {
-      var _options$data$entitie, _options$data, _options$data$entitie2, _options$data$relatio, _options$data2, _options$data2$relati, _options$changes;
-
-      this.initialData = {
-        entities: (_options$data$entitie = (_options$data = options.data) === null || _options$data === void 0 ? void 0 : (_options$data$entitie2 = _options$data.entities) === null || _options$data$entitie2 === void 0 ? void 0 : _options$data$entitie2.map(function (item) {
-          return new diagram_Entity(_this.diagram, item);
-        })) !== null && _options$data$entitie !== void 0 ? _options$data$entitie : [],
-        relations: (_options$data$relatio = (_options$data2 = options.data) === null || _options$data2 === void 0 ? void 0 : (_options$data2$relati = _options$data2.relations) === null || _options$data2$relati === void 0 ? void 0 : _options$data2$relati.map(function (item) {
-          return new diagram_Relation(_this.diagram, item);
-        })) !== null && _options$data$relatio !== void 0 ? _options$data$relatio : [],
-        changes: (_options$changes = options.changes) !== null && _options$changes !== void 0 ? _options$changes : []
-      };
-      this.entitiesMap.clear();
-
-      this._addEntities(this.initialData.entities);
-
-      this.relationsMap.clear();
-
-      this._addRelations(this.initialData.relations);
-
-      var _iterator = _createForOfIteratorHelper(this.initialData.changes),
-          _step;
-
-      try {
-        for (_iterator.s(); !(_step = _iterator.n()).done;) {
-          var change = _step.value;
-          this.commitChange(change, true);
-        }
-      } catch (err) {
-        _iterator.e(err);
-      } finally {
-        _iterator.f();
-      }
-    }
-  }
-
-  _createClass(DiagramData, [{
-    key: "canUndo",
-    get: function get() {
-      return this.changes.length > 0;
-    }
-  }, {
-    key: "canRedo",
-    get: function get() {
-      return this.undoneChanges.length > 0;
-    }
-  }, {
-    key: "add",
-    value: function add(options) {
-      this.commitChange({
-        type: 'addition',
-        entities: options.entities,
-        relations: options.relations
-      });
-    }
-  }, {
-    key: "remove",
-    value: function remove(options) {
-      this.commitChange({
-        type: 'removal',
-        entityIds: options.entityIds,
-        relationIds: options.relationIds
-      });
-    }
-  }, {
-    key: "edit",
-    value: function edit(options) {
-      this.commitChange({
-        type: 'edit',
-        entities: options.entities,
-        relations: options.relations
-      });
-    }
-  }, {
-    key: "commitChange",
-    value: function commitChange(change) {
-      var isInitial = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
-
-      var compiledChange = this._compileChange(change);
-
-      if (compiledChange.apply(!isInitial) == false) return;
-
-      if (!isInitial) {
-        this.changes.push(compiledChange);
-        this.undoneChanges = [];
-      }
-    }
-  }, {
-    key: "undo",
-    value: function undo() {
-      var trackEvents = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : true;
-      var lastChange = this.changes.pop();
-      if (!lastChange) return;
-      lastChange.revert(trackEvents);
-      this.undoneChanges.push(lastChange);
-      if (trackEvents) this.diagram.eventBus.emit({
-        name: 'undo'
-      });
-    }
-  }, {
-    key: "redo",
-    value: function redo() {
-      var trackEvents = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : true;
-      var lastUndoneChange = this.undoneChanges.pop();
-      if (!lastUndoneChange) return;
-      lastUndoneChange.apply(trackEvents);
-      this.changes.push(lastUndoneChange);
-      if (trackEvents) this.diagram.eventBus.emit({
-        name: 'redo'
-      });
-    }
-  }, {
-    key: "reset",
-    value: function reset() {
-      while (this.canUndo) {
-        this.undo(false);
-      }
-
-      this.changes = [];
-      this.undoneChanges = [];
-    }
-  }, {
-    key: "parseEntities",
-    value: function parseEntities(entities) {
-      var parsed = [];
-
-      var _iterator2 = _createForOfIteratorHelper(entities),
-          _step2;
-
-      try {
-        for (_iterator2.s(); !(_step2 = _iterator2.n()).done;) {
-          var e = _step2.value;
-
-          try {
-            parsed.push(new diagram_Entity(this.diagram, e));
-          } catch (err) {
-            console.error('Could not parse entity. Entity:', e, 'Error:', err);
-          }
-        }
-      } catch (err) {
-        _iterator2.e(err);
-      } finally {
-        _iterator2.f();
-      }
-
-      return parsed;
-    }
-  }, {
-    key: "parseRelations",
-    value: function parseRelations(relations) {
-      var parsed = [];
-
-      var _iterator3 = _createForOfIteratorHelper(relations),
-          _step3;
-
-      try {
-        for (_iterator3.s(); !(_step3 = _iterator3.n()).done;) {
-          var r = _step3.value;
-
-          try {
-            parsed.push(new diagram_Relation(this.diagram, r));
-          } catch (err) {
-            console.error('Could not parse relation. Relation:', r, 'Error:', err);
-          }
-        }
-      } catch (err) {
-        _iterator3.e(err);
-      } finally {
-        _iterator3.f();
-      }
-
-      return parsed;
-    }
-  }, {
-    key: "_compileChange",
-    value: function _compileChange(change) {
-      var _this2 = this;
-
-      var applied = false;
-
-      var _apply;
-
-      var _revert = null;
-
-      switch (change.type) {
-        case 'addition':
-          {
-            _apply = function apply() {
-              var _change$entities, _change$relations, _change$entities2, _change$relations2;
-
-              change.entities = (_change$entities = change.entities) === null || _change$entities === void 0 ? void 0 : _change$entities.filter(function (e) {
-                return !_this2.entitiesMap.has(e.id);
-              });
-              change.relations = (_change$relations = change.relations) === null || _change$relations === void 0 ? void 0 : _change$relations.filter(function (r) {
-                return !_this2.relationsMap.has(r.id);
-              });
-
-              var entities = _this2.parseEntities((_change$entities2 = change.entities) !== null && _change$entities2 !== void 0 ? _change$entities2 : []);
-
-              var relations = _this2.parseRelations((_change$relations2 = change.relations) !== null && _change$relations2 !== void 0 ? _change$relations2 : []); // Cancel if nothing to add
-
-
-              if (!entities.length && !relations.length) return false;
-              if (entities.length) _this2._addEntities(entities);
-              if (relations.length) _this2._addRelations(relations);
-
-              _revert = function revert() {
-                if (entities.length) _this2._removeEntities(entities);
-                if (relations.length) _this2._removeRelations(relations);
-              };
-            };
-
-            break;
-          }
-
-        case 'removal':
-          {
-            _apply = function apply() {
-              var _change$entityIds, _change$relationIds;
-
-              var entities = [];
-              var relations = [];
-
-              var _iterator4 = _createForOfIteratorHelper((_change$entityIds = change.entityIds) !== null && _change$entityIds !== void 0 ? _change$entityIds : []),
-                  _step4;
-
-              try {
-                for (_iterator4.s(); !(_step4 = _iterator4.n()).done;) {
-                  var id = _step4.value;
-
-                  var entity = _this2.entitiesMap.get(id);
-
-                  if (entity) {
-                    entities.push(entity);
-                  }
-                }
-              } catch (err) {
-                _iterator4.e(err);
-              } finally {
-                _iterator4.f();
-              }
-
-              var _iterator5 = _createForOfIteratorHelper((_change$relationIds = change.relationIds) !== null && _change$relationIds !== void 0 ? _change$relationIds : []),
-                  _step5;
-
-              try {
-                for (_iterator5.s(); !(_step5 = _iterator5.n()).done;) {
-                  var _id = _step5.value;
-
-                  var relation = _this2.relationsMap.get(_id);
-
-                  if (relation) {
-                    relations.push(relation);
-                  }
-                }
-              } catch (err) {
-                _iterator5.e(err);
-              } finally {
-                _iterator5.f();
-              }
-
-              change.entityIds = change.entityIds && entities.map(function (e) {
-                return e.id;
-              });
-              change.relationIds = change.relationIds && relations.map(function (r) {
-                return r.id;
-              }); // Cancel if nothing to remove
-
-              if (!entities.length && !relations.length) return false;
-              if (entities.length) _this2._removeEntities(entities);
-              if (relations.length) _this2._removeRelations(relations);
-
-              _revert = function revert() {
-                if (entities.length) _this2._addEntities(entities);
-                if (relations.length) _this2._addRelations(relations);
-              };
-            };
-
-            break;
-          }
-
-        case 'edit':
-          {
-            _apply = function apply() {
-              var _change$entities3, _change$relations3;
-
-              // These will replace change.entities and change.relations, so unused edits are removed
-              var entityEdits = change.entities && [];
-              var relationEdits = change.relations && [];
-              var reverters = [];
-
-              var _iterator6 = _createForOfIteratorHelper((_change$entities3 = change.entities) !== null && _change$entities3 !== void 0 ? _change$entities3 : []),
-                  _step6;
-
-              try {
-                for (_iterator6.s(); !(_step6 = _iterator6.n()).done;) {
-                  var _edit$data, _edit$style;
-
-                  var edit = _step6.value;
-
-                  var entity = _this2.entitiesMap.get(edit.id);
-
-                  if (!entity) continue;
-                  entityEdits === null || entityEdits === void 0 ? void 0 : entityEdits.push(edit);
-                  reverters.push(merge(entity, {
-                    data: (_edit$data = edit.data) !== null && _edit$data !== void 0 ? _edit$data : {},
-                    style: (_edit$style = edit.style) !== null && _edit$style !== void 0 ? _edit$style : {}
-                  }));
-                }
-              } catch (err) {
-                _iterator6.e(err);
-              } finally {
-                _iterator6.f();
-              }
-
-              var _iterator7 = _createForOfIteratorHelper((_change$relations3 = change.relations) !== null && _change$relations3 !== void 0 ? _change$relations3 : []),
-                  _step7;
-
-              try {
-                for (_iterator7.s(); !(_step7 = _iterator7.n()).done;) {
-                  var _edit$data2, _edit$style2;
-
-                  var _edit = _step7.value;
-
-                  var relation = _this2.relationsMap.get(_edit.id);
-
-                  if (!relation) continue;
-                  relationEdits === null || relationEdits === void 0 ? void 0 : relationEdits.push(_edit);
-                  reverters.push(merge(relation, {
-                    data: (_edit$data2 = _edit.data) !== null && _edit$data2 !== void 0 ? _edit$data2 : {},
-                    style: (_edit$style2 = _edit.style) !== null && _edit$style2 !== void 0 ? _edit$style2 : {}
-                  }));
-                }
-              } catch (err) {
-                _iterator7.e(err);
-              } finally {
-                _iterator7.f();
-              }
-
-              change.entities = entityEdits;
-              change.relations = relationEdits; // Cancel if nothing was edited
-
-              if (!reverters.length) return false;
-
-              _revert = function revert() {
-                return reverters.forEach(function (revert) {
-                  return revert();
-                });
-              };
-            };
-
-            break;
-          }
-      }
-
-      return {
-        change: change,
-        apply: function apply() {
-          var trackEvents = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : true;
-
-          if (applied) {
-            console.warn('change.apply() was called after change was already applied');
-            return;
-          }
-
-          applied = true;
-
-          var result = _apply();
-
-          if (trackEvents) _this2.diagram.eventBus.emit({
-            name: 'dataUpdated'
-          });
-          return result;
-        },
-        revert: function revert() {
-          var trackEvents = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : true;
-
-          if (!_revert) {
-            console.warn('change.revert() was called before it was defined');
-            return;
-          }
-
-          if (!applied) {
-            console.warn('change.revert() was called before change was applied');
-            return;
-          }
-
-          applied = false;
-
-          var result = _revert();
-
-          if (trackEvents) _this2.diagram.eventBus.emit({
-            name: 'dataUpdated'
-          });
-          return result;
-        }
-      };
-    }
-  }, {
-    key: "_addEntities",
-    value: function _addEntities(entities) {
-      var _iterator8 = _createForOfIteratorHelper(entities),
-          _step8;
-
-      try {
-        for (_iterator8.s(); !(_step8 = _iterator8.n()).done;) {
-          var entity = _step8.value;
-          this.entitiesMap.set(entity.id, entity);
-        }
-      } catch (err) {
-        _iterator8.e(err);
-      } finally {
-        _iterator8.f();
-      }
-
-      this._updateEntitiesArray();
-    }
-  }, {
-    key: "_addRelations",
-    value: function _addRelations(relations) {
-      var _iterator9 = _createForOfIteratorHelper(relations),
-          _step9;
-
-      try {
-        for (_iterator9.s(); !(_step9 = _iterator9.n()).done;) {
-          var relation = _step9.value;
-          this.relationsMap.set(relation.id, relation);
-        }
-      } catch (err) {
-        _iterator9.e(err);
-      } finally {
-        _iterator9.f();
-      }
-
-      this._updateRelationsArray();
-    }
-  }, {
-    key: "_removeEntities",
-    value: function _removeEntities(entities) {
-      var _iterator10 = _createForOfIteratorHelper(entities),
-          _step10;
-
-      try {
-        for (_iterator10.s(); !(_step10 = _iterator10.n()).done;) {
-          var entity = _step10.value;
-          this.entitiesMap.delete(entity.id);
-        }
-      } catch (err) {
-        _iterator10.e(err);
-      } finally {
-        _iterator10.f();
-      }
-
-      this._updateEntitiesArray();
-    }
-  }, {
-    key: "_removeRelations",
-    value: function _removeRelations(relations) {
-      var _iterator11 = _createForOfIteratorHelper(relations),
-          _step11;
-
-      try {
-        for (_iterator11.s(); !(_step11 = _iterator11.n()).done;) {
-          var relation = _step11.value;
-          this.relationsMap.delete(relation.id);
-        }
-      } catch (err) {
-        _iterator11.e(err);
-      } finally {
-        _iterator11.f();
-      }
-
-      this._updateRelationsArray();
-    }
-  }, {
-    key: "_updateEntitiesArray",
-    value: function _updateEntitiesArray() {
-      this.entities = toConsumableArray_toConsumableArray(this.entitiesMap.values());
-    }
-  }, {
-    key: "_updateRelationsArray",
-    value: function _updateRelationsArray() {
-      this.relations = toConsumableArray_toConsumableArray(this.relationsMap.values());
-    }
-  }]);
-
-  return DiagramData;
-}();
-
-
 // CONCATENATED MODULE: ./node_modules/babel-loader/lib!./node_modules/ts-loader??ref--14-1!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/SaveLoadDialog.vue?vue&type=script&lang=ts&
-
-
-
-
-
-
 
 
 
@@ -59652,72 +60884,8 @@ var SaveLoadDialogvue_type_script_lang_ts_SaveLoadDialog = /*#__PURE__*/function
   }, {
     key: "load",
     value: function load() {
-      var _savedDiagram$title, _savedDiagram$descrip, _savedDiagram$shared;
-
       var savedDiagram = parseSavedDiagramJSON(this.textareaText);
-      if (!savedDiagram) return;
-      var activeDiagram = new diagram_ActiveDiagram(this.diagram);
-      var settings = activeDiagram.settings;
-      activeDiagram.id = savedDiagram.id;
-      activeDiagram.title = (_savedDiagram$title = savedDiagram.title) !== null && _savedDiagram$title !== void 0 ? _savedDiagram$title : '';
-      activeDiagram.description = (_savedDiagram$descrip = savedDiagram.description) !== null && _savedDiagram$descrip !== void 0 ? _savedDiagram$descrip : '';
-      activeDiagram.shared = (_savedDiagram$shared = savedDiagram.shared) !== null && _savedDiagram$shared !== void 0 ? _savedDiagram$shared : false;
-      activeDiagram.data = new DiagramData_DiagramData(this.diagram, {
-        data: savedDiagram.data,
-        changes: savedDiagram.changes
-      });
-
-      if (savedDiagram.settings) {
-        if (savedDiagram.settings.activeFields) {
-          for (var id in settings.activeFields) {
-            settings.activeFields[id] = false;
-          }
-
-          var _iterator = _createForOfIteratorHelper(savedDiagram.settings.activeFields),
-              _step;
-
-          try {
-            for (_iterator.s(); !(_step = _iterator.n()).done;) {
-              var _id = _step.value;
-              if (_id in settings.activeFields) settings.activeFields[_id] = true;
-            }
-          } catch (err) {
-            _iterator.e(err);
-          } finally {
-            _iterator.f();
-          }
-        }
-
-        if (savedDiagram.settings.activeFilters) {
-          for (var _id2 in settings.activeFilters) {
-            settings.activeFilters[_id2] = false;
-          }
-
-          var _iterator2 = _createForOfIteratorHelper(savedDiagram.settings.activeFilters),
-              _step2;
-
-          try {
-            for (_iterator2.s(); !(_step2 = _iterator2.n()).done;) {
-              var _id3 = _step2.value;
-              if (_id3 in settings.activeFilters) settings.activeFilters[_id3] = true;
-            }
-          } catch (err) {
-            _iterator2.e(err);
-          } finally {
-            _iterator2.f();
-          }
-        }
-
-        if (savedDiagram.settings.activeLayout) {
-          var _id4 = savedDiagram.settings.activeLayout;
-          var layout = this.diagram.layouts.find(function (l) {
-            return l.id === _id4;
-          });
-          if (layout) settings.activeLayout = layout;
-        }
-      }
-
-      this.diagram.activeDiagram = activeDiagram;
+      if (savedDiagram) this.diagram.load(savedDiagram);
     }
   }]);
 
@@ -59751,8 +60919,8 @@ var SaveLoadDialogvue_type_style_index_0_lang_scss_ = __webpack_require__("f000"
 
 var SaveLoadDialog_component = normalizeComponent(
   components_SaveLoadDialogvue_type_script_lang_ts_,
-  SaveLoadDialogvue_type_template_id_1d75fbfe_render,
-  SaveLoadDialogvue_type_template_id_1d75fbfe_staticRenderFns,
+  SaveLoadDialogvue_type_template_id_3f26a93e_render,
+  SaveLoadDialogvue_type_template_id_3f26a93e_staticRenderFns,
   false,
   null,
   null,
@@ -59881,8 +61049,8 @@ var TopBarvue_type_style_index_0_lang_scss_ = __webpack_require__("d4bd");
 
 var TopBar_component = normalizeComponent(
   components_TopBarvue_type_script_lang_ts_,
-  TopBarvue_type_template_id_06796866_render,
-  TopBarvue_type_template_id_06796866_staticRenderFns,
+  TopBarvue_type_template_id_8091cf5a_render,
+  TopBarvue_type_template_id_8091cf5a_staticRenderFns,
   false,
   null,
   null,
@@ -59891,12 +61059,12 @@ var TopBar_component = normalizeComponent(
 )
 
 /* harmony default export */ var components_TopBar = (TopBar_component.exports);
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"15a880ee-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/Graph.vue?vue&type=template&id=9a9ef814&
-var Graphvue_type_template_id_9a9ef814_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"lassox-diagram__Graph",attrs:{"tabindex":"-1"},on:{"keydown":_vm.onKeyDown}},[_c('div',{ref:"graphContainerEl",staticStyle:{"width":"100%","height":"100%"},on:{"mousedown":_vm.redirectCytoscapeBlur,"touchstart":_vm.redirectCytoscapeBlur}})])}
-var Graphvue_type_template_id_9a9ef814_staticRenderFns = []
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"77807189-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/Graph.vue?vue&type=template&id=2fea0fe4&
+var Graphvue_type_template_id_2fea0fe4_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"lassox-diagram__Graph",attrs:{"tabindex":"-1"},on:{"keydown":_vm.onKeyDown}},[_c('div',{ref:"graphContainerEl",staticStyle:{"width":"100%","height":"100%"},on:{"mousedown":_vm.redirectCytoscapeBlur,"touchstart":_vm.redirectCytoscapeBlur}})])}
+var Graphvue_type_template_id_2fea0fe4_staticRenderFns = []
 
 
-// CONCATENATED MODULE: ./src/components/Graph.vue?vue&type=template&id=9a9ef814&
+// CONCATENATED MODULE: ./src/components/Graph.vue?vue&type=template&id=2fea0fe4&
 
 // EXTERNAL MODULE: ./node_modules/core-js/modules/es.regexp.exec.js
 var es_regexp_exec = __webpack_require__("ac1f");
@@ -59978,6 +61146,7 @@ var getPercBrightness = function () {
 
 
 
+
 var Graphvue_type_script_lang_ts_generateStyle = function generateStyle(diagram) {
   var printing = false;
 
@@ -59986,6 +61155,14 @@ var Graphvue_type_script_lang_ts_generateStyle = function generateStyle(diagram)
 
     var item = element.isNode() ? element.data('entity') : element.data('relation');
     return (_ref = (_item$style$property = item.style[property]) !== null && _item$style$property !== void 0 ? _item$style$property : item.type.style[property]) !== null && _ref !== void 0 ? _ref : defaultValue;
+  };
+
+  var getEdgeWidth = function getEdgeWidth(edge) {
+    return getStyle(edge, 'lineWidth');
+  };
+
+  var getEdgeColor = function getEdgeColor(edge) {
+    return edge.selected() ? '#cd4b3d' : getStyle(edge, 'lineColor');
   };
 
   return [{
@@ -60007,9 +61184,7 @@ var Graphvue_type_script_lang_ts_generateStyle = function generateStyle(diagram)
       'visibility': function visibility(edge) {
         return edge.data('hidden') ? 'hidden' : 'visible';
       },
-      'width': function width() {
-        return 4;
-      },
+      'width': getEdgeWidth,
       'label': function label(edge) {
         var relation = edge.data('relation');
         var strings = [];
@@ -60026,10 +61201,12 @@ var Graphvue_type_script_lang_ts_generateStyle = function generateStyle(diagram)
 
             try {
               for (_iterator2.s(); !(_step2 = _iterator2.n()).done;) {
+                var _field$getValue, _field$getInitialValu;
+
                 var field = _step2.value;
                 if (!field.isRelationLabel) continue;
                 if (!field.active) continue;
-                var value = relation.getFieldValue(field);
+                var value = (_field$getValue = field.getValue(relation.data)) !== null && _field$getValue !== void 0 ? _field$getValue : (_field$getInitialValu = field.getInitialValue) === null || _field$getInitialValu === void 0 ? void 0 : _field$getInitialValu.call(field, relation.data);
                 var formatted = String(field.formatter ? field.formatter(value) : value !== null && value !== void 0 ? value : '');
                 if (formatted) strings.push(formatted);
               }
@@ -60047,50 +61224,38 @@ var Graphvue_type_script_lang_ts_generateStyle = function generateStyle(diagram)
 
         return strings.join('\n');
       },
-      'color': function color() {
-        return printing ? '#000' : '#777';
+      'color': function color(edge) {
+        return printing ? '#000' : edge.selected() ? '#cd4b3d' : '#777';
       },
-      'curve-style': function curveStyle() {
-        return 'bezier';
-      },
-      'text-background-color': function textBackgroundColor() {
-        return '#fff';
-      },
-      'text-background-opacity': function textBackgroundOpacity() {
-        return 1;
-      },
-      'line-color': function lineColor() {
-        return printing ? '#999' : '#d8d8d8';
-      },
-      'source-arrow-color': function sourceArrowColor() {
-        return printing ? '#999' : '#d8d8d8';
-      },
-      'target-arrow-color': function targetArrowColor() {
-        return printing ? '#999' : '#d8d8d8';
-      },
-      'source-arrow-fill': function sourceArrowFill() {
-        return 'filled';
-      },
-      'target-arrow-fill': function targetArrowFill() {
-        return 'filled';
+      'curve-style': 'bezier',
+      'text-background-color': '#fff',
+      'text-background-opacity': 1,
+      'line-color': getEdgeColor,
+      'source-arrow-color': getEdgeColor,
+      'target-arrow-color': getEdgeColor,
+      'source-arrow-fill': 'filled',
+      'target-arrow-fill': 'filled',
+      'arrow-scale': function arrowScale(edge) {
+        return getStyle(edge, 'arrowSize') / getEdgeWidth(edge);
       },
       'line-style': function lineStyle(edge) {
-        return getStyle(edge, 'lineStyle', 'solid') === 'solid' ? 'solid' : 'dashed';
+        return getStyle(edge, 'lineStyle') === 'solid' ? 'solid' : 'dashed';
       },
       "line-dash-pattern": function lineDashPattern(edge) {
-        return getStyle(edge, 'lineStyle', 'solid') === 'dotted' ? [4, 8] : [8, 4];
+        var width = getEdgeWidth(edge);
+        return getStyle(edge, 'lineStyle') === 'dotted' ? [width, width * 2] : [width * 2, width];
       },
       'source-arrow-shape': function sourceArrowShape(edge) {
-        return getStyle(edge, 'arrowFrom', false) ? 'triangle' : 'none';
+        return getStyle(edge, 'arrowFrom') ? 'triangle-backcurve' : 'none';
       },
       'target-arrow-shape': function targetArrowShape(edge) {
-        return getStyle(edge, 'arrowTo', true) ? 'triangle' : 'none';
+        return getStyle(edge, 'arrowTo') ? 'triangle-backcurve' : 'none';
       },
       'control-point-step-size': function controlPointStepSize() {
         return 100;
       },
       'text-background-padding': function textBackgroundPadding() {
-        return '5px';
+        return '4px';
       }
     }, {
       'loop-direction': function loopDirection() {
@@ -60141,20 +61306,23 @@ var Graphvue_type_script_lang_ts_initNodeHtmlLabel = function initNodeHtmlLabel(
         return getPercBrightness(new iro_es.Color(bgColor)) > 165 ? 'rgba(0, 0, 0, 0.68)' : 'rgb(255, 255, 255)';
       };
 
-      var borderWidth = "".concat((_getStyleValue = getStyleValue('borderWidth')) !== null && _getStyleValue !== void 0 ? _getStyleValue : 2, "px");
+      var borderWidth = (_getStyleValue = getStyleValue('borderWidth')) !== null && _getStyleValue !== void 0 ? _getStyleValue : 2;
       var borderStyle = getStyleValue('borderStyle');
       var borderColor = entity.isMainEntity ? 'black' : getStyleValue('borderColor');
       var bgColor = (_getStyleValue2 = getStyleValue('backgroundColor')) !== null && _getStyleValue2 !== void 0 ? _getStyleValue2 : '#ffffff';
       var labelsBgColor = (_getStyleValue3 = getStyleValue('labelsBackgroundColor')) !== null && _getStyleValue3 !== void 0 ? _getStyleValue3 : bgColor;
-      var style = createStyleString([['visibility', data.hidden ? 'hidden' : 'visible'], ['border-width', borderWidth], ['border-style', borderStyle], ['border-color', borderColor]]);
+      var style = createStyleString([['visibility', data.hidden ? 'hidden' : 'visible'], ['border-width', "".concat(borderWidth, "px")], ['border-style', borderStyle], ['border-color', borderColor]]);
+      var selectedOutlineStyle = createStyleString([['top', "".concat(-borderWidth, "px")], ['left', "".concat(-borderWidth, "px")], ['right', "".concat(-borderWidth, "px")], ['bottom', "".concat(-borderWidth, "px")]]);
       var labelsStyle = createStyleString([['color', getContrastingTextColor(labelsBgColor)], ['background-color', labelsBgColor]]);
-      var fieldsStyle = createStyleString([['border-top-width', borderWidth], ['border-style', borderStyle], ['border-color', borderColor], ['color', getContrastingTextColor(bgColor)], ['background-color', bgColor]]);
+      var fieldsStyle = createStyleString([['border-top-width', "".concat(borderWidth, "px")], ['border-style', borderStyle], ['border-color', borderColor], ['color', getContrastingTextColor(bgColor)], ['background-color', bgColor]]);
 
       var createHtmlField = function createHtmlField(options) {
         var _options$legendColor, _options$field, _options$text;
 
         var getFormattedFieldValue = function getFormattedFieldValue(field) {
-          var value = entity.getFieldValue(field);
+          var _field$getValue2, _field$getInitialValu2;
+
+          var value = (_field$getValue2 = field.getValue(entity.data)) !== null && _field$getValue2 !== void 0 ? _field$getValue2 : (_field$getInitialValu2 = field.getInitialValue) === null || _field$getInitialValu2 === void 0 ? void 0 : _field$getInitialValu2.call(field, entity.data);
           if (field.formatter) return field.formatter(value);
           return String(value !== null && value !== void 0 ? value : '');
         };
@@ -60217,7 +61385,7 @@ var Graphvue_type_script_lang_ts_initNodeHtmlLabel = function initNodeHtmlLabel(
 
       var labelsHtml = labels.join('');
       var fieldsHtml = fields.join('');
-      return "<div class=\"".concat(classes, "\" style=\"").concat(style, "\">") + "<div class=\"lassox-diagram__Graph_entity-labels-wrapper\" style=\"".concat(labelsStyle, "\">") + (entity.type.icon ? "<div class=\"lassox-diagram__Graph_entity-icon material-icons-outlined\">".concat(entity.type.icon, "</div>") : '') + '<div class="lassox-diagram__Graph_entity-labels">' + labelsHtml + '</div>' + '</div>' + (fieldsHtml ? "<div class=\"lassox-diagram__Graph_entity-fields\" style=\"".concat(fieldsStyle, "\">") + fieldsHtml + '</div>' : '') + '</div>';
+      return "<div class=\"".concat(classes, "\" style=\"").concat(style, "\">") + "<div class=\"lassox-diagram__Graph_entity-selected-outline\" style=\"".concat(selectedOutlineStyle, "\"></div>") + "<div class=\"lassox-diagram__Graph_entity-labels-wrapper\" style=\"".concat(labelsStyle, "\">") + (entity.type.icon ? "<div class=\"lassox-diagram__Graph_entity-icon material-icons-outlined\">".concat(entity.type.icon, "</div>") : '') + '<div class="lassox-diagram__Graph_entity-labels">' + labelsHtml + '</div>' + '</div>' + (fieldsHtml ? "<div class=\"lassox-diagram__Graph_entity-fields\" style=\"".concat(fieldsStyle, "\">") + fieldsHtml + '</div>' : '') + '</div>';
     }
   }], {
     enablePointerEvents: true
@@ -60254,23 +61422,44 @@ var Graphvue_type_script_lang_ts_Graph = /*#__PURE__*/function (_Vue) {
       var _this2 = this;
 
       var destroyCallbacks = [];
-      destroyCallbacks.push(watchRect(this.el, this.onResize).unwatch);
+
+      var createMoveEntities = function createMoveEntities() {
+        var _this2$_graph;
+
+        var moveEntities = [];
+        (_this2$_graph = _this2._graph) === null || _this2$_graph === void 0 ? void 0 : _this2$_graph.nodes().forEach(function (node) {
+          var _node$position = node.position(),
+              x = _node$position.x,
+              y = _node$position.y;
+
+          moveEntities.push({
+            id: node.id(),
+            x: x,
+            y: y
+          });
+        });
+        return moveEntities;
+      };
+
+      destroyCallbacks.push(watchRect(this.el, this.onResize).unwatch, this.diagram.eventBus.on('graph.layout', function (_ref4) {
+        var _this2$layout;
+
+        var layout = _ref4.layout;
+        (_this2$layout = _this2.layout(layout, false)) === null || _this2$layout === void 0 ? void 0 : _this2$layout.then(function () {
+          _this2.diagram.activeDiagram.data.commitChange({
+            layout: layout.id,
+            moveEntities: createMoveEntities()
+          });
+        });
+      }), this.diagram.eventBus.on('graph.fit', function () {
+        return _this2.fit();
+      }), this.diagram.eventBus.on(['dataUpdated', 'activeFieldsChanged'], function () {
+        return _this2.updateElements();
+      }));
       this.initialize();
-      destroyCallbacks.push(this.diagram.eventBus.on('activeLayoutChanged', function () {
-        console.log('Active layout changed');
-
-        _this2.runLayout(false);
-      }));
-      destroyCallbacks.push(this.diagram.eventBus.on(['dataUpdated', 'activeFieldsChanged'], function () {
-        console.log('Data or active fields changed');
-
-        _this2.updateElements();
-      }));
       this.$watch(function () {
         return _this2.diagram.activeDiagram;
       }, function () {
-        console.log('Active diagram changed');
-
         _this2.clearElements();
 
         _this2.updateElements();
@@ -60384,13 +61573,27 @@ var Graphvue_type_script_lang_ts_Graph = /*#__PURE__*/function (_Vue) {
       }); // Fit elements in graph when graph is resized
 
       graph.on('resize', function () {
-        _this4.fitInGraph();
-      }); // // Add inital elements
-      // this.updateElements()
-      // // Sometimes cytoscape will fail at initially fitting the elements in the graph, so we wait for a frame before doing it.
-      // requestAnimationFrame(() => {
-      //   this.fitInGraph()
-      // })
+        return _this4.fit();
+      }); // Track node position changes
+
+      var movedNodes = new Set();
+      graph.on('dragfree', function (event) {
+        movedNodes.add(event.target);
+        if (movedNodes.size == 1) requestAnimationFrame(function () {
+          _this4.diagram.activeDiagram.data.commitChange({
+            moveEntities: toConsumableArray_toConsumableArray(movedNodes).map(function (node) {
+              var position = node.position();
+              return {
+                id: node.id(),
+                x: position.x,
+                y: position.y
+              };
+            })
+          });
+
+          movedNodes.clear();
+        });
+      });
     }
   }, {
     key: "clearElements",
@@ -60407,7 +61610,7 @@ var Graphvue_type_script_lang_ts_Graph = /*#__PURE__*/function (_Vue) {
 
       var graph = this._graph;
       if (!graph) return;
-      var shouldLayout = !this.addedItems.size;
+      var shouldLayout = !graph.elements().length;
       graph.batch(function () {
         var items = new Map([].concat(toConsumableArray_toConsumableArray(_this5.diagram.activeDiagram.data.entitiesMap), toConsumableArray_toConsumableArray(_this5.diagram.activeDiagram.data.relationsMap)));
         var toAdd = [];
@@ -60456,7 +61659,8 @@ var Graphvue_type_script_lang_ts_Graph = /*#__PURE__*/function (_Vue) {
           if (item.isEntity) {
             elementDefinitions.push({
               group: 'nodes',
-              classes: 'entity',
+              classes: 'entity' + (item.position ? '' : ' needs-position'),
+              position: item.position,
               data: {
                 id: item.id,
                 entity: item,
@@ -60480,11 +61684,13 @@ var Graphvue_type_script_lang_ts_Graph = /*#__PURE__*/function (_Vue) {
 
         for (var _i2 = 0, _toUpdate = toUpdate; _i2 < _toUpdate.length; _i2++) {
           var _item = _toUpdate[_i2];
-          graph.$id(_item.id).data(_item.isEntity ? {
-            entity: _item
-          } : {
-            relation: _item
-          });
+          var element = graph.$id(_item.id);
+          element.data(_item.isEntity ? 'entity' : 'relation', _item);
+
+          if (_item.isEntity) {
+            element.toggleClass('needs-position', !_item.position);
+            if (_item.position) element.position(_item.position);
+          }
         }
 
         for (var _i3 = 0, _toRemove = toRemove; _i3 < _toRemove.length; _i3++) {
@@ -60494,11 +61700,10 @@ var Graphvue_type_script_lang_ts_Graph = /*#__PURE__*/function (_Vue) {
 
         var elements = graph.add(elementDefinitions);
         var nodes = elements.nodes();
-        var edges = elements.edges();
         elements.data('hidden', true);
         _this5.addedItems = items;
 
-        if (graph.elements().length) {
+        if (nodes.length) {
           graph.one('render', function () {
             graph.batch(function () {
               nodes.forEach(function (node) {
@@ -60528,63 +61733,89 @@ var Graphvue_type_script_lang_ts_Graph = /*#__PURE__*/function (_Vue) {
 
                 watchRect(nodeEl, onRectChanged);
                 node.on('remove', function () {
-                  watch_rect_unwatchRect(nodeEl, onRectChanged);
+                  return watch_rect_unwatchRect(nodeEl, onRectChanged);
                 });
               });
             });
 
-            if (!shouldLayout) {
-              graph.one('render', function () {
-                elements.data('hidden', false);
-              });
-            } else {
-              graph.one('layoutstart', function () {
-                elements.data('hidden', false);
-              });
+            var unhideElements = function unhideElements() {
+              return elements.data('hidden', false);
+            };
 
-              _this5.runLayout(false);
-            }
-          });
-          nodes.on('click', function (event) {
-            _this5.$emit('clickEntity', event.target.data('entity'));
-          });
-          edges.on('click', function (event) {
-            _this5.$emit('clickRelation', event.target.data('relation'));
-          });
-          elements.on('select', function (event) {
-            event.target.data('selected', true);
-            if (event.target.isNode()) _this5.$emit('selectEntity', event.target.data('entity'));else if (event.target.isEdge()) _this5.$emit('selectRelation', event.target.data('relation'));
-          });
-          elements.on('unselect', function (event) {
-            event.target.removeData('selected');
-            if (event.target.isNode()) _this5.$emit('unselectEntity', event.target.data('entity'));else if (event.target.isEdge()) _this5.$emit('unselectRelation', event.target.data('relation'));
+            var setInitialPositions = function setInitialPositions() {
+              return graph.nodes().forEach(function (node) {
+                var entity = node.data('entity');
+
+                if (!entity.position) {
+                  entity.initialState.position = _objectSpread2({}, node.position());
+                  entity.position = _objectSpread2({}, node.position());
+                }
+              });
+            };
+
+            graph.one('render', function () {
+              var nodesToLayout = shouldLayout ? graph.nodes('.needs-position') : null;
+
+              if (nodesToLayout !== null && nodesToLayout !== void 0 && nodesToLayout.length) {
+                var _this5$layout;
+
+                var nodesToLock = graph.nodes().not(nodesToLayout).not(':locked');
+                nodesToLock.lock();
+                (_this5$layout = _this5.layout(_this5.diagram.activeDiagram.settings.activeLayout, false)) === null || _this5$layout === void 0 ? void 0 : _this5$layout.then(function () {
+                  return graph.batch(function () {
+                    nodesToLock.unlock();
+                    setInitialPositions();
+                    unhideElements();
+                  });
+                });
+              } else {
+                setInitialPositions();
+                unhideElements();
+              }
+            });
           });
         }
+
+        elements.on('click', function (event) {
+          var element = event.target;
+
+          _this5.diagram.eventBus.emit({
+            name: 'editor.open',
+            target: element.data(element.isNode() ? 'entity' : 'relation')
+          });
+        });
+        elements.on('select', function (event) {
+          event.target.data('selected', true);
+        });
+        elements.on('unselect', function (event) {
+          event.target.data('selected', false);
+        });
       });
     }
   }, {
-    key: "runLayout",
-    value: function runLayout() {
-      var animate = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : true;
+    key: "layout",
+    value: function layout(_layout) {
+      var _layout$animate;
+
+      var animate = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : (_layout$animate = _layout === null || _layout === void 0 ? void 0 : _layout.animate) !== null && _layout$animate !== void 0 ? _layout$animate : false;
       var graph = this._graph;
       if (!graph) return;
-      var layout = this.diagram.activeDiagram.settings.activeLayout;
       return new Promise(function (resolve) {
-        var _layout$directed, _layout$grid, _layout$spacingFactor, _layout$maximal, _layout$animate, _layout$animationDura, _layout$animationEasi;
+        var _layout$directed, _layout$grid, _layout$spacingFactor, _layout$maximal, _layout$animationDura, _layout$animationEasi;
 
         graph.layout({
           name: 'breadthfirst',
           fit: true,
           padding: 32,
-          directed: (_layout$directed = layout === null || layout === void 0 ? void 0 : layout.directed) !== null && _layout$directed !== void 0 ? _layout$directed : false,
-          grid: (_layout$grid = layout === null || layout === void 0 ? void 0 : layout.grid) !== null && _layout$grid !== void 0 ? _layout$grid : false,
-          spacingFactor: (_layout$spacingFactor = layout === null || layout === void 0 ? void 0 : layout.spacingFactor) !== null && _layout$spacingFactor !== void 0 ? _layout$spacingFactor : 1.3,
-          maximal: (_layout$maximal = layout === null || layout === void 0 ? void 0 : layout.maximal) !== null && _layout$maximal !== void 0 ? _layout$maximal : false,
+          directed: (_layout$directed = _layout === null || _layout === void 0 ? void 0 : _layout.directed) !== null && _layout$directed !== void 0 ? _layout$directed : false,
+          grid: (_layout$grid = _layout === null || _layout === void 0 ? void 0 : _layout.grid) !== null && _layout$grid !== void 0 ? _layout$grid : false,
+          spacingFactor: (_layout$spacingFactor = _layout === null || _layout === void 0 ? void 0 : _layout.spacingFactor) !== null && _layout$spacingFactor !== void 0 ? _layout$spacingFactor : 1.3,
+          maximal: (_layout$maximal = _layout === null || _layout === void 0 ? void 0 : _layout.maximal) !== null && _layout$maximal !== void 0 ? _layout$maximal : false,
           avoidOverlap: true,
-          animate: animate && ((_layout$animate = layout === null || layout === void 0 ? void 0 : layout.animate) !== null && _layout$animate !== void 0 ? _layout$animate : true),
-          animationDuration: (_layout$animationDura = layout === null || layout === void 0 ? void 0 : layout.animationDuration) !== null && _layout$animationDura !== void 0 ? _layout$animationDura : 1000,
-          animationEasing: (_layout$animationEasi = layout === null || layout === void 0 ? void 0 : layout.animationEasing) !== null && _layout$animationEasi !== void 0 ? _layout$animationEasi : 'ease-out',
-          transform: layout !== null && layout !== void 0 && layout.inverted ? function (_, pos) {
+          animate: animate,
+          animationDuration: (_layout$animationDura = _layout === null || _layout === void 0 ? void 0 : _layout.animationDuration) !== null && _layout$animationDura !== void 0 ? _layout$animationDura : 1000,
+          animationEasing: (_layout$animationEasi = _layout === null || _layout === void 0 ? void 0 : _layout.animationEasing) !== null && _layout$animationEasi !== void 0 ? _layout$animationEasi : 'ease-out',
+          transform: _layout !== null && _layout !== void 0 && _layout.inverted ? function (_, pos) {
             return {
               x: -pos.x,
               y: -pos.y
@@ -60597,8 +61828,8 @@ var Graphvue_type_script_lang_ts_Graph = /*#__PURE__*/function (_Vue) {
       });
     }
   }, {
-    key: "fitInGraph",
-    value: function fitInGraph() {
+    key: "fit",
+    value: function fit() {
       var _this$_graph2;
 
       (_this$_graph2 = this._graph) === null || _this$_graph2 === void 0 ? void 0 : _this$_graph2.fit(undefined, 32);
@@ -60633,8 +61864,8 @@ var Graphvue_type_style_index_0_lang_scss_ = __webpack_require__("2a3c");
 
 var Graph_component = normalizeComponent(
   components_Graphvue_type_script_lang_ts_,
-  Graphvue_type_template_id_9a9ef814_render,
-  Graphvue_type_template_id_9a9ef814_staticRenderFns,
+  Graphvue_type_template_id_2fea0fe4_render,
+  Graphvue_type_template_id_2fea0fe4_staticRenderFns,
   false,
   null,
   null,
@@ -60643,21 +61874,21 @@ var Graph_component = normalizeComponent(
 )
 
 /* harmony default export */ var components_Graph = (Graph_component.exports);
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"15a880ee-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/Customizer.vue?vue&type=template&id=4f25ccdc&
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"77807189-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/Customizer.vue?vue&type=template&id=4f25ccdc&
 var Customizervue_type_template_id_4f25ccdc_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"lassox-diagram__Customizer"},[_c('div',{staticClass:"lassox-diagram__Customizer_fields"},_vm._l((_vm.diagram.fieldGroups),function(fieldGroup){return _c('CustomizerFieldGroup',{key:fieldGroup.id,attrs:{"diagram":_vm.diagram,"fieldGroup":fieldGroup}})}),1)])}
 var Customizervue_type_template_id_4f25ccdc_staticRenderFns = []
 
 
 // CONCATENATED MODULE: ./src/components/Customizer.vue?vue&type=template&id=4f25ccdc&
 
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"15a880ee-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/CustomizerFieldGroup.vue?vue&type=template&id=9cb73a02&
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"77807189-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/CustomizerFieldGroup.vue?vue&type=template&id=9cb73a02&
 var CustomizerFieldGroupvue_type_template_id_9cb73a02_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"lassox-diagram__CustomizerFieldGroup"},[_c('CustomizerFieldGroupDropdownButton',{attrs:{"diagram":_vm.diagram,"fieldGroup":_vm.fieldGroup}}),(_vm.activeFields.length)?_c('div',{staticClass:"lassox-diagram__CustomizerFieldGroup_fields"},_vm._l((_vm.activeFields),function(field){return _c('div',{key:field.id,staticClass:"lassox-diagram__CustomizerFieldGroup_field"},[_c('div',{staticClass:"lassox-diagram__CustomizerFieldGroup_field-legend-color",style:({ backgroundColor: field.legendColor })}),_c('div',{staticClass:"lassox-diagram__CustomizerFieldGroup_field-title",domProps:{"textContent":_vm._s(field.title)}})])}),0):_vm._e()],1)}
 var CustomizerFieldGroupvue_type_template_id_9cb73a02_staticRenderFns = []
 
 
 // CONCATENATED MODULE: ./src/components/CustomizerFieldGroup.vue?vue&type=template&id=9cb73a02&
 
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"15a880ee-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/CustomizerFieldGroupDropdownButton.vue?vue&type=template&id=75ae99b2&
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"77807189-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/CustomizerFieldGroupDropdownButton.vue?vue&type=template&id=75ae99b2&
 var CustomizerFieldGroupDropdownButtonvue_type_template_id_75ae99b2_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"lassox-diagram__CustomizerFieldGroupDropdownButton"},[_c('BaseButton',{ref:"button",staticClass:"lassox-diagram__CustomizerFieldGroupDropdownButton_button",attrs:{"label":_vm.fieldGroup.title,"trailingIcon":_vm.showDropdownMenu ? 'expand_less' : 'expand_more'},on:{"click":function () { return _vm.showDropdownMenu = !_vm.showDropdownMenu; },"focusout":_vm.onFocusOut}}),_c('div',{directives:[{name:"show",rawName:"v-show",value:(_vm.showDropdownMenu),expression:"showDropdownMenu"}],ref:"dropdownMenuEl",staticClass:"lassox-diagram__CustomizerFieldGroupDropdownButton_dropdown-menu",style:(_vm.dropdownStyle),attrs:{"tabindex":"-1"},on:{"focusout":_vm.onFocusOut}},_vm._l((_vm.fields),function(field){return _c('BaseButton',{key:field.id,staticClass:"lassox-diagram__CustomizerFieldGroupDropdownButton_dropdown-menu-item",attrs:{"label":field.title,"icon":field.active ? 'check_box' : 'check_box_outline_blank'},on:{"click":function () { return field.active = !field.active; }}})}),1),_c('div',{ref:"boundsEl",staticClass:"lassox-diagram__CustomizerFieldGroupDropdownButton_dropdown-menu-bounds"})],1)}
 var CustomizerFieldGroupDropdownButtonvue_type_template_id_75ae99b2_staticRenderFns = []
 
@@ -60958,14 +62189,14 @@ var Customizer_component = normalizeComponent(
 )
 
 /* harmony default export */ var components_Customizer = (Customizer_component.exports);
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"15a880ee-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/Editor.vue?vue&type=template&id=48b2eb1a&
-var Editorvue_type_template_id_48b2eb1a_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"lassox-diagram__Editor"},[_c('header',{staticClass:"lassox-diagram__Editor_header"},[_c('div',{staticClass:"lassox-diagram__Editor_header-title-bar"},[_c('div',{staticClass:"lassox-diagram__Editor_header-title-bar-title",domProps:{"textContent":_vm._s(("Rediger " + _vm.label))}}),_c('IconButton',{attrs:{"icon":"close","size":"normal"},on:{"click":function () { return _vm.close(); }}})],1),_c('div',{staticClass:"lassox-diagram__Editor_header-description",domProps:{"textContent":_vm._s('Rediger staminformation, nøgletal og tilføj relationer, så det fremgår som ønsket i diagrammet.')}}),_c('div',{staticClass:"lassox-diagram__Editor_header-actions"},[_c('ButtonGroup',[(_vm.object.isEntity)?_c('Button',{ref:"addDropdownButton",attrs:{"label":"Tilføj","trailingIcon":_vm.showAddDropdownMenu ? 'expand_less' : 'expand_more',"disabled":!_vm.addMenuItems},on:{"click":function () { return _vm.showAddDropdownMenu = !_vm.showAddDropdownMenu; }}}):_vm._e(),_c('Button',{attrs:{"label":"Fjern","disabled":_vm.object.isEntity && _vm.object.isMainEntity},on:{"click":_vm.remove}})],1),(_vm.addMenuItems)?_c('DropdownMenu',{attrs:{"buttonEl":_vm.showAddDropdownMenu ? _vm.$refs.addDropdownButton.$el : null,"close":function () { return _vm.showAddDropdownMenu = false; }}},[_vm._l((_vm.addMenuItems),function(items,i){return [(i)?_c('DropdownMenuDivider',{key:("group-" + i + "-divider")}):_vm._e(),_vm._l((items),function(item){return _c('DropdownMenuItem',{key:("group-" + i + "-item-" + (item.key)),attrs:{"label":item.label},on:{"click":item.onClick}})})]})],2):_vm._e()],1)]),_c('div',{staticClass:"lassox-diagram__Editor_body-wrapper"},[_c('div',{staticClass:"lassox-diagram__Editor_body"},[_c('EditorFieldGroups',_vm._l((_vm.fieldGroups),function(fieldGroup){return _c('EditorFieldGroup',{key:fieldGroup.id,attrs:{"title":fieldGroup.title}},_vm._l((fieldGroup.fields),function(field){return _c('EditorField',{key:field.id,attrs:{"id":field.id,"type":field.type,"title":field.title,"options":field.options,"initialValue":field.initialValue,"initialValueLabel":field.initialValueLabel,"resetValue":field.resetValue},model:{value:(field.value),callback:function ($$v) {_vm.$set(field, "value", $$v)},expression:"field.value"}})}),1)}),1)],1)]),_c('footer',{staticClass:"lassox-diagram__Editor_footer"},[_c('ButtonGroup',{attrs:{"align":"right"}},[_c('Button',{attrs:{"label":"Luk"},on:{"click":function () { return _vm.close(); }}}),_c('Button',{attrs:{"type":"primary","label":"Gem ændringer","disabled":!_vm.hasChanges},on:{"click":function () { return _vm.saveChanges(); }}})],1)],1)])}
-var Editorvue_type_template_id_48b2eb1a_staticRenderFns = []
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"77807189-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/Editor.vue?vue&type=template&id=70d337e4&
+var Editorvue_type_template_id_70d337e4_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"lassox-diagram__Editor"},[_c('header',{staticClass:"lassox-diagram__Editor_header"},[_c('div',{staticClass:"lassox-diagram__Editor_header-title-bar"},[_c('div',{staticClass:"lassox-diagram__Editor_header-title-bar-title",domProps:{"textContent":_vm._s(("Rediger " + _vm.label))}}),_c('IconButton',{attrs:{"icon":"close","size":"normal"},on:{"click":function () { return _vm.close(); }}})],1),_c('div',{staticClass:"lassox-diagram__Editor_header-description",domProps:{"textContent":_vm._s('Rediger staminformation, nøgletal og tilføj relationer, så det fremgår som ønsket i diagrammet.')}}),_c('div',{staticClass:"lassox-diagram__Editor_header-actions"},[_c('ButtonGroup',[(_vm.object.isEntity)?_c('Button',{ref:"addDropdownButton",attrs:{"label":"Tilføj","trailingIcon":_vm.showAddDropdownMenu ? 'expand_less' : 'expand_more',"disabled":!_vm.addMenuItems},on:{"click":function () { return _vm.showAddDropdownMenu = !_vm.showAddDropdownMenu; }}}):_vm._e(),_c('Button',{attrs:{"label":"Fjern","disabled":_vm.object.isEntity && _vm.object.isMainEntity},on:{"click":_vm.remove}})],1),(_vm.addMenuItems)?_c('DropdownMenu',{attrs:{"buttonEl":_vm.showAddDropdownMenu ? _vm.$refs.addDropdownButton.$el : null,"close":function () { return _vm.showAddDropdownMenu = false; }}},[_vm._l((_vm.addMenuItems),function(items,i){return [(i)?_c('DropdownMenuDivider',{key:("group-" + i + "-divider")}):_vm._e(),_vm._l((items),function(item){return _c('DropdownMenuItem',{key:("group-" + i + "-item-" + (item.key)),attrs:{"label":item.label},on:{"click":item.onClick}})})]})],2):_vm._e()],1)]),_c('div',{staticClass:"lassox-diagram__Editor_body-wrapper"},[_c('div',{staticClass:"lassox-diagram__Editor_body"},[_c('EditorFieldGroups',_vm._l((_vm.fieldGroups),function(fieldGroup){return _c('EditorFieldGroup',{key:fieldGroup.id,attrs:{"title":fieldGroup.title}},_vm._l((fieldGroup.fields),function(field){return _c('EditorField',{key:field.id,attrs:{"id":field.id,"type":field.type,"title":field.title,"options":field.options,"initialValue":field.initialValue,"initialValueLabel":field.initialValueLabel,"resetValue":field.resetValue},model:{value:(field.value),callback:function ($$v) {_vm.$set(field, "value", $$v)},expression:"field.value"}})}),1)}),1)],1)]),_c('footer',{staticClass:"lassox-diagram__Editor_footer"},[_c('ButtonGroup',{attrs:{"align":"right"}},[_c('Button',{attrs:{"label":"Luk"},on:{"click":function () { return _vm.close(); }}}),_c('Button',{attrs:{"type":"primary","label":"Gem ændringer","disabled":!_vm.hasChanges},on:{"click":function () { return _vm.saveChanges(); }}})],1)],1)])}
+var Editorvue_type_template_id_70d337e4_staticRenderFns = []
 
 
-// CONCATENATED MODULE: ./src/components/Editor.vue?vue&type=template&id=48b2eb1a&
+// CONCATENATED MODULE: ./src/components/Editor.vue?vue&type=template&id=70d337e4&
 
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"15a880ee-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/EditorFieldGroups.vue?vue&type=template&id=545a4e7c&
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"77807189-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/EditorFieldGroups.vue?vue&type=template&id=545a4e7c&
 var EditorFieldGroupsvue_type_template_id_545a4e7c_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"lassox-diagram__EditorFieldGroups"},[_vm._t("default")],2)}
 var EditorFieldGroupsvue_type_template_id_545a4e7c_staticRenderFns = []
 
@@ -61021,14 +62252,14 @@ var EditorFieldGroups_component = normalizeComponent(
 )
 
 /* harmony default export */ var components_EditorFieldGroups = (EditorFieldGroups_component.exports);
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"15a880ee-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/EditorFieldGroup.vue?vue&type=template&id=3a3b3e51&
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"77807189-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/EditorFieldGroup.vue?vue&type=template&id=3a3b3e51&
 var EditorFieldGroupvue_type_template_id_3a3b3e51_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"lassox-diagram__EditorFieldGroup"},[(_vm.title)?_c('div',{staticClass:"lassox-diagram__EditorFieldGroup-title"},[_vm._v(_vm._s(_vm.title))]):_vm._e(),_c('EditorFields',[_vm._t("default")],2)],1)}
 var EditorFieldGroupvue_type_template_id_3a3b3e51_staticRenderFns = []
 
 
 // CONCATENATED MODULE: ./src/components/EditorFieldGroup.vue?vue&type=template&id=3a3b3e51&
 
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"15a880ee-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/EditorFields.vue?vue&type=template&id=708d066c&
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"77807189-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/EditorFields.vue?vue&type=template&id=708d066c&
 var EditorFieldsvue_type_template_id_708d066c_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"lassox-diagram__EditorFields"},[_vm._t("default")],2)}
 var EditorFieldsvue_type_template_id_708d066c_staticRenderFns = []
 
@@ -61146,14 +62377,14 @@ var EditorFieldGroup_component = normalizeComponent(
 var lodash_set = __webpack_require__("f4c4");
 var lodash_set_default = /*#__PURE__*/__webpack_require__.n(lodash_set);
 
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"15a880ee-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/AddRelationDialog.vue?vue&type=template&id=e96ca1ce&
-var AddRelationDialogvue_type_template_id_e96ca1ce_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('Dialog',{staticClass:"lassox-diagram__AddRelationDialog",attrs:{"dismissable":true,"title":("Tilføj " + (_vm.relationTypeLabel.toLowerCase())),"size":"2x","onClose":_vm.dismiss},scopedSlots:_vm._u([{key:"content",fn:function(){return [_c('EditorFieldGroups',[(_vm.relationFields.length)?[_c('EditorFieldGroup',_vm._l((_vm.relationFields),function(field){return _c('EditorField',{key:field.fullId,attrs:{"id":field.fullId,"type":field.type,"title":field.title},model:{value:(field.value),callback:function ($$v) {_vm.$set(field, "value", $$v)},expression:"field.value"}})}),1),_c('DropdownMenuDivider',{staticStyle:{"margin":"24px 0"}})]:_vm._e(),_c('EditorFieldGroup',[_c('FieldContainer',{attrs:{"label":"Type"}},[_c('DropdownField',{attrs:{"options":_vm.entityTypeDropdownOptions},model:{value:(_vm.entityType),callback:function ($$v) {_vm.entityType=$$v},expression:"entityType"}})],1),(_vm.entityMode == 'search')?[_c('FieldContainer',{attrs:{"label":("Søg efter " + (_vm.entityType.labels.singular.toLowerCase()))}},[_c('EntitySearchBar',{attrs:{"entityType":_vm.entityType}})],1)]:_vm._l((_vm.entityFields),function(field){return _c('EditorField',{key:field.fullId,attrs:{"id":field.fullId,"type":field.type,"title":field.title},model:{value:(field.value),callback:function ($$v) {_vm.$set(field, "value", $$v)},expression:"field.value"}})})],2)],2)]},proxy:true},{key:"actions",fn:function(){return [_c('ButtonGroup',{attrs:{"align":"right"}},[_c('Button',{attrs:{"label":"Fortryd"},on:{"click":_vm.dismiss}}),_c('Button',{attrs:{"label":"Tilføj","type":"primary"},on:{"click":_vm.confirm}})],1)]},proxy:true}])})}
-var AddRelationDialogvue_type_template_id_e96ca1ce_staticRenderFns = []
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"77807189-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/AddRelationDialog.vue?vue&type=template&id=44654e61&
+var AddRelationDialogvue_type_template_id_44654e61_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('Dialog',{staticClass:"lassox-diagram__AddRelationDialog",attrs:{"dismissable":true,"title":("Tilføj " + (_vm.relationTypeLabel.toLowerCase())),"size":"2x","onClose":_vm.dismiss},scopedSlots:_vm._u([{key:"content",fn:function(){return [_c('EditorFieldGroups',[(_vm.relationFields.length)?[_c('EditorFieldGroup',_vm._l((_vm.relationFields),function(field){return _c('EditorField',{key:field.fullId,attrs:{"id":field.fullId,"type":field.type,"title":field.title},model:{value:(field.value),callback:function ($$v) {_vm.$set(field, "value", $$v)},expression:"field.value"}})}),1),_c('DropdownMenuDivider',{staticStyle:{"margin":"24px 0"}})]:_vm._e(),_c('EditorFieldGroup',[_c('FieldContainer',{attrs:{"label":"Type"}},[_c('DropdownField',{attrs:{"options":_vm.entityTypeDropdownOptions},model:{value:(_vm.entityType),callback:function ($$v) {_vm.entityType=$$v},expression:"entityType"}})],1),(_vm.entityMode == 'search')?[_c('FieldContainer',{attrs:{"label":("Søg efter " + (_vm.entityType.labels.singular.toLowerCase()))}},[_c('EntitySearchBar',{attrs:{"entityType":_vm.entityType}})],1)]:_vm._l((_vm.entityFields),function(field){return _c('EditorField',{key:field.fullId,attrs:{"id":field.fullId,"type":field.type,"title":field.title},model:{value:(field.value),callback:function ($$v) {_vm.$set(field, "value", $$v)},expression:"field.value"}})})],2)],2)]},proxy:true},{key:"actions",fn:function(){return [_c('ButtonGroup',{attrs:{"align":"right"}},[_c('Button',{attrs:{"label":"Fortryd"},on:{"click":_vm.dismiss}}),_c('Button',{attrs:{"label":"Tilføj","type":"primary"},on:{"click":_vm.confirm}})],1)]},proxy:true}])})}
+var AddRelationDialogvue_type_template_id_44654e61_staticRenderFns = []
 
 
-// CONCATENATED MODULE: ./src/components/AddRelationDialog.vue?vue&type=template&id=e96ca1ce&
+// CONCATENATED MODULE: ./src/components/AddRelationDialog.vue?vue&type=template&id=44654e61&
 
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"15a880ee-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/DropdownField.vue?vue&type=template&id=60ea2025&
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"77807189-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/DropdownField.vue?vue&type=template&id=60ea2025&
 var DropdownFieldvue_type_template_id_60ea2025_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"lassox-diagram__DropdownField"},[_c('Button',{ref:"dropdownButton",staticClass:"lassox-diagram__DropdownField-button",attrs:{"label":_vm.selectedOption && _vm.selectedOption.label || '',"trailingIcon":_vm.showDropdownMenu ? 'expand_less' : 'expand_more'},on:{"click":function () { return _vm.showDropdownMenu = !_vm.showDropdownMenu; }}}),_c('DropdownMenu',{attrs:{"buttonEl":_vm.showDropdownMenu ? _vm.$refs.dropdownButton.$el : null,"close":function () { return _vm.showDropdownMenu = false; }}},_vm._l((_vm.options),function(option){return _c('DropdownMenuItem',{key:option.id,attrs:{"icon":option.value === _vm.value ? 'check' : ' ',"label":option.label},on:{"click":function () { return _vm.$emit('change', option.value); }}})}),1)],1)}
 var DropdownFieldvue_type_template_id_60ea2025_staticRenderFns = []
 
@@ -61242,7 +62473,7 @@ var DropdownField_component = normalizeComponent(
 )
 
 /* harmony default export */ var components_DropdownField = (DropdownField_component.exports);
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"15a880ee-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/EntitySearchBar.vue?vue&type=template&id=45c41d70&
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"77807189-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/EntitySearchBar.vue?vue&type=template&id=45c41d70&
 var EntitySearchBarvue_type_template_id_45c41d70_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"lassox-diagram__EntitySearchBar"},[_c('TextField',{ref:"textField",attrs:{"autocomplete":"off","leadingIcon":"search","trailingIcon":_vm.inputText ? 'cancel' : null,"onClickTrailingIcon":function () {
       _vm.inputText = ''
     },"value":_vm.inputText},on:{"mousedown":function () {
@@ -61565,7 +62796,7 @@ var EntitySearchBar_component = normalizeComponent(
 )
 
 /* harmony default export */ var components_EntitySearchBar = (EntitySearchBar_component.exports);
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"15a880ee-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/TabBar.vue?vue&type=template&id=768e61f8&
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"77807189-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/TabBar.vue?vue&type=template&id=768e61f8&
 var TabBarvue_type_template_id_768e61f8_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{class:[
     'lassox-diagram__TabBar',
     _vm.outlined && 'lassox-diagram__TabBar--outlined' ]},[_c('div',{staticClass:"lassox-diagram__TabBar_tabs-wrapper"},_vm._l((_vm.tabs),function(tab){return _c('BaseButton',{key:tab.id,class:[
@@ -61960,8 +63191,8 @@ AddRelationDialogvue_type_script_lang_ts_AddRelationDialog = __decorate([vue_cla
 
 var AddRelationDialog_component = normalizeComponent(
   components_AddRelationDialogvue_type_script_lang_ts_,
-  AddRelationDialogvue_type_template_id_e96ca1ce_render,
-  AddRelationDialogvue_type_template_id_e96ca1ce_staticRenderFns,
+  AddRelationDialogvue_type_template_id_44654e61_render,
+  AddRelationDialogvue_type_template_id_44654e61_staticRenderFns,
   false,
   null,
   null,
@@ -61970,7 +63201,7 @@ var AddRelationDialog_component = normalizeComponent(
 )
 
 /* harmony default export */ var components_AddRelationDialog = (AddRelationDialog_component.exports);
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"15a880ee-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/ConfirmAdditionDialog.vue?vue&type=template&id=3b4e2956&
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"77807189-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/ConfirmAdditionDialog.vue?vue&type=template&id=3b4e2956&
 var ConfirmAdditionDialogvue_type_template_id_3b4e2956_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('Dialog',{staticClass:"lassox-diagram__ConfirmAdditionDialog",attrs:{"dismissable":true,"title":"Bekræft ændringer","content":_vm.content,"onClose":_vm.dismiss},scopedSlots:_vm._u([{key:"actions",fn:function(){return [_c('ButtonGroup',{attrs:{"align":"right"}},[_c('Button',{attrs:{"label":"Fortryd"},on:{"click":_vm.dismiss}}),_c('Button',{attrs:{"label":"Tilføj","type":"primary"},on:{"click":_vm.confirm}})],1)]},proxy:true}])})}
 var ConfirmAdditionDialogvue_type_template_id_3b4e2956_staticRenderFns = []
 
@@ -62227,7 +63458,7 @@ var Editorvue_type_script_lang_ts_Editor = /*#__PURE__*/function (_Vue) {
 
           items.new.push({
             key: "new-".concat(type.id, "-parent"),
-            label: (_type$labels$newParen = type.labels.newParent) !== null && _type$labels$newParen !== void 0 ? _type$labels$newParen : 'Ny(t)' + (type.labels.singularFrom || type.labels.singular).toLowerCase(),
+            label: (_type$labels$newParen = type.labels.newParent) !== null && _type$labels$newParen !== void 0 ? _type$labels$newParen : 'Ny(t) ' + (type.labels.singularFrom || type.labels.singular).toLowerCase(),
             onClick: function onClick() {
               _this2.diagramVm.showDialog(components_AddRelationDialog, {
                 relationType: type,
@@ -62381,7 +63612,7 @@ var Editorvue_type_script_lang_ts_Editor = /*#__PURE__*/function (_Vue) {
       return this.fieldGroups.map(function (fieldGroup) {
         return _objectSpread2(_objectSpread2({}, fieldGroup), {}, {
           fields: fieldGroup.fields.filter(function (field) {
-            return field.value != field.initialValue;
+            return field.value != field.valueBeforeChanges;
           })
         });
       }).filter(function (fieldGroup) {
@@ -62404,12 +63635,12 @@ var Editorvue_type_script_lang_ts_Editor = /*#__PURE__*/function (_Vue) {
           return relation.id;
         });
         this.diagram.activeDiagram.data.remove({
-          entityIds: [entityId],
-          relationIds: connectedRelationIds
+          entities: [entityId],
+          relations: connectedRelationIds
         });
       } else {
         this.diagram.activeDiagram.data.remove({
-          relationIds: [this.object.id]
+          relations: [this.object.id]
         });
       }
 
@@ -62450,8 +63681,7 @@ var Editorvue_type_script_lang_ts_Editor = /*#__PURE__*/function (_Vue) {
       }
 
       if (this.object.isEntity) {
-        this.diagram.activeDiagram.data.commitChange({
-          type: 'edit',
+        this.diagram.activeDiagram.data.edit({
           entities: [{
             id: id,
             data: newData,
@@ -62459,8 +63689,7 @@ var Editorvue_type_script_lang_ts_Editor = /*#__PURE__*/function (_Vue) {
           }]
         });
       } else {
-        this.diagram.activeDiagram.data.commitChange({
-          type: 'edit',
+        this.diagram.activeDiagram.data.edit({
           relations: [{
             id: id,
             data: newData,
@@ -62474,19 +63703,18 @@ var Editorvue_type_script_lang_ts_Editor = /*#__PURE__*/function (_Vue) {
   }, {
     key: "onObjectChanged",
     value: function onObjectChanged() {
-      var diagram = this.diagram,
-          object = this.object;
+      var object = this.object;
 
       var createField = function createField(options) {
-        var _options$initialValue, _options$initialValue2, _options$value;
+        var _options$initialValue, _options$initialValue2;
 
         return {
           id: options.id,
           title: options.title,
           dataKey: options.dataKey,
           styleKey: options.styleKey,
-          initialValue: (_options$initialValue = options.initialValue) !== null && _options$initialValue !== void 0 ? _options$initialValue : options.value,
-          initialValueLabel: (_options$initialValue2 = options.initialValueLabel) !== null && _options$initialValue2 !== void 0 ? _options$initialValue2 : "".concat((_options$value = options.value) !== null && _options$value !== void 0 ? _options$value : ''),
+          initialValue: options.initialValue,
+          initialValueLabel: (_options$initialValue = options.initialValueLabel) !== null && _options$initialValue !== void 0 ? _options$initialValue : "".concat((_options$initialValue2 = options.initialValue) !== null && _options$initialValue2 !== void 0 ? _options$initialValue2 : ''),
           value: options.value,
           resetValue: options.resetValue
         };
@@ -62511,7 +63739,7 @@ var Editorvue_type_script_lang_ts_Editor = /*#__PURE__*/function (_Vue) {
           type: 'radio-buttons',
           options: options.options,
           initialValueLabel: (_options$initialValue3 = options.initialValueLabel) !== null && _options$initialValue3 !== void 0 ? _options$initialValue3 : (_options$options$find = options.options.find(function (o) {
-            return o.value === options.value;
+            return o.value === options.initialValue;
           })) === null || _options$options$find === void 0 ? void 0 : _options$options$find.label
         });
       };
@@ -62549,36 +63777,37 @@ var Editorvue_type_script_lang_ts_Editor = /*#__PURE__*/function (_Vue) {
 
           try {
             for (_iterator7.s(); !(_step7 = _iterator7.n()).done;) {
-              var _field = _step7.value;
-              if (!_field.active) continue;
+              var _field2$getValue, _field2$getInitialVal, _field2$getValue2, _field2$getInitialVal2;
+
+              var _field2 = _step7.value;
+              if (!_field2.active) continue;
               var baseField = {
-                id: _field.fullId,
-                title: _field.title,
-                dataKey: _field.dataKey,
-                value: object.getFieldValue(_field)
+                id: _field2.fullId,
+                title: _field2.title,
+                dataKey: _field2.dataKey,
+                value: (_field2$getValue = _field2.getValue(object.data)) !== null && _field2$getValue !== void 0 ? _field2$getValue : (_field2$getInitialVal = _field2.getInitialValue) === null || _field2$getInitialVal === void 0 ? void 0 : _field2$getInitialVal.call(_field2, object.data),
+                initialValue: (_field2$getValue2 = _field2.getValue(object.initialState.data)) !== null && _field2$getValue2 !== void 0 ? _field2$getValue2 : (_field2$getInitialVal2 = _field2.getInitialValue) === null || _field2$getInitialVal2 === void 0 ? void 0 : _field2$getInitialVal2.call(_field2, object.initialState.data)
               };
               var newField = void 0;
 
-              switch (_field.type) {
+              switch (_field2.type) {
                 case 'text':
                   {
+                    var _baseField$value, _baseField$initialVal;
+
+                    baseField.value = "".concat((_baseField$value = baseField.value) !== null && _baseField$value !== void 0 ? _baseField$value : '');
+                    baseField.initialValue = "".concat((_baseField$initialVal = baseField.initialValue) !== null && _baseField$initialVal !== void 0 ? _baseField$initialVal : '');
                     newField = createTextField(baseField);
                     break;
                   }
 
                 case 'boolean':
                   {
+                    baseField.value = !!baseField.value;
+                    baseField.initialValue = !!baseField.initialValue;
                     newField = createBooleanField(baseField);
                     break;
                   }
-                // case 'radio-buttons': {
-                //   // TODO
-                //   newField = createRadioField({
-                //     ...baseField,
-                //     options: [],
-                //   })
-                //   break
-                // }
               }
 
               fields.push(newField);
@@ -62609,6 +63838,7 @@ var Editorvue_type_script_lang_ts_Editor = /*#__PURE__*/function (_Vue) {
 
         return {
           value: (_object$style$prop = object.style[prop]) !== null && _object$style$prop !== void 0 ? _object$style$prop : object.type.style[prop],
+          initialValue: object.type.style[prop],
           resetValue: object.type.style[prop]
         };
       }
@@ -62647,14 +63877,14 @@ var Editorvue_type_script_lang_ts_Editor = /*#__PURE__*/function (_Vue) {
         }, getStyleValues(object, 'borderWidth'))));
       } else {
         styleFields.push(createBooleanField(_objectSpread2({
-          id: 'arrowFrom',
-          title: 'Vis pil fra',
-          styleKey: 'arrowFrom'
-        }, getStyleValues(object, 'arrowFrom'))), createBooleanField(_objectSpread2({
           id: 'arrowTo',
           title: 'Vis pil til',
           styleKey: 'arrowTo'
-        }, getStyleValues(object, 'arrowTo'))), createRadioField(_objectSpread2({
+        }, getStyleValues(object, 'arrowTo'))), createBooleanField(_objectSpread2({
+          id: 'arrowFrom',
+          title: 'Vis pil fra',
+          styleKey: 'arrowFrom'
+        }, getStyleValues(object, 'arrowFrom'))), createRadioField(_objectSpread2({
           id: 'lineStyle',
           title: 'Linjetype',
           styleKey: 'lineStyle',
@@ -62668,7 +63898,11 @@ var Editorvue_type_script_lang_ts_Editor = /*#__PURE__*/function (_Vue) {
             label: 'Stiplet',
             value: 'dashed'
           }]
-        }, getStyleValues(object, 'lineStyle'))));
+        }, getStyleValues(object, 'lineStyle'))), createColorField(_objectSpread2({
+          id: 'lineColor',
+          title: 'Linjefarve',
+          styleKey: 'lineColor'
+        }, getStyleValues(object, 'lineColor'))));
       }
 
       if (styleFields.length) fieldGroups.push({
@@ -62677,16 +63911,21 @@ var Editorvue_type_script_lang_ts_Editor = /*#__PURE__*/function (_Vue) {
         fields: styleFields
       });
 
-      for (var _i = 0, _fieldGroups = fieldGroups; _i < _fieldGroups.length; _i++) {
-        var fieldGroup = _fieldGroups[_i];
+      for (var _i = 0, _styleFields = styleFields; _i < _styleFields.length; _i++) {
+        var field = _styleFields[_i];
+        field.initialValue;
+      }
+
+      for (var _i2 = 0, _fieldGroups = fieldGroups; _i2 < _fieldGroups.length; _i2++) {
+        var fieldGroup = _fieldGroups[_i2];
 
         var _iterator6 = _createForOfIteratorHelper(fieldGroup.fields),
             _step6;
 
         try {
           for (_iterator6.s(); !(_step6 = _iterator6.n()).done;) {
-            var field = _step6.value;
-            field.initialValue = field.value;
+            var _field = _step6.value;
+            _field.valueBeforeChanges = _field.value;
           }
         } catch (err) {
           _iterator6.e(err);
@@ -62704,10 +63943,7 @@ var Editorvue_type_script_lang_ts_Editor = /*#__PURE__*/function (_Vue) {
 
 __decorate([Inject()], Editorvue_type_script_lang_ts_Editor.prototype, "diagramVm", void 0);
 
-__decorate([Prop({
-  type: diagram_Diagram,
-  required: true
-})], Editorvue_type_script_lang_ts_Editor.prototype, "diagram", void 0);
+__decorate([Inject()], Editorvue_type_script_lang_ts_Editor.prototype, "diagram", void 0);
 
 __decorate([Prop({
   type: [diagram_Entity, diagram_Relation],
@@ -62757,8 +63993,8 @@ var Editorvue_type_style_index_0_lang_scss_ = __webpack_require__("58d3");
 
 var Editor_component = normalizeComponent(
   components_Editorvue_type_script_lang_ts_,
-  Editorvue_type_template_id_48b2eb1a_render,
-  Editorvue_type_template_id_48b2eb1a_staticRenderFns,
+  Editorvue_type_template_id_70d337e4_render,
+  Editorvue_type_template_id_70d337e4_staticRenderFns,
   false,
   null,
   null,
@@ -62791,10 +64027,7 @@ var Diagramvue_type_script_lang_ts_DiagramVue = /*#__PURE__*/function (_Vue) {
     _classCallCheck(this, DiagramVue);
 
     _this = _super.apply(this, arguments);
-    _this.editor = {
-      show: false,
-      object: null
-    };
+    _this.editorTarget = null;
     _this.dialogs = [];
     return _this;
   }
@@ -62807,28 +64040,15 @@ var Diagramvue_type_script_lang_ts_DiagramVue = /*#__PURE__*/function (_Vue) {
   }, {
     key: "mounted",
     value: function mounted() {
-      this.diagram.eventBus.on('dataUpdated', this.hideEditor);
-    }
-  }, {
-    key: "beforeDestroy",
-    value: function beforeDestroy() {
-      this.diagram.eventBus.off('dataUpdated', this.hideEditor);
-    }
-  }, {
-    key: "showEditor",
-    value: function showEditor(object) {
-      this.editor = {
-        show: true,
-        object: object
-      };
-    }
-  }, {
-    key: "hideEditor",
-    value: function hideEditor() {
-      this.editor = {
-        show: false,
-        object: null
-      };
+      var _this2 = this;
+
+      this.diagram.eventBus.on('editor.open', function (_ref) {
+        var target = _ref.target;
+        return _this2.editorTarget = target;
+      });
+      this.diagram.eventBus.on('dataUpdated', function () {
+        return _this2.editorTarget = null;
+      });
     }
   }, {
     key: "showDialog",
@@ -62845,7 +64065,7 @@ var Diagramvue_type_script_lang_ts_DiagramVue = /*#__PURE__*/function (_Vue) {
 
 __decorate([Provide('diagramVm')], Diagramvue_type_script_lang_ts_DiagramVue.prototype, "diagramVm", null);
 
-__decorate([Prop({
+__decorate([Provide('diagram'), Prop({
   type: diagram_Diagram,
   required: true
 })], Diagramvue_type_script_lang_ts_DiagramVue.prototype, "diagram", void 0);
@@ -62875,7 +64095,7 @@ var Diagramvue_type_style_index_0_lang_scss_ = __webpack_require__("034b");
 
 var Diagram_component = normalizeComponent(
   components_Diagramvue_type_script_lang_ts_,
-  Diagramvue_type_template_id_78bf0c58_render,
+  Diagramvue_type_template_id_00667149_render,
   staticRenderFns,
   false,
   null,
@@ -62885,6 +64105,767 @@ var Diagram_component = normalizeComponent(
 )
 
 /* harmony default export */ var components_Diagram = (Diagram_component.exports);
+// CONCATENATED MODULE: ./src/types/EventBus.ts
+
+
+
+
+
+
+
+
+
+
+var EventBus_EventBus = /*#__PURE__*/function () {
+  function EventBus() {
+    _classCallCheck(this, EventBus);
+
+    this.handlers = {};
+  }
+
+  _createClass(EventBus, [{
+    key: "getHandlers",
+    value: function getHandlers(name) {
+      var _this$handlers, _this$handlers$name;
+
+      return (_this$handlers$name = (_this$handlers = this.handlers)[name]) !== null && _this$handlers$name !== void 0 ? _this$handlers$name : _this$handlers[name] = new Set();
+    }
+  }, {
+    key: "on",
+    value: function on(names, handler) {
+      var _this = this;
+
+      var _iterator = _createForOfIteratorHelper(Array.isArray(names) ? names : [names]),
+          _step;
+
+      try {
+        for (_iterator.s(); !(_step = _iterator.n()).done;) {
+          var name = _step.value;
+          this.getHandlers(name).add(handler);
+        }
+      } catch (err) {
+        _iterator.e(err);
+      } finally {
+        _iterator.f();
+      }
+
+      return function () {
+        return _this.off(names, handler);
+      };
+    }
+  }, {
+    key: "off",
+    value: function off(names, handler) {
+      var _iterator2 = _createForOfIteratorHelper(Array.isArray(names) ? names : [names]),
+          _step2;
+
+      try {
+        for (_iterator2.s(); !(_step2 = _iterator2.n()).done;) {
+          var name = _step2.value;
+          this.getHandlers(name).delete(handler);
+        }
+      } catch (err) {
+        _iterator2.e(err);
+      } finally {
+        _iterator2.f();
+      }
+    }
+  }, {
+    key: "emit",
+    value: function emit(event) {
+      console.log("Emitted event: ".concat(event.name));
+
+      var _iterator3 = _createForOfIteratorHelper(this.getHandlers(event.name)),
+          _step3;
+
+      try {
+        for (_iterator3.s(); !(_step3 = _iterator3.n()).done;) {
+          var handler = _step3.value;
+          handler(event);
+        }
+      } catch (err) {
+        _iterator3.e(err);
+      } finally {
+        _iterator3.f();
+      }
+    }
+  }]);
+
+  return EventBus;
+}();
+
+/* harmony default export */ var types_EventBus = (EventBus_EventBus);
+// CONCATENATED MODULE: ./src/types/DiagramEventBus.ts
+
+
+
+
+
+var DiagramEventBus_DiagramEventBus = /*#__PURE__*/function (_EventBus) {
+  _inherits(DiagramEventBus, _EventBus);
+
+  var _super = _createSuper(DiagramEventBus);
+
+  function DiagramEventBus() {
+    _classCallCheck(this, DiagramEventBus);
+
+    return _super.apply(this, arguments);
+  }
+
+  return DiagramEventBus;
+}(types_EventBus);
+
+
+// EXTERNAL MODULE: ./node_modules/core-js/modules/es.array.splice.js
+var es_array_splice = __webpack_require__("a434");
+
+// CONCATENATED MODULE: ./src/util/revertible-object-manipulation.ts
+
+
+function isObject(value) {
+  var type = _typeof(value);
+
+  return value != null && (type === 'object' || type === 'function');
+}
+/**
+ * Merges source object into target object and returns a revert function.
+ */
+
+
+function merge(target, source) {
+  if (!isObject(target)) throw Error("target (".concat(target, ") is not an object"));
+  if (!isObject(source)) throw Error("source (".concat(source, ") is not an object"));
+  if (target === source) return function () {};
+  var reverters = [];
+
+  var commit = function commit(revert) {
+    return reverters.unshift(revert);
+  };
+
+  for (var key in source) {
+    var targetValue = target[key];
+    var sourceValue = source[key];
+
+    if (isObject(sourceValue)) {
+      if (isObject(targetValue)) {
+        commit(merge(targetValue, sourceValue));
+      } else {
+        commit(set(target, key, sourceValue));
+      }
+    } else {
+      commit(set(target, key, sourceValue));
+    }
+  }
+
+  return function () {
+    return reverters.forEach(function (revert) {
+      return revert();
+    });
+  };
+}
+/**
+ * Sets the value of an object property and returns a revert function.
+ */
+
+function set(object, key, value) {
+  if (!isObject(object)) throw Error("(".concat(object, ") is not an object"));
+  var oldValue = object[key];
+  object[key] = value;
+  return function () {
+    return object[key] = oldValue;
+  };
+}
+// CONCATENATED MODULE: ./src/types/DiagramData.ts
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var DiagramData_DiagramData = /*#__PURE__*/function () {
+  function DiagramData(diagram, options) {
+    var _this = this;
+
+    _classCallCheck(this, DiagramData);
+
+    this.initialData = {
+      entities: [],
+      relations: [],
+      changes: []
+    };
+    this.changes = [];
+    this.undoneChanges = [];
+    this.entitiesMap = new Map();
+    this.entities = [];
+    this.relationsMap = new Map();
+    this.relations = [];
+    this.diagram = diagram;
+
+    if (options) {
+      var _options$data$entitie, _options$data, _options$data$entitie2, _options$data$relatio, _options$data2, _options$data2$relati, _options$changes;
+
+      this.initialData = {
+        entities: (_options$data$entitie = (_options$data = options.data) === null || _options$data === void 0 ? void 0 : (_options$data$entitie2 = _options$data.entities) === null || _options$data$entitie2 === void 0 ? void 0 : _options$data$entitie2.map(function (item) {
+          return new diagram_Entity(_this.diagram, item);
+        })) !== null && _options$data$entitie !== void 0 ? _options$data$entitie : [],
+        relations: (_options$data$relatio = (_options$data2 = options.data) === null || _options$data2 === void 0 ? void 0 : (_options$data2$relati = _options$data2.relations) === null || _options$data2$relati === void 0 ? void 0 : _options$data2$relati.map(function (item) {
+          return new diagram_Relation(_this.diagram, item);
+        })) !== null && _options$data$relatio !== void 0 ? _options$data$relatio : [],
+        changes: (_options$changes = options.changes) !== null && _options$changes !== void 0 ? _options$changes : []
+      };
+      this.entitiesMap.clear();
+
+      this._addEntities(this.initialData.entities);
+
+      this.relationsMap.clear();
+
+      this._addRelations(this.initialData.relations);
+
+      var _iterator = _createForOfIteratorHelper(this.initialData.changes),
+          _step;
+
+      try {
+        for (_iterator.s(); !(_step = _iterator.n()).done;) {
+          var change = _step.value;
+          this.commitChange(change, true);
+        }
+      } catch (err) {
+        _iterator.e(err);
+      } finally {
+        _iterator.f();
+      }
+    }
+  }
+
+  _createClass(DiagramData, [{
+    key: "canUndo",
+    get: function get() {
+      return this.changes.length > 0;
+    }
+  }, {
+    key: "canRedo",
+    get: function get() {
+      return this.undoneChanges.length > 0;
+    }
+  }, {
+    key: "add",
+    value: function add(options) {
+      this.commitChange({
+        add: {
+          entities: options.entities,
+          relations: options.relations
+        }
+      });
+    }
+  }, {
+    key: "remove",
+    value: function remove(options) {
+      this.commitChange({
+        remove: {
+          entities: options.entities,
+          relations: options.relations
+        }
+      });
+    }
+  }, {
+    key: "edit",
+    value: function edit(options) {
+      this.commitChange({
+        edit: {
+          entities: options.entities,
+          relations: options.relations
+        }
+      });
+    }
+  }, {
+    key: "commitChange",
+    value: function commitChange(change) {
+      var isInitial = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
+
+      var compiledChange = this._compileChange(change);
+
+      if (compiledChange.apply(!isInitial) == false) return;
+
+      if (!isInitial) {
+        this.changes.push(compiledChange);
+        this.undoneChanges = [];
+      }
+    }
+  }, {
+    key: "undo",
+    value: function undo() {
+      var trackEvents = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : true;
+      var lastChange = this.changes.pop();
+      if (!lastChange) return;
+      lastChange.revert(trackEvents);
+      this.undoneChanges.push(lastChange);
+      if (trackEvents) this.diagram.eventBus.emit({
+        name: 'undo'
+      });
+    }
+  }, {
+    key: "redo",
+    value: function redo() {
+      var trackEvents = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : true;
+      var lastUndoneChange = this.undoneChanges.pop();
+      if (!lastUndoneChange) return;
+      lastUndoneChange.apply(trackEvents);
+      this.changes.push(lastUndoneChange);
+      if (trackEvents) this.diagram.eventBus.emit({
+        name: 'redo'
+      });
+    }
+  }, {
+    key: "reset",
+    value: function reset() {
+      while (this.canUndo) {
+        this.undo(false);
+      }
+
+      this.changes = [];
+      this.undoneChanges = [];
+    }
+  }, {
+    key: "_compileChange",
+    value: function _compileChange(change) {
+      var _this2 = this;
+
+      var applied = false;
+      var applyFns = [];
+      var revertFns = [];
+
+      if (change.add) {
+        var addition = change.add;
+        applyFns.push(function () {
+          var _addition$entities, _addition$relations, _addition$entities2, _addition$relations2;
+
+          addition.entities = (_addition$entities = addition.entities) === null || _addition$entities === void 0 ? void 0 : _addition$entities.filter(function (e) {
+            return !_this2.entitiesMap.has(e.id);
+          });
+          addition.relations = (_addition$relations = addition.relations) === null || _addition$relations === void 0 ? void 0 : _addition$relations.filter(function (r) {
+            return !_this2.relationsMap.has(r.id);
+          });
+          var entities = DiagramData_mapThrowable((_addition$entities2 = addition.entities) !== null && _addition$entities2 !== void 0 ? _addition$entities2 : [], function (entity) {
+            return new diagram_Entity(_this2.diagram, entity);
+          });
+          var relations = DiagramData_mapThrowable((_addition$relations2 = addition.relations) !== null && _addition$relations2 !== void 0 ? _addition$relations2 : [], function (relation) {
+            return new diagram_Relation(_this2.diagram, relation);
+          }); // Cancel if nothing to add
+
+          if (!entities.length && !relations.length) return false;
+          if (entities.length) _this2._addEntities(entities);
+          if (relations.length) _this2._addRelations(relations);
+          revertFns.push(function () {
+            if (entities.length) _this2._removeEntities(entities);
+            if (relations.length) _this2._removeRelations(relations);
+          });
+        });
+      }
+
+      if (change.remove) {
+        var removal = change.remove;
+        applyFns.push(function () {
+          var _removal$entities, _removal$relations;
+
+          var entities = [];
+          var relations = [];
+
+          var _iterator2 = _createForOfIteratorHelper((_removal$entities = removal.entities) !== null && _removal$entities !== void 0 ? _removal$entities : []),
+              _step2;
+
+          try {
+            for (_iterator2.s(); !(_step2 = _iterator2.n()).done;) {
+              var id = _step2.value;
+
+              var entity = _this2.entitiesMap.get(id);
+
+              if (entity) {
+                entities.push(entity);
+              }
+            }
+          } catch (err) {
+            _iterator2.e(err);
+          } finally {
+            _iterator2.f();
+          }
+
+          var _iterator3 = _createForOfIteratorHelper((_removal$relations = removal.relations) !== null && _removal$relations !== void 0 ? _removal$relations : []),
+              _step3;
+
+          try {
+            for (_iterator3.s(); !(_step3 = _iterator3.n()).done;) {
+              var _id = _step3.value;
+
+              var relation = _this2.relationsMap.get(_id);
+
+              if (relation) {
+                relations.push(relation);
+              }
+            }
+          } catch (err) {
+            _iterator3.e(err);
+          } finally {
+            _iterator3.f();
+          }
+
+          removal.entities = removal.entities && entities.map(function (e) {
+            return e.id;
+          });
+          removal.relations = removal.relations && relations.map(function (r) {
+            return r.id;
+          }); // Cancel if nothing to remove
+
+          if (!entities.length && !relations.length) return false;
+          if (entities.length) _this2._removeEntities(entities);
+          if (relations.length) _this2._removeRelations(relations);
+          revertFns.push(function () {
+            if (entities.length) _this2._addEntities(entities);
+            if (relations.length) _this2._addRelations(relations);
+          });
+        });
+      }
+
+      if (change.edit) {
+        var edit = change.edit;
+        applyFns.push(function () {
+          var _edit$entities, _edit$relations;
+
+          // These will replace change.entities and change.relations, so unused edits are removed
+          var entityEdits = edit.entities && [];
+          var relationEdits = edit.relations && [];
+          var reverters = [];
+
+          var _iterator4 = _createForOfIteratorHelper((_edit$entities = edit.entities) !== null && _edit$entities !== void 0 ? _edit$entities : []),
+              _step4;
+
+          try {
+            for (_iterator4.s(); !(_step4 = _iterator4.n()).done;) {
+              var _entityEdit$data, _entityEdit$style;
+
+              var entityEdit = _step4.value;
+
+              var entity = _this2.entitiesMap.get(entityEdit.id);
+
+              if (!entity) continue;
+              entityEdits === null || entityEdits === void 0 ? void 0 : entityEdits.push(entityEdit);
+              reverters.push(merge(entity, {
+                data: (_entityEdit$data = entityEdit.data) !== null && _entityEdit$data !== void 0 ? _entityEdit$data : {},
+                style: (_entityEdit$style = entityEdit.style) !== null && _entityEdit$style !== void 0 ? _entityEdit$style : {}
+              }));
+            }
+          } catch (err) {
+            _iterator4.e(err);
+          } finally {
+            _iterator4.f();
+          }
+
+          var _iterator5 = _createForOfIteratorHelper((_edit$relations = edit.relations) !== null && _edit$relations !== void 0 ? _edit$relations : []),
+              _step5;
+
+          try {
+            for (_iterator5.s(); !(_step5 = _iterator5.n()).done;) {
+              var _relationEdit$data, _relationEdit$style;
+
+              var relationEdit = _step5.value;
+
+              var relation = _this2.relationsMap.get(relationEdit.id);
+
+              if (!relation) continue;
+              relationEdits === null || relationEdits === void 0 ? void 0 : relationEdits.push(relationEdit);
+              reverters.push(merge(relation, {
+                data: (_relationEdit$data = relationEdit.data) !== null && _relationEdit$data !== void 0 ? _relationEdit$data : {},
+                style: (_relationEdit$style = relationEdit.style) !== null && _relationEdit$style !== void 0 ? _relationEdit$style : {}
+              }));
+            }
+          } catch (err) {
+            _iterator5.e(err);
+          } finally {
+            _iterator5.f();
+          }
+
+          edit.entities = entityEdits;
+          edit.relations = relationEdits; // Cancel if nothing was edited
+
+          if (!reverters.length) return false;
+          revertFns.push.apply(revertFns, reverters);
+        });
+      }
+
+      if (change.layout) {
+        var _this$diagram$layouts;
+
+        var layoutId = change.layout;
+        var oldLayout = this.diagram.activeDiagram.settings.activeLayout;
+        var newLayout = (_this$diagram$layouts = this.diagram.layouts.find(function (layout) {
+          return layout.id === layoutId;
+        })) !== null && _this$diagram$layouts !== void 0 ? _this$diagram$layouts : null;
+        applyFns.push(function () {
+          if (!newLayout) return false;
+          _this2.diagram.activeDiagram.settings.activeLayout = newLayout;
+          revertFns.push(function () {
+            _this2.diagram.activeDiagram.settings.activeLayout = oldLayout;
+          });
+        });
+      }
+
+      if (change.moveEntities) {
+        var moveEntities = change.moveEntities;
+        applyFns.push(function () {
+          var reverters = [];
+
+          var _iterator6 = _createForOfIteratorHelper(moveEntities),
+              _step6;
+
+          try {
+            for (_iterator6.s(); !(_step6 = _iterator6.n()).done;) {
+              var _step6$value = _step6.value,
+                  id = _step6$value.id,
+                  x = _step6$value.x,
+                  y = _step6$value.y;
+
+              var entity = _this2.entitiesMap.get(id);
+
+              if (!entity) continue;
+              reverters.push(merge(entity, {
+                position: {
+                  x: x,
+                  y: y
+                }
+              }));
+            } // Cancel if nothing was changed
+
+          } catch (err) {
+            _iterator6.e(err);
+          } finally {
+            _iterator6.f();
+          }
+
+          if (!reverters.length) return false;
+          revertFns.push.apply(revertFns, reverters);
+        });
+      }
+
+      return {
+        change: change,
+        apply: function apply() {
+          var trackEvents = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : true;
+
+          if (applied) {
+            console.warn('change.apply() was called after change was already applied');
+            return false;
+          }
+
+          applied = true;
+          var success = true;
+
+          var _iterator7 = _createForOfIteratorHelper(applyFns),
+              _step7;
+
+          try {
+            for (_iterator7.s(); !(_step7 = _iterator7.n()).done;) {
+              var fn = _step7.value;
+
+              if (fn() === false) {
+                success = false;
+              }
+            }
+          } catch (err) {
+            _iterator7.e(err);
+          } finally {
+            _iterator7.f();
+          }
+
+          if (trackEvents) {
+            _this2.diagram.eventBus.emit({
+              name: 'dataUpdated'
+            });
+
+            if (change.layout) {
+              _this2.diagram.eventBus.emit({
+                name: 'settingsChanged'
+              });
+
+              _this2.diagram.eventBus.emit({
+                name: 'graph.fit'
+              });
+            }
+          }
+
+          return success;
+        },
+        revert: function revert() {
+          var trackEvents = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : true;
+
+          if (!applied) {
+            console.warn('change.revert() was called before change was applied');
+            return;
+          }
+
+          applied = false;
+
+          var _iterator8 = _createForOfIteratorHelper([].concat(revertFns).reverse()),
+              _step8;
+
+          try {
+            for (_iterator8.s(); !(_step8 = _iterator8.n()).done;) {
+              var fn = _step8.value;
+              fn();
+            }
+          } catch (err) {
+            _iterator8.e(err);
+          } finally {
+            _iterator8.f();
+          }
+
+          revertFns.splice(0);
+
+          if (trackEvents) {
+            _this2.diagram.eventBus.emit({
+              name: 'dataUpdated'
+            });
+
+            if (change.layout) {
+              _this2.diagram.eventBus.emit({
+                name: 'settingsChanged'
+              });
+
+              _this2.diagram.eventBus.emit({
+                name: 'graph.fit'
+              });
+            }
+          }
+        }
+      };
+    }
+  }, {
+    key: "_addEntities",
+    value: function _addEntities(entities) {
+      var _iterator9 = _createForOfIteratorHelper(entities),
+          _step9;
+
+      try {
+        for (_iterator9.s(); !(_step9 = _iterator9.n()).done;) {
+          var entity = _step9.value;
+          this.entitiesMap.set(entity.id, entity);
+        }
+      } catch (err) {
+        _iterator9.e(err);
+      } finally {
+        _iterator9.f();
+      }
+
+      this._updateEntitiesArray();
+    }
+  }, {
+    key: "_addRelations",
+    value: function _addRelations(relations) {
+      var _iterator10 = _createForOfIteratorHelper(relations),
+          _step10;
+
+      try {
+        for (_iterator10.s(); !(_step10 = _iterator10.n()).done;) {
+          var relation = _step10.value;
+          this.relationsMap.set(relation.id, relation);
+        }
+      } catch (err) {
+        _iterator10.e(err);
+      } finally {
+        _iterator10.f();
+      }
+
+      this._updateRelationsArray();
+    }
+  }, {
+    key: "_removeEntities",
+    value: function _removeEntities(entities) {
+      var _iterator11 = _createForOfIteratorHelper(entities),
+          _step11;
+
+      try {
+        for (_iterator11.s(); !(_step11 = _iterator11.n()).done;) {
+          var entity = _step11.value;
+          this.entitiesMap.delete(entity.id);
+        }
+      } catch (err) {
+        _iterator11.e(err);
+      } finally {
+        _iterator11.f();
+      }
+
+      this._updateEntitiesArray();
+    }
+  }, {
+    key: "_removeRelations",
+    value: function _removeRelations(relations) {
+      var _iterator12 = _createForOfIteratorHelper(relations),
+          _step12;
+
+      try {
+        for (_iterator12.s(); !(_step12 = _iterator12.n()).done;) {
+          var relation = _step12.value;
+          this.relationsMap.delete(relation.id);
+        }
+      } catch (err) {
+        _iterator12.e(err);
+      } finally {
+        _iterator12.f();
+      }
+
+      this._updateRelationsArray();
+    }
+  }, {
+    key: "_updateEntitiesArray",
+    value: function _updateEntitiesArray() {
+      this.entities = toConsumableArray_toConsumableArray(this.entitiesMap.values());
+    }
+  }, {
+    key: "_updateRelationsArray",
+    value: function _updateRelationsArray() {
+      this.relations = toConsumableArray_toConsumableArray(this.relationsMap.values());
+    }
+  }]);
+
+  return DiagramData;
+}(); // Map an array and skip items that throw an exception.
+
+
+
+
+var DiagramData_mapThrowable = function mapThrowable(items, transformer) {
+  var result = [];
+
+  var _iterator13 = _createForOfIteratorHelper(items),
+      _step13;
+
+  try {
+    for (_iterator13.s(); !(_step13 = _iterator13.n()).done;) {
+      var item = _step13.value;
+
+      try {
+        result.push(transformer(item));
+      } catch (e) {
+        continue;
+      }
+    }
+  } catch (err) {
+    _iterator13.e(err);
+  } finally {
+    _iterator13.f();
+  }
+
+  return result;
+};
 // EXTERNAL MODULE: ./node_modules/core-js/modules/es.string.split.js
 var es_string_split = __webpack_require__("1276");
 
@@ -62932,6 +64913,10 @@ function setDeep(obj, path, value) {
   var targetProp = path[path.length - 1];
   targetParent[targetProp] = value;
 }
+// EXTERNAL MODULE: ./node_modules/lodash.clonedeep/index.js
+var lodash_clonedeep = __webpack_require__("cd3f");
+var lodash_clonedeep_default = /*#__PURE__*/__webpack_require__.n(lodash_clonedeep);
+
 // CONCATENATED MODULE: ./src/example.ts
 
 
@@ -63930,6 +65915,7 @@ var exampleData = {
 
 
 
+
 var diagram_Diagram = /*#__PURE__*/function () {
   function Diagram(config) {
     var _config$entityTypes,
@@ -63982,12 +65968,12 @@ var diagram_Diagram = /*#__PURE__*/function () {
       this.enableSaving = true;
 
       if (!config.enableEditing) {
-        console.warn('Cannot enable saving, without enabling editing.');
+        console.warn('Cannot enable saving without enabling editing.');
         this.enableSaving = false;
       }
 
       if (!((_config$methods3 = config.methods) !== null && _config$methods3 !== void 0 && _config$methods3.saveDiagram)) {
-        console.warn('Cannot enable saving, without providing a saveDiagram method.');
+        console.warn('Cannot enable saving without providing a saveDiagram method.');
         this.enableSaving = false;
       }
     }
@@ -63996,7 +65982,7 @@ var diagram_Diagram = /*#__PURE__*/function () {
       this.enableSharing = true;
 
       if (!config.enableSaving) {
-        console.warn('Cannot enable sharing, without enabling saving.');
+        console.warn('Cannot enable sharing without enabling saving.');
         this.enableSharing = false;
       }
     }
@@ -64066,7 +66052,17 @@ var diagram_Diagram = /*#__PURE__*/function () {
       parents: 10,
       children: 10
     }).then(function (data) {
-      _this.setActiveDiagram(new diagram_ActiveDiagram(_this, data));
+      requestAnimationFrame(function () {
+        _this.setActiveDiagram(new diagram_ActiveDiagram(_this, {
+          data: new DiagramData_DiagramData(_this, {
+            data: data
+          })
+        })); // this.eventBus.emit({
+        //   name: 'graph.initialLayout',
+        //   layout: this.activeDiagram.settings.activeLayout ?? undefined,
+        // })
+
+      });
     });
     this.eventBus.on(['dataUpdated', 'settingsChanged'], function () {
       _this.hasUnsavedChanges = true;
@@ -64101,6 +66097,9 @@ var diagram_Diagram = /*#__PURE__*/function () {
     value: function setActiveDiagram(activeDiagram) {
       this.activeDiagram = activeDiagram;
       this.hasUnsavedChanges = false;
+      this.eventBus.emit({
+        name: 'settingsChanged'
+      });
     }
   }, {
     key: "save",
@@ -64147,20 +66146,20 @@ var diagram_Diagram = /*#__PURE__*/function () {
   }, {
     key: "load",
     value: function load(savedDiagram) {
-      var _savedDiagram$title, _savedDiagram$descrip, _savedDiagram$shared;
-
-      var activeDiagram = new diagram_ActiveDiagram(this);
-      var settings = activeDiagram.settings;
-      activeDiagram.id = savedDiagram.id;
-      activeDiagram.title = (_savedDiagram$title = savedDiagram.title) !== null && _savedDiagram$title !== void 0 ? _savedDiagram$title : '';
-      activeDiagram.description = (_savedDiagram$descrip = savedDiagram.description) !== null && _savedDiagram$descrip !== void 0 ? _savedDiagram$descrip : '';
-      activeDiagram.shared = (_savedDiagram$shared = savedDiagram.shared) !== null && _savedDiagram$shared !== void 0 ? _savedDiagram$shared : false;
-      activeDiagram.data = new DiagramData_DiagramData(this, {
-        data: savedDiagram.data,
-        changes: savedDiagram.changes
+      var activeDiagram = new diagram_ActiveDiagram(this, {
+        id: savedDiagram.id,
+        title: savedDiagram.title,
+        description: savedDiagram.description,
+        shared: savedDiagram.shared,
+        data: new DiagramData_DiagramData(this, {
+          data: savedDiagram.data,
+          changes: savedDiagram.changes
+        })
       });
 
       if (savedDiagram.settings) {
+        var settings = activeDiagram.settings;
+
         if (savedDiagram.settings.activeFields) {
           for (var id in settings.activeFields) {
             settings.activeFields[id] = false;
@@ -64237,18 +66236,18 @@ var diagram_Diagram = /*#__PURE__*/function () {
 
 
 var diagram_ActiveDiagram = /*#__PURE__*/function () {
-  function ActiveDiagram(diagram, data) {
+  function ActiveDiagram(diagram, options) {
+    var _options$id, _options$title, _options$description, _options$shared, _options$data, _options$settings;
+
     _classCallCheck(this, ActiveDiagram);
 
-    this.id = '';
-    this.title = '';
-    this.description = '';
-    this.shared = false;
     this.diagram = diagram;
-    this.data = new DiagramData_DiagramData(diagram, {
-      data: data
-    });
-    this.settings = new diagram_Settings(diagram);
+    this.id = (_options$id = options === null || options === void 0 ? void 0 : options.id) !== null && _options$id !== void 0 ? _options$id : '';
+    this.title = (_options$title = options === null || options === void 0 ? void 0 : options.title) !== null && _options$title !== void 0 ? _options$title : '';
+    this.description = (_options$description = options === null || options === void 0 ? void 0 : options.description) !== null && _options$description !== void 0 ? _options$description : '';
+    this.shared = (_options$shared = options === null || options === void 0 ? void 0 : options.shared) !== null && _options$shared !== void 0 ? _options$shared : false;
+    this.data = (_options$data = options === null || options === void 0 ? void 0 : options.data) !== null && _options$data !== void 0 ? _options$data : new DiagramData_DiagramData(diagram);
+    this.settings = (_options$settings = options === null || options === void 0 ? void 0 : options.settings) !== null && _options$settings !== void 0 ? _options$settings : new diagram_Settings(diagram);
   }
 
   _createClass(ActiveDiagram, [{
@@ -64408,7 +66407,7 @@ var diagram_EntityType = function EntityType(options) {
   };
 };
 var diagram_RelationType = function RelationType(options) {
-  var _options$style$arrowF, _options$style6, _options$style$arrowT, _options$style7, _options$style$lineSt, _options$style8;
+  var _options$style$arrowF, _options$style6, _options$style$arrowT, _options$style7, _options$style$arrowS, _options$style8, _options$style$lineWi, _options$style9, _options$style$lineSt, _options$style10, _options$style$lineCo, _options$style11;
 
   _classCallCheck(this, RelationType);
 
@@ -64419,7 +66418,10 @@ var diagram_RelationType = function RelationType(options) {
   this.style = {
     arrowFrom: (_options$style$arrowF = (_options$style6 = options.style) === null || _options$style6 === void 0 ? void 0 : _options$style6.arrowFrom) !== null && _options$style$arrowF !== void 0 ? _options$style$arrowF : false,
     arrowTo: (_options$style$arrowT = (_options$style7 = options.style) === null || _options$style7 === void 0 ? void 0 : _options$style7.arrowTo) !== null && _options$style$arrowT !== void 0 ? _options$style$arrowT : true,
-    lineStyle: (_options$style$lineSt = (_options$style8 = options.style) === null || _options$style8 === void 0 ? void 0 : _options$style8.lineStyle) !== null && _options$style$lineSt !== void 0 ? _options$style$lineSt : 'solid'
+    arrowSize: (_options$style$arrowS = (_options$style8 = options.style) === null || _options$style8 === void 0 ? void 0 : _options$style8.arrowSize) !== null && _options$style$arrowS !== void 0 ? _options$style$arrowS : 6,
+    lineWidth: (_options$style$lineWi = (_options$style9 = options.style) === null || _options$style9 === void 0 ? void 0 : _options$style9.lineWidth) !== null && _options$style$lineWi !== void 0 ? _options$style$lineWi : 4,
+    lineStyle: (_options$style$lineSt = (_options$style10 = options.style) === null || _options$style10 === void 0 ? void 0 : _options$style10.lineStyle) !== null && _options$style$lineSt !== void 0 ? _options$style$lineSt : 'solid',
+    lineColor: (_options$style$lineCo = (_options$style11 = options.style) === null || _options$style11 === void 0 ? void 0 : _options$style11.lineColor) !== null && _options$style$lineCo !== void 0 ? _options$style$lineCo : '#d8d8d8'
   };
   this.supports = options.supports.map(function (r) {
     return new diagram_RelationTypeSupport(r);
@@ -64436,7 +66438,7 @@ var diagram_RelationTypeSupport = function RelationTypeSupport(options) {
 };
 var diagram_Entity = /*#__PURE__*/function () {
   function Entity(diagram, options) {
-    var _options$data, _options$style9;
+    var _cloneDeep, _cloneDeep2;
 
     _classCallCheck(this, Entity);
 
@@ -64445,9 +66447,14 @@ var diagram_Entity = /*#__PURE__*/function () {
     this.diagram = diagram;
     this.type = diagram.entityTypes.get(options.type);
     this.id = options.id;
-    this.position = options.position && _objectSpread2({}, options.position);
-    this.data = _objectSpread2({}, (_options$data = options.data) !== null && _options$data !== void 0 ? _options$data : {});
-    this.style = _objectSpread2({}, (_options$style9 = options.style) !== null && _options$style9 !== void 0 ? _options$style9 : {});
+    this.initialState = {
+      position: lodash_clonedeep_default()(options.position),
+      data: (_cloneDeep = lodash_clonedeep_default()(options.data)) !== null && _cloneDeep !== void 0 ? _cloneDeep : {},
+      style: (_cloneDeep2 = lodash_clonedeep_default()(options.style)) !== null && _cloneDeep2 !== void 0 ? _cloneDeep2 : {}
+    };
+    this.position = lodash_clonedeep_default()(this.initialState.position);
+    this.data = lodash_clonedeep_default()(this.initialState.data);
+    this.style = lodash_clonedeep_default()(this.initialState.style);
   }
 
   _createClass(Entity, [{
@@ -64460,27 +66467,13 @@ var diagram_Entity = /*#__PURE__*/function () {
     get: function get() {
       return this.type.fieldGroups;
     }
-  }, {
-    key: "getFieldValue",
-    value: function getFieldValue(field) {
-      var value = getDeep(this.data, field.dataKey);
-
-      if (value === undefined || value === null) {
-        var _field$getInitialValu;
-
-        value = (_field$getInitialValu = field.getInitialValue) === null || _field$getInitialValu === void 0 ? void 0 : _field$getInitialValu.call(field, this.data);
-        setDeep(this.data, field.dataKey, value);
-      }
-
-      return value;
-    }
   }]);
 
   return Entity;
 }();
 var diagram_Relation = /*#__PURE__*/function () {
   function Relation(diagram, options) {
-    var _options$data2, _options$style10;
+    var _cloneDeep3, _cloneDeep4;
 
     _classCallCheck(this, Relation);
 
@@ -64491,28 +66484,18 @@ var diagram_Relation = /*#__PURE__*/function () {
     this.id = options.id;
     this.from = options.from;
     this.to = options.to;
-    this.data = _objectSpread2({}, (_options$data2 = options.data) !== null && _options$data2 !== void 0 ? _options$data2 : {});
-    this.style = _objectSpread2({}, (_options$style10 = options.style) !== null && _options$style10 !== void 0 ? _options$style10 : {});
+    this.initialState = {
+      data: (_cloneDeep3 = lodash_clonedeep_default()(options.data)) !== null && _cloneDeep3 !== void 0 ? _cloneDeep3 : {},
+      style: (_cloneDeep4 = lodash_clonedeep_default()(options.style)) !== null && _cloneDeep4 !== void 0 ? _cloneDeep4 : {}
+    };
+    this.data = lodash_clonedeep_default()(this.initialState.data);
+    this.style = lodash_clonedeep_default()(this.initialState.style);
   }
 
   _createClass(Relation, [{
     key: "fieldGroups",
     get: function get() {
       return this.type.fieldGroups;
-    }
-  }, {
-    key: "getFieldValue",
-    value: function getFieldValue(field) {
-      var value = getDeep(this.data, field.dataKey);
-
-      if (value === undefined || value === null) {
-        var _field$getInitialValu2;
-
-        value = (_field$getInitialValu2 = field.getInitialValue) === null || _field$getInitialValu2 === void 0 ? void 0 : _field$getInitialValu2.call(field, this.data);
-        setDeep(this.data, field.dataKey, value);
-      }
-
-      return value;
     }
   }]);
 
@@ -64570,6 +66553,11 @@ var diagram_Field = /*#__PURE__*/function () {
       this.diagram.eventBus.emit({
         name: 'activeFieldsChanged'
       });
+    }
+  }, {
+    key: "getValue",
+    value: function getValue(data) {
+      return getDeep(data, this.dataKey);
     }
   }]);
 

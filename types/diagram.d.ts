@@ -4,7 +4,6 @@ import DiagramData, { DiagramDataDefinition } from './types/DiagramData';
 import SavedDiagram from './types/SavedDiagram';
 export default class Diagram {
     static init(config: DiagramConfig): Diagram;
-    container?: HTMLElement;
     element?: Element;
     vm?: Vue;
     eventBus: DiagramEventBus;
@@ -58,7 +57,14 @@ export interface DiagramConfigMethods {
     }) => Promise<DiagramDataDefinition>;
 }
 export declare class ActiveDiagram {
-    constructor(diagram: Diagram, data?: DiagramDataDefinition);
+    constructor(diagram: Diagram, options?: {
+        id?: string;
+        title?: string;
+        description?: string;
+        shared?: boolean;
+        data?: DiagramData;
+        settings?: Settings;
+    });
     diagram: Diagram;
     id: string;
     title: string;
@@ -165,6 +171,7 @@ export declare class Entity {
     readonly isRelation = false;
     type: EntityType;
     id: string;
+    initialState: Pick<Entity, 'position' | 'data' | 'style'>;
     position?: {
         x: number;
         y: number;
@@ -174,7 +181,6 @@ export declare class Entity {
     constructor(diagram: Diagram, options: EntityDefinition);
     get isMainEntity(): boolean;
     get fieldGroups(): FieldGroup[];
-    getFieldValue(field: Field): any;
 }
 export interface EntityDefinition {
     type: string;
@@ -201,11 +207,11 @@ export declare class Relation {
     id: string;
     from: string;
     to: string;
+    initialState: Pick<Relation, 'data' | 'style'>;
     data: Record<string, any>;
     style: RelationStyle;
     constructor(diagram: Diagram, options: RelationDefinition);
     get fieldGroups(): FieldGroup[];
-    getFieldValue(field: Field): any;
 }
 export interface RelationDefinition {
     type: string;
@@ -218,7 +224,10 @@ export interface RelationDefinition {
 export interface RelationStyle {
     arrowFrom?: boolean;
     arrowTo?: boolean;
+    arrowSize?: number;
+    lineWidth?: number;
     lineStyle?: 'solid' | 'dotted' | 'dashed';
+    lineColor?: string;
 }
 export declare class FieldGroup {
     id: string;
@@ -256,6 +265,7 @@ export declare class Field {
     constructor(diagram: Diagram, fieldGroup: FieldGroup, options: FieldDefinition);
     get active(): boolean;
     set active(active: boolean);
+    getValue(data: Record<string, any>): any;
 }
 export interface FieldDefinition {
     id: string;

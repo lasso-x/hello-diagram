@@ -17,6 +17,7 @@ interface EditorBaseField {
     title: string;
     dataKey?: string;
     styleKey?: string;
+    valueBeforeChanges?: any;
     initialValue?: any;
     initialValueLabel?: string;
     resetValue?: any;

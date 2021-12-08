@@ -4,17 +4,11 @@ import { VueConstructor } from 'vue';
 export default class DiagramVue extends Vue {
     get diagramVm(): this;
     readonly diagram: Diagram;
-    editor: {
-        show: boolean;
-        object: Entity | Relation | null;
-    };
+    editorTarget: Entity | Relation | null;
     dialogs: ({
         component: VueConstructor;
         props?: any;
     })[];
     mounted(): void;
-    beforeDestroy(): void;
-    showEditor(object: Entity | Relation): void;
-    hideEditor(): void;
     showDialog(component: VueConstructor, props?: any): void;
 }

@@ -8,10 +8,10 @@ export default class AddRelationDialog extends Vue {
     readonly asParent: false;
     readonly onConfirm?: () => void;
     readonly onDismiss?: () => void;
-    entityFields: (Field & {
+    entityFields: (Omit<Field, 'getValue'> & {
         value: any;
     })[];
-    relationFields: (Field & {
+    relationFields: (Omit<Field, 'getValue'> & {
         value: any;
     })[];
     entityMode: 'search' | 'custom';

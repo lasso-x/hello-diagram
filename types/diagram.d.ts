@@ -28,6 +28,8 @@ export default class Diagram {
     save(): Promise<void>;
     load(savedDiagram: SavedDiagram): void;
     reset(): void;
+    search(type: EntityType, searchString: string): Entity[];
+    search(type: RelationType, searchString: string): Relation[];
 }
 export interface DiagramConfig {
     mainEntityId: string;
@@ -73,6 +75,7 @@ export declare class ActiveDiagram {
     data: DiagramData;
     settings: Settings;
     expand(): Promise<void>;
+    reset(): void;
 }
 export declare class EntityTypes {
     constructor(items: EntityTypeDefinition[]);
@@ -95,14 +98,13 @@ export declare class RelationTypes {
 export declare class EntityType {
     id: string;
     icon?: string;
-    labels: {
-        singular: string;
-        plural: string;
-        editorLabel?: (data: Record<string, any>) => string;
-    };
+    labels: EntityTypeDefinition['labels'];
     style: EntityStyle;
+    searchable: boolean;
+    searchResultBuilder: SearchResultBuilder;
     fieldGroups: FieldGroup[];
     fields: Field[];
+    searchableFields: Field[];
     constructor(options: EntityTypeDefinition);
 }
 export interface EntityTypeDefinition {
@@ -114,26 +116,18 @@ export interface EntityTypeDefinition {
         editorLabel?: (data: Record<string, any>) => string;
     };
     style?: EntityStyle;
+    searchable?: boolean;
+    searchResultBuilder?: SearchResultBuilder;
 }
 export declare class RelationType {
     id: string;
-    labels: {
-        singular: string;
-        plural: string;
-        newParent?: string;
-        newChild?: string;
-        existingParents?: string;
-        existingChildren?: string;
-        singularFrom?: string;
-        pluralFrom?: string;
-        singularTo?: string;
-        pluralTo?: string;
-        editorLabel?: (data: Record<string, any>) => string;
-    };
+    labels: RelationTypeDefinition['labels'];
     style: RelationStyle;
     supports: RelationTypeSupport[];
+    searchable: boolean;
     fieldGroups: FieldGroup[];
     fields: Field[];
+    searchableFields: Field[];
     constructor(options: RelationTypeDefinition);
 }
 export declare type RelationTypeDefinition = {
@@ -153,6 +147,7 @@ export declare type RelationTypeDefinition = {
     };
     style?: RelationStyle;
     supports: RelationTypeSupportDefinition[];
+    searchable?: boolean;
 };
 export declare class RelationTypeSupport {
     from: string;
@@ -164,6 +159,16 @@ export interface RelationTypeSupportDefinition {
     from: string;
     to: string;
     allowAddExisting?: boolean;
+}
+export declare type SearchResultBuilder = (context: SearchResultBuilderContext) => SearchResult;
+export interface SearchResultBuilderContext {
+    id: string;
+    data: Record<string, any>;
+}
+export interface SearchResult {
+    text: string;
+    supertext?: string | null;
+    subtext?: string | null;
 }
 export declare class Entity {
     diagram: Diagram;
@@ -262,6 +267,7 @@ export declare class Field {
     legendColor: string | null;
     startActive: boolean;
     display: boolean;
+    searchable: boolean;
     constructor(diagram: Diagram, fieldGroup: FieldGroup, options: FieldDefinition);
     get active(): boolean;
     set active(active: boolean);
@@ -282,13 +288,14 @@ export interface FieldDefinition {
     legendColor?: string;
     startActive?: boolean;
     display?: boolean;
+    searchable?: boolean;
 }
 export declare class Filter {
     diagram: Diagram;
     id: string;
     title: string;
-    type: string | null;
-    filter: (entity: any) => boolean;
+    filter: (context: FilterContext) => any;
+    filterWhen: 'active' | 'inactive';
     startActive: boolean;
     constructor(diagram: Diagram, options: FilterDefinition);
     get active(): boolean;
@@ -297,9 +304,18 @@ export declare class Filter {
 export interface FilterDefinition {
     id: string;
     title: string;
-    type?: string;
-    filter?: (entity: any) => boolean;
+    filter: (context: FilterContext) => any;
+    filterWhen?: 'active' | 'inactive';
     startActive?: boolean;
+}
+export interface FilterContext {
+    isEntity: boolean;
+    isRelation: boolean;
+    type: string;
+    data: Record<string, any>;
+    isMainEntity: boolean;
+    isParent: boolean;
+    isChild: boolean;
 }
 export interface LayoutDefinition {
     id: string;
@@ -316,10 +332,12 @@ export interface LayoutDefinition {
 }
 export declare class Settings {
     diagram: Diagram;
+    initialState: Pick<Settings, 'activeFields' | 'activeFilters' | 'activeLayout'>;
     activeFields: Record<string, boolean | undefined>;
     activeFilters: Record<string, boolean | undefined>;
     activeLayout: LayoutDefinition | null;
     constructor(diagram: Diagram);
+    init(): void;
     reset(): void;
     loadFromLocalStorage(): void;
     saveToLocalStorage(): void;

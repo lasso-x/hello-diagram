@@ -1,16 +1,14 @@
 import { Vue } from 'vue-property-decorator';
-import Diagram, { EntityType } from '@/diagram';
+import Diagram, { Entity, EntityType, SearchResult } from '@/diagram';
 import TextField from './TextField.vue';
 import DiagramVue from './Diagram.vue';
-interface Suggestion {
-    id: string;
-    name: string;
+interface Suggestion extends SearchResult {
+    entity: Entity;
 }
 export default class EntitySearchBar extends Vue {
-    log: (...data: any[]) => void;
     readonly diagramVm: DiagramVue;
     readonly entityType?: EntityType;
-    readonly entityId?: string;
+    readonly selectedSuggestion?: Suggestion;
     readonly textField: TextField;
     readonly suggestionsEl: HTMLElement;
     focused: boolean;
@@ -35,12 +33,20 @@ export default class EntitySearchBar extends Vue {
         width: string;
         maxHeight: string;
     };
+    get loadingSuggestions(): boolean;
+    get noSuggestions(): boolean;
+    get activeSuggestion(): Suggestion | null;
     onDestroy?: () => void;
     mounted(): void;
     beforeDestroy(): void;
+    onInputKeyDown(e: KeyboardEvent): void;
     loadSuggestions(): Promise<void>;
+    scrollActiveSuggestionIntoView(): void;
     selectSuggestion(suggestion: Suggestion | null): void;
     onEntityTypeChanged(): void;
+    onSelectedSuggestionChanged(): void;
+    onFocusedChanged(): void;
     onInputTextChanged(): void;
+    onSuggestionsChanged(): void;
 }
 export {};

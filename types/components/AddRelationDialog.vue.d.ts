@@ -8,14 +8,17 @@ export default class AddRelationDialog extends Vue {
     readonly asParent: false;
     readonly onConfirm?: () => void;
     readonly onDismiss?: () => void;
-    entityFields: (Omit<Field, 'getValue'> & {
-        value: any;
-    })[];
     relationFields: (Omit<Field, 'getValue'> & {
         value: any;
     })[];
-    entityMode: 'search' | 'custom';
+    entityFields: (Omit<Field, 'getValue'> & {
+        value: any;
+    })[];
     entityType: EntityType | null;
+    entityMode: 'search' | 'custom';
+    selectedSearchEntity: {
+        entity: Entity;
+    } | null;
     get diagram(): import("../diagram").default;
     get relationTypeLabel(): string;
     get supportedEntityTypes(): EntityType[];
@@ -28,6 +31,6 @@ export default class AddRelationDialog extends Vue {
     confirm(): void;
     dismiss(): void;
     onSupportedEntityTypesChanged(): void;
-    onEntityTypeChanged(): void;
     onRelationTypeChanged(): void;
+    onEntityTypeChanged(): void;
 }

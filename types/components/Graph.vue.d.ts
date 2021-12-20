@@ -17,6 +17,7 @@ export default class Graph extends Vue {
     initialize(): void;
     clearElements(): void;
     updateElements(): void;
+    runFilters(): void;
     layout(layout?: LayoutDefinition | null, animate?: boolean): Promise<void> | undefined;
     fit(): void;
 }

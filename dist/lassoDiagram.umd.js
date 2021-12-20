@@ -11797,6 +11797,20 @@ fixRegExpWellKnownSymbolLogic('split', function (SPLIT, nativeSplit, maybeCallNa
 
 /***/ }),
 
+/***/ "129f":
+/***/ (function(module, exports) {
+
+// `SameValue` abstract operation
+// https://tc39.es/ecma262/#sec-samevalue
+// eslint-disable-next-line es/no-object-is -- safe
+module.exports = Object.is || function is(x, y) {
+  // eslint-disable-next-line no-self-compare -- NaN check
+  return x === y ? x !== 0 || 1 / x === 1 / y : x != x && y != y;
+};
+
+
+/***/ }),
+
 /***/ "1319":
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
@@ -45889,6 +45903,26 @@ module.exports = !!Object.getOwnPropertySymbols && !fails(function () {
 
 /***/ }),
 
+/***/ "498a":
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+var $ = __webpack_require__("23e7");
+var $trim = __webpack_require__("58a8").trim;
+var forcedStringTrimMethod = __webpack_require__("c8d2");
+
+// `String.prototype.trim` method
+// https://tc39.es/ecma262/#sec-string.prototype.trim
+$({ target: 'String', proto: true, forced: forcedStringTrimMethod('trim') }, {
+  trim: function trim() {
+    return $trim(this);
+  }
+});
+
+
+/***/ }),
+
 /***/ "4ae1":
 /***/ (function(module, exports, __webpack_require__) {
 
@@ -47542,6 +47576,49 @@ module.exports = function (object, key, value) {
 
 /***/ }),
 
+/***/ "841c":
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+var fixRegExpWellKnownSymbolLogic = __webpack_require__("d784");
+var anObject = __webpack_require__("825a");
+var requireObjectCoercible = __webpack_require__("1d80");
+var sameValue = __webpack_require__("129f");
+var toString = __webpack_require__("577e");
+var regExpExec = __webpack_require__("14c3");
+
+// @@search logic
+fixRegExpWellKnownSymbolLogic('search', function (SEARCH, nativeSearch, maybeCallNative) {
+  return [
+    // `String.prototype.search` method
+    // https://tc39.es/ecma262/#sec-string.prototype.search
+    function search(regexp) {
+      var O = requireObjectCoercible(this);
+      var searcher = regexp == undefined ? undefined : regexp[SEARCH];
+      return searcher !== undefined ? searcher.call(regexp, O) : new RegExp(regexp)[SEARCH](toString(O));
+    },
+    // `RegExp.prototype[@@search]` method
+    // https://tc39.es/ecma262/#sec-regexp.prototype-@@search
+    function (string) {
+      var rx = anObject(this);
+      var S = toString(string);
+      var res = maybeCallNative(nativeSearch, rx, S);
+
+      if (res.done) return res.value;
+
+      var previousLastIndex = rx.lastIndex;
+      if (!sameValue(previousLastIndex, 0)) rx.lastIndex = 0;
+      var result = regExpExec(rx, S);
+      if (!sameValue(rx.lastIndex, previousLastIndex)) rx.lastIndex = previousLastIndex;
+      return result === null ? -1 : result.index;
+    }
+  ];
+});
+
+
+/***/ }),
+
 /***/ "861d":
 /***/ (function(module, exports) {
 
@@ -47666,6 +47743,50 @@ if (typeof store.inspectSource != 'function') {
 }
 
 module.exports = store.inspectSource;
+
+
+/***/ }),
+
+/***/ "8a79":
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+var $ = __webpack_require__("23e7");
+var getOwnPropertyDescriptor = __webpack_require__("06cf").f;
+var toLength = __webpack_require__("50c4");
+var toString = __webpack_require__("577e");
+var notARegExp = __webpack_require__("5a34");
+var requireObjectCoercible = __webpack_require__("1d80");
+var correctIsRegExpLogic = __webpack_require__("ab13");
+var IS_PURE = __webpack_require__("c430");
+
+// eslint-disable-next-line es/no-string-prototype-endswith -- safe
+var $endsWith = ''.endsWith;
+var min = Math.min;
+
+var CORRECT_IS_REGEXP_LOGIC = correctIsRegExpLogic('endsWith');
+// https://github.com/zloirock/core-js/pull/702
+var MDN_POLYFILL_BUG = !IS_PURE && !CORRECT_IS_REGEXP_LOGIC && !!function () {
+  var descriptor = getOwnPropertyDescriptor(String.prototype, 'endsWith');
+  return descriptor && !descriptor.writable;
+}();
+
+// `String.prototype.endsWith` method
+// https://tc39.es/ecma262/#sec-string.prototype.endswith
+$({ target: 'String', proto: true, forced: !MDN_POLYFILL_BUG && !CORRECT_IS_REGEXP_LOGIC }, {
+  endsWith: function endsWith(searchString /* , endPosition = @length */) {
+    var that = toString(requireObjectCoercible(this));
+    notARegExp(searchString);
+    var endPosition = arguments.length > 1 ? arguments[1] : undefined;
+    var len = toLength(that.length);
+    var end = endPosition === undefined ? len : min(toLength(endPosition), len);
+    var search = toString(searchString);
+    return $endsWith
+      ? $endsWith.call(that, search, end)
+      : that.slice(end - search.length, end) === search;
+  }
+});
 
 
 /***/ }),
@@ -50033,6 +50154,25 @@ try {
 // easier to handle this case. if(!global) { ...}
 
 module.exports = g;
+
+
+/***/ }),
+
+/***/ "c8d2":
+/***/ (function(module, exports, __webpack_require__) {
+
+var fails = __webpack_require__("d039");
+var whitespaces = __webpack_require__("5899");
+
+var non = '\u200B\u0085\u180E';
+
+// check that a method works with the correct list
+// of whitespaces and has a correct name
+module.exports = function (METHOD_NAME) {
+  return fails(function () {
+    return !!whitespaces[METHOD_NAME]() || non[METHOD_NAME]() != non || whitespaces[METHOD_NAME].name !== METHOD_NAME;
+  });
+};
 
 
 /***/ }),
@@ -55269,6 +55409,15 @@ var es_array_unscopables_flat_map = __webpack_require__("73d9");
 // EXTERNAL MODULE: ./node_modules/core-js/modules/es.array.find.js
 var es_array_find = __webpack_require__("7db0");
 
+// EXTERNAL MODULE: ./node_modules/core-js/modules/es.string.trim.js
+var es_string_trim = __webpack_require__("498a");
+
+// EXTERNAL MODULE: ./node_modules/core-js/modules/es.array.includes.js
+var es_array_includes = __webpack_require__("caad");
+
+// EXTERNAL MODULE: ./node_modules/core-js/modules/es.string.includes.js
+var es_string_includes = __webpack_require__("2532");
+
 // EXTERNAL MODULE: ./node_modules/core-js/modules/es.map.js
 var es_map = __webpack_require__("4ec9");
 
@@ -55279,12 +55428,12 @@ var es_array_concat = __webpack_require__("99af");
 var external_commonjs_vue_commonjs2_vue_root_Vue_ = __webpack_require__("8bbf");
 var external_commonjs_vue_commonjs2_vue_root_Vue_default = /*#__PURE__*/__webpack_require__.n(external_commonjs_vue_commonjs2_vue_root_Vue_);
 
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"77807189-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/Diagram.vue?vue&type=template&id=00667149&
-var Diagramvue_type_template_id_00667149_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"lassox-diagram__Diagram"},[_c('TopBar',{attrs:{"diagram":_vm.diagram}}),_c('div',{staticClass:"lassox-diagram__Diagram_graph-columns"},[_c('Graph',{attrs:{"diagram":_vm.diagram,"data":_vm.diagram.data}}),_c('Customizer',{attrs:{"diagram":_vm.diagram}}),(_vm.editorTarget)?_c('Editor',{attrs:{"object":_vm.editorTarget,"close":function () { return _vm.editorTarget = null; }}}):_vm._e()],1),_c('div',{staticClass:"lassox-diagram__Diagram_dialogs"},_vm._l((_vm.dialogs),function(dialog,i){return _c(dialog.component,_vm._b({key:i,tag:"component",on:{"close":function($event){return _vm.dialogs.splice(i, 1)}}},'component',dialog.props,false))}),1)],1)}
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"77807189-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/Diagram.vue?vue&type=template&id=359ff311&
+var Diagramvue_type_template_id_359ff311_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"lassox-diagram__Diagram"},[_c('TopBar',{attrs:{"diagram":_vm.diagram}}),_c('div',{staticClass:"lassox-diagram__Diagram_graph-columns"},[_c('Graph',{attrs:{"diagram":_vm.diagram,"data":_vm.diagram.data}}),_c('Customizer',{attrs:{"diagram":_vm.diagram}}),(_vm.editorTarget)?_c('Editor',{attrs:{"object":_vm.editorTarget,"close":function () { return _vm.editorTarget = null; }}}):_vm._e()],1),_c('div',{staticClass:"lassox-diagram__Diagram_dialogs"},_vm._l((_vm.dialogs),function(dialog,i){return _c(dialog.component,_vm._b({key:i,tag:"component",on:{"close":function($event){return _vm.dialogs.splice(i, 1)}}},'component',dialog.props,false))}),1)],1)}
 var staticRenderFns = []
 
 
-// CONCATENATED MODULE: ./src/components/Diagram.vue?vue&type=template&id=00667149&
+// CONCATENATED MODULE: ./src/components/Diagram.vue?vue&type=template&id=359ff311&
 
 // CONCATENATED MODULE: ./node_modules/@babel/runtime/helpers/esm/setPrototypeOf.js
 function _setPrototypeOf(o, p) {
@@ -56492,15 +56641,15 @@ var Buttonvue_type_template_id_6c8546b3_staticRenderFns = []
 // EXTERNAL MODULE: ./node_modules/core-js/modules/es.set.js
 var es_set = __webpack_require__("6062");
 
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"77807189-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/BaseButton.vue?vue&type=template&id=20ab1ea2&
-var BaseButtonvue_type_template_id_20ab1ea2_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('button',_vm._g({class:[
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"77807189-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/BaseButton.vue?vue&type=template&id=1cee8e6f&
+var BaseButtonvue_type_template_id_1cee8e6f_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('button',_vm._g({class:[
     'lassox-diagram__BaseButton',
     _vm.disabled && 'lassox-diagram__BaseButton--disabled' ],attrs:{"disabled":_vm.disabled}},Object.assign({}, _vm.$listeners,
     {click: function (e) { return !_vm.disabled && _vm.$emit('click', e); }})),[_vm._t("default"),(_vm.finalLeadingIcon)?_c('Icon',{staticClass:"lassox-diagram__BaseButton_leading-icon",attrs:{"icon":_vm.finalLeadingIcon}}):_vm._e(),(_vm.label)?_c('div',{staticClass:"lassox-diagram__BaseButton_label",domProps:{"textContent":_vm._s(_vm.label)}}):_vm._e(),(_vm.finalTrailingIcon)?_c('Icon',{staticClass:"lassox-diagram__BaseButton_trailing-icon",attrs:{"icon":_vm.finalTrailingIcon}}):_vm._e(),_c('div',{staticClass:"lassox-diagram__BaseButton_outline"}),_c('div',{staticClass:"lassox-diagram__BaseButton_overlay"})],2)}
-var BaseButtonvue_type_template_id_20ab1ea2_staticRenderFns = []
+var BaseButtonvue_type_template_id_1cee8e6f_staticRenderFns = []
 
 
-// CONCATENATED MODULE: ./src/components/BaseButton.vue?vue&type=template&id=20ab1ea2&
+// CONCATENATED MODULE: ./src/components/BaseButton.vue?vue&type=template&id=1cee8e6f&
 
 // CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"77807189-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/Icon.vue?vue&type=template&id=38dc3431&
 var Iconvue_type_template_id_38dc3431_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"lassox-diagram__Icon",style:({ fontSize: (_vm.size + "px") })},[(_vm.icon && _vm.icon != ' ')?_c('span',{staticClass:"material-icons-outlined",domProps:{"textContent":_vm._s(_vm.icon)}}):_vm._e()])}
@@ -56654,8 +56803,8 @@ var BaseButtonvue_type_style_index_0_lang_scss_ = __webpack_require__("55ae");
 
 var BaseButton_component = normalizeComponent(
   components_BaseButtonvue_type_script_lang_ts_,
-  BaseButtonvue_type_template_id_20ab1ea2_render,
-  BaseButtonvue_type_template_id_20ab1ea2_staticRenderFns,
+  BaseButtonvue_type_template_id_1cee8e6f_render,
+  BaseButtonvue_type_template_id_1cee8e6f_staticRenderFns,
   false,
   null,
   null,
@@ -60420,12 +60569,6 @@ var EditorField_component = normalizeComponent(
 )
 
 /* harmony default export */ var components_EditorField = (EditorField_component.exports);
-// EXTERNAL MODULE: ./node_modules/core-js/modules/es.array.includes.js
-var es_array_includes = __webpack_require__("caad");
-
-// EXTERNAL MODULE: ./node_modules/core-js/modules/es.string.includes.js
-var es_string_includes = __webpack_require__("2532");
-
 // CONCATENATED MODULE: ./src/types/SavedDiagram.ts
 
 
@@ -60443,7 +60586,7 @@ var SavedDiagram_createSavedDiagram = function createSavedDiagram(diagram) {
   var _diagram$activeDiagra;
 
   return {
-    id: 'saved-diagram-test',
+    id: diagram.activeDiagram.id,
     title: diagram.activeDiagram.title,
     description: diagram.activeDiagram.description,
     shared: diagram.activeDiagram.shared,
@@ -61068,12 +61211,12 @@ var TopBar_component = normalizeComponent(
 )
 
 /* harmony default export */ var components_TopBar = (TopBar_component.exports);
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"77807189-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/Graph.vue?vue&type=template&id=2fea0fe4&
-var Graphvue_type_template_id_2fea0fe4_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"lassox-diagram__Graph",attrs:{"tabindex":"-1"},on:{"keydown":_vm.onKeyDown}},[_c('div',{ref:"graphContainerEl",staticStyle:{"width":"100%","height":"100%"},on:{"mousedown":_vm.redirectCytoscapeBlur,"touchstart":_vm.redirectCytoscapeBlur}})])}
-var Graphvue_type_template_id_2fea0fe4_staticRenderFns = []
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"77807189-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/Graph.vue?vue&type=template&id=72dbaec6&
+var Graphvue_type_template_id_72dbaec6_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"lassox-diagram__Graph",attrs:{"tabindex":"-1"},on:{"keydown":_vm.onKeyDown}},[_c('div',{ref:"graphContainerEl",staticStyle:{"width":"100%","height":"100%"},on:{"mousedown":_vm.redirectCytoscapeBlur,"touchstart":_vm.redirectCytoscapeBlur}})])}
+var Graphvue_type_template_id_72dbaec6_staticRenderFns = []
 
 
-// CONCATENATED MODULE: ./src/components/Graph.vue?vue&type=template&id=2fea0fe4&
+// CONCATENATED MODULE: ./src/components/Graph.vue?vue&type=template&id=72dbaec6&
 
 // EXTERNAL MODULE: ./node_modules/core-js/modules/es.regexp.exec.js
 var es_regexp_exec = __webpack_require__("ac1f");
@@ -61154,9 +61297,11 @@ var getPercBrightness = function () {
 
 
 
+ // Show 'parent' and 'child' label on entities and relations
 
+var debugHierarchy = false;
 
-var Graphvue_type_script_lang_ts_generateStyle = function generateStyle(diagram) {
+var Graphvue_type_script_lang_ts_generateStyle = function generateStyle() {
   var printing = false;
 
   var getStyle = function getStyle(element, property, defaultValue) {
@@ -61190,13 +61335,17 @@ var Graphvue_type_script_lang_ts_generateStyle = function generateStyle(diagram)
   }, {
     selector: 'edge',
     style: _objectSpread2({
-      'visibility': function visibility(edge) {
-        return edge.data('hidden') ? 'hidden' : 'visible';
-      },
       'width': getEdgeWidth,
       'label': function label(edge) {
         var relation = edge.data('relation');
         var strings = [];
+
+        if (debugHierarchy) {
+          var labelStrings = [];
+          if (edge.data('isParent')) labelStrings.push('parent');
+          if (edge.data('isChild')) labelStrings.push('child');
+          if (labelStrings.length) strings.push(labelStrings.join(', '));
+        }
 
         var _iterator = _createForOfIteratorHelper(relation.fieldGroups),
             _step;
@@ -61210,12 +61359,11 @@ var Graphvue_type_script_lang_ts_generateStyle = function generateStyle(diagram)
 
             try {
               for (_iterator2.s(); !(_step2 = _iterator2.n()).done;) {
-                var _field$getValue, _field$getInitialValu;
-
                 var field = _step2.value;
                 if (!field.isRelationLabel) continue;
                 if (!field.active) continue;
-                var value = (_field$getValue = field.getValue(relation.data)) !== null && _field$getValue !== void 0 ? _field$getValue : (_field$getInitialValu = field.getInitialValue) === null || _field$getInitialValu === void 0 ? void 0 : _field$getInitialValu.call(field, relation.data);
+                var value = field.getValue(relation.data); // ?? field.getInitialValue?.(relation.data)
+
                 var formatted = String(field.formatter ? field.formatter(value) : value !== null && value !== void 0 ? value : '');
                 if (formatted) strings.push(formatted);
               }
@@ -61233,10 +61381,13 @@ var Graphvue_type_script_lang_ts_generateStyle = function generateStyle(diagram)
 
         return strings.join('\n');
       },
+      'text-max-width': '200px',
+      'text-wrap': 'wrap',
       'color': function color(edge) {
         return printing ? '#000' : edge.selected() ? '#cd4b3d' : '#777';
       },
       'curve-style': 'bezier',
+      // 'curve-style': 'taxi',
       'text-background-color': '#fff',
       'text-background-opacity': 1,
       'line-color': getEdgeColor,
@@ -61274,19 +61425,21 @@ var Graphvue_type_script_lang_ts_generateStyle = function generateStyle(diagram)
         return '45deg';
       }
     })
+  }, {
+    selector: '[?hidden], [?hiddenByFilter]',
+    style: {
+      'visibility': 'hidden'
+    }
   }];
 };
 
-var Graphvue_type_script_lang_ts_initNodeHtmlLabel = function initNodeHtmlLabel(graph, diagram) {
+var Graphvue_type_script_lang_ts_initNodeHtmlLabel = function initNodeHtmlLabel(graph) {
   graph.nodeHtmlLabel([{
     query: '.entity:inside',
     tpl: function tpl(data) {
       var _getStyleValue, _getStyleValue2, _getStyleValue3;
 
-      var entity = data.entity; // FIXME: Disabled
-      // // depending on the filters, we might not show the entity at all
-      // if ((!settings.people.active && data.entity.type === 'Person') || (!settings.unknown.active && data.entity.type === 'Unknown') || (!settings.foreign.active && data.entity.type === 'Foreign')) return '<span></span>'
-
+      var entity = data.entity;
       var classes = ['lassox-diagram__Graph_entity', "lassox-diagram__Graph_entity--id-".concat(data.id), entity.isMainEntity && 'lassox-diagram__Graph_entity--main-entity', data.selected && 'lassox-diagram__Graph_entity--selected'].filter(function (v) {
         return !!v;
       }).join(' ');
@@ -61320,7 +61473,7 @@ var Graphvue_type_script_lang_ts_initNodeHtmlLabel = function initNodeHtmlLabel(
       var borderColor = entity.isMainEntity ? 'black' : getStyleValue('borderColor');
       var bgColor = (_getStyleValue2 = getStyleValue('backgroundColor')) !== null && _getStyleValue2 !== void 0 ? _getStyleValue2 : '#ffffff';
       var labelsBgColor = (_getStyleValue3 = getStyleValue('labelsBackgroundColor')) !== null && _getStyleValue3 !== void 0 ? _getStyleValue3 : bgColor;
-      var style = createStyleString([['visibility', data.hidden ? 'hidden' : 'visible'], ['border-width', "".concat(borderWidth, "px")], ['border-style', borderStyle], ['border-color', borderColor]]);
+      var style = createStyleString([['visibility', data.hidden || data.hiddenByFilter ? 'hidden' : 'visible'], ['border-width', "".concat(borderWidth, "px")], ['border-style', borderStyle], ['border-color', borderColor]]);
       var selectedOutlineStyle = createStyleString([['top', "".concat(-borderWidth, "px")], ['left', "".concat(-borderWidth, "px")], ['right', "".concat(-borderWidth, "px")], ['bottom', "".concat(-borderWidth, "px")]]);
       var labelsStyle = createStyleString([['color', getContrastingTextColor(labelsBgColor)], ['background-color', labelsBgColor]]);
       var fieldsStyle = createStyleString([['border-top-width', "".concat(borderWidth, "px")], ['border-style', borderStyle], ['border-color', borderColor], ['color', getContrastingTextColor(bgColor)], ['background-color', bgColor]]);
@@ -61329,9 +61482,8 @@ var Graphvue_type_script_lang_ts_initNodeHtmlLabel = function initNodeHtmlLabel(
         var _options$legendColor, _options$field, _options$text;
 
         var getFormattedFieldValue = function getFormattedFieldValue(field) {
-          var _field$getValue2, _field$getInitialValu2;
+          var value = field.getValue(entity.data); // ?? field.getInitialValue?.(entity.data)
 
-          var value = (_field$getValue2 = field.getValue(entity.data)) !== null && _field$getValue2 !== void 0 ? _field$getValue2 : (_field$getInitialValu2 = field.getInitialValue) === null || _field$getInitialValu2 === void 0 ? void 0 : _field$getInitialValu2.call(field, entity.data);
           if (field.formatter) return field.formatter(value);
           return String(value !== null && value !== void 0 ? value : '');
         };
@@ -61353,6 +61505,15 @@ var Graphvue_type_script_lang_ts_initNodeHtmlLabel = function initNodeHtmlLabel(
 
       var labels = [];
       var fields = [];
+
+      if (debugHierarchy) {
+        var labelStrings = [];
+        if (data.isParent) labelStrings.push('parent');
+        if (data.isChild) labelStrings.push('child');
+        if (labelStrings.length) labels.push(createHtmlField({
+          text: labelStrings.join(', ')
+        }));
+      }
 
       var _iterator3 = _createForOfIteratorHelper(entity.fieldGroups),
           _step3;
@@ -61455,15 +61616,21 @@ var Graphvue_type_script_lang_ts_Graph = /*#__PURE__*/function (_Vue) {
 
         var layout = _ref4.layout;
         (_this2$layout = _this2.layout(layout, false)) === null || _this2$layout === void 0 ? void 0 : _this2$layout.then(function () {
+          _this2.fit();
+
           _this2.diagram.activeDiagram.data.commitChange({
             layout: layout.id,
             moveEntities: createMoveEntities()
           });
         });
       }), this.diagram.eventBus.on('graph.fit', function () {
-        return _this2.fit();
+        _this2.fit();
       }), this.diagram.eventBus.on(['dataUpdated', 'activeFieldsChanged'], function () {
-        return _this2.updateElements();
+        _this2.updateElements();
+
+        _this2.runFilters();
+      }), this.diagram.eventBus.on('activeFiltersChanged', function () {
+        _this2.runFilters();
       }));
       this.initialize();
       this.$watch(function () {
@@ -61472,6 +61639,8 @@ var Graphvue_type_script_lang_ts_Graph = /*#__PURE__*/function (_Vue) {
         _this2.clearElements();
 
         _this2.updateElements();
+
+        _this2.runFilters();
       }, {
         immediate: true
       });
@@ -61565,15 +61734,16 @@ var Graphvue_type_script_lang_ts_Graph = /*#__PURE__*/function (_Vue) {
       // Initialize cytoscape
       var graph = this._graph = cytoscape_cjs_default()({
         container: this.graphContainerEl,
-        style: Graphvue_type_script_lang_ts_generateStyle(this.diagram),
+        style: Graphvue_type_script_lang_ts_generateStyle(),
         wheelSensitivity: 0.05,
         maxZoom: 1
       }); // Initialize node-html-label
 
-      Graphvue_type_script_lang_ts_initNodeHtmlLabel(graph, this.diagram); // Initialize panzoom
+      Graphvue_type_script_lang_ts_initNodeHtmlLabel(graph); // Initialize panzoom
 
       graph.panzoom({
         zoomOnly: true,
+        fitSelector: '[!hiddenByFilter]',
         fitPadding: 32,
         zoomInIcon: 'material-icons-outlined',
         zoomOutIcon: 'material-icons-outlined',
@@ -61619,8 +61789,8 @@ var Graphvue_type_script_lang_ts_Graph = /*#__PURE__*/function (_Vue) {
 
       var graph = this._graph;
       if (!graph) return;
-      var shouldLayout = !graph.elements().length;
       graph.batch(function () {
+        var shouldLayout = !graph.elements().length;
         var items = new Map([].concat(toConsumableArray_toConsumableArray(_this5.diagram.activeDiagram.data.entitiesMap), toConsumableArray_toConsumableArray(_this5.diagram.activeDiagram.data.relationsMap)));
         var toAdd = [];
         var toUpdate = [];
@@ -61633,9 +61803,9 @@ var Graphvue_type_script_lang_ts_Graph = /*#__PURE__*/function (_Vue) {
           for (_iterator6.s(); !(_step6 = _iterator6.n()).done;) {
             var _step6$value = _slicedToArray(_step6.value, 2),
                 id = _step6$value[0],
-                _item3 = _step6$value[1];
+                _item2 = _step6$value[1];
 
-            if (!_this5.addedItems.has(id)) toAdd.push(_item3);else toUpdate.push(_item3);
+            if (!_this5.addedItems.has(id)) toAdd.push(_item2);else toUpdate.push(_item2);
           }
         } catch (err) {
           _iterator6.e(err);
@@ -61650,9 +61820,9 @@ var Graphvue_type_script_lang_ts_Graph = /*#__PURE__*/function (_Vue) {
           for (_iterator7.s(); !(_step7 = _iterator7.n()).done;) {
             var _step7$value = _slicedToArray(_step7.value, 2),
                 _id = _step7$value[0],
-                _item4 = _step7$value[1];
+                _item3 = _step7$value[1];
 
-            if (!items.has(_id)) toRemove.push(_item4);
+            if (!items.has(_id)) toRemove.push(_item3);
           }
         } catch (err) {
           _iterator7.e(err);
@@ -61660,62 +61830,81 @@ var Graphvue_type_script_lang_ts_Graph = /*#__PURE__*/function (_Vue) {
           _iterator7.f();
         }
 
-        var elementDefinitions = [];
+        var addedElements = graph.add(toAdd.map(function (item) {
+          return item.isEntity ? {
+            group: 'nodes',
+            classes: 'entity' + (item.position ? '' : ' needs-position'),
+            position: item.position,
+            data: {
+              id: item.id,
+              hidden: true,
+              entity: item,
+              width: 160,
+              height: 36
+            }
+          } : {
+            group: 'edges',
+            classes: 'relation',
+            data: {
+              id: item.id,
+              hidden: true,
+              relation: item,
+              source: item.from,
+              target: item.to
+            }
+          };
+        }));
+        var addedNodes = addedElements.nodes();
+        var addedEdges = addedElements.edges();
 
-        for (var _i = 0, _toAdd = toAdd; _i < _toAdd.length; _i++) {
-          var item = _toAdd[_i];
+        for (var _i = 0, _toUpdate = toUpdate; _i < _toUpdate.length; _i++) {
+          var item = _toUpdate[_i];
+          var element = graph.$id(item.id);
+          element.data(item.isEntity ? 'entity' : 'relation', item);
 
           if (item.isEntity) {
-            elementDefinitions.push({
-              group: 'nodes',
-              classes: 'entity' + (item.position ? '' : ' needs-position'),
-              position: item.position,
-              data: {
-                id: item.id,
-                entity: item,
-                width: 160,
-                height: 36
-              }
-            });
-          } else {
-            elementDefinitions.push({
-              group: 'edges',
-              classes: 'relation',
-              data: {
-                id: item.id,
-                source: item.from,
-                target: item.to,
-                relation: item
-              }
-            });
+            element.toggleClass('needs-position', !item.position);
+            if (item.position) element.position(item.position);
           }
         }
 
-        for (var _i2 = 0, _toUpdate = toUpdate; _i2 < _toUpdate.length; _i2++) {
-          var _item = _toUpdate[_i2];
-          var element = graph.$id(_item.id);
-          element.data(_item.isEntity ? 'entity' : 'relation', _item);
-
-          if (_item.isEntity) {
-            element.toggleClass('needs-position', !_item.position);
-            if (_item.position) element.position(_item.position);
-          }
+        for (var _i2 = 0, _toRemove = toRemove; _i2 < _toRemove.length; _i2++) {
+          var _item = _toRemove[_i2];
+          graph.$id(_item.id).remove();
         }
 
-        for (var _i3 = 0, _toRemove = toRemove; _i3 < _toRemove.length; _i3++) {
-          var _item2 = _toRemove[_i3];
-          graph.$id(_item2.id).remove();
-        }
+        var elements = graph.elements();
+        var mainEntityNode = elements.$id(_this5.diagram.mainEntityId);
+        _this5.addedItems = items; // Calculate hierarchy
 
-        var elements = graph.add(elementDefinitions);
-        var nodes = elements.nodes();
-        elements.data('hidden', true);
-        _this5.addedItems = items;
+        elements.data({
+          isParent: false,
+          isChild: false
+        });
+        mainEntityNode.predecessors().not(mainEntityNode).data('isParent', true);
+        mainEntityNode.successors().not(mainEntityNode).data('isChild', true);
 
-        if (nodes.length) {
+        var onDone = function onDone() {
+          // Set initial entity positions
+          graph.nodes().forEach(function (node) {
+            var entity = node.data('entity');
+
+            if (!entity.position) {
+              entity.initialState.position = _objectSpread2({}, node.position());
+              entity.position = _objectSpread2({}, node.position());
+              node.removeClass('needs-position');
+            }
+          }); // Unhide elements
+
+          addedElements.data('hidden', false); // Fit graph to screen, if necessary
+
+          if (shouldLayout) _this5.fit();
+        };
+
+        if (addedNodes.length) {
           graph.one('render', function () {
             graph.batch(function () {
-              nodes.forEach(function (node) {
+              addedNodes.forEach(function (node) {
                 var _this5$el$querySelect;
 
                 var nodeEl = (_this5$el$querySelect = _this5.el.querySelector(".lassox-diagram__Graph_entity--id-".concat(node.id()))) === null || _this5$el$querySelect === void 0 ? void 0 : _this5$el$querySelect.parentElement;
@@ -61746,22 +61935,6 @@ var Graphvue_type_script_lang_ts_Graph = /*#__PURE__*/function (_Vue) {
                 });
               });
             });
-
-            var unhideElements = function unhideElements() {
-              return elements.data('hidden', false);
-            };
-
-            var setInitialPositions = function setInitialPositions() {
-              return graph.nodes().forEach(function (node) {
-                var entity = node.data('entity');
-
-                if (!entity.position) {
-                  entity.initialState.position = _objectSpread2({}, node.position());
-                  entity.position = _objectSpread2({}, node.position());
-                }
-              });
-            };
-
             graph.one('render', function () {
               var nodesToLayout = shouldLayout ? graph.nodes('.needs-position') : null;
 
@@ -61773,19 +61946,19 @@ var Graphvue_type_script_lang_ts_Graph = /*#__PURE__*/function (_Vue) {
                 (_this5$layout = _this5.layout(_this5.diagram.activeDiagram.settings.activeLayout, false)) === null || _this5$layout === void 0 ? void 0 : _this5$layout.then(function () {
                   return graph.batch(function () {
                     nodesToLock.unlock();
-                    setInitialPositions();
-                    unhideElements();
+                    onDone();
                   });
                 });
               } else {
-                setInitialPositions();
-                unhideElements();
+                onDone();
               }
             });
           });
+        } else {
+          onDone();
         }
 
-        elements.on('click', function (event) {
+        addedElements.on('click', function (event) {
           var element = event.target;
 
           _this5.diagram.eventBus.emit({
@@ -61793,11 +61966,63 @@ var Graphvue_type_script_lang_ts_Graph = /*#__PURE__*/function (_Vue) {
             target: element.data(element.isNode() ? 'entity' : 'relation')
           });
         });
-        elements.on('select', function (event) {
+        addedElements.on('select', function (event) {
           event.target.data('selected', true);
         });
-        elements.on('unselect', function (event) {
+        addedElements.on('unselect', function (event) {
           event.target.data('selected', false);
+        });
+      });
+    }
+  }, {
+    key: "runFilters",
+    value: function runFilters() {
+      var _this6 = this;
+
+      var graph = this._graph;
+      if (!graph) return;
+      var filters = this.diagram.filters.filter(function (filter) {
+        return filter.filterWhen === 'active' ? filter.active : !filter.active;
+      });
+      graph.batch(function () {
+        var elements = graph.elements();
+        elements.data('hiddenByFilter', false);
+        elements.forEach(function (element) {
+          var _entity$isMainEntity;
+
+          // Skip elements that are already hidden
+          if (element.data('hiddenByFilter')) return;
+          var entityOrRelation = element.data(element.isNode() ? 'entity' : 'relation');
+          var entity = entityOrRelation instanceof diagram_Entity ? entityOrRelation : null;
+          var relation = entityOrRelation instanceof diagram_Relation ? entityOrRelation : null;
+          var context = {
+            isEntity: !!entity,
+            isRelation: !!relation,
+            type: entityOrRelation.type.id,
+            data: entityOrRelation.data,
+            isMainEntity: (_entity$isMainEntity = entity === null || entity === void 0 ? void 0 : entity.isMainEntity) !== null && _entity$isMainEntity !== void 0 ? _entity$isMainEntity : false,
+            isParent: element.data('isParent'),
+            isChild: element.data('isChild')
+          }; // Hide if at least one filter returns false
+
+          if (filters.some(function (filter) {
+            return !filter.filter(context);
+          })) {
+            element.data('hiddenByFilter', true); // If the element is a node, hide connected edges
+
+            if (element.isNode()) {
+              var connectedEdges = element.connectedEdges();
+              connectedEdges.data('hiddenByFilter', true);
+            }
+          }
+        }); // Find and hide visible nodes that have edges, but are dangling because of filters
+
+        elements.nodes('[!hiddenByFilter]').not("#".concat(_this6.diagram.mainEntityId)).forEach(function (node) {
+          // Skip if no connected edges
+          if (!node.connectedEdges().length) return; // Skip if any of the connected edges are visible
+
+          if (node.connectedEdges('[!hiddenByFilter]').length) return;
+          node.data('hiddenByFilter', true);
         });
       });
     }
@@ -61812,10 +62037,9 @@ var Graphvue_type_script_lang_ts_Graph = /*#__PURE__*/function (_Vue) {
       return new Promise(function (resolve) {
         var _layout$directed, _layout$grid, _layout$spacingFactor, _layout$maximal, _layout$animationDura, _layout$animationEasi;
 
-        graph.layout({
+        graph.elements('[!hiddenByFilter]').layout({
           name: 'breadthfirst',
-          fit: true,
-          padding: 32,
+          fit: false,
           directed: (_layout$directed = _layout === null || _layout === void 0 ? void 0 : _layout.directed) !== null && _layout$directed !== void 0 ? _layout$directed : false,
           grid: (_layout$grid = _layout === null || _layout === void 0 ? void 0 : _layout.grid) !== null && _layout$grid !== void 0 ? _layout$grid : false,
           spacingFactor: (_layout$spacingFactor = _layout === null || _layout === void 0 ? void 0 : _layout.spacingFactor) !== null && _layout$spacingFactor !== void 0 ? _layout$spacingFactor : 1.3,
@@ -61831,7 +62055,7 @@ var Graphvue_type_script_lang_ts_Graph = /*#__PURE__*/function (_Vue) {
             };
           } : undefined,
           stop: function stop() {
-            return resolve();
+            resolve();
           }
         }).run();
       });
@@ -61839,9 +62063,9 @@ var Graphvue_type_script_lang_ts_Graph = /*#__PURE__*/function (_Vue) {
   }, {
     key: "fit",
     value: function fit() {
-      var _this$_graph2;
-
-      (_this$_graph2 = this._graph) === null || _this$_graph2 === void 0 ? void 0 : _this$_graph2.fit(undefined, 32);
+      var graph = this._graph;
+      if (!graph) return;
+      graph.fit(graph.elements('[!hiddenByFilter]'), 32);
     }
   }]);
 
@@ -61873,8 +62097,8 @@ var Graphvue_type_style_index_0_lang_scss_ = __webpack_require__("2a3c");
 
 var Graph_component = normalizeComponent(
   components_Graphvue_type_script_lang_ts_,
-  Graphvue_type_template_id_2fea0fe4_render,
-  Graphvue_type_template_id_2fea0fe4_staticRenderFns,
+  Graphvue_type_template_id_72dbaec6_render,
+  Graphvue_type_template_id_72dbaec6_staticRenderFns,
   false,
   null,
   null,
@@ -61883,12 +62107,12 @@ var Graph_component = normalizeComponent(
 )
 
 /* harmony default export */ var components_Graph = (Graph_component.exports);
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"77807189-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/Customizer.vue?vue&type=template&id=4f25ccdc&
-var Customizervue_type_template_id_4f25ccdc_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"lassox-diagram__Customizer"},[_c('div',{staticClass:"lassox-diagram__Customizer_fields"},_vm._l((_vm.diagram.fieldGroups),function(fieldGroup){return _c('CustomizerFieldGroup',{key:fieldGroup.id,attrs:{"diagram":_vm.diagram,"fieldGroup":fieldGroup}})}),1)])}
-var Customizervue_type_template_id_4f25ccdc_staticRenderFns = []
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"77807189-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/Customizer.vue?vue&type=template&id=56972952&
+var Customizervue_type_template_id_56972952_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"lassox-diagram__Customizer"},[_c('div',{staticClass:"lassox-diagram__Customizer_fields"},_vm._l((_vm.diagram.fieldGroups),function(fieldGroup){return _c('CustomizerFieldGroup',{key:fieldGroup.id,attrs:{"diagram":_vm.diagram,"fieldGroup":fieldGroup}})}),1),_c('div',{staticClass:"lassox-diagram__Customizer_seperator"}),_c('div',{staticClass:"lassox-diagram__Customizer_filters"},[_c('h4',{staticClass:"lassox-diagram__Customizer_filters-headline",domProps:{"textContent":_vm._s('Filtre')}}),_vm._l((_vm.diagram.filters),function(filter){return _c('BaseButton',{key:filter.id,staticClass:"lassox-diagram__Customizer_filter-button",attrs:{"label":filter.title,"icon":filter.active ? 'check_box' : 'check_box_outline_blank'},on:{"click":function () { return filter.active = !filter.active; }}})})],2)])}
+var Customizervue_type_template_id_56972952_staticRenderFns = []
 
 
-// CONCATENATED MODULE: ./src/components/Customizer.vue?vue&type=template&id=4f25ccdc&
+// CONCATENATED MODULE: ./src/components/Customizer.vue?vue&type=template&id=56972952&
 
 // CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"77807189-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/CustomizerFieldGroup.vue?vue&type=template&id=9cb73a02&
 var CustomizerFieldGroupvue_type_template_id_9cb73a02_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"lassox-diagram__CustomizerFieldGroup"},[_c('CustomizerFieldGroupDropdownButton',{attrs:{"diagram":_vm.diagram,"fieldGroup":_vm.fieldGroup}}),(_vm.activeFields.length)?_c('div',{staticClass:"lassox-diagram__CustomizerFieldGroup_fields"},_vm._l((_vm.activeFields),function(field){return _c('div',{key:field.id,staticClass:"lassox-diagram__CustomizerFieldGroup_field"},[_c('div',{staticClass:"lassox-diagram__CustomizerFieldGroup_field-legend-color",style:({ backgroundColor: field.legendColor })}),_c('div',{staticClass:"lassox-diagram__CustomizerFieldGroup_field-title",domProps:{"textContent":_vm._s(field.title)}})])}),0):_vm._e()],1)}
@@ -62188,8 +62412,8 @@ var Customizervue_type_style_index_0_lang_scss_ = __webpack_require__("7fc0");
 
 var Customizer_component = normalizeComponent(
   components_Customizervue_type_script_lang_ts_,
-  Customizervue_type_template_id_4f25ccdc_render,
-  Customizervue_type_template_id_4f25ccdc_staticRenderFns,
+  Customizervue_type_template_id_56972952_render,
+  Customizervue_type_template_id_56972952_staticRenderFns,
   false,
   null,
   null,
@@ -62198,12 +62422,12 @@ var Customizer_component = normalizeComponent(
 )
 
 /* harmony default export */ var components_Customizer = (Customizer_component.exports);
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"77807189-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/Editor.vue?vue&type=template&id=70d337e4&
-var Editorvue_type_template_id_70d337e4_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"lassox-diagram__Editor"},[_c('header',{staticClass:"lassox-diagram__Editor_header"},[_c('div',{staticClass:"lassox-diagram__Editor_header-title-bar"},[_c('div',{staticClass:"lassox-diagram__Editor_header-title-bar-title",domProps:{"textContent":_vm._s(("Rediger " + _vm.label))}}),_c('IconButton',{attrs:{"icon":"close","size":"normal"},on:{"click":function () { return _vm.close(); }}})],1),_c('div',{staticClass:"lassox-diagram__Editor_header-description",domProps:{"textContent":_vm._s('Rediger staminformation, nøgletal og tilføj relationer, så det fremgår som ønsket i diagrammet.')}}),_c('div',{staticClass:"lassox-diagram__Editor_header-actions"},[_c('ButtonGroup',[(_vm.object.isEntity)?_c('Button',{ref:"addDropdownButton",attrs:{"label":"Tilføj","trailingIcon":_vm.showAddDropdownMenu ? 'expand_less' : 'expand_more',"disabled":!_vm.addMenuItems},on:{"click":function () { return _vm.showAddDropdownMenu = !_vm.showAddDropdownMenu; }}}):_vm._e(),_c('Button',{attrs:{"label":"Fjern","disabled":_vm.object.isEntity && _vm.object.isMainEntity},on:{"click":_vm.remove}})],1),(_vm.addMenuItems)?_c('DropdownMenu',{attrs:{"buttonEl":_vm.showAddDropdownMenu ? _vm.$refs.addDropdownButton.$el : null,"close":function () { return _vm.showAddDropdownMenu = false; }}},[_vm._l((_vm.addMenuItems),function(items,i){return [(i)?_c('DropdownMenuDivider',{key:("group-" + i + "-divider")}):_vm._e(),_vm._l((items),function(item){return _c('DropdownMenuItem',{key:("group-" + i + "-item-" + (item.key)),attrs:{"label":item.label},on:{"click":item.onClick}})})]})],2):_vm._e()],1)]),_c('div',{staticClass:"lassox-diagram__Editor_body-wrapper"},[_c('div',{staticClass:"lassox-diagram__Editor_body"},[_c('EditorFieldGroups',_vm._l((_vm.fieldGroups),function(fieldGroup){return _c('EditorFieldGroup',{key:fieldGroup.id,attrs:{"title":fieldGroup.title}},_vm._l((fieldGroup.fields),function(field){return _c('EditorField',{key:field.id,attrs:{"id":field.id,"type":field.type,"title":field.title,"options":field.options,"initialValue":field.initialValue,"initialValueLabel":field.initialValueLabel,"resetValue":field.resetValue},model:{value:(field.value),callback:function ($$v) {_vm.$set(field, "value", $$v)},expression:"field.value"}})}),1)}),1)],1)]),_c('footer',{staticClass:"lassox-diagram__Editor_footer"},[_c('ButtonGroup',{attrs:{"align":"right"}},[_c('Button',{attrs:{"label":"Luk"},on:{"click":function () { return _vm.close(); }}}),_c('Button',{attrs:{"type":"primary","label":"Gem ændringer","disabled":!_vm.hasChanges},on:{"click":function () { return _vm.saveChanges(); }}})],1)],1)])}
-var Editorvue_type_template_id_70d337e4_staticRenderFns = []
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"77807189-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/Editor.vue?vue&type=template&id=38f3d20c&
+var Editorvue_type_template_id_38f3d20c_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"lassox-diagram__Editor"},[_c('header',{staticClass:"lassox-diagram__Editor_header"},[_c('div',{staticClass:"lassox-diagram__Editor_header-title-bar"},[_c('div',{staticClass:"lassox-diagram__Editor_header-title-bar-title",domProps:{"textContent":_vm._s(("Rediger " + _vm.label))}}),_c('IconButton',{attrs:{"icon":"close","size":"normal"},on:{"click":function () { return _vm.close(); }}})],1),_c('div',{staticClass:"lassox-diagram__Editor_header-description",domProps:{"textContent":_vm._s('Rediger staminformation, nøgletal og tilføj relationer, så det fremgår som ønsket i diagrammet.')}}),_c('div',{staticClass:"lassox-diagram__Editor_header-actions"},[_c('ButtonGroup',[(_vm.object.isEntity)?_c('Button',{ref:"addDropdownButton",attrs:{"label":"Tilføj","trailingIcon":_vm.showAddDropdownMenu ? 'expand_less' : 'expand_more',"disabled":!_vm.addMenuItems},on:{"click":function () { return _vm.showAddDropdownMenu = !_vm.showAddDropdownMenu; }}}):_vm._e(),_c('Button',{attrs:{"label":"Fjern","disabled":_vm.object.isEntity && _vm.object.isMainEntity},on:{"click":_vm.remove}})],1),(_vm.addMenuItems)?_c('DropdownMenu',{attrs:{"buttonEl":_vm.showAddDropdownMenu ? _vm.$refs.addDropdownButton.$el : null,"close":function () { return _vm.showAddDropdownMenu = false; }}},[_vm._l((_vm.addMenuItems),function(items,i){return [(i)?_c('DropdownMenuDivider',{key:("group-" + i + "-divider")}):_vm._e(),_vm._l((items),function(item){return _c('DropdownMenuItem',{key:("group-" + i + "-item-" + (item.key)),attrs:{"label":item.label},on:{"click":item.onClick}})})]})],2):_vm._e()],1)]),_c('div',{staticClass:"lassox-diagram__Editor_body-wrapper"},[_c('div',{staticClass:"lassox-diagram__Editor_body"},[_c('EditorFieldGroups',_vm._l((_vm.fieldGroups),function(fieldGroup){return _c('EditorFieldGroup',{key:fieldGroup.id,attrs:{"title":fieldGroup.title}},_vm._l((fieldGroup.fields),function(field){return _c('EditorField',{key:field.id,attrs:{"id":field.id,"type":field.type,"title":field.title,"options":field.options,"initialValue":field.initialValue,"initialValueLabel":field.initialValueLabel,"resetValue":field.resetValue},model:{value:(field.value),callback:function ($$v) {_vm.$set(field, "value", $$v)},expression:"field.value"}})}),1)}),1)],1)]),_c('footer',{staticClass:"lassox-diagram__Editor_footer"},[_c('ButtonGroup',{attrs:{"align":"right"}},[_c('Button',{attrs:{"label":"Luk"},on:{"click":function () { return _vm.close(); }}}),_c('Button',{attrs:{"type":"primary","label":"Gem ændringer","disabled":!_vm.hasChanges},on:{"click":function () { return _vm.saveChanges(); }}})],1)],1)])}
+var Editorvue_type_template_id_38f3d20c_staticRenderFns = []
 
 
-// CONCATENATED MODULE: ./src/components/Editor.vue?vue&type=template&id=70d337e4&
+// CONCATENATED MODULE: ./src/components/Editor.vue?vue&type=template&id=38f3d20c&
 
 // CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"77807189-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/EditorFieldGroups.vue?vue&type=template&id=545a4e7c&
 var EditorFieldGroupsvue_type_template_id_545a4e7c_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"lassox-diagram__EditorFieldGroups"},[_vm._t("default")],2)}
@@ -62386,12 +62610,14 @@ var EditorFieldGroup_component = normalizeComponent(
 var lodash_set = __webpack_require__("f4c4");
 var lodash_set_default = /*#__PURE__*/__webpack_require__.n(lodash_set);
 
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"77807189-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/AddRelationDialog.vue?vue&type=template&id=44654e61&
-var AddRelationDialogvue_type_template_id_44654e61_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('Dialog',{staticClass:"lassox-diagram__AddRelationDialog",attrs:{"dismissable":true,"title":("Tilføj " + (_vm.relationTypeLabel.toLowerCase())),"size":"2x","onClose":_vm.dismiss},scopedSlots:_vm._u([{key:"content",fn:function(){return [_c('EditorFieldGroups',[(_vm.relationFields.length)?[_c('EditorFieldGroup',_vm._l((_vm.relationFields),function(field){return _c('EditorField',{key:field.fullId,attrs:{"id":field.fullId,"type":field.type,"title":field.title},model:{value:(field.value),callback:function ($$v) {_vm.$set(field, "value", $$v)},expression:"field.value"}})}),1),_c('DropdownMenuDivider',{staticStyle:{"margin":"24px 0"}})]:_vm._e(),_c('EditorFieldGroup',[_c('FieldContainer',{attrs:{"label":"Type"}},[_c('DropdownField',{attrs:{"options":_vm.entityTypeDropdownOptions},model:{value:(_vm.entityType),callback:function ($$v) {_vm.entityType=$$v},expression:"entityType"}})],1),(_vm.entityMode == 'search')?[_c('FieldContainer',{attrs:{"label":("Søg efter " + (_vm.entityType.labels.singular.toLowerCase()))}},[_c('EntitySearchBar',{attrs:{"entityType":_vm.entityType}})],1)]:_vm._l((_vm.entityFields),function(field){return _c('EditorField',{key:field.fullId,attrs:{"id":field.fullId,"type":field.type,"title":field.title},model:{value:(field.value),callback:function ($$v) {_vm.$set(field, "value", $$v)},expression:"field.value"}})})],2)],2)]},proxy:true},{key:"actions",fn:function(){return [_c('ButtonGroup',{attrs:{"align":"right"}},[_c('Button',{attrs:{"label":"Fortryd"},on:{"click":_vm.dismiss}}),_c('Button',{attrs:{"label":"Tilføj","type":"primary"},on:{"click":_vm.confirm}})],1)]},proxy:true}])})}
-var AddRelationDialogvue_type_template_id_44654e61_staticRenderFns = []
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"77807189-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/AddRelationDialog.vue?vue&type=template&id=38479ad2&
+var AddRelationDialogvue_type_template_id_38479ad2_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('Dialog',{staticClass:"lassox-diagram__AddRelationDialog",attrs:{"dismissable":true,"title":("Tilføj " + (_vm.relationTypeLabel.toLowerCase())),"size":"2x","onClose":_vm.dismiss},scopedSlots:_vm._u([{key:"content",fn:function(){return [_c('EditorFieldGroups',[(_vm.relationFields.length)?[_c('EditorFieldGroup',_vm._l((_vm.relationFields),function(field){return _c('EditorField',{key:field.fullId,attrs:{"id":field.fullId,"type":field.type,"title":field.title},model:{value:(field.value),callback:function ($$v) {_vm.$set(field, "value", $$v)},expression:"field.value"}})}),1),_c('DropdownMenuDivider',{staticStyle:{"margin":"24px 0"}})]:_vm._e(),_c('EditorFieldGroup',[_c('FieldContainer',{attrs:{"label":"Type"}},[_c('DropdownField',{attrs:{"options":_vm.entityTypeDropdownOptions},model:{value:(_vm.entityType),callback:function ($$v) {_vm.entityType=$$v},expression:"entityType"}})],1),(_vm.entityType.searchable)?_c('FieldContainer',[_c('TabBar',{attrs:{"outlined":"","tabs":[
+              { id: 'search', label: 'Søg' },
+              { id: 'custom', label: 'Manuelt' } ]},model:{value:(_vm.entityMode),callback:function ($$v) {_vm.entityMode=$$v},expression:"entityMode"}})],1):_vm._e(),(_vm.entityMode === 'search')?[_c('FieldContainer',{attrs:{"label":("Søg efter " + (_vm.entityType.labels.singular.toLowerCase()))}},[_c('EntitySearchBar',{attrs:{"entityType":_vm.entityType},model:{value:(_vm.selectedSearchEntity),callback:function ($$v) {_vm.selectedSearchEntity=$$v},expression:"selectedSearchEntity"}})],1)]:_vm._l((_vm.entityFields),function(field){return _c('EditorField',{key:field.fullId,attrs:{"id":field.fullId,"type":field.type,"title":field.title},model:{value:(field.value),callback:function ($$v) {_vm.$set(field, "value", $$v)},expression:"field.value"}})})],2)],2)]},proxy:true},{key:"actions",fn:function(){return [_c('ButtonGroup',{attrs:{"align":"right"}},[_c('Button',{attrs:{"label":"Fortryd"},on:{"click":_vm.dismiss}}),_c('Button',{attrs:{"label":"Tilføj","type":"primary","disabled":_vm.entityMode === 'search' ? !_vm.selectedSearchEntity : false},on:{"click":_vm.confirm}})],1)]},proxy:true}])})}
+var AddRelationDialogvue_type_template_id_38479ad2_staticRenderFns = []
 
 
-// CONCATENATED MODULE: ./src/components/AddRelationDialog.vue?vue&type=template&id=44654e61&
+// CONCATENATED MODULE: ./src/components/AddRelationDialog.vue?vue&type=template&id=38479ad2&
 
 // CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"77807189-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/DropdownField.vue?vue&type=template&id=60ea2025&
 var DropdownFieldvue_type_template_id_60ea2025_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"lassox-diagram__DropdownField"},[_c('Button',{ref:"dropdownButton",staticClass:"lassox-diagram__DropdownField-button",attrs:{"label":_vm.selectedOption && _vm.selectedOption.label || '',"trailingIcon":_vm.showDropdownMenu ? 'expand_less' : 'expand_more'},on:{"click":function () { return _vm.showDropdownMenu = !_vm.showDropdownMenu; }}}),_c('DropdownMenu',{attrs:{"buttonEl":_vm.showDropdownMenu ? _vm.$refs.dropdownButton.$el : null,"close":function () { return _vm.showDropdownMenu = false; }}},_vm._l((_vm.options),function(option){return _c('DropdownMenuItem',{key:option.id,attrs:{"icon":option.value === _vm.value ? 'check' : ' ',"label":option.label},on:{"click":function () { return _vm.$emit('change', option.value); }}})}),1)],1)}
@@ -62482,51 +62708,27 @@ var DropdownField_component = normalizeComponent(
 )
 
 /* harmony default export */ var components_DropdownField = (DropdownField_component.exports);
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"77807189-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/EntitySearchBar.vue?vue&type=template&id=45c41d70&
-var EntitySearchBarvue_type_template_id_45c41d70_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"lassox-diagram__EntitySearchBar"},[_c('TextField',{ref:"textField",attrs:{"autocomplete":"off","leadingIcon":"search","trailingIcon":_vm.inputText ? 'cancel' : null,"onClickTrailingIcon":function () {
-      _vm.inputText = ''
-    },"value":_vm.inputText},on:{"mousedown":function () {
-      if (_vm.focused && _vm.inputText) { _vm.showSuggestions = true }
-    },"focusin":function () {
-      _vm.log('inputFocused = true')
-      _vm.inputFocused = true
-      // focused = true
-      // if (inputText) showSuggestions = true
-    },"focusout":function () {
-      _vm.log('inputFocused = false')
-      _vm.inputFocused = false
-      // TODO
-    },"keydown":function () {
-      // TODO
-    },"input":function (event) {
-      _vm.inputText = event.target.value
-
-      _vm.activeSuggestionIndex = 0
-      _vm.showSuggestions = !!_vm.inputText && _vm.focused
-
-      if (!_vm.inputText) {
-        _vm.suggestionsPromise = null
-        _vm.suggestions = null
-        return
-      }
-
-      _vm.loadSuggestions()
-    }}}),_c('div',{ref:"suggestionsEl",staticClass:"lassox-diagram__EntitySearchBar_suggestions",style:([
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"77807189-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/EntitySearchBar.vue?vue&type=template&id=c4c9d114&
+var EntitySearchBarvue_type_template_id_c4c9d114_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"lassox-diagram__EntitySearchBar"},[_c('TextField',{ref:"textField",attrs:{"autocomplete":"off","leadingIcon":"search","trailingIcon":_vm.inputText ? 'cancel' : null,"onClickTrailingIcon":function () { return _vm.selectSuggestion(null); },"value":_vm.inputText,"tabindex":"-1"},on:{"mousedown":function () {
+      if (_vm.inputText) { _vm.showSuggestions = true }
+    },"keydown":_vm.onInputKeyDown,"input":function (event) { return _vm.inputText = event.target.value; }},nativeOn:{"focusin":function($event){return (function () { return _vm.inputFocused = true; }).apply(null, arguments)},"focusout":function($event){return (function () { return _vm.inputFocused = false; }).apply(null, arguments)}}}),_c('div',{ref:"suggestionsEl",staticClass:"lassox-diagram__EntitySearchBar_suggestions",style:([
       _vm.suggestionsStyle,
-      { visibility: _vm.showSuggestions ? '' : 'hidden' } ]),attrs:{"tabindex":"-1"},on:{"focusin":function () {
-      _vm.log('suggestionsFocused = true')
-      _vm.suggestionsFocused = true
-    },"focusout":function () {
-      _vm.log('suggestionsFocused = false')
-      _vm.suggestionsFocused = false
-      // TODO
-    }}},[(_vm.suggestions && _vm.suggestions.length)?_vm._l((_vm.suggestions),function(suggestion,i){return _c('BaseButton',{key:i,class:[
+      { visibility: _vm.showSuggestions ? '' : 'hidden' } ]),attrs:{"tabindex":"-1"},on:{"focusin":function () { return _vm.suggestionsFocused = true; },"focusout":function () { return _vm.suggestionsFocused = false; }}},[(_vm.noSuggestions)?_c('p',{staticClass:"lassox-diagram__EntitySearchBar_suggestions-status"},[(_vm.loadingSuggestions)?[_vm._v("Søger...")]:[_vm._v("Ingen resultater fundet")]],2):_vm._l((_vm.suggestions),function(suggestion,i){return _c('BaseButton',{key:i,class:[
           'lassox-diagram__EntitySearchBar_suggestion',
-          i == _vm.activeSuggestionIndex && 'lassox-diagram__EntitySearchBar_suggestion--active' ],attrs:{"label":suggestion.name},on:{"mouseover":function () { return _vm.activeSuggestionIndex = i; },"click":function () { return _vm.selectSuggestion(suggestion); }}})}):_c('p',{staticClass:"lassox-diagram__EntitySearchBar_suggestions-status",staticStyle:{"padding":"10px 12px","text-align":"center"}},[(_vm.suggestionsPromise)?[_vm._v("Finder firmaer...")]:[_vm._v("Ingen firmaer fundet")]],2)],2)],1)}
-var EntitySearchBarvue_type_template_id_45c41d70_staticRenderFns = []
+          i === _vm.activeSuggestionIndex && 'lassox-diagram__EntitySearchBar_suggestion--active' ],attrs:{"tabindex":"-1"},on:{"click":function () {
+          _vm.textField.inputEl.focus()
+          _vm.selectSuggestion(suggestion)
+        }}},[_c('div',{staticClass:"lassox-diagram__EntitySearchBar_suggestion-column-1"},[(suggestion.supertext)?_c('div',{staticClass:"lassox-diagram__EntitySearchBar_suggestion-supertext",domProps:{"textContent":_vm._s(suggestion.supertext)}}):_vm._e(),_c('div',{staticClass:"lassox-diagram__EntitySearchBar_suggestion-text",domProps:{"textContent":_vm._s(suggestion.text || (("Id: " + (suggestion.object.id))))}}),(suggestion.subtext)?_c('div',{staticClass:"lassox-diagram__EntitySearchBar_suggestion-subtext",domProps:{"textContent":_vm._s(suggestion.subtext)}}):_vm._e()]),(true /* if the suggestion is already in the diagram */)?_c('div',{staticClass:"lassox-diagram__EntitySearchBar_suggestion-column-2"},[_c('div',{staticClass:"lassox-diagram__EntitySearchBar_suggestion-side-text",domProps:{"textContent":_vm._s('I diagram')}})]):undefined])})],2)],1)}
+var EntitySearchBarvue_type_template_id_c4c9d114_staticRenderFns = []
 
 
-// CONCATENATED MODULE: ./src/components/EntitySearchBar.vue?vue&type=template&id=45c41d70&
+// CONCATENATED MODULE: ./src/components/EntitySearchBar.vue?vue&type=template&id=c4c9d114&
+
+// EXTERNAL MODULE: ./node_modules/core-js/modules/es.string.ends-with.js
+var es_string_ends_with = __webpack_require__("8a79");
+
+// EXTERNAL MODULE: ./node_modules/core-js/modules/es.string.search.js
+var es_string_search = __webpack_require__("841c");
 
 // CONCATENATED MODULE: ./src/util/watch-viewport.ts
 
@@ -62567,6 +62769,8 @@ function watch_viewport_unwatchViewport(callback) {
 
 
 
+
+
 var caches = new Map();
 
 var EntitySearchBarvue_type_script_lang_ts_EntitySearchBar = /*#__PURE__*/function (_Vue) {
@@ -62580,12 +62784,10 @@ var EntitySearchBarvue_type_script_lang_ts_EntitySearchBar = /*#__PURE__*/functi
     _classCallCheck(this, EntitySearchBar);
 
     _this = _super.apply(this, arguments);
-    _this.log = console.log;
     _this.focused = false;
     _this.inputFocused = false;
     _this.suggestionsFocused = false;
-    _this.showSuggestions = true; // false
-
+    _this.showSuggestions = false;
     _this.inputText = '';
     _this.suggestionsPromise = null;
     _this.suggestions = null;
@@ -62612,6 +62814,25 @@ var EntitySearchBarvue_type_script_lang_ts_EntitySearchBar = /*#__PURE__*/functi
       };
     }
   }, {
+    key: "loadingSuggestions",
+    get: function get() {
+      return !!this.suggestionsPromise;
+    }
+  }, {
+    key: "noSuggestions",
+    get: function get() {
+      var _this$suggestions;
+
+      return !((_this$suggestions = this.suggestions) !== null && _this$suggestions !== void 0 && _this$suggestions.length);
+    }
+  }, {
+    key: "activeSuggestion",
+    get: function get() {
+      var _this$suggestions$thi, _this$suggestions2;
+
+      return (_this$suggestions$thi = (_this$suggestions2 = this.suggestions) === null || _this$suggestions2 === void 0 ? void 0 : _this$suggestions2[this.activeSuggestionIndex]) !== null && _this$suggestions$thi !== void 0 ? _this$suggestions$thi : null;
+    }
+  }, {
     key: "mounted",
     value: function mounted() {
       var _this2 = this;
@@ -62626,32 +62847,18 @@ var EntitySearchBarvue_type_script_lang_ts_EntitySearchBar = /*#__PURE__*/functi
       }),
           unwatchTextField = _watchRect.unwatch;
 
-      var ignoreFocusChange = false;
-
-      var handleFocusChange = function handleFocusChange() {
-        console.log('handleFocusChange');
-        ignoreFocusChange = true;
-        var inputFocused = _this2.inputFocused,
-            suggestionsFocused = _this2.suggestionsFocused;
-        requestAnimationFrame(function () {
-          console.log('handleFocusChange - raf - 1');
-
-          if (_this2.inputFocused != inputFocused || _this2.suggestionsFocused != suggestionsFocused) {
-            console.log('handleFocusChange - raf - 2');
-            handleFocusChange();
-            return;
-          }
-
-          console.log('handleFocusChange - raf - 3');
-          ignoreFocusChange = false;
-          _this2.focused = _this2.inputFocused || _this2.suggestionsFocused;
-        });
-      };
-
       this.$watch(function () {
         return [_this2.inputFocused, _this2.suggestionsFocused];
-      }, function () {
-        if (!ignoreFocusChange) handleFocusChange();
+      }, function (_ref) {
+        var _ref2 = _slicedToArray(_ref, 2),
+            inputFocused = _ref2[0],
+            suggestionsFocused = _ref2[1];
+
+        requestAnimationFrame(function () {
+          // Focus changed since last frame, return out
+          if (_this2.inputFocused !== inputFocused || _this2.suggestionsFocused !== suggestionsFocused) return;
+          _this2.focused = inputFocused || suggestionsFocused;
+        });
       });
 
       this.onDestroy = function () {
@@ -62667,35 +62874,90 @@ var EntitySearchBarvue_type_script_lang_ts_EntitySearchBar = /*#__PURE__*/functi
       (_this$onDestroy = this.onDestroy) === null || _this$onDestroy === void 0 ? void 0 : _this$onDestroy.call(this);
     }
   }, {
+    key: "onInputKeyDown",
+    value: function onInputKeyDown(e) {
+      if (!this.showSuggestions) return;
+      var key = e.key || e.code;
+
+      switch (key) {
+        case 'ArrowUp':
+        case 'Up':
+        case 'ArrowDown':
+        case 'Down':
+          {
+            var _this$suggestions$len, _this$suggestions3;
+
+            e.preventDefault();
+            var min = 0;
+            var max = Math.max(((_this$suggestions$len = (_this$suggestions3 = this.suggestions) === null || _this$suggestions3 === void 0 ? void 0 : _this$suggestions3.length) !== null && _this$suggestions$len !== void 0 ? _this$suggestions$len : 0) - 1, 0);
+            var newIndex = this.activeSuggestionIndex;
+            if (key.endsWith('Up')) newIndex--;else newIndex++;
+            if (newIndex < min) newIndex = max;else if (newIndex > max) newIndex = min;
+            this.activeSuggestionIndex = newIndex;
+            this.scrollActiveSuggestionIntoView();
+            break;
+          }
+
+        case 'Tab':
+        case 'Enter':
+          {
+            if (!this.activeSuggestion) return; // Ignore Shift + Tab
+
+            if (e.shiftKey && e.code === 'Tab') break;
+            e.preventDefault();
+            this.selectSuggestion(this.activeSuggestion);
+            break;
+          }
+      }
+    }
+  }, {
     key: "loadSuggestions",
     value: function () {
       var _loadSuggestions = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee2() {
         var _this3 = this;
 
-        var entityType, promise, suggestions;
+        var entityType, inputText, promise, suggestions;
         return regeneratorRuntime.wrap(function _callee2$(_context2) {
           while (1) {
             switch (_context2.prev = _context2.next) {
               case 0:
-                entityType = this.entityType;
+                entityType = this.entityType, inputText = this.inputText;
+
+                if (!(!entityType || !inputText)) {
+                  _context2.next = 5;
+                  break;
+                }
+
+                this.suggestionsPromise = null;
+                this.suggestions = null;
+                return _context2.abrupt("return");
+
+              case 5:
                 promise = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee() {
                   var entities;
                   return regeneratorRuntime.wrap(function _callee$(_context) {
                     while (1) {
                       switch (_context.prev = _context.next) {
                         case 0:
-                          entities = _this3.diagram.activeDiagram.data.entities;
-                          if (entityType) entities = entities.filter(function (e) {
-                            return e.type === entityType;
-                          });
+                          entities = _this3.diagram.search(entityType, inputText);
                           return _context.abrupt("return", entities.map(function (entity) {
-                            return {
+                            var _entity$type$searchRe = entity.type.searchResultBuilder({
                               id: entity.id,
-                              name: entity.data.name
+                              data: entity.data
+                            }),
+                                text = _entity$type$searchRe.text,
+                                supertext = _entity$type$searchRe.supertext,
+                                subtext = _entity$type$searchRe.subtext;
+
+                            return {
+                              entity: entity,
+                              text: text,
+                              supertext: supertext,
+                              subtext: subtext
                             };
                           }));
 
-                        case 3:
+                        case 2:
                         case "end":
                           return _context.stop();
                       }
@@ -62703,24 +62965,24 @@ var EntitySearchBarvue_type_script_lang_ts_EntitySearchBar = /*#__PURE__*/functi
                   }, _callee);
                 }))();
                 this.suggestionsPromise = promise;
-                _context2.next = 5;
+                _context2.next = 9;
                 return promise;
 
-              case 5:
+              case 9:
                 suggestions = _context2.sent;
 
                 if (!(this.suggestionsPromise !== promise)) {
-                  _context2.next = 8;
+                  _context2.next = 12;
                   break;
                 }
 
                 return _context2.abrupt("return");
 
-              case 8:
+              case 12:
                 this.suggestionsPromise = null;
                 this.suggestions = suggestions;
 
-              case 10:
+              case 14:
               case "end":
                 return _context2.stop();
             }
@@ -62735,13 +62997,34 @@ var EntitySearchBarvue_type_script_lang_ts_EntitySearchBar = /*#__PURE__*/functi
       return loadSuggestions;
     }()
   }, {
+    key: "scrollActiveSuggestionIntoView",
+    value: function scrollActiveSuggestionIntoView() {
+      var _this$suggestions4;
+
+      if (!((_this$suggestions4 = this.suggestions) !== null && _this$suggestions4 !== void 0 && _this$suggestions4.length)) return;
+      var el = this.suggestionsEl.querySelectorAll('.lassox-diagram__EntitySearchBar_suggestion')[this.activeSuggestionIndex];
+      if (!el) return;
+      var rect = el.getBoundingClientRect();
+      var parentRect = this.suggestionsEl.getBoundingClientRect();
+
+      if (rect.top < parentRect.top) {
+        this.suggestionsEl.scrollTop -= parentRect.top - rect.top;
+      } else if (rect.bottom > parentRect.bottom) {
+        this.suggestionsEl.scrollTop -= parentRect.bottom - rect.bottom;
+      }
+    }
+  }, {
     key: "selectSuggestion",
     value: function selectSuggestion(suggestion) {
-      var _suggestion$name;
+      var _ref4,
+          _suggestion$text,
+          _this4 = this;
 
-      if ((suggestion === null || suggestion === void 0 ? void 0 : suggestion.id) !== this.entityId) this.$emit('change', suggestion === null || suggestion === void 0 ? void 0 : suggestion.id);
-      this.inputText = (_suggestion$name = suggestion === null || suggestion === void 0 ? void 0 : suggestion.name) !== null && _suggestion$name !== void 0 ? _suggestion$name : '';
-      this.showSuggestions = false;
+      if (suggestion !== this.selectedSuggestion) this.$emit('change', suggestion);
+      this.inputText = (_ref4 = (_suggestion$text = suggestion === null || suggestion === void 0 ? void 0 : suggestion.text) !== null && _suggestion$text !== void 0 ? _suggestion$text : suggestion === null || suggestion === void 0 ? void 0 : suggestion.entity.id) !== null && _ref4 !== void 0 ? _ref4 : '';
+      this.$nextTick(function () {
+        _this4.showSuggestions = false;
+      });
     }
   }, {
     key: "onEntityTypeChanged",
@@ -62751,8 +63034,46 @@ var EntitySearchBarvue_type_script_lang_ts_EntitySearchBar = /*#__PURE__*/functi
       this.loadSuggestions();
     }
   }, {
+    key: "onSelectedSuggestionChanged",
+    value: function onSelectedSuggestionChanged() {
+      var _this$selectedSuggest;
+
+      this.selectSuggestion((_this$selectedSuggest = this.selectedSuggestion) !== null && _this$selectedSuggest !== void 0 ? _this$selectedSuggest : null);
+    }
+  }, {
+    key: "onFocusedChanged",
+    value: function onFocusedChanged() {
+      this.showSuggestions = this.focused && !!this.inputText;
+
+      if (!this.focused) {
+        if (!this.inputText || !this.selectedSuggestion) {
+          this.selectSuggestion(null);
+        } else {
+          this.selectSuggestion(this.selectedSuggestion);
+        }
+      }
+    }
+  }, {
     key: "onInputTextChanged",
-    value: function onInputTextChanged() {}
+    value: function onInputTextChanged() {
+      var focused = this.focused,
+          inputText = this.inputText;
+      this.activeSuggestionIndex = 0;
+
+      if (inputText) {
+        this.loadSuggestions();
+        this.showSuggestions = focused;
+      } else {
+        this.selectSuggestion(null);
+        this.suggestionsPromise = null;
+        this.suggestions = null;
+      }
+    }
+  }, {
+    key: "onSuggestionsChanged",
+    value: function onSuggestionsChanged() {
+      this.activeSuggestionIndex = 0;
+    }
   }]);
 
   return EntitySearchBar;
@@ -62762,7 +63083,7 @@ __decorate([Inject()], EntitySearchBarvue_type_script_lang_ts_EntitySearchBar.pr
 
 __decorate([Prop(diagram_EntityType)], EntitySearchBarvue_type_script_lang_ts_EntitySearchBar.prototype, "entityType", void 0);
 
-__decorate([Model('change', String)], EntitySearchBarvue_type_script_lang_ts_EntitySearchBar.prototype, "entityId", void 0);
+__decorate([Model('change', Object)], EntitySearchBarvue_type_script_lang_ts_EntitySearchBar.prototype, "selectedSuggestion", void 0);
 
 __decorate([Ref()], EntitySearchBarvue_type_script_lang_ts_EntitySearchBar.prototype, "textField", void 0);
 
@@ -62770,7 +63091,17 @@ __decorate([Ref()], EntitySearchBarvue_type_script_lang_ts_EntitySearchBar.proto
 
 __decorate([Watch('entityType')], EntitySearchBarvue_type_script_lang_ts_EntitySearchBar.prototype, "onEntityTypeChanged", null);
 
-__decorate([Watch('inputText')], EntitySearchBarvue_type_script_lang_ts_EntitySearchBar.prototype, "onInputTextChanged", null);
+__decorate([Watch('selectedSuggestion', {
+  immediate: true
+})], EntitySearchBarvue_type_script_lang_ts_EntitySearchBar.prototype, "onSelectedSuggestionChanged", null);
+
+__decorate([Watch('focused')], EntitySearchBarvue_type_script_lang_ts_EntitySearchBar.prototype, "onFocusedChanged", null);
+
+__decorate([Watch('inputText', {
+  immediate: true
+})], EntitySearchBarvue_type_script_lang_ts_EntitySearchBar.prototype, "onInputTextChanged", null);
+
+__decorate([Watch('suggestions')], EntitySearchBarvue_type_script_lang_ts_EntitySearchBar.prototype, "onSuggestionsChanged", null);
 
 EntitySearchBarvue_type_script_lang_ts_EntitySearchBar = __decorate([vue_class_component_esm({
   components: {
@@ -62795,8 +63126,8 @@ var EntitySearchBarvue_type_style_index_0_lang_scss_ = __webpack_require__("636b
 
 var EntitySearchBar_component = normalizeComponent(
   components_EntitySearchBarvue_type_script_lang_ts_,
-  EntitySearchBarvue_type_template_id_45c41d70_render,
-  EntitySearchBarvue_type_template_id_45c41d70_staticRenderFns,
+  EntitySearchBarvue_type_template_id_c4c9d114_render,
+  EntitySearchBarvue_type_template_id_c4c9d114_staticRenderFns,
   false,
   null,
   null,
@@ -62805,16 +63136,16 @@ var EntitySearchBar_component = normalizeComponent(
 )
 
 /* harmony default export */ var components_EntitySearchBar = (EntitySearchBar_component.exports);
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"77807189-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/TabBar.vue?vue&type=template&id=768e61f8&
-var TabBarvue_type_template_id_768e61f8_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{class:[
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"77807189-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/TabBar.vue?vue&type=template&id=44c3d682&
+var TabBarvue_type_template_id_44c3d682_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{class:[
     'lassox-diagram__TabBar',
-    _vm.outlined && 'lassox-diagram__TabBar--outlined' ]},[_c('div',{staticClass:"lassox-diagram__TabBar_tabs-wrapper"},_vm._l((_vm.tabs),function(tab){return _c('BaseButton',{key:tab.id,class:[
+    _vm.outlined && 'lassox-diagram__TabBar--outlined' ]},[_c('div',{staticClass:"lassox-diagram__TabBar_outline"}),_c('div',{staticClass:"lassox-diagram__TabBar_tabs-wrapper"},_vm._l((_vm.tabs),function(tab){return _c('BaseButton',{key:tab.id,class:[
         'lassox-diagram__TabBar_tab',
         tab === _vm.activeTab && 'lassox-diagram__TabBar_tab--active' ],attrs:{"label":tab.label},on:{"click":function($event){_vm.activeTab = tab}}})}),1)])}
-var TabBarvue_type_template_id_768e61f8_staticRenderFns = []
+var TabBarvue_type_template_id_44c3d682_staticRenderFns = []
 
 
-// CONCATENATED MODULE: ./src/components/TabBar.vue?vue&type=template&id=768e61f8&
+// CONCATENATED MODULE: ./src/components/TabBar.vue?vue&type=template&id=44c3d682&
 
 // CONCATENATED MODULE: ./node_modules/babel-loader/lib!./node_modules/ts-loader??ref--14-1!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/TabBar.vue?vue&type=script&lang=ts&
 
@@ -62898,8 +63229,8 @@ var TabBarvue_type_style_index_0_lang_scss_ = __webpack_require__("ae1f");
 
 var TabBar_component = normalizeComponent(
   components_TabBarvue_type_script_lang_ts_,
-  TabBarvue_type_template_id_768e61f8_render,
-  TabBarvue_type_template_id_768e61f8_staticRenderFns,
+  TabBarvue_type_template_id_44c3d682_render,
+  TabBarvue_type_template_id_44c3d682_staticRenderFns,
   false,
   null,
   null,
@@ -62952,11 +63283,11 @@ var AddRelationDialogvue_type_script_lang_ts_AddRelationDialog = /*#__PURE__*/fu
     _classCallCheck(this, AddRelationDialog);
 
     _this = _super.apply(this, arguments);
-    _this.entityFields = [];
     _this.relationFields = [];
-    _this.entityMode = 'custom'; // 'search'
-
+    _this.entityFields = [];
     _this.entityType = null;
+    _this.entityMode = 'search';
+    _this.selectedSearchEntity = null;
     return _this;
   }
 
@@ -63039,6 +63370,7 @@ var AddRelationDialogvue_type_script_lang_ts_AddRelationDialog = /*#__PURE__*/fu
 
       this.close();
       (_this$onConfirm = this.onConfirm) === null || _this$onConfirm === void 0 ? void 0 : _this$onConfirm.call(this);
+      if (!this.entityType) return;
 
       var generateId = function generateId(prefix, items) {
         var time = Date.now();
@@ -63073,25 +63405,40 @@ var AddRelationDialogvue_type_script_lang_ts_AddRelationDialog = /*#__PURE__*/fu
         return data;
       };
 
-      if (this.entityMode === 'custom') {
-        if (!this.entityType) return;
-        var entity = {
+      var baseRelation = {
+        type: this.relationType.id,
+        id: generateId('CUSTOM-RELATION', this.diagram.activeDiagram.data.relationsMap),
+        data: generateData(this.relationFields)
+      };
+
+      if (this.entityMode === 'search') {
+        if (!this.selectedSearchEntity) return;
+        var entity = this.selectedSearchEntity.entity;
+
+        var newRelation = _objectSpread2(_objectSpread2({}, baseRelation), {}, {
+          from: this.asParent ? entity.id : this.entity.id,
+          to: this.asParent ? this.entity.id : entity.id
+        });
+
+        this.diagram.activeDiagram.data.add({
+          relations: [newRelation]
+        });
+      } else {
+        var newEntity = {
           type: this.entityType.id,
           id: generateId('CUSTOM-ENTITY', this.diagram.activeDiagram.data.entitiesMap),
           data: generateData(this.entityFields)
         };
-        var relation = {
-          type: this.relationType.id,
-          id: generateId('CUSTOM-RELATION', this.diagram.activeDiagram.data.relationsMap),
-          from: this.asParent ? entity.id : this.entity.id,
-          to: this.asParent ? this.entity.id : entity.id,
-          data: generateData(this.relationFields)
-        };
+
+        var relation = _objectSpread2(_objectSpread2({}, baseRelation), {}, {
+          from: this.asParent ? newEntity.id : this.entity.id,
+          to: this.asParent ? this.entity.id : newEntity.id
+        });
+
         this.diagram.activeDiagram.data.add({
-          entities: [entity],
+          entities: [newEntity],
           relations: [relation]
         });
-      } else {// TODO
       }
     }
   }, {
@@ -63108,20 +63455,6 @@ var AddRelationDialogvue_type_script_lang_ts_AddRelationDialog = /*#__PURE__*/fu
       this.entityType = this.supportedEntityTypes[0];
     }
   }, {
-    key: "onEntityTypeChanged",
-    value: function onEntityTypeChanged() {
-      var _this$entityType$fiel, _this$entityType;
-
-      this.entityFields = (_this$entityType$fiel = (_this$entityType = this.entityType) === null || _this$entityType === void 0 ? void 0 : _this$entityType.fields.filter(function (field) {
-        return field.isEntityLabel;
-      }).map(function (field) {
-        return _objectSpread2(_objectSpread2({}, field), {}, {
-          value: undefined,
-          active: true
-        });
-      })) !== null && _this$entityType$fiel !== void 0 ? _this$entityType$fiel : [];
-    }
-  }, {
     key: "onRelationTypeChanged",
     value: function onRelationTypeChanged() {
       this.relationFields = this.relationType.fields.filter(function (field) {
@@ -63132,6 +63465,25 @@ var AddRelationDialogvue_type_script_lang_ts_AddRelationDialog = /*#__PURE__*/fu
           active: true
         });
       });
+    }
+  }, {
+    key: "onEntityTypeChanged",
+    value: function onEntityTypeChanged() {
+      var _this$entityType, _this$entityType$fiel, _this$entityType2;
+
+      if (!((_this$entityType = this.entityType) !== null && _this$entityType !== void 0 && _this$entityType.searchable)) {
+        this.entityMode = 'custom';
+      }
+
+      this.selectedSearchEntity = null;
+      this.entityFields = (_this$entityType$fiel = (_this$entityType2 = this.entityType) === null || _this$entityType2 === void 0 ? void 0 : _this$entityType2.fields.filter(function (field) {
+        return field.isEntityLabel;
+      }).map(function (field) {
+        return _objectSpread2(_objectSpread2({}, field), {}, {
+          value: undefined,
+          active: true
+        });
+      })) !== null && _this$entityType$fiel !== void 0 ? _this$entityType$fiel : [];
     }
   }]);
 
@@ -63163,13 +63515,13 @@ __decorate([Watch('supportedEntityTypes', {
   immediate: true
 })], AddRelationDialogvue_type_script_lang_ts_AddRelationDialog.prototype, "onSupportedEntityTypesChanged", null);
 
-__decorate([Watch('entityType', {
-  immediate: true
-})], AddRelationDialogvue_type_script_lang_ts_AddRelationDialog.prototype, "onEntityTypeChanged", null);
-
 __decorate([Watch('relationType', {
   immediate: true
 })], AddRelationDialogvue_type_script_lang_ts_AddRelationDialog.prototype, "onRelationTypeChanged", null);
+
+__decorate([Watch('entityType', {
+  immediate: true
+})], AddRelationDialogvue_type_script_lang_ts_AddRelationDialog.prototype, "onEntityTypeChanged", null);
 
 AddRelationDialogvue_type_script_lang_ts_AddRelationDialog = __decorate([vue_class_component_esm({
   components: {
@@ -63200,8 +63552,8 @@ AddRelationDialogvue_type_script_lang_ts_AddRelationDialog = __decorate([vue_cla
 
 var AddRelationDialog_component = normalizeComponent(
   components_AddRelationDialogvue_type_script_lang_ts_,
-  AddRelationDialogvue_type_template_id_44654e61_render,
-  AddRelationDialogvue_type_template_id_44654e61_staticRenderFns,
+  AddRelationDialogvue_type_template_id_38479ad2_render,
+  AddRelationDialogvue_type_template_id_38479ad2_staticRenderFns,
   false,
   null,
   null,
@@ -63786,16 +64138,14 @@ var Editorvue_type_script_lang_ts_Editor = /*#__PURE__*/function (_Vue) {
 
           try {
             for (_iterator7.s(); !(_step7 = _iterator7.n()).done;) {
-              var _field2$getValue, _field2$getInitialVal, _field2$getValue2, _field2$getInitialVal2;
-
               var _field2 = _step7.value;
               if (!_field2.active) continue;
               var baseField = {
                 id: _field2.fullId,
                 title: _field2.title,
                 dataKey: _field2.dataKey,
-                value: (_field2$getValue = _field2.getValue(object.data)) !== null && _field2$getValue !== void 0 ? _field2$getValue : (_field2$getInitialVal = _field2.getInitialValue) === null || _field2$getInitialVal === void 0 ? void 0 : _field2$getInitialVal.call(_field2, object.data),
-                initialValue: (_field2$getValue2 = _field2.getValue(object.initialState.data)) !== null && _field2$getValue2 !== void 0 ? _field2$getValue2 : (_field2$getInitialVal2 = _field2.getInitialValue) === null || _field2$getInitialVal2 === void 0 ? void 0 : _field2$getInitialVal2.call(_field2, object.initialState.data)
+                value: _field2.getValue(object.data),
+                initialValue: _field2.getValue(object.initialState.data)
               };
               var newField = void 0;
 
@@ -64002,8 +64352,8 @@ var Editorvue_type_style_index_0_lang_scss_ = __webpack_require__("58d3");
 
 var Editor_component = normalizeComponent(
   components_Editorvue_type_script_lang_ts_,
-  Editorvue_type_template_id_70d337e4_render,
-  Editorvue_type_template_id_70d337e4_staticRenderFns,
+  Editorvue_type_template_id_38f3d20c_render,
+  Editorvue_type_template_id_38f3d20c_staticRenderFns,
   false,
   null,
   null,
@@ -64104,7 +64454,7 @@ var Diagramvue_type_style_index_0_lang_scss_ = __webpack_require__("034b");
 
 var Diagram_component = normalizeComponent(
   components_Diagramvue_type_script_lang_ts_,
-  Diagramvue_type_template_id_00667149_render,
+  Diagramvue_type_template_id_359ff311_render,
   staticRenderFns,
   false,
   null,
@@ -64473,11 +64823,15 @@ var DiagramData_DiagramData = /*#__PURE__*/function () {
           }); // Cancel if nothing to add
 
           if (!entities.length && !relations.length) return false;
-          if (entities.length) _this2._addEntities(entities);
-          if (relations.length) _this2._addRelations(relations);
+
+          _this2._addEntities(entities);
+
+          _this2._addRelations(relations);
+
           revertFns.push(function () {
-            if (entities.length) _this2._removeEntities(entities);
-            if (relations.length) _this2._removeRelations(relations);
+            _this2._removeEntities(entities);
+
+            _this2._removeRelations(relations);
           });
         });
       }
@@ -64499,9 +64853,7 @@ var DiagramData_DiagramData = /*#__PURE__*/function () {
 
               var entity = _this2.entitiesMap.get(id);
 
-              if (entity) {
-                entities.push(entity);
-              }
+              if (entity) entities.push(entity);
             }
           } catch (err) {
             _iterator2.e(err);
@@ -64518,9 +64870,7 @@ var DiagramData_DiagramData = /*#__PURE__*/function () {
 
               var relation = _this2.relationsMap.get(_id);
 
-              if (relation) {
-                relations.push(relation);
-              }
+              if (relation) relations.push(relation);
             }
           } catch (err) {
             _iterator3.e(err);
@@ -64760,6 +65110,8 @@ var DiagramData_DiagramData = /*#__PURE__*/function () {
   }, {
     key: "_addEntities",
     value: function _addEntities(entities) {
+      if (!entities.length) return;
+
       var _iterator9 = _createForOfIteratorHelper(entities),
           _step9;
 
@@ -64779,6 +65131,8 @@ var DiagramData_DiagramData = /*#__PURE__*/function () {
   }, {
     key: "_addRelations",
     value: function _addRelations(relations) {
+      if (!relations.length) return;
+
       var _iterator10 = _createForOfIteratorHelper(relations),
           _step10;
 
@@ -64798,6 +65152,8 @@ var DiagramData_DiagramData = /*#__PURE__*/function () {
   }, {
     key: "_removeEntities",
     value: function _removeEntities(entities) {
+      if (!entities.length) return;
+
       var _iterator11 = _createForOfIteratorHelper(entities),
           _step11;
 
@@ -64817,6 +65173,8 @@ var DiagramData_DiagramData = /*#__PURE__*/function () {
   }, {
     key: "_removeRelations",
     value: function _removeRelations(relations) {
+      if (!relations.length) return;
+
       var _iterator12 = _createForOfIteratorHelper(relations),
           _step12;
 
@@ -64946,6 +65304,14 @@ var exampleConfig = {
       editorLabel: function editorLabel(data) {
         return data.name;
       }
+    },
+    // (Optional) Allow entities of this type to be searched for
+    searchable: true,
+    searchResultBuilder: function searchResultBuilder(context) {
+      return {
+        supertext: context.data.cvr ? "CVR ".concat(context.data.cvr) : null,
+        text: context.data.name
+      };
     }
   }, {
     id: 'person',
@@ -64960,6 +65326,19 @@ var exampleConfig = {
     },
     style: {
       labelsBackgroundColor: '#f8f8f8'
+    },
+    searchable: true,
+    searchResultBuilder: function searchResultBuilder(context) {
+      return {
+        text: context.data.name
+      };
+    }
+  }, {
+    id: 'other',
+    icon: 'help_outline',
+    labels: {
+      singular: 'Anden',
+      plural: 'Andre'
     }
   }, {
     id: 'unknownOwners',
@@ -65022,21 +65401,17 @@ var exampleConfig = {
       // (Optional) Show the field in the top of an entity, before all other fields
       isEntityLabel: true,
       // (Optional) Make the field start active by default
-      startActive: true
+      startActive: true,
+      // (Optional) Use this field when searching for entites/relations
+      searchable: true
     }, {
       id: 'name',
       title: 'Navn',
       entityTypes: ['company'],
       dataKey: 'name',
       isEntityLabel: true,
-      startActive: true
-    }, {
-      id: 'note',
-      title: 'Note',
-      entityTypes: ['company'],
-      dataKey: 'note',
-      isEntityLabel: true,
-      startActive: false
+      startActive: true,
+      searchable: true
     }, // Fields for if the main entity is a person.
     // {
     //   id: 'trueOwnership',
@@ -65113,14 +65488,8 @@ var exampleConfig = {
       entityTypes: ['person'],
       dataKey: 'name',
       isEntityLabel: true,
-      startActive: true
-    }, {
-      id: 'note',
-      title: 'Note',
-      entityTypes: ['person'],
-      dataKey: 'note',
-      isEntityLabel: true,
-      startActive: false
+      startActive: true,
+      searchable: true
     }, // Fields for if the main entity is a company.
     {
       id: 'trueOwner',
@@ -65164,6 +65533,31 @@ var exampleConfig = {
       addToLegend: true,
       legendColor: '#cd4b3d',
       startActive: true
+    }]
+  }, {
+    id: 'otherInfo',
+    title: 'Andre oplysninger',
+    fields: [{
+      id: 'foreign',
+      title: 'Udenlandsk',
+      entityTypes: ['company', 'person', 'other'],
+      dataKey: 'foreign',
+      type: 'boolean',
+      getInitialValue: function getInitialValue() {
+        return false;
+      },
+      formatter: function formatter(value) {
+        return value ? 'Udenlandsk' : '';
+      },
+      isEntityLabel: true,
+      startActive: true
+    }, {
+      id: 'note',
+      title: 'Note',
+      entityTypes: ['company', 'person', 'other'],
+      dataKey: 'note',
+      isEntityLabel: true,
+      startActive: false
     }]
   }, {
     id: 'accountingFigures',
@@ -65273,6 +65667,53 @@ var exampleConfig = {
       startActive: true
     }]
   }],
+  // Filters
+  filters: [{
+    id: 'showChildCompanies',
+    title: 'Vis datterselskaber',
+    filter: function filter(_ref) {
+      var isEntity = _ref.isEntity,
+          type = _ref.type,
+          isParent = _ref.isParent,
+          isChild = _ref.isChild;
+      return !(isEntity && type === 'company' && isChild && !isParent);
+    }
+  }, {
+    id: 'showParentCompanies',
+    title: 'Vis moderselskaber',
+    filter: function filter(_ref2) {
+      var isEntity = _ref2.isEntity,
+          type = _ref2.type,
+          isParent = _ref2.isParent,
+          isChild = _ref2.isChild;
+      return !(isEntity && type === 'company' && isParent && !isChild);
+    }
+  }, {
+    id: 'showPeople',
+    title: 'Vis personer',
+    filter: function filter(_ref3) {
+      var isEntity = _ref3.isEntity,
+          type = _ref3.type;
+      return !(isEntity && type === 'person');
+    }
+  }, {
+    id: 'showForeignOwners',
+    title: 'Vis udenlandske ejere',
+    filter: function filter(_ref4) {
+      var isEntity = _ref4.isEntity,
+          data = _ref4.data;
+      return !(isEntity && data.foreign);
+    }
+  }, {
+    id: 'showUnknownOwners',
+    title: 'Vis ukendte ejere',
+    filter: function filter(_ref5) {
+      var isEntity = _ref5.isEntity,
+          type = _ref5.type;
+      return !(isEntity && type === 'unknownOwners');
+    }
+  }],
+  // Layouts
   layouts: [// Layouts for if the main entity is a company
   {
     id: 'company-layout-1',
@@ -65925,6 +66366,9 @@ var exampleData = {
 
 
 
+
+
+
 var diagram_Diagram = /*#__PURE__*/function () {
   function Diagram(config) {
     var _config$entityTypes,
@@ -66014,6 +66458,9 @@ var diagram_Diagram = /*#__PURE__*/function () {
         entityType.fields = entityType.fieldGroups.flatMap(function (fg) {
           return fg.fields;
         });
+        entityType.searchableFields = entityType.fields.filter(function (field) {
+          return field.searchable;
+        });
       };
 
       for (_iterator.s(); !(_step = _iterator.n()).done;) {
@@ -66041,6 +66488,9 @@ var diagram_Diagram = /*#__PURE__*/function () {
         relationType.fields = relationType.fieldGroups.flatMap(function (fg) {
           return fg.fields;
         });
+        relationType.searchableFields = relationType.fields.filter(function (field) {
+          return field.searchable;
+        });
       };
 
       for (_iterator2.s(); !(_step2 = _iterator2.n()).done;) {
@@ -66066,11 +66516,7 @@ var diagram_Diagram = /*#__PURE__*/function () {
           data: new DiagramData_DiagramData(_this, {
             data: data
           })
-        })); // this.eventBus.emit({
-        //   name: 'graph.initialLayout',
-        //   layout: this.activeDiagram.settings.activeLayout ?? undefined,
-        // })
-
+        }));
       });
     });
     this.eventBus.on(['dataUpdated', 'settingsChanged'], function () {
@@ -66223,15 +66669,64 @@ var diagram_Diagram = /*#__PURE__*/function () {
   }, {
     key: "reset",
     value: function reset() {
-      var activeDiagram = new diagram_ActiveDiagram(this);
-      activeDiagram.id = this.activeDiagram.id;
-      activeDiagram.title = this.activeDiagram.title;
-      activeDiagram.description = this.activeDiagram.description;
-      activeDiagram.shared = this.activeDiagram.shared;
-      activeDiagram.data = this.activeDiagram.data;
-      activeDiagram.data.reset(); // TODO: Reset settings to initial state
+      this.activeDiagram.reset();
+      this.eventBus.emit({
+        name: 'settingsChanged'
+      });
+      this.eventBus.emit({
+        name: 'activeFieldsChanged'
+      });
+      this.eventBus.emit({
+        name: 'activeFiltersChanged'
+      });
+      this.eventBus.emit({
+        name: 'graph.fit'
+      });
+    }
+  }, {
+    key: "search",
+    value: function search(type, searchString) {
+      searchString = searchString.trim().toLowerCase();
+      if (!searchString || !type.searchable || !type.searchableFields.length) return [];
+      var results = [];
 
-      this.setActiveDiagram(activeDiagram);
+      var _iterator5 = _createForOfIteratorHelper(this.activeDiagram.data[type instanceof diagram_EntityType ? 'entities' : 'relations']),
+          _step5;
+
+      try {
+        for (_iterator5.s(); !(_step5 = _iterator5.n()).done;) {
+          var item = _step5.value;
+          if (item.type !== type) continue;
+
+          var _iterator6 = _createForOfIteratorHelper(type.searchableFields),
+              _step6;
+
+          try {
+            for (_iterator6.s(); !(_step6 = _iterator6.n()).done;) {
+              var _ref;
+
+              var field = _step6.value;
+              var value = field.getValue(item.data);
+              var string = "".concat((_ref = field.formatter ? field.formatter(value) : value) !== null && _ref !== void 0 ? _ref : '').trim().toLowerCase();
+
+              if (string && string.includes(searchString)) {
+                results.push(item);
+                break;
+              }
+            }
+          } catch (err) {
+            _iterator6.e(err);
+          } finally {
+            _iterator6.f();
+          }
+        }
+      } catch (err) {
+        _iterator5.e(err);
+      } finally {
+        _iterator5.f();
+      }
+
+      return results;
     }
   }], [{
     key: "init",
@@ -66309,6 +66804,12 @@ var diagram_ActiveDiagram = /*#__PURE__*/function () {
 
       return expand;
     }()
+  }, {
+    key: "reset",
+    value: function reset() {
+      this.data.reset();
+      this.settings.reset();
+    }
   }]);
 
   return ActiveDiagram;
@@ -66398,12 +66899,13 @@ var diagram_RelationTypes = /*#__PURE__*/function () {
   return RelationTypes;
 }();
 var diagram_EntityType = function EntityType(options) {
-  var _options$icon, _options$style$backgr, _options$style, _options$style$border, _options$style2, _options$style$border2, _options$style3, _options$style$border3, _options$style4, _options$style$labels, _options$style5;
+  var _options$icon, _options$style$backgr, _options$style, _options$style$border, _options$style2, _options$style$border2, _options$style3, _options$style$border3, _options$style4, _options$style$labels, _options$style5, _options$searchable, _options$searchResult;
 
   _classCallCheck(this, EntityType);
 
   this.fieldGroups = [];
   this.fields = [];
+  this.searchableFields = [];
   this.id = options.id;
   this.icon = (_options$icon = options.icon) !== null && _options$icon !== void 0 ? _options$icon : undefined;
   this.labels = options.labels;
@@ -66414,14 +66916,21 @@ var diagram_EntityType = function EntityType(options) {
     borderWidth: (_options$style$border3 = (_options$style4 = options.style) === null || _options$style4 === void 0 ? void 0 : _options$style4.borderWidth) !== null && _options$style$border3 !== void 0 ? _options$style$border3 : 2,
     labelsBackgroundColor: (_options$style$labels = (_options$style5 = options.style) === null || _options$style5 === void 0 ? void 0 : _options$style5.labelsBackgroundColor) !== null && _options$style$labels !== void 0 ? _options$style$labels : '#ffffff'
   };
+  this.searchable = (_options$searchable = options.searchable) !== null && _options$searchable !== void 0 ? _options$searchable : false;
+  this.searchResultBuilder = (_options$searchResult = options.searchResultBuilder) !== null && _options$searchResult !== void 0 ? _options$searchResult : function (context) {
+    return {
+      text: context.id
+    };
+  };
 };
 var diagram_RelationType = function RelationType(options) {
-  var _options$style$arrowF, _options$style6, _options$style$arrowT, _options$style7, _options$style$arrowS, _options$style8, _options$style$lineWi, _options$style9, _options$style$lineSt, _options$style10, _options$style$lineCo, _options$style11;
+  var _options$style$arrowF, _options$style6, _options$style$arrowT, _options$style7, _options$style$arrowS, _options$style8, _options$style$lineWi, _options$style9, _options$style$lineSt, _options$style10, _options$style$lineCo, _options$style11, _options$searchable2;
 
   _classCallCheck(this, RelationType);
 
   this.fieldGroups = [];
   this.fields = [];
+  this.searchableFields = [];
   this.id = options.id;
   this.labels = options.labels;
   this.style = {
@@ -66435,6 +66944,7 @@ var diagram_RelationType = function RelationType(options) {
   this.supports = options.supports.map(function (r) {
     return new diagram_RelationTypeSupport(r);
   });
+  this.searchable = (_options$searchable2 = options.searchable) !== null && _options$searchable2 !== void 0 ? _options$searchable2 : false;
 };
 var diagram_RelationTypeSupport = function RelationTypeSupport(options) {
   var _options$allowAddExis;
@@ -66523,7 +67033,7 @@ var diagram_FieldGroup = function FieldGroup(diagram, options) {
 };
 var diagram_Field = /*#__PURE__*/function () {
   function Field(diagram, fieldGroup, options) {
-    var _options$type, _options$entityTypes, _options$relationType, _options$isEntityLabe, _options$isRelationLa, _options$addToLegend, _options$legendColor, _options$startActive, _options$display;
+    var _options$type, _options$entityTypes, _options$relationType, _options$isEntityLabe, _options$isRelationLa, _options$addToLegend, _options$legendColor, _options$startActive, _options$display, _options$searchable3;
 
     _classCallCheck(this, Field);
 
@@ -66544,6 +67054,7 @@ var diagram_Field = /*#__PURE__*/function () {
     this.legendColor = (_options$legendColor = options.legendColor) !== null && _options$legendColor !== void 0 ? _options$legendColor : null;
     this.startActive = (_options$startActive = options.startActive) !== null && _options$startActive !== void 0 ? _options$startActive : false;
     this.display = (_options$display = options.display) !== null && _options$display !== void 0 ? _options$display : true;
+    this.searchable = (_options$searchable3 = options.searchable) !== null && _options$searchable3 !== void 0 ? _options$searchable3 : false;
   }
 
   _createClass(Field, [{
@@ -66566,7 +67077,16 @@ var diagram_Field = /*#__PURE__*/function () {
   }, {
     key: "getValue",
     value: function getValue(data) {
-      return getDeep(data, this.dataKey);
+      var value = getDeep(data, this.dataKey);
+
+      if (value === null || value === undefined) {
+        var _this$getInitialValue;
+
+        value = (_this$getInitialValue = this.getInitialValue) === null || _this$getInitialValue === void 0 ? void 0 : _this$getInitialValue.call(this, data);
+        setDeep(data, this.dataKey, value);
+      }
+
+      return value;
     }
   }]);
 
@@ -66574,18 +67094,18 @@ var diagram_Field = /*#__PURE__*/function () {
 }();
 var diagram_Filter = /*#__PURE__*/function () {
   function Filter(diagram, options) {
-    var _options$type2, _options$filter, _options$startActive2;
+    var _options$filter, _options$filterWhen, _options$startActive2;
 
     _classCallCheck(this, Filter);
 
     this.diagram = diagram;
     this.id = options.id;
     this.title = options.title;
-    this.type = (_options$type2 = options.type) !== null && _options$type2 !== void 0 ? _options$type2 : null;
     this.filter = (_options$filter = options.filter) !== null && _options$filter !== void 0 ? _options$filter : function () {
       return true;
     };
-    this.startActive = (_options$startActive2 = options.startActive) !== null && _options$startActive2 !== void 0 ? _options$startActive2 : false;
+    this.filterWhen = (_options$filterWhen = options.filterWhen) !== null && _options$filterWhen !== void 0 ? _options$filterWhen : 'inactive';
+    this.startActive = (_options$startActive2 = options.startActive) !== null && _options$startActive2 !== void 0 ? _options$startActive2 : true;
   }
 
   _createClass(Filter, [{
@@ -66615,57 +67135,72 @@ var diagram_Settings = /*#__PURE__*/function () {
 
     _classCallCheck(this, Settings);
 
+    this.initialState = {
+      activeFields: {},
+      activeFilters: {},
+      activeLayout: null
+    };
     this.activeFields = {};
     this.activeFilters = {};
     this.activeLayout = null;
     this.diagram = diagram;
-    this.reset();
+    this.init();
     this.diagram.eventBus.on('settingsChanged', function () {
       _this6.saveToLocalStorage();
     });
   }
 
   _createClass(Settings, [{
-    key: "reset",
-    value: function reset() {
-      var _ref, _this$diagram$layouts;
+    key: "init",
+    value: function init() {
+      var _ref2, _this$diagram$layouts;
 
       this.activeFields = {};
       this.activeFilters = {};
 
-      var _iterator5 = _createForOfIteratorHelper(this.diagram.fields),
-          _step5;
+      var _iterator7 = _createForOfIteratorHelper(this.diagram.fields),
+          _step7;
 
       try {
-        for (_iterator5.s(); !(_step5 = _iterator5.n()).done;) {
-          var field = _step5.value;
+        for (_iterator7.s(); !(_step7 = _iterator7.n()).done;) {
+          var field = _step7.value;
           this.activeFields[field.fullId] = field.startActive;
         }
       } catch (err) {
-        _iterator5.e(err);
+        _iterator7.e(err);
       } finally {
-        _iterator5.f();
+        _iterator7.f();
       }
 
-      var _iterator6 = _createForOfIteratorHelper(this.diagram.filters),
-          _step6;
+      var _iterator8 = _createForOfIteratorHelper(this.diagram.filters),
+          _step8;
 
       try {
-        for (_iterator6.s(); !(_step6 = _iterator6.n()).done;) {
-          var filter = _step6.value;
+        for (_iterator8.s(); !(_step8 = _iterator8.n()).done;) {
+          var filter = _step8.value;
           this.activeFilters[filter.id] = filter.startActive;
         }
       } catch (err) {
-        _iterator6.e(err);
+        _iterator8.e(err);
       } finally {
-        _iterator6.f();
+        _iterator8.f();
       }
 
-      this.activeLayout = (_ref = (_this$diagram$layouts = this.diagram.layouts.find(function (l) {
+      this.activeLayout = (_ref2 = (_this$diagram$layouts = this.diagram.layouts.find(function (l) {
         return l.default;
-      })) !== null && _this$diagram$layouts !== void 0 ? _this$diagram$layouts : this.diagram.layouts[0]) !== null && _ref !== void 0 ? _ref : null;
+      })) !== null && _this$diagram$layouts !== void 0 ? _this$diagram$layouts : this.diagram.layouts[0]) !== null && _ref2 !== void 0 ? _ref2 : null;
       this.loadFromLocalStorage();
       this.saveToLocalStorage();
+      this.initialState.activeFields = _objectSpread2({}, this.activeFields);
+      this.initialState.activeFilters = _objectSpread2({}, this.activeFilters);
+      this.initialState.activeLayout = this.activeLayout;
+    }
+  }, {
+    key: "reset",
+    value: function reset() {
+      this.activeFields = _objectSpread2({}, this.initialState.activeFields);
+      this.activeFilters = _objectSpread2({}, this.initialState.activeFilters);
+      this.activeLayout = this.initialState.activeLayout;
     }
   }, {
     key: "loadFromLocalStorage",
@@ -66682,36 +67217,36 @@ var diagram_Settings = /*#__PURE__*/function () {
             activeLayout = settings.activeLayout;
 
         if (diagram_isRecord(activeFields)) {
-          var _iterator7 = _createForOfIteratorHelper(this.diagram.fields),
-              _step7;
+          var _iterator9 = _createForOfIteratorHelper(this.diagram.fields),
+              _step9;
 
           try {
-            for (_iterator7.s(); !(_step7 = _iterator7.n()).done;) {
-              var field = _step7.value;
+            for (_iterator9.s(); !(_step9 = _iterator9.n()).done;) {
+              var field = _step9.value;
               var active = activeFields[field.fullId];
               if (typeof active == 'boolean') this.activeFields[field.fullId] = active;
             }
           } catch (err) {
-            _iterator7.e(err);
+            _iterator9.e(err);
           } finally {
-            _iterator7.f();
+            _iterator9.f();
           }
         }
 
         if (diagram_isRecord(activeFilters)) {
-          var _iterator8 = _createForOfIteratorHelper(this.diagram.filters),
-              _step8;
+          var _iterator10 = _createForOfIteratorHelper(this.diagram.filters),
+              _step10;
 
           try {
-            for (_iterator8.s(); !(_step8 = _iterator8.n()).done;) {
-              var filter = _step8.value;
+            for (_iterator10.s(); !(_step10 = _iterator10.n()).done;) {
+              var filter = _step10.value;
               var _active = activeFilters[filter.id];
               if (typeof _active == 'boolean') this.activeFilters[filter.id] = _active;
             }
           } catch (err) {
-            _iterator8.e(err);
+            _iterator10.e(err);
           } finally {
-            _iterator8.f();
+            _iterator10.f();
           }
         }
 

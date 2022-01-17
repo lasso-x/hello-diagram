@@ -1,6 +1,7 @@
 import { Vue } from 'vue-property-decorator';
 export default class RadioField extends Vue {
     readonly name?: string;
+    readonly disabled: boolean;
     readonly options: ({
         label: string;
         value: any;

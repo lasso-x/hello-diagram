@@ -14,8 +14,11 @@ export default class Diagram {
     fields: Field[];
     filters: Filter[];
     layouts: LayoutDefinition[];
-    methods: Pick<DiagramConfigMethods, ('saveDiagram' | 'getEntityData')>;
+    methods: Pick<DiagramConfigMethods, ('saveDiagram' | 'getPrintTitle' | 'getPrintFilename' | 'convertPngToPdf' | 'getEntityData' | 'searchEntities')>;
     enableEditing: boolean;
+    enableStyleEditing: boolean;
+    enableDragAndDrop: boolean;
+    enableExpand: boolean;
     enableSaving: boolean;
     enableSharing: boolean;
     saveSettingsToLocalStorage: boolean;
@@ -25,7 +28,7 @@ export default class Diagram {
     constructor(config: DiagramConfig);
     render(container: Element): HTMLDivElement;
     setActiveDiagram(activeDiagram: ActiveDiagram): void;
-    save(): Promise<void>;
+    save(overwrite?: boolean): Promise<void>;
     load(savedDiagram: SavedDiagram): void;
     reset(): void;
     search(type: EntityType, searchString: string): Entity[];
@@ -40,23 +43,46 @@ export interface DiagramConfig {
     layouts?: LayoutDefinition[];
     methods?: DiagramConfigMethods;
     enableEditing?: boolean;
+    enableStyleEditing?: boolean;
+    enableDragAndDrop?: boolean;
+    enableExpand?: boolean;
     enableSaving?: boolean;
     enableSharing?: boolean;
     saveSettingsToLocalStorage?: boolean;
 }
 export interface DiagramConfigMethods {
-    onBeforePrint?: () => void;
-    onAfterPrint?: () => void;
     getSavedDiagrams?: () => Promise<SavedDiagram[]>;
     saveDiagram?: (savedDiagram: SavedDiagram) => Promise<void>;
     deleteSavedDiagram?: (savedDiagram: SavedDiagram) => Promise<void>;
-    downloadPdf?: (blob: Blob) => Promise<void>;
+    getPrintTitle?: (context: PrintContext) => string;
+    getPrintFilename?: (context: PrintContext) => string;
+    convertPngToPdf?: (context: {
+        blob: Blob;
+        title: string;
+        filename: string;
+        size: 'A5' | 'A4' | 'A3';
+        orientation: 'portrait' | 'landscape';
+    }) => Promise<Blob>;
     getEntityData?: (options: {
         ids: string[];
         relationTypes: string[];
         parents: number;
         children: number;
     }) => Promise<DiagramDataDefinition>;
+    searchEntities?: (context: {
+        query: string;
+        type: string;
+    }) => Promise<EntityDefinition[]>;
+}
+export interface PrintContext {
+    mainEntity: {
+        id: string;
+        data: Record<string, any>;
+    };
+    hasDataChanges: boolean;
+    date: Date;
+    formattedDate: string;
+    formattedTime: string;
 }
 export declare class ActiveDiagram {
     constructor(diagram: Diagram, options?: {
@@ -74,7 +100,6 @@ export declare class ActiveDiagram {
     shared: boolean;
     data: DiagramData;
     settings: Settings;
-    expand(): Promise<void>;
     reset(): void;
 }
 export declare class EntityTypes {
@@ -100,6 +125,7 @@ export declare class EntityType {
     icon?: string;
     labels: EntityTypeDefinition['labels'];
     style: EntityStyle;
+    printStyle?: EntityStyle;
     searchable: boolean;
     searchResultBuilder: SearchResultBuilder;
     fieldGroups: FieldGroup[];
@@ -114,8 +140,10 @@ export interface EntityTypeDefinition {
         singular: string;
         plural: string;
         editorLabel?: (data: Record<string, any>) => string;
+        editorDescription?: (data: Record<string, any>) => string;
     };
     style?: EntityStyle;
+    printStyle?: EntityStyle;
     searchable?: boolean;
     searchResultBuilder?: SearchResultBuilder;
 }
@@ -123,6 +151,7 @@ export declare class RelationType {
     id: string;
     labels: RelationTypeDefinition['labels'];
     style: RelationStyle;
+    printStyle?: RelationStyle;
     supports: RelationTypeSupport[];
     searchable: boolean;
     fieldGroups: FieldGroup[];
@@ -140,12 +169,14 @@ export declare type RelationTypeDefinition = {
         singularTo?: string;
         pluralTo?: string;
         editorLabel?: (data: Record<string, any>) => string;
+        editorDescription?: (data: Record<string, any>) => string;
         newParent?: string;
         newChild?: string;
         existingParents?: string;
         existingChildren?: string;
     };
     style?: RelationStyle;
+    printStyle?: RelationStyle;
     supports: RelationTypeSupportDefinition[];
     searchable?: boolean;
 };
@@ -268,6 +299,7 @@ export declare class Field {
     startActive: boolean;
     display: boolean;
     searchable: boolean;
+    editable: boolean;
     constructor(diagram: Diagram, fieldGroup: FieldGroup, options: FieldDefinition);
     get active(): boolean;
     set active(active: boolean);
@@ -289,6 +321,7 @@ export interface FieldDefinition {
     startActive?: boolean;
     display?: boolean;
     searchable?: boolean;
+    editable?: boolean;
 }
 export declare class Filter {
     diagram: Diagram;

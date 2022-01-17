@@ -17,6 +17,7 @@ interface EditorBaseField {
     title: string;
     dataKey?: string;
     styleKey?: string;
+    editable?: boolean;
     valueBeforeChanges?: any;
     initialValue?: any;
     initialValueLabel?: string;
@@ -48,6 +49,7 @@ export default class Editor extends Vue {
     showAddDropdownMenu: boolean;
     fieldGroups: EditorFieldGroup[];
     get label(): string;
+    get description(): string | undefined;
     get addMenuItems(): AddMenuItem[][] | null;
     get changedFieldGroups(): {
         fields: EditorField[];

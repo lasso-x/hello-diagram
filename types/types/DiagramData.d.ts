@@ -16,6 +16,7 @@ export default class DiagramData {
     entities: Entity[];
     relationsMap: Map<string, Relation>;
     relations: Relation[];
+    get mainEntity(): Entity | undefined;
     get canUndo(): boolean;
     get canRedo(): boolean;
     add(options: Exclude<Change['add'], undefined>): void;

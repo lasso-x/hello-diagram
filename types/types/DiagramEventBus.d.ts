@@ -21,6 +21,14 @@ export declare type DiagramEvent = ({
 } | {
     name: 'editor.open';
     target: Entity | Relation;
+} | {
+    name: 'print';
+    mode: 'print' | 'pdf' | 'png';
+    orientation: 'portrait' | 'landscape';
+    size: 'A5' | 'A4' | 'A3';
+    includeMargin: boolean;
+} | {
+    name: 'printDone';
 });
 export default class DiagramEventBus extends EventBus<DiagramEvent> {
 }

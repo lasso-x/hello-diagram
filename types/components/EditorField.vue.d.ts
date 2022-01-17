@@ -7,7 +7,9 @@ export default class EditorField extends Vue {
     readonly id?: string;
     readonly type: string;
     readonly title?: string;
+    readonly editable: boolean;
     readonly options?: unknown[];
+    readonly helperText?: string;
     readonly initialValue?: any;
     readonly initialValueLabel?: string;
     readonly resetValue?: any;

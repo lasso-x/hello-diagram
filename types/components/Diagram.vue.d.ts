@@ -11,4 +11,5 @@ export default class DiagramVue extends Vue {
     })[];
     mounted(): void;
     showDialog(component: VueConstructor, props?: any): void;
+    onKeyDown(event: KeyboardEvent): void;
 }

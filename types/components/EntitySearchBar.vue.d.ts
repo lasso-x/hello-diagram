@@ -1,10 +1,13 @@
 import { Vue } from 'vue-property-decorator';
-import Diagram, { Entity, EntityType, SearchResult } from '@/diagram';
+import Diagram, { Entity, EntityDefinition, EntityType, SearchResult } from '@/diagram';
 import TextField from './TextField.vue';
 import DiagramVue from './Diagram.vue';
-interface Suggestion extends SearchResult {
-    entity: Entity;
+export interface Suggestion extends SearchResult {
+    id: string;
+    entity?: Entity;
+    entityDefinition?: EntityDefinition;
 }
+declare type Cache = Map<string, Promise<Suggestion[]>>;
 export default class EntitySearchBar extends Vue {
     readonly diagramVm: DiagramVue;
     readonly entityType?: EntityType;
@@ -16,12 +19,13 @@ export default class EntitySearchBar extends Vue {
     suggestionsFocused: boolean;
     showSuggestions: boolean;
     inputText: string;
-    suggestionsPromise: Promise<Suggestion[]> | null;
+    suggestionsPromise: Promise<void> | null;
     suggestions: Suggestion[] | null;
     activeSuggestionIndex: number;
     viewportRect: DOMRect | null;
     textFieldRect: DOMRect | null;
     get diagram(): Diagram;
+    get cache(): Cache;
     get suggestionsStyle(): {
         top?: undefined;
         left?: undefined;
@@ -40,7 +44,9 @@ export default class EntitySearchBar extends Vue {
     mounted(): void;
     beforeDestroy(): void;
     onInputKeyDown(e: KeyboardEvent): void;
-    loadSuggestions(): Promise<void>;
+    getSuggestionsFromDiagram(): Suggestion[];
+    fetchSuggestionsFromServer(): Promise<Suggestion[]>;
+    loadSuggestions(debounce?: boolean): Promise<void>;
     scrollActiveSuggestionIntoView(): void;
     selectSuggestion(suggestion: Suggestion | null): void;
     onEntityTypeChanged(): void;

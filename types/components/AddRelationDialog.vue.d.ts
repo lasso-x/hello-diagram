@@ -1,36 +1,23 @@
 import { Vue } from 'vue-property-decorator';
+import { EntitySelectorModel } from './EntitySelector.vue';
 import DiagramVue from './Diagram.vue';
-import { Entity, EntityType, Field, RelationType } from '@/diagram';
+import { Entity, EntityType, RelationType } from '@/diagram';
 export default class AddRelationDialog extends Vue {
     readonly diagramVm: DiagramVue;
     readonly relationType: RelationType;
     readonly entity: Entity;
-    readonly asParent: false;
+    readonly asParent: boolean;
     readonly onConfirm?: () => void;
     readonly onDismiss?: () => void;
-    relationFields: (Omit<Field, 'getValue'> & {
-        value: any;
-    })[];
-    entityFields: (Omit<Field, 'getValue'> & {
-        value: any;
-    })[];
-    entityType: EntityType | null;
-    entityMode: 'search' | 'custom';
-    selectedSearchEntity: {
-        entity: Entity;
-    } | null;
+    isConfirming: boolean;
+    relationData: Record<string, any>;
+    entitySelectorModel: EntitySelectorModel;
     get diagram(): import("../diagram").default;
     get relationTypeLabel(): string;
+    get relationFields(): import("../diagram").Field[];
     get supportedEntityTypes(): EntityType[];
-    get entityTypeDropdownOptions(): {
-        id: string;
-        label: string;
-        value: EntityType;
-    }[];
+    get canConfirm(): boolean;
     close(): void;
-    confirm(): void;
+    confirm(): Promise<void>;
     dismiss(): void;
-    onSupportedEntityTypesChanged(): void;
-    onRelationTypeChanged(): void;
-    onEntityTypeChanged(): void;
 }

@@ -1,7 +1,7 @@
 import { Vue } from 'vue-property-decorator';
-import Diagram, { Entity, EntityDefinition, EntityType, SearchResult } from '@/diagram';
+import { default as Diagram, Entity, EntityDefinition, EntityType, SearchResult } from '@/diagram';
 import TextField from './TextField.vue';
-import DiagramVue from './Diagram.vue';
+import type DiagramVue from './Diagram.vue';
 export interface Suggestion extends SearchResult {
     id: string;
     entity?: Entity;

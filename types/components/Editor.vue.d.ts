@@ -1,11 +1,6 @@
 import { Vue } from 'vue-property-decorator';
-import Diagram, { Entity, Relation } from '@/diagram';
-import DiagramVue from './Diagram.vue';
-interface AddMenuItem {
-    key: string;
-    label: string;
-    onClick: () => void;
-}
+import type DiagramVue from './Diagram.vue';
+import type { default as Diagram, Entity, Relation } from '@/diagram';
 interface EditorFieldGroup {
     id: string;
     title: string;
@@ -50,7 +45,6 @@ export default class Editor extends Vue {
     fieldGroups: EditorFieldGroup[];
     get label(): string;
     get description(): string | undefined;
-    get addMenuItems(): AddMenuItem[][] | null;
     get changedFieldGroups(): {
         fields: EditorField[];
         id: string;

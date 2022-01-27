@@ -1,6 +1,6 @@
 import { Vue } from 'vue-property-decorator';
-import Diagram from '@/diagram';
-import DiagramVue from './Diagram.vue';
+import type DiagramVue from './Diagram.vue';
+import type Diagram from '@/diagram';
 import PrintDialog from './PrintDialog.vue';
 export default class TopBar extends Vue {
     readonly diagramVm: DiagramVue;
@@ -9,6 +9,7 @@ export default class TopBar extends Vue {
     showLoadDropdownMenu: boolean;
     showLayoutDropdownMenu: boolean;
     showEditDropdownMenu: boolean;
+    get compact(): boolean;
     get canUndo(): boolean;
     get canRedo(): boolean;
     showPrintDialog(mode: PrintDialog['mode']): void;

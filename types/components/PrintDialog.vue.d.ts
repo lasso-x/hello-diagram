@@ -1,5 +1,5 @@
 import { Vue } from 'vue-property-decorator';
-import DiagramVue from './Diagram.vue';
+import type DiagramVue from './Diagram.vue';
 export default class PrintDialog extends Vue {
     readonly diagramVm: DiagramVue;
     readonly mode: 'print' | 'pdf' | 'png';

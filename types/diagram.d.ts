@@ -1,6 +1,6 @@
 import Vue from 'vue';
 import DiagramEventBus from './types/DiagramEventBus';
-import DiagramData, { DiagramDataDefinition } from './types/DiagramData';
+import DiagramData, { DiagramDataDefinition, Change } from './types/DiagramData';
 import SavedDiagram from './types/SavedDiagram';
 export default class Diagram {
     static init(config: DiagramConfig): Diagram;
@@ -14,7 +14,7 @@ export default class Diagram {
     fields: Field[];
     filters: Filter[];
     layouts: LayoutDefinition[];
-    methods: Pick<DiagramConfigMethods, ('saveDiagram' | 'getPrintTitle' | 'getPrintFilename' | 'convertPngToPdf' | 'getEntityData' | 'searchEntities')>;
+    methods: Pick<DiagramConfigMethods, ('saveDiagram' | 'getPrintTitle' | 'getPrintFilename' | 'convertPngToPdf' | 'getEntityData' | 'searchEntities' | 'getContextMenuActions')>;
     enableEditing: boolean;
     enableStyleEditing: boolean;
     enableDragAndDrop: boolean;
@@ -73,16 +73,33 @@ export interface DiagramConfigMethods {
         query: string;
         type: string;
     }) => Promise<EntityDefinition[]>;
+    getContextMenuActions?: (context: {
+        position: {
+            x: number;
+            y: number;
+        };
+        selectedItems: ContextItem[];
+        selectedEntities: ContextItem[];
+        selectedRelations: ContextItem[];
+        hasSelectedItems: boolean;
+        onlySelectedItem: ContextItem | null;
+        commitChange: (change: Change) => void;
+    }) => ContextMenuActions;
 }
 export interface PrintContext {
-    mainEntity: {
-        id: string;
-        data: Record<string, any>;
-    };
+    mainEntity: ContextItem;
     hasDataChanges: boolean;
     date: Date;
     formattedDate: string;
     formattedTime: string;
+}
+export declare type ContextMenuActions = Arrayable<ContextMenuAction | null>[];
+export interface ContextMenuAction {
+    icon?: string;
+    label: string;
+    disabled?: boolean;
+    submenu?: ContextMenuActions;
+    onClick?: () => void;
 }
 export declare class ActiveDiagram {
     constructor(diagram: Diagram, options?: {
@@ -125,12 +142,22 @@ export declare class EntityType {
     icon?: string;
     labels: EntityTypeDefinition['labels'];
     style: EntityStyle;
+    styleBuilder?: EntityStyleBuilder;
     printStyle?: EntityStyle;
+    printStyleBuilder?: EntityStyleBuilder;
     searchable: boolean;
     searchResultBuilder: SearchResultBuilder;
     fieldGroups: FieldGroup[];
     fields: Field[];
     searchableFields: Field[];
+    supportedRelations: Map<string, {
+        type: RelationType;
+        supports: RelationTypeSupport[];
+        supportsParent: boolean;
+        supportsAddExistingParents: boolean;
+        supportsChild: boolean;
+        supportsAddExistingChildren: boolean;
+    }>;
     constructor(options: EntityTypeDefinition);
 }
 export interface EntityTypeDefinition {
@@ -142,16 +169,20 @@ export interface EntityTypeDefinition {
         editorLabel?: (data: Record<string, any>) => string;
         editorDescription?: (data: Record<string, any>) => string;
     };
-    style?: EntityStyle;
-    printStyle?: EntityStyle;
+    style?: EntityTypeStyleArgument;
+    printStyle?: EntityTypeStyleArgument;
     searchable?: boolean;
     searchResultBuilder?: SearchResultBuilder;
 }
+export declare type EntityTypeStyleArgument = EntityStyle | EntityStyleBuilder;
+export declare type EntityStyleBuilder = (context: ContextItem) => EntityStyle;
 export declare class RelationType {
     id: string;
     labels: RelationTypeDefinition['labels'];
     style: RelationStyle;
+    styleBuilder?: RelationStyleBuilder;
     printStyle?: RelationStyle;
+    printStyleBuilder?: RelationStyleBuilder;
     supports: RelationTypeSupport[];
     searchable: boolean;
     fieldGroups: FieldGroup[];
@@ -175,11 +206,13 @@ export declare type RelationTypeDefinition = {
         existingParents?: string;
         existingChildren?: string;
     };
-    style?: RelationStyle;
-    printStyle?: RelationStyle;
+    style?: RelationTypeStyleArgument;
+    printStyle?: RelationTypeStyleArgument;
     supports: RelationTypeSupportDefinition[];
     searchable?: boolean;
 };
+export declare type RelationTypeStyleArgument = RelationStyle | RelationStyleBuilder;
+export declare type RelationStyleBuilder = (context: ContextItem) => RelationStyle;
 export declare class RelationTypeSupport {
     from: string;
     to: string;
@@ -191,11 +224,7 @@ export interface RelationTypeSupportDefinition {
     to: string;
     allowAddExisting?: boolean;
 }
-export declare type SearchResultBuilder = (context: SearchResultBuilderContext) => SearchResult;
-export interface SearchResultBuilderContext {
-    id: string;
-    data: Record<string, any>;
-}
+export declare type SearchResultBuilder = (context: ContextItem) => SearchResult;
 export interface SearchResult {
     text: string;
     supertext?: string | null;
@@ -214,9 +243,16 @@ export declare class Entity {
     };
     data: Record<string, any>;
     style: EntityStyle;
+    isMainEntity: boolean;
+    isParent: boolean;
+    isChild: boolean;
+    builtTypeStyle: EntityStyle;
+    builtTypePrintStyle: EntityStyle;
+    builtStyle: EntityStyle;
+    builtPrintStyle: EntityStyle;
     constructor(diagram: Diagram, options: EntityDefinition);
-    get isMainEntity(): boolean;
     get fieldGroups(): FieldGroup[];
+    buildStyle(): void;
 }
 export interface EntityDefinition {
     type: string;
@@ -246,8 +282,15 @@ export declare class Relation {
     initialState: Pick<Relation, 'data' | 'style'>;
     data: Record<string, any>;
     style: RelationStyle;
+    isParent: boolean;
+    isChild: boolean;
+    builtTypeStyle: RelationStyle;
+    builtTypePrintStyle: RelationStyle;
+    builtStyle: RelationStyle;
+    builtPrintStyle: RelationStyle;
     constructor(diagram: Diagram, options: RelationDefinition);
     get fieldGroups(): FieldGroup[];
+    buildStyle(): void;
 }
 export interface RelationDefinition {
     type: string;
@@ -327,7 +370,7 @@ export declare class Filter {
     diagram: Diagram;
     id: string;
     title: string;
-    filter: (context: FilterContext) => any;
+    filter: (context: ContextItem) => any;
     filterWhen: 'active' | 'inactive';
     startActive: boolean;
     constructor(diagram: Diagram, options: FilterDefinition);
@@ -337,18 +380,9 @@ export declare class Filter {
 export interface FilterDefinition {
     id: string;
     title: string;
-    filter: (context: FilterContext) => any;
+    filter: (context: ContextItem) => any;
     filterWhen?: 'active' | 'inactive';
     startActive?: boolean;
-}
-export interface FilterContext {
-    isEntity: boolean;
-    isRelation: boolean;
-    type: string;
-    data: Record<string, any>;
-    isMainEntity: boolean;
-    isParent: boolean;
-    isChild: boolean;
 }
 export interface LayoutDefinition {
     id: string;
@@ -375,4 +409,16 @@ export declare class Settings {
     loadFromLocalStorage(): void;
     saveToLocalStorage(): void;
 }
+export declare const createContextItem: (item: Entity | Relation) => ContextItem;
+export interface ContextItem {
+    isEntity: boolean;
+    isRelation: boolean;
+    type: string;
+    id: string;
+    data: Record<string, any>;
+    isMainEntity: boolean;
+    isParent: boolean;
+    isChild: boolean;
+}
+export declare type Arrayable<T> = T | T[];
 export * from './example';

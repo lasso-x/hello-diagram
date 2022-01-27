@@ -1,16 +1,22 @@
 import { Vue } from 'vue-property-decorator';
-import Diagram, { Entity, LayoutDefinition, Relation } from '@/diagram';
+import { Entity, LayoutDefinition, Relation } from '@/diagram';
 import cytoscape from 'cytoscape';
 import 'cytoscape-panzoom/cytoscape.js-panzoom.css';
-import DiagramVue from './Diagram.vue';
+import type DiagramVue from './Diagram.vue';
 export default class Graph extends Vue {
     readonly diagramVm: DiagramVue;
     readonly printMode: boolean;
     readonly graphContainerEl: HTMLElement;
     _graph?: cytoscape.Core;
     addedItems: Map<string, Entity | Relation>;
+    contextMenu: {
+        show: boolean;
+        position: cytoscape.Position;
+        modelPosition: cytoscape.Position;
+        selectedItems: (Entity | Relation)[];
+    };
     onDestroy?: () => void;
-    get diagram(): Diagram;
+    get diagram(): import("../diagram").default;
     get el(): HTMLElement;
     get fitPadding(): 0 | 16;
     mounted(): void;

@@ -1,5 +1,5 @@
-import Diagram from '@/diagram';
-import { Change, DiagramDataDefinition } from './DiagramData';
+import type { default as Diagram } from '@/diagram';
+import type { Change, DiagramDataDefinition } from './DiagramData';
 export default interface SavedDiagram {
     id: string;
     title?: string;

@@ -1,6 +1,6 @@
 import { Vue } from 'vue-property-decorator';
-import { EntityType } from '@/diagram';
-import DiagramVue from './Diagram.vue';
+import type { EntityType } from '@/diagram';
+import type DiagramVue from './Diagram.vue';
 import { Suggestion } from './EntitySearchBar.vue';
 export declare type EntitySelectorModel = ({
     entityType: EntityType;

@@ -1,5 +1,5 @@
 import { Vue } from 'vue-property-decorator';
-import Diagram, { FieldGroup, Field } from '@/diagram';
+import type { default as Diagram, FieldGroup } from '@/diagram';
 export default class CustomizerFieldGroupDropdownButton extends Vue {
     readonly diagram: Diagram;
     readonly fieldGroup: FieldGroup;
@@ -12,7 +12,7 @@ export default class CustomizerFieldGroupDropdownButton extends Vue {
         maxHeight: string;
         transform: string;
     } | null;
-    get fields(): Field[];
+    get fields(): import("../diagram").Field[];
     mounted(): void;
     beforeDestroy(): void;
     updateButtonRect(rect: DOMRect): void;

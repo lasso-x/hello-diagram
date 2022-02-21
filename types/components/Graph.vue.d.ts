@@ -2,13 +2,18 @@ import { Vue } from 'vue-property-decorator';
 import { Entity, LayoutDefinition, Relation } from '@/diagram';
 import cytoscape from 'cytoscape';
 import 'cytoscape-panzoom/cytoscape.js-panzoom.css';
-import type DiagramVue from './Diagram.vue';
+import type DiagramVm from './Diagram.vue';
 export default class Graph extends Vue {
-    readonly diagramVm: DiagramVue;
+    readonly diagramVm: DiagramVm;
+    get graphVm(): this;
     readonly printMode: boolean;
     readonly graphContainerEl: HTMLElement;
+    readonly graphNodesEl: HTMLElement;
     _graph?: cytoscape.Core;
     addedItems: Map<string, Entity | Relation>;
+    entities: Entity[];
+    relations: Relation[];
+    elementHovered: boolean;
     contextMenu: {
         show: boolean;
         position: cytoscape.Position;

@@ -1,5 +1,5 @@
 import { Vue } from 'vue-property-decorator';
-import type DiagramVue from './Diagram.vue';
+import type DiagramVm from './Diagram.vue';
 import type { default as Diagram, Entity, Relation } from '@/diagram';
 interface EditorFieldGroup {
     id: string;
@@ -37,10 +37,9 @@ interface EditorColorField extends EditorBaseField {
     type: 'color';
 }
 export default class Editor extends Vue {
-    readonly diagramVm: DiagramVue;
+    readonly diagramVm: DiagramVm;
     readonly diagram: Diagram;
-    readonly object: Entity | Relation;
-    readonly close: () => void;
+    object: Entity | Relation | null;
     showAddDropdownMenu: boolean;
     fieldGroups: EditorFieldGroup[];
     get label(): string;
@@ -51,8 +50,9 @@ export default class Editor extends Vue {
         title: string;
     }[];
     get hasChanges(): boolean;
+    created(): void;
     remove(): void;
     saveChanges(): void;
-    onObjectChanged(): void;
+    onObjectChanged(object: Editor['object']): void;
 }
 export {};

@@ -23,6 +23,7 @@ export default class DiagramData {
     remove(options: Exclude<Change['remove'], undefined>): void;
     edit(options: Exclude<Change['edit'], undefined>): void;
     commitChange(change: Change, isInitial?: boolean): void;
+    applyLayoutToLastChange(change: Pick<Change, 'layout' | 'moveEntities'>): void;
     undo(trackEvents?: boolean): void;
     redo(trackEvents?: boolean): void;
     reset(): void;

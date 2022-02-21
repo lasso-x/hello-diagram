@@ -2,11 +2,11 @@
 import { Vue } from 'vue-property-decorator';
 import Diagram, { ContextItem, ContextMenuActions } from '@/diagram';
 import type { Change } from '@/types/DiagramData';
-import type DiagramVue from './Diagram.vue';
+import type DiagramVm from './Diagram.vue';
 import type Graph from './Graph.vue';
 export default class GraphContextMenu extends Vue {
     readonly diagram: Diagram;
-    readonly diagramVm: DiagramVue;
+    readonly diagramVm: DiagramVm;
     $refs: {
         positionEl?: HTMLElement;
     };

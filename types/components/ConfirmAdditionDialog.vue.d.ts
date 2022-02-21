@@ -1,11 +1,12 @@
 import { Vue } from 'vue-property-decorator';
 import type { DiagramDataDefinition } from '@/types/DiagramData';
-import type DiagramVue from './Diagram.vue';
+import type DiagramVm from './Diagram.vue';
 export default class ConfirmAdditionDialog extends Vue {
-    readonly diagramVm: DiagramVue;
+    readonly diagramVm: DiagramVm;
     readonly data: DiagramDataDefinition;
     readonly onConfirm?: () => void;
     readonly onDismiss?: () => void;
+    runLayout: boolean;
     get diagram(): import("../diagram").default;
     get content(): string;
     close(): void;

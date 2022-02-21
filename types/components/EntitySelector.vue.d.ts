@@ -1,6 +1,6 @@
 import { Vue } from 'vue-property-decorator';
 import type { EntityType } from '@/diagram';
-import type DiagramVue from './Diagram.vue';
+import type DiagramVm from './Diagram.vue';
 import { Suggestion } from './EntitySearchBar.vue';
 export declare type EntitySelectorModel = ({
     entityType: EntityType;
@@ -12,7 +12,7 @@ export declare type EntitySelectorModel = ({
     entityData: Record<string, any>;
 })) | null;
 export default class EntitySelector extends Vue {
-    readonly diagramVm: DiagramVue;
+    readonly diagramVm: DiagramVm;
     readonly entityTypes?: EntityType[];
     entityType: EntityType | null;
     mode: 'search' | 'custom';

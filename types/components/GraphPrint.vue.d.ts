@@ -1,7 +1,7 @@
 import { Vue } from 'vue-property-decorator';
-import type DiagramVue from './Diagram.vue';
+import type DiagramVm from './Diagram.vue';
 export default class GraphPrint extends Vue {
-    readonly diagramVm: DiagramVue;
+    readonly diagramVm: DiagramVm;
     readonly printContentEl?: HTMLDivElement;
     printing: boolean;
     scaling: number;

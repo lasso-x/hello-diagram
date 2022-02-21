@@ -15,7 +15,7 @@ export declare type DiagramEvent = ({
 } | {
     name: 'graph.layout';
     layout: LayoutDefinition;
-    initial?: boolean;
+    applyToLastChange?: boolean;
 } | {
     name: 'graph.fit';
 } | {
@@ -29,6 +29,10 @@ export declare type DiagramEvent = ({
     includeMargin: boolean;
 } | {
     name: 'printDone';
+    file?: {
+        filename: string;
+        blob: Blob;
+    };
 });
 export default class DiagramEventBus extends EventBus<DiagramEvent> {
 }

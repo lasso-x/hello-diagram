@@ -14,7 +14,9 @@ export default class Diagram {
     fields: Field[];
     filters: Filter[];
     layouts: LayoutDefinition[];
-    methods: Pick<DiagramConfigMethods, ('saveDiagram' | 'getPrintTitle' | 'getPrintFilename' | 'convertPngToPdf' | 'getEntityData' | 'searchEntities' | 'getContextMenuActions')>;
+    methods: Pick<DiagramConfigMethods, ('getSavedDiagrams' | 'saveDiagram' | 'deleteSavedDiagram' | 'getDefaultSavedDiagramId' | 'setDefaultSavedDiagramId' | 'getPrintTitle' | 'getPrintFilename' | 'convertPngToPdf' | 'getEntityData' | 'searchEntities' | 'getContextMenuActions')>;
+    compactWidth: number;
+    dragAndDropGridSize: number;
     enableEditing: boolean;
     enableStyleEditing: boolean;
     enableDragAndDrop: boolean;
@@ -22,14 +24,23 @@ export default class Diagram {
     enableSaving: boolean;
     enableSharing: boolean;
     saveSettingsToLocalStorage: boolean;
+    isLoading: boolean;
+    loadSavedDiagramsPromise: Promise<SavedDiagram[]> | null;
+    savedDiagrams: SavedDiagram[];
+    savedDiagramsMap: Map<string, SavedDiagram>;
+    defaultSavedDiagramId: string | null;
     activeDiagram: ActiveDiagram;
+    hasActiveDiagram: boolean;
     hasUnsavedChanges: boolean;
     isSaving: boolean;
     constructor(config: DiagramConfig);
     render(container: Element): HTMLDivElement;
     setActiveDiagram(activeDiagram: ActiveDiagram): void;
+    loadSavedDiagrams(): Promise<void>;
+    getDefaultSavedDiagramId(): Promise<string | null>;
+    setDefaultSavedDiagramId(id: string | null): Promise<void>;
     save(overwrite?: boolean): Promise<void>;
-    load(savedDiagram: SavedDiagram): void;
+    load(savedDiagram?: SavedDiagram): Promise<void>;
     reset(): void;
     search(type: EntityType, searchString: string): Entity[];
     search(type: RelationType, searchString: string): Relation[];
@@ -42,6 +53,8 @@ export interface DiagramConfig {
     filters?: FilterDefinition[];
     layouts?: LayoutDefinition[];
     methods?: DiagramConfigMethods;
+    compactWidth?: number;
+    dragAndDropGridSize?: number;
     enableEditing?: boolean;
     enableStyleEditing?: boolean;
     enableDragAndDrop?: boolean;
@@ -52,8 +65,16 @@ export interface DiagramConfig {
 }
 export interface DiagramConfigMethods {
     getSavedDiagrams?: () => Promise<SavedDiagram[]>;
-    saveDiagram?: (savedDiagram: SavedDiagram) => Promise<void>;
+    saveDiagram?: (context: {
+        savedDiagram: SavedDiagram;
+        generatePng: (options?: {
+            orientation?: 'portrait' | 'landscape';
+            size?: 'A5' | 'A4' | 'A3';
+        }) => Promise<Blob>;
+    }) => Promise<string | void>;
     deleteSavedDiagram?: (savedDiagram: SavedDiagram) => Promise<void>;
+    getDefaultSavedDiagramId?: () => Promise<string | null>;
+    setDefaultSavedDiagramId?: (id: string | null) => Promise<void>;
     getPrintTitle?: (context: PrintContext) => string;
     getPrintFilename?: (context: PrintContext) => string;
     convertPngToPdf?: (context: {
@@ -246,6 +267,7 @@ export declare class Entity {
     isMainEntity: boolean;
     isParent: boolean;
     isChild: boolean;
+    expanded: boolean;
     builtTypeStyle: EntityStyle;
     builtTypePrintStyle: EntityStyle;
     builtStyle: EntityStyle;
@@ -301,6 +323,7 @@ export interface RelationDefinition {
     style?: RelationStyle;
 }
 export interface RelationStyle {
+    taxi?: boolean;
     arrowFrom?: boolean;
     arrowTo?: boolean;
     arrowSize?: number;
@@ -388,14 +411,21 @@ export interface LayoutDefinition {
     id: string;
     name: string;
     default?: boolean;
-    directed?: boolean;
+    type?: 'breadthfirst' | 'dagre';
     inverted?: boolean;
-    grid?: boolean;
     spacingFactor?: number;
-    maximal?: boolean;
     animate?: boolean;
     animationDuration?: number;
     animationEasing?: string;
+    directed?: boolean;
+    grid?: boolean;
+    maximal?: boolean;
+    nodeSep?: number;
+    edgeSep?: number;
+    rankSep?: number;
+    rankDir?: 'TB' | 'LR';
+    align?: 'UL' | 'UR' | 'DL' | 'DR';
+    ranker?: 'network-simplex' | 'tight-tree' | 'longest-path';
 }
 export declare class Settings {
     diagram: Diagram;

@@ -96,6 +96,42 @@ return /******/ (function(modules) { // webpackBootstrap
 /************************************************************************/
 /******/ ({
 
+/***/ "004e":
+/***/ (function(module, exports, __webpack_require__) {
+
+var baseExtremum = __webpack_require__("76e9"),
+    baseLt = __webpack_require__("8d20"),
+    identity = __webpack_require__("cd9d");
+
+/**
+ * Computes the minimum value of `array`. If `array` is empty or falsey,
+ * `undefined` is returned.
+ *
+ * @static
+ * @since 0.1.0
+ * @memberOf _
+ * @category Math
+ * @param {Array} array The array to iterate over.
+ * @returns {*} Returns the minimum value.
+ * @example
+ *
+ * _.min([4, 2, 8, 6]);
+ * // => 2
+ *
+ * _.min([]);
+ * // => undefined
+ */
+function min(array) {
+  return (array && array.length)
+    ? baseExtremum(array, identity, baseLt)
+    : undefined;
+}
+
+module.exports = min;
+
+
+/***/ }),
+
 /***/ "00ee":
 /***/ (function(module, exports, __webpack_require__) {
 
@@ -107,6 +143,230 @@ var test = {};
 test[TO_STRING_TAG] = 'z';
 
 module.exports = String(test) === '[object z]';
+
+
+/***/ }),
+
+/***/ "00fd":
+/***/ (function(module, exports, __webpack_require__) {
+
+var Symbol = __webpack_require__("9e69");
+
+/** Used for built-in method references. */
+var objectProto = Object.prototype;
+
+/** Used to check objects for own properties. */
+var hasOwnProperty = objectProto.hasOwnProperty;
+
+/**
+ * Used to resolve the
+ * [`toStringTag`](http://ecma-international.org/ecma-262/7.0/#sec-object.prototype.tostring)
+ * of values.
+ */
+var nativeObjectToString = objectProto.toString;
+
+/** Built-in value references. */
+var symToStringTag = Symbol ? Symbol.toStringTag : undefined;
+
+/**
+ * A specialized version of `baseGetTag` which ignores `Symbol.toStringTag` values.
+ *
+ * @private
+ * @param {*} value The value to query.
+ * @returns {string} Returns the raw `toStringTag`.
+ */
+function getRawTag(value) {
+  var isOwn = hasOwnProperty.call(value, symToStringTag),
+      tag = value[symToStringTag];
+
+  try {
+    value[symToStringTag] = undefined;
+    var unmasked = true;
+  } catch (e) {}
+
+  var result = nativeObjectToString.call(value);
+  if (unmasked) {
+    if (isOwn) {
+      value[symToStringTag] = tag;
+    } else {
+      delete value[symToStringTag];
+    }
+  }
+  return result;
+}
+
+module.exports = getRawTag;
+
+
+/***/ }),
+
+/***/ "01ce":
+/***/ (function(module, exports, __webpack_require__) {
+
+// Includes only the "core" of graphlib
+module.exports = {
+  Graph: __webpack_require__("9671"),
+  version: __webpack_require__("c3cd")
+};
+
+
+/***/ }),
+
+/***/ "01eb":
+/***/ (function(module, exports, __webpack_require__) {
+
+var _ = __webpack_require__("33de");
+
+module.exports = PriorityQueue;
+
+/**
+ * A min-priority queue data structure. This algorithm is derived from Cormen,
+ * et al., "Introduction to Algorithms". The basic idea of a min-priority
+ * queue is that you can efficiently (in O(1) time) get the smallest key in
+ * the queue. Adding and removing elements takes O(log n) time. A key can
+ * have its priority decreased in O(log n) time.
+ */
+function PriorityQueue() {
+  this._arr = [];
+  this._keyIndices = {};
+}
+
+/**
+ * Returns the number of elements in the queue. Takes `O(1)` time.
+ */
+PriorityQueue.prototype.size = function() {
+  return this._arr.length;
+};
+
+/**
+ * Returns the keys that are in the queue. Takes `O(n)` time.
+ */
+PriorityQueue.prototype.keys = function() {
+  return this._arr.map(function(x) { return x.key; });
+};
+
+/**
+ * Returns `true` if **key** is in the queue and `false` if not.
+ */
+PriorityQueue.prototype.has = function(key) {
+  return _.has(this._keyIndices, key);
+};
+
+/**
+ * Returns the priority for **key**. If **key** is not present in the queue
+ * then this function returns `undefined`. Takes `O(1)` time.
+ *
+ * @param {Object} key
+ */
+PriorityQueue.prototype.priority = function(key) {
+  var index = this._keyIndices[key];
+  if (index !== undefined) {
+    return this._arr[index].priority;
+  }
+};
+
+/**
+ * Returns the key for the minimum element in this queue. If the queue is
+ * empty this function throws an Error. Takes `O(1)` time.
+ */
+PriorityQueue.prototype.min = function() {
+  if (this.size() === 0) {
+    throw new Error("Queue underflow");
+  }
+  return this._arr[0].key;
+};
+
+/**
+ * Inserts a new key into the priority queue. If the key already exists in
+ * the queue this function returns `false`; otherwise it will return `true`.
+ * Takes `O(n)` time.
+ *
+ * @param {Object} key the key to add
+ * @param {Number} priority the initial priority for the key
+ */
+PriorityQueue.prototype.add = function(key, priority) {
+  var keyIndices = this._keyIndices;
+  key = String(key);
+  if (!_.has(keyIndices, key)) {
+    var arr = this._arr;
+    var index = arr.length;
+    keyIndices[key] = index;
+    arr.push({key: key, priority: priority});
+    this._decrease(index);
+    return true;
+  }
+  return false;
+};
+
+/**
+ * Removes and returns the smallest key in the queue. Takes `O(log n)` time.
+ */
+PriorityQueue.prototype.removeMin = function() {
+  this._swap(0, this._arr.length - 1);
+  var min = this._arr.pop();
+  delete this._keyIndices[min.key];
+  this._heapify(0);
+  return min.key;
+};
+
+/**
+ * Decreases the priority for **key** to **priority**. If the new priority is
+ * greater than the previous priority, this function will throw an Error.
+ *
+ * @param {Object} key the key for which to raise priority
+ * @param {Number} priority the new priority for the key
+ */
+PriorityQueue.prototype.decrease = function(key, priority) {
+  var index = this._keyIndices[key];
+  if (priority > this._arr[index].priority) {
+    throw new Error("New priority is greater than current priority. " +
+        "Key: " + key + " Old: " + this._arr[index].priority + " New: " + priority);
+  }
+  this._arr[index].priority = priority;
+  this._decrease(index);
+};
+
+PriorityQueue.prototype._heapify = function(i) {
+  var arr = this._arr;
+  var l = 2 * i;
+  var r = l + 1;
+  var largest = i;
+  if (l < arr.length) {
+    largest = arr[l].priority < arr[largest].priority ? l : largest;
+    if (r < arr.length) {
+      largest = arr[r].priority < arr[largest].priority ? r : largest;
+    }
+    if (largest !== i) {
+      this._swap(i, largest);
+      this._heapify(largest);
+    }
+  }
+};
+
+PriorityQueue.prototype._decrease = function(index) {
+  var arr = this._arr;
+  var priority = arr[index].priority;
+  var parent;
+  while (index !== 0) {
+    parent = index >> 1;
+    if (arr[parent].priority < priority) {
+      break;
+    }
+    this._swap(index, parent);
+    index = parent;
+  }
+};
+
+PriorityQueue.prototype._swap = function(i, j) {
+  var arr = this._arr;
+  var keyIndices = this._keyIndices;
+  var origArrI = arr[i];
+  var origArrJ = arr[j];
+  arr[i] = origArrJ;
+  arr[j] = origArrI;
+  keyIndices[origArrJ.key] = i;
+  keyIndices[origArrI.key] = j;
+};
 
 
 /***/ }),
@@ -149,6 +409,43 @@ module.exports = function (fn, that, length) {
     return fn.apply(that, arguments);
   };
 };
+
+
+/***/ }),
+
+/***/ "03dd":
+/***/ (function(module, exports, __webpack_require__) {
+
+var isPrototype = __webpack_require__("eac5"),
+    nativeKeys = __webpack_require__("57a5");
+
+/** Used for built-in method references. */
+var objectProto = Object.prototype;
+
+/** Used to check objects for own properties. */
+var hasOwnProperty = objectProto.hasOwnProperty;
+
+/**
+ * The base implementation of `_.keys` which doesn't treat sparse arrays as dense.
+ *
+ * @private
+ * @param {Object} object The object to query.
+ * @returns {Array} Returns the array of property names.
+ */
+function baseKeys(object) {
+  if (!isPrototype(object)) {
+    return nativeKeys(object);
+  }
+  var result = [];
+  for (var key in Object(object)) {
+    if (hasOwnProperty.call(object, key) && key != 'constructor') {
+      result.push(key);
+    }
+  }
+  return result;
+}
+
+module.exports = baseKeys;
 
 
 /***/ }),
@@ -218,6 +515,69 @@ module.exports.f = function getOwnPropertyNames(it) {
 
 /***/ }),
 
+/***/ "0621":
+/***/ (function(module, exports, __webpack_require__) {
+
+var Symbol = __webpack_require__("9e69"),
+    isArguments = __webpack_require__("d370"),
+    isArray = __webpack_require__("6747");
+
+/** Built-in value references. */
+var spreadableSymbol = Symbol ? Symbol.isConcatSpreadable : undefined;
+
+/**
+ * Checks if `value` is a flattenable `arguments` object or array.
+ *
+ * @private
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if `value` is flattenable, else `false`.
+ */
+function isFlattenable(value) {
+  return isArray(value) || isArguments(value) ||
+    !!(spreadableSymbol && value && value[spreadableSymbol]);
+}
+
+module.exports = isFlattenable;
+
+
+/***/ }),
+
+/***/ "0644":
+/***/ (function(module, exports, __webpack_require__) {
+
+var baseClone = __webpack_require__("3818");
+
+/** Used to compose bitmasks for cloning. */
+var CLONE_DEEP_FLAG = 1,
+    CLONE_SYMBOLS_FLAG = 4;
+
+/**
+ * This method is like `_.clone` except that it recursively clones `value`.
+ *
+ * @static
+ * @memberOf _
+ * @since 1.0.0
+ * @category Lang
+ * @param {*} value The value to recursively clone.
+ * @returns {*} Returns the deep cloned value.
+ * @see _.clone
+ * @example
+ *
+ * var objects = [{ 'a': 1 }, { 'b': 2 }];
+ *
+ * var deep = _.cloneDeep(objects);
+ * console.log(deep[0] === objects[0]);
+ * // => false
+ */
+function cloneDeep(value) {
+  return baseClone(value, CLONE_DEEP_FLAG | CLONE_SYMBOLS_FLAG);
+}
+
+module.exports = cloneDeep;
+
+
+/***/ }),
+
 /***/ "06b8":
 /***/ (function(module, exports, __webpack_require__) {
 
@@ -253,10 +613,145 @@ exports.f = DESCRIPTORS ? $getOwnPropertyDescriptor : function getOwnPropertyDes
 
 /***/ }),
 
+/***/ "07c7":
+/***/ (function(module, exports) {
+
+/**
+ * This method returns `false`.
+ *
+ * @static
+ * @memberOf _
+ * @since 4.13.0
+ * @category Util
+ * @returns {boolean} Returns `false`.
+ * @example
+ *
+ * _.times(2, _.stubFalse);
+ * // => [false, false]
+ */
+function stubFalse() {
+  return false;
+}
+
+module.exports = stubFalse;
+
+
+/***/ }),
+
+/***/ "087d":
+/***/ (function(module, exports) {
+
+/**
+ * Appends the elements of `values` to `array`.
+ *
+ * @private
+ * @param {Array} array The array to modify.
+ * @param {Array} values The values to append.
+ * @returns {Array} Returns `array`.
+ */
+function arrayPush(array, values) {
+  var index = -1,
+      length = values.length,
+      offset = array.length;
+
+  while (++index < length) {
+    array[offset + index] = values[index];
+  }
+  return array;
+}
+
+module.exports = arrayPush;
+
+
+/***/ }),
+
+/***/ "08cc":
+/***/ (function(module, exports, __webpack_require__) {
+
+var isObject = __webpack_require__("1a8c");
+
+/**
+ * Checks if `value` is suitable for strict equality comparisons, i.e. `===`.
+ *
+ * @private
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if `value` if suitable for strict
+ *  equality comparisons, else `false`.
+ */
+function isStrictComparable(value) {
+  return value === value && !isObject(value);
+}
+
+module.exports = isStrictComparable;
+
+
+/***/ }),
+
+/***/ "0967":
+/***/ (function(module, exports, __webpack_require__) {
+
+// extracted by mini-css-extract-plugin
+
+/***/ }),
+
+/***/ "099a":
+/***/ (function(module, exports) {
+
+/**
+ * A specialized version of `_.indexOf` which performs strict equality
+ * comparisons of values, i.e. `===`.
+ *
+ * @private
+ * @param {Array} array The array to inspect.
+ * @param {*} value The value to search for.
+ * @param {number} fromIndex The index to search from.
+ * @returns {number} Returns the index of the matched value, else `-1`.
+ */
+function strictIndexOf(array, value, fromIndex) {
+  var index = fromIndex - 1,
+      length = array.length;
+
+  while (++index < length) {
+    if (array[index] === value) {
+      return index;
+    }
+  }
+  return -1;
+}
+
+module.exports = strictIndexOf;
+
+
+/***/ }),
+
 /***/ "0af7":
 /***/ (function(module, exports, __webpack_require__) {
 
 // extracted by mini-css-extract-plugin
+
+/***/ }),
+
+/***/ "0b07":
+/***/ (function(module, exports, __webpack_require__) {
+
+var baseIsNative = __webpack_require__("34ac"),
+    getValue = __webpack_require__("3698");
+
+/**
+ * Gets the native function at `key` of `object`.
+ *
+ * @private
+ * @param {Object} object The object to query.
+ * @param {string} key The key of the method to get.
+ * @returns {*} Returns the function if it's native, else `undefined`.
+ */
+function getNative(object, key) {
+  var value = getValue(object, key);
+  return baseIsNative(value) ? value : undefined;
+}
+
+module.exports = getNative;
+
 
 /***/ }),
 
@@ -283,6 +778,62 @@ module.exports = function (originalArray) {
     }
   } return C === undefined ? Array : C;
 };
+
+
+/***/ }),
+
+/***/ "0b8b":
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+var rankUtil = __webpack_require__("e849");
+var longestPath = rankUtil.longestPath;
+var feasibleTree = __webpack_require__("1845");
+var networkSimplex = __webpack_require__("74e8");
+
+module.exports = rank;
+
+/*
+ * Assigns a rank to each node in the input graph that respects the "minlen"
+ * constraint specified on edges between nodes.
+ *
+ * This basic structure is derived from Gansner, et al., "A Technique for
+ * Drawing Directed Graphs."
+ *
+ * Pre-conditions:
+ *
+ *    1. Graph must be a connected DAG
+ *    2. Graph nodes must be objects
+ *    3. Graph edges must have "weight" and "minlen" attributes
+ *
+ * Post-conditions:
+ *
+ *    1. Graph nodes will have a "rank" attribute based on the results of the
+ *       algorithm. Ranks can start at any index (including negative), we'll
+ *       fix them up later.
+ */
+function rank(g) {
+  switch(g.graph().ranker) {
+  case "network-simplex": networkSimplexRanker(g); break;
+  case "tight-tree": tightTreeRanker(g); break;
+  case "longest-path": longestPathRanker(g); break;
+  default: networkSimplexRanker(g);
+  }
+}
+
+// A fast and simple ranker, but results are far from optimal.
+var longestPathRanker = longestPath;
+
+function tightTreeRanker(g) {
+  longestPath(g);
+  feasibleTree(g);
+}
+
+function networkSimplexRanker(g) {
+  networkSimplex(g);
+}
 
 
 /***/ }),
@@ -392,6 +943,52 @@ module.exports = !DESCRIPTORS && !fails(function () {
 
 /***/ }),
 
+/***/ "0d24":
+/***/ (function(module, exports, __webpack_require__) {
+
+/* WEBPACK VAR INJECTION */(function(module) {var root = __webpack_require__("2b3e"),
+    stubFalse = __webpack_require__("07c7");
+
+/** Detect free variable `exports`. */
+var freeExports =  true && exports && !exports.nodeType && exports;
+
+/** Detect free variable `module`. */
+var freeModule = freeExports && typeof module == 'object' && module && !module.nodeType && module;
+
+/** Detect the popular CommonJS extension `module.exports`. */
+var moduleExports = freeModule && freeModule.exports === freeExports;
+
+/** Built-in value references. */
+var Buffer = moduleExports ? root.Buffer : undefined;
+
+/* Built-in method references for those with the same name as other `lodash` methods. */
+var nativeIsBuffer = Buffer ? Buffer.isBuffer : undefined;
+
+/**
+ * Checks if `value` is a buffer.
+ *
+ * @static
+ * @memberOf _
+ * @since 4.3.0
+ * @category Lang
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if `value` is a buffer, else `false`.
+ * @example
+ *
+ * _.isBuffer(new Buffer(2));
+ * // => true
+ *
+ * _.isBuffer(new Uint8Array(2));
+ * // => false
+ */
+var isBuffer = nativeIsBuffer || stubFalse;
+
+module.exports = isBuffer;
+
+/* WEBPACK VAR INJECTION */}.call(this, __webpack_require__("62e4")(module)))
+
+/***/ }),
+
 /***/ "0d3b":
 /***/ (function(module, exports, __webpack_require__) {
 
@@ -428,6 +1025,95 @@ module.exports = !fails(function () {
     // throws in Safari
     || new URL('http://x', undefined).host !== 'x';
 });
+
+
+/***/ }),
+
+/***/ "0d85":
+/***/ (function(module, exports, __webpack_require__) {
+
+// extracted by mini-css-extract-plugin
+
+/***/ }),
+
+/***/ "0f0f":
+/***/ (function(module, exports, __webpack_require__) {
+
+var copyObject = __webpack_require__("8eeb"),
+    keysIn = __webpack_require__("9934");
+
+/**
+ * The base implementation of `_.assignIn` without support for multiple sources
+ * or `customizer` functions.
+ *
+ * @private
+ * @param {Object} object The destination object.
+ * @param {Object} source The source object.
+ * @returns {Object} Returns `object`.
+ */
+function baseAssignIn(object, source) {
+  return object && copyObject(source, keysIn(source), object);
+}
+
+module.exports = baseAssignIn;
+
+
+/***/ }),
+
+/***/ "0fb9":
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+/* harmony import */ var _node_modules_mini_css_extract_plugin_dist_loader_js_ref_8_oneOf_1_0_node_modules_css_loader_dist_cjs_js_ref_8_oneOf_1_1_node_modules_vue_loader_lib_loaders_stylePostLoader_js_node_modules_postcss_loader_src_index_js_ref_8_oneOf_1_2_node_modules_sass_loader_dist_cjs_js_ref_8_oneOf_1_3_node_modules_cache_loader_dist_cjs_js_ref_0_0_node_modules_vue_loader_lib_index_js_vue_loader_options_Tooltip_vue_vue_type_style_index_0_lang_scss___WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__("251b");
+/* harmony import */ var _node_modules_mini_css_extract_plugin_dist_loader_js_ref_8_oneOf_1_0_node_modules_css_loader_dist_cjs_js_ref_8_oneOf_1_1_node_modules_vue_loader_lib_loaders_stylePostLoader_js_node_modules_postcss_loader_src_index_js_ref_8_oneOf_1_2_node_modules_sass_loader_dist_cjs_js_ref_8_oneOf_1_3_node_modules_cache_loader_dist_cjs_js_ref_0_0_node_modules_vue_loader_lib_index_js_vue_loader_options_Tooltip_vue_vue_type_style_index_0_lang_scss___WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(_node_modules_mini_css_extract_plugin_dist_loader_js_ref_8_oneOf_1_0_node_modules_css_loader_dist_cjs_js_ref_8_oneOf_1_1_node_modules_vue_loader_lib_loaders_stylePostLoader_js_node_modules_postcss_loader_src_index_js_ref_8_oneOf_1_2_node_modules_sass_loader_dist_cjs_js_ref_8_oneOf_1_3_node_modules_cache_loader_dist_cjs_js_ref_0_0_node_modules_vue_loader_lib_index_js_vue_loader_options_Tooltip_vue_vue_type_style_index_0_lang_scss___WEBPACK_IMPORTED_MODULE_0__);
+/* unused harmony reexport * */
+
+
+/***/ }),
+
+/***/ "100e":
+/***/ (function(module, exports, __webpack_require__) {
+
+var identity = __webpack_require__("cd9d"),
+    overRest = __webpack_require__("2286"),
+    setToString = __webpack_require__("c1c9");
+
+/**
+ * The base implementation of `_.rest` which doesn't validate or coerce arguments.
+ *
+ * @private
+ * @param {Function} func The function to apply a rest parameter to.
+ * @param {number} [start=func.length-1] The start position of the rest parameter.
+ * @returns {Function} Returns the new function.
+ */
+function baseRest(func, start) {
+  return setToString(overRest(func, start, identity), func + '');
+}
+
+module.exports = baseRest;
+
+
+/***/ }),
+
+/***/ "1041":
+/***/ (function(module, exports, __webpack_require__) {
+
+var copyObject = __webpack_require__("8eeb"),
+    getSymbolsIn = __webpack_require__("a029");
+
+/**
+ * Copies own and inherited symbols of `source` to `object`.
+ *
+ * @private
+ * @param {Object} source The object to copy symbols from.
+ * @param {Object} [object={}] The object to copy symbols to.
+ * @returns {Object} Returns `object`.
+ */
+function copySymbolsIn(source, object) {
+  return copyObject(source, getSymbolsIn(source), object);
+}
+
+module.exports = copySymbolsIn;
 
 
 /***/ }),
@@ -11899,6 +12585,28 @@ fixRegExpWellKnownSymbolLogic('split', function (SPLIT, nativeSplit, maybeCallNa
 
 /***/ }),
 
+/***/ "1290":
+/***/ (function(module, exports) {
+
+/**
+ * Checks if `value` is suitable for use as unique object key.
+ *
+ * @private
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if `value` is suitable, else `false`.
+ */
+function isKeyable(value) {
+  var type = typeof value;
+  return (type == 'string' || type == 'number' || type == 'symbol' || type == 'boolean')
+    ? (value !== '__proto__')
+    : (value === null);
+}
+
+module.exports = isKeyable;
+
+
+/***/ }),
+
 /***/ "129f":
 /***/ (function(module, exports) {
 
@@ -11913,6 +12621,63 @@ module.exports = Object.is || function is(x, y) {
 
 /***/ }),
 
+/***/ "1304":
+/***/ (function(module, exports, __webpack_require__) {
+
+var identity = __webpack_require__("cd9d");
+
+/**
+ * Casts `value` to `identity` if it's not a function.
+ *
+ * @private
+ * @param {*} value The value to inspect.
+ * @returns {Function} Returns cast function.
+ */
+function castFunction(value) {
+  return typeof value == 'function' ? value : identity;
+}
+
+module.exports = castFunction;
+
+
+/***/ }),
+
+/***/ "1310":
+/***/ (function(module, exports) {
+
+/**
+ * Checks if `value` is object-like. A value is object-like if it's not `null`
+ * and has a `typeof` result of "object".
+ *
+ * @static
+ * @memberOf _
+ * @since 4.0.0
+ * @category Lang
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if `value` is object-like, else `false`.
+ * @example
+ *
+ * _.isObjectLike({});
+ * // => true
+ *
+ * _.isObjectLike([1, 2, 3]);
+ * // => true
+ *
+ * _.isObjectLike(_.noop);
+ * // => false
+ *
+ * _.isObjectLike(null);
+ * // => false
+ */
+function isObjectLike(value) {
+  return value != null && typeof value == 'object';
+}
+
+module.exports = isObjectLike;
+
+
+/***/ }),
+
 /***/ "1319":
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
@@ -11920,6 +12685,117 @@ module.exports = Object.is || function is(x, y) {
 /* harmony import */ var _node_modules_mini_css_extract_plugin_dist_loader_js_ref_8_oneOf_1_0_node_modules_css_loader_dist_cjs_js_ref_8_oneOf_1_1_node_modules_vue_loader_lib_loaders_stylePostLoader_js_node_modules_postcss_loader_src_index_js_ref_8_oneOf_1_2_node_modules_sass_loader_dist_cjs_js_ref_8_oneOf_1_3_node_modules_cache_loader_dist_cjs_js_ref_0_0_node_modules_vue_loader_lib_index_js_vue_loader_options_FieldContainer_vue_vue_type_style_index_0_lang_scss___WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__("3396");
 /* harmony import */ var _node_modules_mini_css_extract_plugin_dist_loader_js_ref_8_oneOf_1_0_node_modules_css_loader_dist_cjs_js_ref_8_oneOf_1_1_node_modules_vue_loader_lib_loaders_stylePostLoader_js_node_modules_postcss_loader_src_index_js_ref_8_oneOf_1_2_node_modules_sass_loader_dist_cjs_js_ref_8_oneOf_1_3_node_modules_cache_loader_dist_cjs_js_ref_0_0_node_modules_vue_loader_lib_index_js_vue_loader_options_FieldContainer_vue_vue_type_style_index_0_lang_scss___WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(_node_modules_mini_css_extract_plugin_dist_loader_js_ref_8_oneOf_1_0_node_modules_css_loader_dist_cjs_js_ref_8_oneOf_1_1_node_modules_vue_loader_lib_loaders_stylePostLoader_js_node_modules_postcss_loader_src_index_js_ref_8_oneOf_1_2_node_modules_sass_loader_dist_cjs_js_ref_8_oneOf_1_3_node_modules_cache_loader_dist_cjs_js_ref_0_0_node_modules_vue_loader_lib_index_js_vue_loader_options_FieldContainer_vue_vue_type_style_index_0_lang_scss___WEBPACK_IMPORTED_MODULE_0__);
 /* unused harmony reexport * */
+
+
+/***/ }),
+
+/***/ "1368":
+/***/ (function(module, exports, __webpack_require__) {
+
+var coreJsData = __webpack_require__("da03");
+
+/** Used to detect methods masquerading as native. */
+var maskSrcKey = (function() {
+  var uid = /[^.]+$/.exec(coreJsData && coreJsData.keys && coreJsData.keys.IE_PROTO || '');
+  return uid ? ('Symbol(src)_1.' + uid) : '';
+}());
+
+/**
+ * Checks if `func` has its source masked.
+ *
+ * @private
+ * @param {Function} func The function to check.
+ * @returns {boolean} Returns `true` if `func` is masked, else `false`.
+ */
+function isMasked(func) {
+  return !!maskSrcKey && (maskSrcKey in func);
+}
+
+module.exports = isMasked;
+
+
+/***/ }),
+
+/***/ "13ea":
+/***/ (function(module, exports, __webpack_require__) {
+
+var baseKeys = __webpack_require__("03dd"),
+    getTag = __webpack_require__("42a2"),
+    isArguments = __webpack_require__("d370"),
+    isArray = __webpack_require__("6747"),
+    isArrayLike = __webpack_require__("30c9"),
+    isBuffer = __webpack_require__("0d24"),
+    isPrototype = __webpack_require__("eac5"),
+    isTypedArray = __webpack_require__("73ac");
+
+/** `Object#toString` result references. */
+var mapTag = '[object Map]',
+    setTag = '[object Set]';
+
+/** Used for built-in method references. */
+var objectProto = Object.prototype;
+
+/** Used to check objects for own properties. */
+var hasOwnProperty = objectProto.hasOwnProperty;
+
+/**
+ * Checks if `value` is an empty object, collection, map, or set.
+ *
+ * Objects are considered empty if they have no own enumerable string keyed
+ * properties.
+ *
+ * Array-like values such as `arguments` objects, arrays, buffers, strings, or
+ * jQuery-like collections are considered empty if they have a `length` of `0`.
+ * Similarly, maps and sets are considered empty if they have a `size` of `0`.
+ *
+ * @static
+ * @memberOf _
+ * @since 0.1.0
+ * @category Lang
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if `value` is empty, else `false`.
+ * @example
+ *
+ * _.isEmpty(null);
+ * // => true
+ *
+ * _.isEmpty(true);
+ * // => true
+ *
+ * _.isEmpty(1);
+ * // => true
+ *
+ * _.isEmpty([1, 2, 3]);
+ * // => false
+ *
+ * _.isEmpty({ 'a': 1 });
+ * // => false
+ */
+function isEmpty(value) {
+  if (value == null) {
+    return true;
+  }
+  if (isArrayLike(value) &&
+      (isArray(value) || typeof value == 'string' || typeof value.splice == 'function' ||
+        isBuffer(value) || isTypedArray(value) || isArguments(value))) {
+    return !value.length;
+  }
+  var tag = getTag(value);
+  if (tag == mapTag || tag == setTag) {
+    return !value.size;
+  }
+  if (isPrototype(value)) {
+    return !baseKeys(value).length;
+  }
+  for (var key in value) {
+    if (hasOwnProperty.call(value, key)) {
+      return false;
+    }
+  }
+  return true;
+}
+
+module.exports = isEmpty;
 
 
 /***/ }),
@@ -11953,6 +12829,64 @@ module.exports = function (R, S) {
 
 /***/ }),
 
+/***/ "159a":
+/***/ (function(module, exports, __webpack_require__) {
+
+var assignValue = __webpack_require__("32b3"),
+    castPath = __webpack_require__("e2e4"),
+    isIndex = __webpack_require__("c098"),
+    isObject = __webpack_require__("1a8c"),
+    toKey = __webpack_require__("f4d6");
+
+/**
+ * The base implementation of `_.set`.
+ *
+ * @private
+ * @param {Object} object The object to modify.
+ * @param {Array|string} path The path of the property to set.
+ * @param {*} value The value to set.
+ * @param {Function} [customizer] The function to customize path creation.
+ * @returns {Object} Returns `object`.
+ */
+function baseSet(object, path, value, customizer) {
+  if (!isObject(object)) {
+    return object;
+  }
+  path = castPath(path, object);
+
+  var index = -1,
+      length = path.length,
+      lastIndex = length - 1,
+      nested = object;
+
+  while (nested != null && ++index < length) {
+    var key = toKey(path[index]),
+        newValue = value;
+
+    if (key === '__proto__' || key === 'constructor' || key === 'prototype') {
+      return object;
+    }
+
+    if (index != lastIndex) {
+      var objValue = nested[key];
+      newValue = customizer ? customizer(objValue, key, nested) : undefined;
+      if (newValue === undefined) {
+        newValue = isObject(objValue)
+          ? objValue
+          : (isIndex(path[index + 1]) ? [] : {});
+      }
+    }
+    assignValue(nested, key, newValue);
+    nested = nested[key];
+  }
+  return object;
+}
+
+module.exports = baseSet;
+
+
+/***/ }),
+
 /***/ "159b":
 /***/ (function(module, exports, __webpack_require__) {
 
@@ -11971,6 +12905,32 @@ for (var COLLECTION_NAME in DOMIterables) {
     CollectionPrototype.forEach = forEach;
   }
 }
+
+
+/***/ }),
+
+/***/ "15f3":
+/***/ (function(module, exports, __webpack_require__) {
+
+var basePickBy = __webpack_require__("89d9"),
+    hasIn = __webpack_require__("8604");
+
+/**
+ * The base implementation of `_.pick` without support for individual
+ * property identifiers.
+ *
+ * @private
+ * @param {Object} object The source object.
+ * @param {string[]} paths The property paths to pick.
+ * @returns {Object} Returns the new object.
+ */
+function basePick(object, paths) {
+  return basePickBy(object, paths, function(value, path) {
+    return hasIn(object, path);
+  });
+}
+
+module.exports = basePick;
 
 
 /***/ }),
@@ -12003,6 +12963,201 @@ module.exports = !STRICT_METHOD ? function forEach(callbackfn /* , thisArg */) {
 
 /***/ }),
 
+/***/ "17d5":
+/***/ (function(module, exports, __webpack_require__) {
+
+/* global window */
+
+var graphlib;
+
+if (true) {
+  try {
+    graphlib = __webpack_require__("e008");
+  } catch (e) {
+    // continue regardless of error
+  }
+}
+
+if (!graphlib) {
+  graphlib = window.graphlib;
+}
+
+module.exports = graphlib;
+
+
+/***/ }),
+
+/***/ "1838":
+/***/ (function(module, exports, __webpack_require__) {
+
+var baseIsEqual = __webpack_require__("c05f"),
+    get = __webpack_require__("9b02"),
+    hasIn = __webpack_require__("8604"),
+    isKey = __webpack_require__("f608"),
+    isStrictComparable = __webpack_require__("08cc"),
+    matchesStrictComparable = __webpack_require__("20ec"),
+    toKey = __webpack_require__("f4d6");
+
+/** Used to compose bitmasks for value comparisons. */
+var COMPARE_PARTIAL_FLAG = 1,
+    COMPARE_UNORDERED_FLAG = 2;
+
+/**
+ * The base implementation of `_.matchesProperty` which doesn't clone `srcValue`.
+ *
+ * @private
+ * @param {string} path The path of the property to get.
+ * @param {*} srcValue The value to match.
+ * @returns {Function} Returns the new spec function.
+ */
+function baseMatchesProperty(path, srcValue) {
+  if (isKey(path) && isStrictComparable(srcValue)) {
+    return matchesStrictComparable(toKey(path), srcValue);
+  }
+  return function(object) {
+    var objValue = get(object, path);
+    return (objValue === undefined && objValue === srcValue)
+      ? hasIn(object, path)
+      : baseIsEqual(srcValue, objValue, COMPARE_PARTIAL_FLAG | COMPARE_UNORDERED_FLAG);
+  };
+}
+
+module.exports = baseMatchesProperty;
+
+
+/***/ }),
+
+/***/ "1845":
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+var _ = __webpack_require__("6f9c");
+var Graph = __webpack_require__("17d5").Graph;
+var slack = __webpack_require__("e849").slack;
+
+module.exports = feasibleTree;
+
+/*
+ * Constructs a spanning tree with tight edges and adjusted the input node's
+ * ranks to achieve this. A tight edge is one that is has a length that matches
+ * its "minlen" attribute.
+ *
+ * The basic structure for this function is derived from Gansner, et al., "A
+ * Technique for Drawing Directed Graphs."
+ *
+ * Pre-conditions:
+ *
+ *    1. Graph must be a DAG.
+ *    2. Graph must be connected.
+ *    3. Graph must have at least one node.
+ *    5. Graph nodes must have been previously assigned a "rank" property that
+ *       respects the "minlen" property of incident edges.
+ *    6. Graph edges must have a "minlen" property.
+ *
+ * Post-conditions:
+ *
+ *    - Graph nodes will have their rank adjusted to ensure that all edges are
+ *      tight.
+ *
+ * Returns a tree (undirected graph) that is constructed using only "tight"
+ * edges.
+ */
+function feasibleTree(g) {
+  var t = new Graph({ directed: false });
+
+  // Choose arbitrary node from which to start our tree
+  var start = g.nodes()[0];
+  var size = g.nodeCount();
+  t.setNode(start, {});
+
+  var edge, delta;
+  while (tightTree(t, g) < size) {
+    edge = findMinSlackEdge(t, g);
+    delta = t.hasNode(edge.v) ? slack(g, edge) : -slack(g, edge);
+    shiftRanks(t, g, delta);
+  }
+
+  return t;
+}
+
+/*
+ * Finds a maximal tree of tight edges and returns the number of nodes in the
+ * tree.
+ */
+function tightTree(t, g) {
+  function dfs(v) {
+    _.forEach(g.nodeEdges(v), function(e) {
+      var edgeV = e.v,
+        w = (v === edgeV) ? e.w : edgeV;
+      if (!t.hasNode(w) && !slack(g, e)) {
+        t.setNode(w, {});
+        t.setEdge(v, w, {});
+        dfs(w);
+      }
+    });
+  }
+
+  _.forEach(t.nodes(), dfs);
+  return t.nodeCount();
+}
+
+/*
+ * Finds the edge with the smallest slack that is incident on tree and returns
+ * it.
+ */
+function findMinSlackEdge(t, g) {
+  return _.minBy(g.edges(), function(e) {
+    if (t.hasNode(e.v) !== t.hasNode(e.w)) {
+      return slack(g, e);
+    }
+  });
+}
+
+function shiftRanks(t, g, delta) {
+  _.forEach(t.nodes(), function(v) {
+    g.node(v).rank += delta;
+  });
+}
+
+
+/***/ }),
+
+/***/ "18d8":
+/***/ (function(module, exports, __webpack_require__) {
+
+var memoizeCapped = __webpack_require__("234d");
+
+/** Used to match property names within property paths. */
+var rePropName = /[^.[\]]+|\[(?:(-?\d+(?:\.\d+)?)|(["'])((?:(?!\2)[^\\]|\\.)*?)\2)\]|(?=(?:\.|\[\])(?:\.|\[\]|$))/g;
+
+/** Used to match backslashes in property paths. */
+var reEscapeChar = /\\(\\)?/g;
+
+/**
+ * Converts `string` to a property path array.
+ *
+ * @private
+ * @param {string} string The string to convert.
+ * @returns {Array} Returns the property path array.
+ */
+var stringToPath = memoizeCapped(function(string) {
+  var result = [];
+  if (string.charCodeAt(0) === 46 /* . */) {
+    result.push('');
+  }
+  string.replace(rePropName, function(match, number, quote, subString) {
+    result.push(quote ? subString.replace(reEscapeChar, '$1') : (number || match));
+  });
+  return result;
+});
+
+module.exports = stringToPath;
+
+
+/***/ }),
+
 /***/ "18da":
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
@@ -12014,6 +13169,13 @@ module.exports = !STRICT_METHOD ? function forEach(callbackfn /* , thisArg */) {
 
 /***/ }),
 
+/***/ "197a":
+/***/ (function(module, exports, __webpack_require__) {
+
+// extracted by mini-css-extract-plugin
+
+/***/ }),
+
 /***/ "19aa":
 /***/ (function(module, exports) {
 
@@ -12022,6 +13184,166 @@ module.exports = function (it, Constructor, name) {
     throw TypeError('Incorrect ' + (name ? name + ' ' : '') + 'invocation');
   } return it;
 };
+
+
+/***/ }),
+
+/***/ "19b2":
+/***/ (function(module, exports, __webpack_require__) {
+
+var _ = __webpack_require__("33de");
+var Graph = __webpack_require__("9671");
+
+module.exports = {
+  write: write,
+  read: read
+};
+
+function write(g) {
+  var json = {
+    options: {
+      directed: g.isDirected(),
+      multigraph: g.isMultigraph(),
+      compound: g.isCompound()
+    },
+    nodes: writeNodes(g),
+    edges: writeEdges(g)
+  };
+  if (!_.isUndefined(g.graph())) {
+    json.value = _.clone(g.graph());
+  }
+  return json;
+}
+
+function writeNodes(g) {
+  return _.map(g.nodes(), function(v) {
+    var nodeValue = g.node(v);
+    var parent = g.parent(v);
+    var node = { v: v };
+    if (!_.isUndefined(nodeValue)) {
+      node.value = nodeValue;
+    }
+    if (!_.isUndefined(parent)) {
+      node.parent = parent;
+    }
+    return node;
+  });
+}
+
+function writeEdges(g) {
+  return _.map(g.edges(), function(e) {
+    var edgeValue = g.edge(e);
+    var edge = { v: e.v, w: e.w };
+    if (!_.isUndefined(e.name)) {
+      edge.name = e.name;
+    }
+    if (!_.isUndefined(edgeValue)) {
+      edge.value = edgeValue;
+    }
+    return edge;
+  });
+}
+
+function read(json) {
+  var g = new Graph(json.options).setGraph(json.value);
+  _.each(json.nodes, function(entry) {
+    g.setNode(entry.v, entry.value);
+    if (entry.parent) {
+      g.setParent(entry.v, entry.parent);
+    }
+  });
+  _.each(json.edges, function(entry) {
+    g.setEdge({ v: entry.v, w: entry.w, name: entry.name }, entry.value);
+  });
+  return g;
+}
+
+
+/***/ }),
+
+/***/ "1a2d":
+/***/ (function(module, exports, __webpack_require__) {
+
+var getTag = __webpack_require__("42a2"),
+    isObjectLike = __webpack_require__("1310");
+
+/** `Object#toString` result references. */
+var mapTag = '[object Map]';
+
+/**
+ * The base implementation of `_.isMap` without Node.js optimizations.
+ *
+ * @private
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if `value` is a map, else `false`.
+ */
+function baseIsMap(value) {
+  return isObjectLike(value) && getTag(value) == mapTag;
+}
+
+module.exports = baseIsMap;
+
+
+/***/ }),
+
+/***/ "1a8c":
+/***/ (function(module, exports) {
+
+/**
+ * Checks if `value` is the
+ * [language type](http://www.ecma-international.org/ecma-262/7.0/#sec-ecmascript-language-types)
+ * of `Object`. (e.g. arrays, functions, objects, regexes, `new Number(0)`, and `new String('')`)
+ *
+ * @static
+ * @memberOf _
+ * @since 0.1.0
+ * @category Lang
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if `value` is an object, else `false`.
+ * @example
+ *
+ * _.isObject({});
+ * // => true
+ *
+ * _.isObject([1, 2, 3]);
+ * // => true
+ *
+ * _.isObject(_.noop);
+ * // => true
+ *
+ * _.isObject(null);
+ * // => false
+ */
+function isObject(value) {
+  var type = typeof value;
+  return value != null && (type == 'object' || type == 'function');
+}
+
+module.exports = isObject;
+
+
+/***/ }),
+
+/***/ "1bac":
+/***/ (function(module, exports, __webpack_require__) {
+
+var baseGetAllKeys = __webpack_require__("7d1f"),
+    getSymbolsIn = __webpack_require__("a029"),
+    keysIn = __webpack_require__("9934");
+
+/**
+ * Creates an array of own and inherited enumerable property names and
+ * symbols of `object`.
+ *
+ * @private
+ * @param {Object} object The object to query.
+ * @returns {Array} Returns the array of property names and symbols.
+ */
+function getAllKeysIn(object) {
+  return baseGetAllKeys(object, keysIn, getSymbolsIn);
+}
+
+module.exports = getAllKeysIn;
 
 
 /***/ }),
@@ -12044,6 +13366,125 @@ module.exports = function (it) {
     throw TypeError(String(it) + ' is not a function');
   } return it;
 };
+
+
+/***/ }),
+
+/***/ "1c3c":
+/***/ (function(module, exports, __webpack_require__) {
+
+var Symbol = __webpack_require__("9e69"),
+    Uint8Array = __webpack_require__("2474"),
+    eq = __webpack_require__("9638"),
+    equalArrays = __webpack_require__("a2be"),
+    mapToArray = __webpack_require__("edfa"),
+    setToArray = __webpack_require__("ac41");
+
+/** Used to compose bitmasks for value comparisons. */
+var COMPARE_PARTIAL_FLAG = 1,
+    COMPARE_UNORDERED_FLAG = 2;
+
+/** `Object#toString` result references. */
+var boolTag = '[object Boolean]',
+    dateTag = '[object Date]',
+    errorTag = '[object Error]',
+    mapTag = '[object Map]',
+    numberTag = '[object Number]',
+    regexpTag = '[object RegExp]',
+    setTag = '[object Set]',
+    stringTag = '[object String]',
+    symbolTag = '[object Symbol]';
+
+var arrayBufferTag = '[object ArrayBuffer]',
+    dataViewTag = '[object DataView]';
+
+/** Used to convert symbols to primitives and strings. */
+var symbolProto = Symbol ? Symbol.prototype : undefined,
+    symbolValueOf = symbolProto ? symbolProto.valueOf : undefined;
+
+/**
+ * A specialized version of `baseIsEqualDeep` for comparing objects of
+ * the same `toStringTag`.
+ *
+ * **Note:** This function only supports comparing values with tags of
+ * `Boolean`, `Date`, `Error`, `Number`, `RegExp`, or `String`.
+ *
+ * @private
+ * @param {Object} object The object to compare.
+ * @param {Object} other The other object to compare.
+ * @param {string} tag The `toStringTag` of the objects to compare.
+ * @param {number} bitmask The bitmask flags. See `baseIsEqual` for more details.
+ * @param {Function} customizer The function to customize comparisons.
+ * @param {Function} equalFunc The function to determine equivalents of values.
+ * @param {Object} stack Tracks traversed `object` and `other` objects.
+ * @returns {boolean} Returns `true` if the objects are equivalent, else `false`.
+ */
+function equalByTag(object, other, tag, bitmask, customizer, equalFunc, stack) {
+  switch (tag) {
+    case dataViewTag:
+      if ((object.byteLength != other.byteLength) ||
+          (object.byteOffset != other.byteOffset)) {
+        return false;
+      }
+      object = object.buffer;
+      other = other.buffer;
+
+    case arrayBufferTag:
+      if ((object.byteLength != other.byteLength) ||
+          !equalFunc(new Uint8Array(object), new Uint8Array(other))) {
+        return false;
+      }
+      return true;
+
+    case boolTag:
+    case dateTag:
+    case numberTag:
+      // Coerce booleans to `1` or `0` and dates to milliseconds.
+      // Invalid dates are coerced to `NaN`.
+      return eq(+object, +other);
+
+    case errorTag:
+      return object.name == other.name && object.message == other.message;
+
+    case regexpTag:
+    case stringTag:
+      // Coerce regexes to strings and treat strings, primitives and objects,
+      // as equal. See http://www.ecma-international.org/ecma-262/7.0/#sec-regexp.prototype.tostring
+      // for more details.
+      return object == (other + '');
+
+    case mapTag:
+      var convert = mapToArray;
+
+    case setTag:
+      var isPartial = bitmask & COMPARE_PARTIAL_FLAG;
+      convert || (convert = setToArray);
+
+      if (object.size != other.size && !isPartial) {
+        return false;
+      }
+      // Assume cyclic values are equal.
+      var stacked = stack.get(object);
+      if (stacked) {
+        return stacked == other;
+      }
+      bitmask |= COMPARE_UNORDERED_FLAG;
+
+      // Recursively compare objects (susceptible to call stack limits).
+      stack.set(object, other);
+      var result = equalArrays(convert(object), convert(other), bitmask, customizer, equalFunc, stack);
+      stack['delete'](object);
+      return result;
+
+    case symbolTag:
+      if (symbolValueOf) {
+        return symbolValueOf.call(object) == symbolValueOf.call(other);
+      }
+  }
+  return false;
+}
+
+module.exports = equalByTag;
 
 
 /***/ }),
@@ -12093,12 +13534,63 @@ module.exports = function (exec, SKIP_CLOSING) {
 
 /***/ }),
 
+/***/ "1cba":
+/***/ (function(module, exports, __webpack_require__) {
+
+var baseRange = __webpack_require__("4796"),
+    isIterateeCall = __webpack_require__("9aff"),
+    toFinite = __webpack_require__("6428");
+
+/**
+ * Creates a `_.range` or `_.rangeRight` function.
+ *
+ * @private
+ * @param {boolean} [fromRight] Specify iterating from right to left.
+ * @returns {Function} Returns the new range function.
+ */
+function createRange(fromRight) {
+  return function(start, end, step) {
+    if (step && typeof step != 'number' && isIterateeCall(start, end, step)) {
+      end = step = undefined;
+    }
+    // Ensure the sign of `-0` is preserved.
+    start = toFinite(start);
+    if (end === undefined) {
+      end = start;
+      start = 0;
+    } else {
+      end = toFinite(end);
+    }
+    step = step === undefined ? (start < end ? 1 : -1) : toFinite(step);
+    return baseRange(start, end, step, fromRight);
+  };
+}
+
+module.exports = createRange;
+
+
+/***/ }),
+
 /***/ "1cdc":
 /***/ (function(module, exports, __webpack_require__) {
 
 var userAgent = __webpack_require__("342f");
 
 module.exports = /(?:ipad|iphone|ipod).*applewebkit/i.test(userAgent);
+
+
+/***/ }),
+
+/***/ "1cec":
+/***/ (function(module, exports, __webpack_require__) {
+
+var getNative = __webpack_require__("0b07"),
+    root = __webpack_require__("2b3e");
+
+/* Built-in method references that are verified to be native. */
+var Promise = getNative(root, 'Promise');
+
+module.exports = Promise;
 
 
 /***/ }),
@@ -12138,6 +13630,17 @@ module.exports = function (METHOD_NAME) {
     return array[METHOD_NAME](Boolean).foo !== 1;
   });
 };
+
+
+/***/ }),
+
+/***/ "1df3":
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+/* harmony import */ var _node_modules_mini_css_extract_plugin_dist_loader_js_ref_8_oneOf_1_0_node_modules_css_loader_dist_cjs_js_ref_8_oneOf_1_1_node_modules_vue_loader_lib_loaders_stylePostLoader_js_node_modules_postcss_loader_src_index_js_ref_8_oneOf_1_2_node_modules_sass_loader_dist_cjs_js_ref_8_oneOf_1_3_node_modules_cache_loader_dist_cjs_js_ref_0_0_node_modules_vue_loader_lib_index_js_vue_loader_options_ConfirmAdditionDialog_vue_vue_type_style_index_0_lang_scss___WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__("dd72");
+/* harmony import */ var _node_modules_mini_css_extract_plugin_dist_loader_js_ref_8_oneOf_1_0_node_modules_css_loader_dist_cjs_js_ref_8_oneOf_1_1_node_modules_vue_loader_lib_loaders_stylePostLoader_js_node_modules_postcss_loader_src_index_js_ref_8_oneOf_1_2_node_modules_sass_loader_dist_cjs_js_ref_8_oneOf_1_3_node_modules_cache_loader_dist_cjs_js_ref_0_0_node_modules_vue_loader_lib_index_js_vue_loader_options_ConfirmAdditionDialog_vue_vue_type_style_index_0_lang_scss___WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(_node_modules_mini_css_extract_plugin_dist_loader_js_ref_8_oneOf_1_0_node_modules_css_loader_dist_cjs_js_ref_8_oneOf_1_1_node_modules_vue_loader_lib_loaders_stylePostLoader_js_node_modules_postcss_loader_src_index_js_ref_8_oneOf_1_2_node_modules_sass_loader_dist_cjs_js_ref_8_oneOf_1_3_node_modules_cache_loader_dist_cjs_js_ref_0_0_node_modules_vue_loader_lib_index_js_vue_loader_options_ConfirmAdditionDialog_vue_vue_type_style_index_0_lang_scss___WEBPACK_IMPORTED_MODULE_0__);
+/* unused harmony reexport * */
 
 
 /***/ }),
@@ -12737,837 +14240,169 @@ SOFTWARE.
 
 /***/ }),
 
-/***/ "2163":
-/***/ (function(module, exports, __webpack_require__) {
-
-(function webpackUniversalModuleDefinition(root, factory) {
-	if(true)
-		module.exports = factory();
-	else {}
-})(this, function() {
-return /******/ (function(modules) { // webpackBootstrap
-/******/ 	// The module cache
-/******/ 	var installedModules = {};
-/******/
-/******/ 	// The require function
-/******/ 	function __webpack_require__(moduleId) {
-/******/
-/******/ 		// Check if module is in cache
-/******/ 		if(installedModules[moduleId]) {
-/******/ 			return installedModules[moduleId].exports;
-/******/ 		}
-/******/ 		// Create a new module (and put it into the cache)
-/******/ 		var module = installedModules[moduleId] = {
-/******/ 			i: moduleId,
-/******/ 			l: false,
-/******/ 			exports: {}
-/******/ 		};
-/******/
-/******/ 		// Execute the module function
-/******/ 		modules[moduleId].call(module.exports, module, module.exports, __webpack_require__);
-/******/
-/******/ 		// Flag the module as loaded
-/******/ 		module.l = true;
-/******/
-/******/ 		// Return the exports of the module
-/******/ 		return module.exports;
-/******/ 	}
-/******/
-/******/
-/******/ 	// expose the modules object (__webpack_modules__)
-/******/ 	__webpack_require__.m = modules;
-/******/
-/******/ 	// expose the module cache
-/******/ 	__webpack_require__.c = installedModules;
-/******/
-/******/ 	// identity function for calling harmony imports with the correct context
-/******/ 	__webpack_require__.i = function(value) { return value; };
-/******/
-/******/ 	// define getter function for harmony exports
-/******/ 	__webpack_require__.d = function(exports, name, getter) {
-/******/ 		if(!__webpack_require__.o(exports, name)) {
-/******/ 			Object.defineProperty(exports, name, {
-/******/ 				configurable: false,
-/******/ 				enumerable: true,
-/******/ 				get: getter
-/******/ 			});
-/******/ 		}
-/******/ 	};
-/******/
-/******/ 	// getDefaultExport function for compatibility with non-harmony modules
-/******/ 	__webpack_require__.n = function(module) {
-/******/ 		var getter = module && module.__esModule ?
-/******/ 			function getDefault() { return module['default']; } :
-/******/ 			function getModuleExports() { return module; };
-/******/ 		__webpack_require__.d(getter, 'a', getter);
-/******/ 		return getter;
-/******/ 	};
-/******/
-/******/ 	// Object.prototype.hasOwnProperty.call
-/******/ 	__webpack_require__.o = function(object, property) { return Object.prototype.hasOwnProperty.call(object, property); };
-/******/
-/******/ 	// __webpack_public_path__
-/******/ 	__webpack_require__.p = "";
-/******/
-/******/ 	// Load entry module and return exports
-/******/ 	return __webpack_require__(__webpack_require__.s = 4);
-/******/ })
-/************************************************************************/
-/******/ ([
-/* 0 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-var defaults = __webpack_require__(2);
-var assign = __webpack_require__(1);
-
-var _require = __webpack_require__(3),
-    removeEles = _require.removeEles,
-    setStyles = _require.setStyles,
-    createElement = _require.createElement,
-    getPixelRatio = _require.getPixelRatio,
-    getOffset = _require.getOffset;
-
-var cxtmenu = function cxtmenu(params) {
-  var options = assign({}, defaults, params);
-  var cy = this;
-  var container = cy.container();
-  var target = void 0;
-
-  var data = {
-    options: options,
-    handlers: [],
-    container: createElement({ class: 'cxtmenu' })
-  };
-
-  var wrapper = data.container;
-  var parent = createElement();
-  var canvas = createElement({ tag: 'canvas' });
-  var commands = [];
-  var c2d = canvas.getContext('2d');
-
-  var r = 100; // defailt radius;
-  var containerSize = (r + options.activePadding) * 2;
-  var activeCommandI = void 0;
-  var offset = void 0;
-
-  container.insertBefore(wrapper, container.firstChild);
-  wrapper.appendChild(parent);
-  parent.appendChild(canvas);
-
-  setStyles(wrapper, {
-    position: 'absolute',
-    zIndex: options.zIndex,
-    userSelect: 'none',
-    pointerEvents: 'none' // prevent events on menu in modern browsers
-  });
-
-  // prevent events on menu in legacy browsers
-  ['mousedown', 'mousemove', 'mouseup', 'contextmenu'].forEach(function (evt) {
-    wrapper.addEventListener(evt, function (e) {
-      e.preventDefault();
-
-      return false;
-    });
-  });
-
-  setStyles(parent, {
-    display: 'none',
-    width: containerSize + 'px',
-    height: containerSize + 'px',
-    position: 'absolute',
-    zIndex: 1,
-    marginLeft: -options.activePadding + 'px',
-    marginTop: -options.activePadding + 'px',
-    userSelect: 'none'
-  });
-
-  canvas.width = containerSize;
-  canvas.height = containerSize;
-
-  function createMenuItems(r, rs) {
-    removeEles('.cxtmenu-item', parent);
-    var dtheta = 2 * Math.PI / commands.length;
-    var theta1 = Math.PI / 2;
-    var theta2 = theta1 + dtheta;
-
-    for (var i = 0; i < commands.length; i++) {
-      var command = commands[i];
-
-      var midtheta = (theta1 + theta2) / 2;
-      var rx1 = (r + rs) / 2 * Math.cos(midtheta);
-      var ry1 = (r + rs) / 2 * Math.sin(midtheta);
-
-      // Arbitrary multiplier to increase the sizing of the space 
-      // available for the item.
-      var width = 1 * Math.abs((r - rs) * Math.cos(midtheta));
-      var height = 1 * Math.abs((r - rs) * Math.sin(midtheta));
-      width = Math.max(width, height);
-
-      var item = createElement({ class: 'cxtmenu-item' });
-      setStyles(item, {
-        color: options.itemColor,
-        cursor: 'default',
-        display: 'table',
-        'text-align': 'center',
-        //background: 'red',
-        position: 'absolute',
-        'text-shadow': '-1px -1px 2px ' + options.itemTextShadowColor + ', 1px -1px 2px ' + options.itemTextShadowColor + ', -1px 1px 2px ' + options.itemTextShadowColor + ', 1px 1px 1px ' + options.itemTextShadowColor,
-        left: '50%',
-        top: '50%',
-        'min-height': width + 'px',
-        width: width + 'px',
-        height: width + 'px',
-        marginLeft: rx1 - width / 2 + 'px',
-        marginTop: -ry1 - width / 2 + 'px'
-      });
-
-      var content = createElement({ class: 'cxtmenu-content' });
-
-      if (command.content instanceof HTMLElement) {
-        content.appendChild(command.content);
-      } else {
-        content.innerHTML = command.content;
-      }
-
-      setStyles(content, {
-        'width': width + 'px',
-        'height': width + 'px',
-        'vertical-align': 'middle',
-        'display': 'table-cell'
-      });
-
-      setStyles(content, command.contentStyle || {});
-
-      if (command.disabled === true || command.enabled === false) {
-        content.setAttribute('class', 'cxtmenu-content cxtmenu-disabled');
-      }
-
-      parent.appendChild(item);
-      item.appendChild(content);
-
-      theta1 += dtheta;
-      theta2 += dtheta;
-    }
-  }
-
-  function queueDrawBg(radius, rspotlight) {
-    redrawQueue.drawBg = [radius, rspotlight];
-  }
-
-  function drawBg(radius, rspotlight) {
-    c2d.globalCompositeOperation = 'source-over';
-
-    c2d.clearRect(0, 0, containerSize, containerSize);
-
-    // draw background items
-    c2d.fillStyle = options.fillColor;
-    var dtheta = 2 * Math.PI / commands.length;
-    var theta1 = Math.PI / 2;
-    var theta2 = theta1 + dtheta;
-
-    for (var index = 0; index < commands.length; index++) {
-      var command = commands[index];
-
-      if (command.fillColor) {
-        c2d.fillStyle = command.fillColor;
-      }
-      c2d.beginPath();
-      c2d.moveTo(radius + options.activePadding, radius + options.activePadding);
-      c2d.arc(radius + options.activePadding, radius + options.activePadding, radius, 2 * Math.PI - theta1, 2 * Math.PI - theta2, true);
-      c2d.closePath();
-      c2d.fill();
-
-      theta1 += dtheta;
-      theta2 += dtheta;
-
-      c2d.fillStyle = options.fillColor;
-    }
-
-    // draw separators between items
-    c2d.globalCompositeOperation = 'destination-out';
-    c2d.strokeStyle = 'white';
-    c2d.lineWidth = options.separatorWidth;
-    theta1 = Math.PI / 2;
-    theta2 = theta1 + dtheta;
-
-    for (var i = 0; i < commands.length; i++) {
-      var rx1 = radius * Math.cos(theta1);
-      var ry1 = radius * Math.sin(theta1);
-      c2d.beginPath();
-      c2d.moveTo(radius + options.activePadding, radius + options.activePadding);
-      c2d.lineTo(radius + options.activePadding + rx1, radius + options.activePadding - ry1);
-      c2d.closePath();
-      c2d.stroke();
-
-      theta1 += dtheta;
-      theta2 += dtheta;
-    }
-
-    c2d.fillStyle = 'white';
-    c2d.globalCompositeOperation = 'destination-out';
-    c2d.beginPath();
-    c2d.arc(radius + options.activePadding, radius + options.activePadding, rspotlight + options.spotlightPadding, 0, Math.PI * 2, true);
-    c2d.closePath();
-    c2d.fill();
-
-    c2d.globalCompositeOperation = 'source-over';
-  }
-
-  function queueDrawCommands(rx, ry, radius, theta, rspotlight) {
-    redrawQueue.drawCommands = [rx, ry, radius, theta, rspotlight];
-  }
-
-  function drawCommands(rx, ry, radius, theta, rs) {
-    var dtheta = 2 * Math.PI / commands.length;
-    var theta1 = Math.PI / 2;
-    var theta2 = theta1 + dtheta;
-
-    theta1 += dtheta * activeCommandI;
-    theta2 += dtheta * activeCommandI;
-
-    c2d.fillStyle = options.activeFillColor;
-    c2d.strokeStyle = 'black';
-    c2d.lineWidth = 1;
-    c2d.beginPath();
-    c2d.moveTo(radius + options.activePadding, radius + options.activePadding);
-    c2d.arc(radius + options.activePadding, radius + options.activePadding, radius + options.activePadding, 2 * Math.PI - theta1, 2 * Math.PI - theta2, true);
-    c2d.closePath();
-    c2d.fill();
-
-    c2d.fillStyle = 'white';
-    c2d.globalCompositeOperation = 'destination-out';
-
-    var tx = radius + options.activePadding + rx / radius * (rs + options.spotlightPadding - options.indicatorSize / 4);
-    var ty = radius + options.activePadding + ry / radius * (rs + options.spotlightPadding - options.indicatorSize / 4);
-    var rot = Math.PI / 4 - theta;
-
-    c2d.translate(tx, ty);
-    c2d.rotate(rot);
-
-    // clear the indicator
-    // The indicator size (arrow) depends on the node size as well. If the indicator size is bigger and the rendered node size + padding, 
-    // use the rendered node size + padding as the indicator size.
-    var indicatorSize = options.indicatorSize > rs + options.spotlightPadding ? rs + options.spotlightPadding : options.indicatorSize;
-    c2d.beginPath();
-    c2d.fillRect(-indicatorSize / 2, -indicatorSize / 2, indicatorSize, indicatorSize);
-    c2d.closePath();
-    c2d.fill();
-
-    c2d.rotate(-rot);
-    c2d.translate(-tx, -ty);
-
-    // c2d.setTransform( 1, 0, 0, 1, 0, 0 );
-
-    // clear the spotlight
-    c2d.beginPath();
-    c2d.arc(radius + options.activePadding, radius + options.activePadding, rs + options.spotlightPadding, 0, Math.PI * 2, true);
-    c2d.closePath();
-    c2d.fill();
-
-    c2d.globalCompositeOperation = 'source-over';
-  }
-
-  function updatePixelRatio() {
-    var pxr = getPixelRatio();
-    var w = containerSize;
-    var h = containerSize;
-
-    canvas.width = w * pxr;
-    canvas.height = h * pxr;
-
-    canvas.style.width = w + 'px';
-    canvas.style.height = h + 'px';
-
-    c2d.setTransform(1, 0, 0, 1, 0, 0);
-    c2d.scale(pxr, pxr);
-  }
-
-  var redrawing = true;
-  var redrawQueue = {};
-
-  var raf = window.requestAnimationFrame || window.webkitRequestAnimationFrame || window.mozRequestAnimationFrame || window.msRequestAnimationFrame || function (fn) {
-    return setTimeout(fn, 16);
-  };
-
-  var redraw = function redraw() {
-    if (redrawQueue.drawBg) {
-      drawBg.apply(null, redrawQueue.drawBg);
-    }
-
-    if (redrawQueue.drawCommands) {
-      drawCommands.apply(null, redrawQueue.drawCommands);
-    }
-
-    redrawQueue = {};
-
-    if (redrawing) {
-      raf(redraw);
-    }
-  };
-
-  // kick off
-  updatePixelRatio();
-  redraw();
-
-  var ctrx = void 0,
-      ctry = void 0,
-      rs = void 0;
-
-  var bindings = {
-    on: function on(events, selector, fn) {
-
-      var _fn = fn;
-      if (selector === 'core') {
-        _fn = function _fn(e) {
-          if (e.cyTarget === cy || e.target === cy) {
-            // only if event target is directly core
-            return fn.apply(this, [e]);
-          }
-        };
-      }
-
-      data.handlers.push({
-        events: events,
-        selector: selector,
-        fn: _fn
-      });
-
-      if (selector === 'core') {
-        cy.on(events, _fn);
-      } else {
-        cy.on(events, selector, _fn);
-      }
-
-      return this;
-    }
-  };
-
-  function addEventListeners() {
-    var grabbable = void 0;
-    var inGesture = false;
-    var dragHandler = void 0;
-    var zoomEnabled = void 0;
-    var panEnabled = void 0;
-    var boxEnabled = void 0;
-    var gestureStartEvent = void 0;
-
-    var restoreZoom = function restoreZoom() {
-      if (zoomEnabled) {
-        cy.userZoomingEnabled(true);
-      }
-    };
-
-    var restoreGrab = function restoreGrab() {
-      if (grabbable) {
-        target.grabify();
-      }
-    };
-
-    var restorePan = function restorePan() {
-      if (panEnabled) {
-        cy.userPanningEnabled(true);
-      }
-    };
-
-    var restoreBoxSeln = function restoreBoxSeln() {
-      if (boxEnabled) {
-        cy.boxSelectionEnabled(true);
-      }
-    };
-
-    var restoreGestures = function restoreGestures() {
-      restoreGrab();
-      restoreZoom();
-      restorePan();
-      restoreBoxSeln();
-    };
-
-    window.addEventListener('resize', updatePixelRatio);
-
-    bindings.on('resize', function () {
-      updatePixelRatio();
-    }).on(options.openMenuEvents, options.selector, function (e) {
-      target = this; // Remember which node the context menu is for
-      var ele = this;
-      var isCy = this === cy;
-
-      if (inGesture) {
-        parent.style.display = 'none';
-
-        inGesture = false;
-
-        restoreGestures();
-      }
-
-      if (typeof options.commands === 'function') {
-        var res = options.commands(target);
-        if (res.then) {
-          res.then(function (_commands) {
-            commands = _commands;
-            openMenu();
-          });
-        } else {
-          commands = res;
-          openMenu();
-        }
-      } else {
-        commands = options.commands;
-        openMenu();
-      }
-
-      function openMenu() {
-        if (!commands || commands.length === 0) {
-          return;
-        }
-
-        zoomEnabled = cy.userZoomingEnabled();
-        cy.userZoomingEnabled(false);
-
-        panEnabled = cy.userPanningEnabled();
-        cy.userPanningEnabled(false);
-
-        boxEnabled = cy.boxSelectionEnabled();
-        cy.boxSelectionEnabled(false);
-
-        grabbable = target.grabbable && target.grabbable();
-        if (grabbable) {
-          target.ungrabify();
-        }
-
-        var rp = void 0,
-            rw = void 0,
-            rh = void 0,
-            rs = void 0;
-        if (!isCy && ele && ele.isNode instanceof Function && ele.isNode() && !ele.isParent() && !options.atMouse) {
-          // If it's a node, the default spotlight radius for a node is the node width
-          rp = ele.renderedPosition();
-          rw = ele.renderedOuterWidth();
-          rh = ele.renderedOuterHeight();
-          rs = rw / 2;
-          // If adaptativeNodespotlightRadius is not enabled and min|maxSpotlighrRadius is defined, use those instead
-          rs = !options.adaptativeNodeSpotlightRadius && options.minSpotlightRadius ? Math.max(rs, options.minSpotlightRadius) : rs;
-          rs = !options.adaptativeNodeSpotlightRadius && options.maxSpotlightRadius ? Math.min(rs, options.maxSpotlightRadius) : rs;
-        } else {
-          // If it's the background or an edge, the spotlight radius is the min|maxSpotlightRadius
-          rp = e.renderedPosition || e.cyRenderedPosition;
-          rw = 1;
-          rh = 1;
-          rs = rw / 2;
-          rs = options.minSpotlightRadius ? Math.max(rs, options.minSpotlightRadius) : rs;
-          rs = options.maxSpotlightRadius ? Math.min(rs, options.maxSpotlightRadius) : rs;
-        }
-
-        offset = getOffset(container);
-
-        ctrx = rp.x;
-        ctry = rp.y;
-        r = rw / 2 + (options.menuRadius instanceof Function ? options.menuRadius(target) : Number(options.menuRadius));
-        containerSize = (r + options.activePadding) * 2;
-        updatePixelRatio();
-
-        setStyles(parent, {
-          width: containerSize + 'px',
-          height: containerSize + 'px',
-          display: 'block',
-          left: rp.x - r + 'px',
-          top: rp.y - r + 'px'
-        });
-        createMenuItems(r, rs);
-        queueDrawBg(r, rs);
-
-        activeCommandI = undefined;
-
-        inGesture = true;
-        gestureStartEvent = e;
-      }
-    }).on('cxtdrag tapdrag', options.selector, dragHandler = function dragHandler(e) {
-
-      if (!inGesture) {
-        return;
-      }
-      e.preventDefault(); // Otherwise, on mobile, the pull-down refresh gesture gets activated
-
-      var origE = e.originalEvent;
-      var isTouch = origE.touches && origE.touches.length > 0;
-
-      var pageX = (isTouch ? origE.touches[0].pageX : origE.pageX) - window.pageXOffset;
-      var pageY = (isTouch ? origE.touches[0].pageY : origE.pageY) - window.pageYOffset;
-
-      activeCommandI = undefined;
-
-      var dx = pageX - offset.left - ctrx;
-      var dy = pageY - offset.top - ctry;
-
-      if (dx === 0) {
-        dx = 0.01;
-      }
-
-      var d = Math.sqrt(dx * dx + dy * dy);
-      var cosTheta = (dy * dy - d * d - dx * dx) / (-2 * d * dx);
-      var theta = Math.acos(cosTheta);
-
-      var rw = void 0;
-      if (target && target.isNode instanceof Function && target.isNode() && !target.isParent() && !options.atMouse) {
-        // If it's a node, the default spotlight radius for a node is the node width
-        rw = target.renderedOuterWidth();
-        rs = rw / 2;
-        // If adaptativeNodespotlightRadius is not enabled and min|maxSpotlighrRadius is defined, use those instead
-        rs = !options.adaptativeNodeSpotlightRadius && options.minSpotlightRadius ? Math.max(rs, options.minSpotlightRadius) : rs;
-        rs = !options.adaptativeNodeSpotlightRadius && options.maxSpotlightRadius ? Math.min(rs, options.maxSpotlightRadius) : rs;
-      } else {
-        // If it's the background or an edge, the spotlight radius is the min|maxSpotlightRadius
-        rw = 1;
-        rs = rw / 2;
-        rs = options.minSpotlightRadius ? Math.max(rs, options.minSpotlightRadius) : rs;
-        rs = options.maxSpotlightRadius ? Math.min(rs, options.maxSpotlightRadius) : rs;
-      }
-
-      r = rw / 2 + (options.menuRadius instanceof Function ? options.menuRadius(target) : Number(options.menuRadius));
-      if (d < rs + options.spotlightPadding || typeof options.outsideMenuCancel === "number" && d > r + options.activePadding + options.outsideMenuCancel) {
-        //
-
-        queueDrawBg(r, rs);
-        return;
-      }
-      queueDrawBg(r, rs);
-
-      var rx = dx * r / d;
-      var ry = dy * r / d;
-
-      if (dy > 0) {
-        theta = Math.PI + Math.abs(theta - Math.PI);
-      }
-
-      var dtheta = 2 * Math.PI / commands.length;
-      var theta1 = Math.PI / 2;
-      var theta2 = theta1 + dtheta;
-
-      for (var i = 0; i < commands.length; i++) {
-        var command = commands[i];
-
-        var inThisCommand = theta1 <= theta && theta <= theta2 || theta1 <= theta + 2 * Math.PI && theta + 2 * Math.PI <= theta2;
-
-        if (command.disabled === true || command.enabled === false) {
-          inThisCommand = false;
-        }
-
-        if (inThisCommand) {
-          activeCommandI = i;
-          break;
-        }
-
-        theta1 += dtheta;
-        theta2 += dtheta;
-      }
-      queueDrawCommands(rx, ry, r, theta, rs);
-    }).on('tapdrag', dragHandler).on('cxttapend tapend', function () {
-      parent.style.display = 'none';
-      if (activeCommandI !== undefined) {
-        var select = commands[activeCommandI].select;
-
-        if (select) {
-          select.apply(target, [target, gestureStartEvent]);
-          activeCommandI = undefined;
-        }
-      }
-
-      inGesture = false;
-
-      restoreGestures();
-    });
-  }
-
-  function removeEventListeners() {
-    var handlers = data.handlers;
-
-    for (var i = 0; i < handlers.length; i++) {
-      var h = handlers[i];
-
-      if (h.selector === 'core') {
-        cy.off(h.events, h.fn);
-      } else {
-        cy.off(h.events, h.selector, h.fn);
-      }
-    }
-
-    window.removeEventListener('resize', updatePixelRatio);
-  }
-
-  function destroyInstance() {
-    redrawing = false;
-
-    removeEventListeners();
-
-    wrapper.remove();
-  }
-
-  addEventListeners();
-
-  return {
-    destroy: function destroy() {
-      destroyInstance();
-    }
-  };
-};
-
-module.exports = cxtmenu;
-
-/***/ }),
-/* 1 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-// Simple, internal Object.assign() polyfill for options objects etc.
-
-module.exports = Object.assign != null ? Object.assign.bind(Object) : function (tgt) {
-  for (var _len = arguments.length, srcs = Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
-    srcs[_key - 1] = arguments[_key];
-  }
-
-  srcs.filter(function (src) {
-    return src != null;
-  }).forEach(function (src) {
-    Object.keys(src).forEach(function (k) {
-      return tgt[k] = src[k];
-    });
-  });
-
-  return tgt;
-};
-
-/***/ }),
-/* 2 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-var defaults = {
-  menuRadius: function menuRadius(ele) {
-    return 100;
-  }, // the radius of the circular menu in pixels
-  selector: 'node', // elements matching this Cytoscape.js selector will trigger cxtmenus
-  commands: [// an array of commands to list in the menu or a function that returns the array
-    /*
-    { // example command
-      fillColor: 'rgba(200, 200, 200, 0.75)', // optional: custom background color for item
-      content: 'a command name' // html/text content to be displayed in the menu
-      contentStyle: {}, // css key:value pairs to set the command's css in js if you want
-      select: function(ele){ // a function to execute when the command is selected
-        console.log( ele.id() ) // `ele` holds the reference to the active element
-      },
-      enabled: true // whether the command is selectable
-    }
-    */
-  ], // function( ele ){ return [ /*...*/ ] }, // example function for commands
-  fillColor: 'rgba(0, 0, 0, 0.75)', // the background colour of the menu
-  activeFillColor: 'rgba(1, 105, 217, 0.75)', // the colour used to indicate the selected command
-  activePadding: 20, // additional size in pixels for the active command
-  indicatorSize: 24, // the size in pixels of the pointer to the active command, will default to the node size if the node size is smaller than the indicator size, 
-  separatorWidth: 3, // the empty spacing in pixels between successive commands
-  spotlightPadding: 4, // extra spacing in pixels between the element and the spotlight
-  adaptativeNodeSpotlightRadius: false, // specify whether the spotlight radius should adapt to the node size
-  minSpotlightRadius: 24, // the minimum radius in pixels of the spotlight (ignored for the node if adaptativeNodeSpotlightRadius is enabled but still used for the edge & background)
-  maxSpotlightRadius: 38, // the maximum radius in pixels of the spotlight (ignored for the node if adaptativeNodeSpotlightRadius is enabled but still used for the edge & background)
-  openMenuEvents: 'cxttapstart taphold', // space-separated cytoscape events that will open the menu; only `cxttapstart` and/or `taphold` work here
-  itemColor: 'white', // the colour of text in the command's content
-  itemTextShadowColor: 'transparent', // the text shadow colour of the command's content
-  zIndex: 9999, // the z-index of the ui div
-  atMouse: false, // draw menu at mouse position
-  outsideMenuCancel: false // if set to a number, this will cancel the command if the pointer is released outside of the spotlight, padded by the number given
-};
-
-module.exports = defaults;
-
-/***/ }),
-/* 3 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-var removeEles = function removeEles(query) {
-  var ancestor = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : document;
-
-  var els = ancestor.querySelectorAll(query);
-
-  for (var i = 0; i < els.length; i++) {
-    var el = els[i];
-
-    el.parentNode.removeChild(el);
-  }
-};
-
-var setStyles = function setStyles(el, style) {
-  var props = Object.keys(style);
-
-  for (var i = 0, l = props.length; i < l; i++) {
-    el.style[props[i]] = style[props[i]];
-  }
-};
-
-var createElement = function createElement(options) {
-  options = options || {};
-
-  var el = document.createElement(options.tag || 'div');
-
-  el.className = options.class || '';
-
-  if (options.style) {
-    setStyles(el, options.style);
-  }
-
-  return el;
-};
-
-var getPixelRatio = function getPixelRatio() {
-  return window.devicePixelRatio || 1;
-};
-
-var getOffset = function getOffset(el) {
-  var offset = el.getBoundingClientRect();
-
-  return {
-    left: offset.left + document.body.scrollLeft + parseFloat(getComputedStyle(document.body)['padding-left']) + parseFloat(getComputedStyle(document.body)['border-left-width']),
-    top: offset.top + document.body.scrollTop + parseFloat(getComputedStyle(document.body)['padding-top']) + parseFloat(getComputedStyle(document.body)['border-top-width'])
-  };
-};
-
-module.exports = { removeEles: removeEles, setStyles: setStyles, createElement: createElement, getPixelRatio: getPixelRatio, getOffset: getOffset };
-
-/***/ }),
-/* 4 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-var cxtmenu = __webpack_require__(0);
-
-// registers the extension on a cytoscape lib ref
-var register = function register(cytoscape) {
-  if (!cytoscape) {
-    return;
-  } // can't register if cytoscape unspecified
-
-  cytoscape('core', 'cxtmenu', cxtmenu); // register with cytoscape.js
-};
-
-if (typeof cytoscape !== 'undefined') {
-  // expose to global cytoscape (i.e. window.cytoscape)
-  register(cytoscape);
+/***/ "1efc":
+/***/ (function(module, exports) {
+
+/**
+ * Removes `key` and its value from the hash.
+ *
+ * @private
+ * @name delete
+ * @memberOf Hash
+ * @param {Object} hash The hash to modify.
+ * @param {string} key The key of the value to remove.
+ * @returns {boolean} Returns `true` if the entry was removed, else `false`.
+ */
+function hashDelete(key) {
+  var result = this.has(key) && delete this.__data__[key];
+  this.size -= result ? 1 : 0;
+  return result;
 }
 
-module.exports = register;
+module.exports = hashDelete;
 
-/***/ })
-/******/ ]);
-});
+
+/***/ }),
+
+/***/ "1f3a":
+/***/ (function(module, exports, __webpack_require__) {
+
+var _ = __webpack_require__("6f9c");
+
+module.exports = barycenter;
+
+function barycenter(g, movable) {
+  return _.map(movable, function(v) {
+    var inV = g.inEdges(v);
+    if (!inV.length) {
+      return { v: v };
+    } else {
+      var result = _.reduce(inV, function(acc, e) {
+        var edge = g.edge(e),
+          nodeU = g.node(e.v);
+        return {
+          sum: acc.sum + (edge.weight * nodeU.order),
+          weight: acc.weight + edge.weight
+        };
+      }, { sum: 0, weight: 0 });
+
+      return {
+        v: v,
+        barycenter: result.sum / result.weight,
+        weight: result.weight
+      };
+    }
+  });
+}
+
+
+
+/***/ }),
+
+/***/ "1fc8":
+/***/ (function(module, exports, __webpack_require__) {
+
+var getMapData = __webpack_require__("4245");
+
+/**
+ * Sets the map `key` to `value`.
+ *
+ * @private
+ * @name set
+ * @memberOf MapCache
+ * @param {string} key The key of the value to set.
+ * @param {*} value The value to set.
+ * @returns {Object} Returns the map cache instance.
+ */
+function mapCacheSet(key, value) {
+  var data = getMapData(this, key),
+      size = data.size;
+
+  data.set(key, value);
+  this.size += data.size == size ? 0 : 1;
+  return this;
+}
+
+module.exports = mapCacheSet;
+
+
+/***/ }),
+
+/***/ "20ec":
+/***/ (function(module, exports) {
+
+/**
+ * A specialized version of `matchesProperty` for source values suitable
+ * for strict equality comparisons, i.e. `===`.
+ *
+ * @private
+ * @param {string} key The key of the property to get.
+ * @param {*} srcValue The value to match.
+ * @returns {Function} Returns the new spec function.
+ */
+function matchesStrictComparable(key, srcValue) {
+  return function(object) {
+    if (object == null) {
+      return false;
+    }
+    return object[key] === srcValue &&
+      (srcValue !== undefined || (key in Object(object)));
+  };
+}
+
+module.exports = matchesStrictComparable;
+
+
+/***/ }),
+
+/***/ "2164":
+/***/ (function(module, exports, __webpack_require__) {
+
+var compareAscending = __webpack_require__("cae7");
+
+/**
+ * Used by `_.orderBy` to compare multiple properties of a value to another
+ * and stable sort them.
+ *
+ * If `orders` is unspecified, all values are sorted in ascending order. Otherwise,
+ * specify an order of "desc" for descending or "asc" for ascending sort order
+ * of corresponding values.
+ *
+ * @private
+ * @param {Object} object The object to compare.
+ * @param {Object} other The other object to compare.
+ * @param {boolean[]|string[]} orders The order to sort by for each property.
+ * @returns {number} Returns the sort order indicator for `object`.
+ */
+function compareMultiple(object, other, orders) {
+  var index = -1,
+      objCriteria = object.criteria,
+      othCriteria = other.criteria,
+      length = objCriteria.length,
+      ordersLength = orders.length;
+
+  while (++index < length) {
+    var result = compareAscending(objCriteria[index], othCriteria[index]);
+    if (result) {
+      if (index >= ordersLength) {
+        return result;
+      }
+      var order = orders[index];
+      return result * (order == 'desc' ? -1 : 1);
+    }
+  }
+  // Fixes an `Array#sort` bug in the JS engine embedded in Adobe applications
+  // that causes it, under certain circumstances, to provide the same value for
+  // `object` and `other`. See https://github.com/jashkenas/underscore/pull/1247
+  // for more details.
+  //
+  // This also ensures a stable sort in V8 and other engines.
+  // See https://bugs.chromium.org/p/v8/issues/detail?id=90 for more details.
+  return object.index - other.index;
+}
+
+module.exports = compareMultiple;
+
 
 /***/ }),
 
@@ -13578,6 +14413,51 @@ module.exports = register;
 /* harmony import */ var _node_modules_mini_css_extract_plugin_dist_loader_js_ref_8_oneOf_1_0_node_modules_css_loader_dist_cjs_js_ref_8_oneOf_1_1_node_modules_vue_loader_lib_loaders_stylePostLoader_js_node_modules_postcss_loader_src_index_js_ref_8_oneOf_1_2_node_modules_sass_loader_dist_cjs_js_ref_8_oneOf_1_3_node_modules_cache_loader_dist_cjs_js_ref_0_0_node_modules_vue_loader_lib_index_js_vue_loader_options_DropdownMenuItem_vue_vue_type_style_index_0_lang_scss___WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__("ebec");
 /* harmony import */ var _node_modules_mini_css_extract_plugin_dist_loader_js_ref_8_oneOf_1_0_node_modules_css_loader_dist_cjs_js_ref_8_oneOf_1_1_node_modules_vue_loader_lib_loaders_stylePostLoader_js_node_modules_postcss_loader_src_index_js_ref_8_oneOf_1_2_node_modules_sass_loader_dist_cjs_js_ref_8_oneOf_1_3_node_modules_cache_loader_dist_cjs_js_ref_0_0_node_modules_vue_loader_lib_index_js_vue_loader_options_DropdownMenuItem_vue_vue_type_style_index_0_lang_scss___WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(_node_modules_mini_css_extract_plugin_dist_loader_js_ref_8_oneOf_1_0_node_modules_css_loader_dist_cjs_js_ref_8_oneOf_1_1_node_modules_vue_loader_lib_loaders_stylePostLoader_js_node_modules_postcss_loader_src_index_js_ref_8_oneOf_1_2_node_modules_sass_loader_dist_cjs_js_ref_8_oneOf_1_3_node_modules_cache_loader_dist_cjs_js_ref_0_0_node_modules_vue_loader_lib_index_js_vue_loader_options_DropdownMenuItem_vue_vue_type_style_index_0_lang_scss___WEBPACK_IMPORTED_MODULE_0__);
 /* unused harmony reexport * */
+
+
+/***/ }),
+
+/***/ "220e":
+/***/ (function(module, exports, __webpack_require__) {
+
+var _ = __webpack_require__("6f9c");
+var util = __webpack_require__("b50e");
+
+module.exports = addBorderSegments;
+
+function addBorderSegments(g) {
+  function dfs(v) {
+    var children = g.children(v);
+    var node = g.node(v);
+    if (children.length) {
+      _.forEach(children, dfs);
+    }
+
+    if (_.has(node, "minRank")) {
+      node.borderLeft = [];
+      node.borderRight = [];
+      for (var rank = node.minRank, maxRank = node.maxRank + 1;
+        rank < maxRank;
+        ++rank) {
+        addBorderNode(g, "borderLeft", "_bl", v, node, rank);
+        addBorderNode(g, "borderRight", "_br", v, node, rank);
+      }
+    }
+  }
+
+  _.forEach(g.children(), dfs);
+}
+
+function addBorderNode(g, prop, prefix, sg, sgNode, rank) {
+  var label = { width: 0, height: 0, rank: rank, borderType: prop };
+  var prev = sgNode[prop][rank - 1];
+  var curr = util.addDummyNode(g, "border", label, prefix);
+  sgNode[prop][rank] = curr;
+  g.setParent(curr, sg);
+  if (prev) {
+    g.setEdge(prev, curr, { weight: 1 });
+  }
+}
 
 
 /***/ }),
@@ -13643,6 +14523,120 @@ module.exports = function (iterable, unboundFunction, options) {
     if (typeof result == 'object' && result && result instanceof Result) return result;
   } return new Result(false);
 };
+
+
+/***/ }),
+
+/***/ "2286":
+/***/ (function(module, exports, __webpack_require__) {
+
+var apply = __webpack_require__("85e35");
+
+/* Built-in method references for those with the same name as other `lodash` methods. */
+var nativeMax = Math.max;
+
+/**
+ * A specialized version of `baseRest` which transforms the rest array.
+ *
+ * @private
+ * @param {Function} func The function to apply a rest parameter to.
+ * @param {number} [start=func.length-1] The start position of the rest parameter.
+ * @param {Function} transform The rest array transform.
+ * @returns {Function} Returns the new function.
+ */
+function overRest(func, start, transform) {
+  start = nativeMax(start === undefined ? (func.length - 1) : start, 0);
+  return function() {
+    var args = arguments,
+        index = -1,
+        length = nativeMax(args.length - start, 0),
+        array = Array(length);
+
+    while (++index < length) {
+      array[index] = args[start + index];
+    }
+    index = -1;
+    var otherArgs = Array(start + 1);
+    while (++index < start) {
+      otherArgs[index] = args[index];
+    }
+    otherArgs[start] = transform(array);
+    return apply(func, this, otherArgs);
+  };
+}
+
+module.exports = overRest;
+
+
+/***/ }),
+
+/***/ "2325":
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+var _ = __webpack_require__("6f9c");
+var util = __webpack_require__("b50e");
+var positionX = __webpack_require__("8c55").positionX;
+
+module.exports = position;
+
+function position(g) {
+  g = util.asNonCompoundGraph(g);
+
+  positionY(g);
+  _.forEach(positionX(g), function(x, v) {
+    g.node(v).x = x;
+  });
+}
+
+function positionY(g) {
+  var layering = util.buildLayerMatrix(g);
+  var rankSep = g.graph().ranksep;
+  var prevY = 0;
+  _.forEach(layering, function(layer) {
+    var maxHeight = _.max(_.map(layer, function(v) { return g.node(v).height; }));
+    _.forEach(layer, function(v) {
+      g.node(v).y = prevY + maxHeight / 2;
+    });
+    prevY += maxHeight + rankSep;
+  });
+}
+
+
+
+/***/ }),
+
+/***/ "234d":
+/***/ (function(module, exports, __webpack_require__) {
+
+var memoize = __webpack_require__("e380");
+
+/** Used as the maximum memoize cache size. */
+var MAX_MEMOIZE_SIZE = 500;
+
+/**
+ * A specialized version of `_.memoize` which clears the memoized function's
+ * cache when it exceeds `MAX_MEMOIZE_SIZE`.
+ *
+ * @private
+ * @param {Function} func The function to have its output memoized.
+ * @returns {Function} Returns the new memoized function.
+ */
+function memoizeCapped(func) {
+  var result = memoize(func, function(key) {
+    if (cache.size === MAX_MEMOIZE_SIZE) {
+      cache.clear();
+    }
+    return key;
+  });
+
+  var cache = result.cache;
+  return result;
+}
+
+module.exports = memoizeCapped;
 
 
 /***/ }),
@@ -13745,6 +14739,241 @@ exports.f = Object.getOwnPropertyNames || function getOwnPropertyNames(O) {
 
 /***/ }),
 
+/***/ "242e":
+/***/ (function(module, exports, __webpack_require__) {
+
+var baseFor = __webpack_require__("72af"),
+    keys = __webpack_require__("ec69");
+
+/**
+ * The base implementation of `_.forOwn` without support for iteratee shorthands.
+ *
+ * @private
+ * @param {Object} object The object to iterate over.
+ * @param {Function} iteratee The function invoked per iteration.
+ * @returns {Object} Returns `object`.
+ */
+function baseForOwn(object, iteratee) {
+  return object && baseFor(object, iteratee, keys);
+}
+
+module.exports = baseForOwn;
+
+
+/***/ }),
+
+/***/ "2474":
+/***/ (function(module, exports, __webpack_require__) {
+
+var root = __webpack_require__("2b3e");
+
+/** Built-in value references. */
+var Uint8Array = root.Uint8Array;
+
+module.exports = Uint8Array;
+
+
+/***/ }),
+
+/***/ "2478":
+/***/ (function(module, exports, __webpack_require__) {
+
+var getMapData = __webpack_require__("4245");
+
+/**
+ * Gets the map value for `key`.
+ *
+ * @private
+ * @name get
+ * @memberOf MapCache
+ * @param {string} key The key of the value to get.
+ * @returns {*} Returns the entry value.
+ */
+function mapCacheGet(key) {
+  return getMapData(this, key).get(key);
+}
+
+module.exports = mapCacheGet;
+
+
+/***/ }),
+
+/***/ "251a":
+/***/ (function(module, exports, __webpack_require__) {
+
+var _ = __webpack_require__("6f9c");
+var util = __webpack_require__("b50e");
+
+module.exports = {
+  run: run,
+  cleanup: cleanup
+};
+
+/*
+ * A nesting graph creates dummy nodes for the tops and bottoms of subgraphs,
+ * adds appropriate edges to ensure that all cluster nodes are placed between
+ * these boundries, and ensures that the graph is connected.
+ *
+ * In addition we ensure, through the use of the minlen property, that nodes
+ * and subgraph border nodes to not end up on the same rank.
+ *
+ * Preconditions:
+ *
+ *    1. Input graph is a DAG
+ *    2. Nodes in the input graph has a minlen attribute
+ *
+ * Postconditions:
+ *
+ *    1. Input graph is connected.
+ *    2. Dummy nodes are added for the tops and bottoms of subgraphs.
+ *    3. The minlen attribute for nodes is adjusted to ensure nodes do not
+ *       get placed on the same rank as subgraph border nodes.
+ *
+ * The nesting graph idea comes from Sander, "Layout of Compound Directed
+ * Graphs."
+ */
+function run(g) {
+  var root = util.addDummyNode(g, "root", {}, "_root");
+  var depths = treeDepths(g);
+  var height = _.max(_.values(depths)) - 1; // Note: depths is an Object not an array
+  var nodeSep = 2 * height + 1;
+
+  g.graph().nestingRoot = root;
+
+  // Multiply minlen by nodeSep to align nodes on non-border ranks.
+  _.forEach(g.edges(), function(e) { g.edge(e).minlen *= nodeSep; });
+
+  // Calculate a weight that is sufficient to keep subgraphs vertically compact
+  var weight = sumWeights(g) + 1;
+
+  // Create border nodes and link them up
+  _.forEach(g.children(), function(child) {
+    dfs(g, root, nodeSep, weight, height, depths, child);
+  });
+
+  // Save the multiplier for node layers for later removal of empty border
+  // layers.
+  g.graph().nodeRankFactor = nodeSep;
+}
+
+function dfs(g, root, nodeSep, weight, height, depths, v) {
+  var children = g.children(v);
+  if (!children.length) {
+    if (v !== root) {
+      g.setEdge(root, v, { weight: 0, minlen: nodeSep });
+    }
+    return;
+  }
+
+  var top = util.addBorderNode(g, "_bt");
+  var bottom = util.addBorderNode(g, "_bb");
+  var label = g.node(v);
+
+  g.setParent(top, v);
+  label.borderTop = top;
+  g.setParent(bottom, v);
+  label.borderBottom = bottom;
+
+  _.forEach(children, function(child) {
+    dfs(g, root, nodeSep, weight, height, depths, child);
+
+    var childNode = g.node(child);
+    var childTop = childNode.borderTop ? childNode.borderTop : child;
+    var childBottom = childNode.borderBottom ? childNode.borderBottom : child;
+    var thisWeight = childNode.borderTop ? weight : 2 * weight;
+    var minlen = childTop !== childBottom ? 1 : height - depths[v] + 1;
+
+    g.setEdge(top, childTop, {
+      weight: thisWeight,
+      minlen: minlen,
+      nestingEdge: true
+    });
+
+    g.setEdge(childBottom, bottom, {
+      weight: thisWeight,
+      minlen: minlen,
+      nestingEdge: true
+    });
+  });
+
+  if (!g.parent(v)) {
+    g.setEdge(root, top, { weight: 0, minlen: height + depths[v] });
+  }
+}
+
+function treeDepths(g) {
+  var depths = {};
+  function dfs(v, depth) {
+    var children = g.children(v);
+    if (children && children.length) {
+      _.forEach(children, function(child) {
+        dfs(child, depth + 1);
+      });
+    }
+    depths[v] = depth;
+  }
+  _.forEach(g.children(), function(v) { dfs(v, 1); });
+  return depths;
+}
+
+function sumWeights(g) {
+  return _.reduce(g.edges(), function(acc, e) {
+    return acc + g.edge(e).weight;
+  }, 0);
+}
+
+function cleanup(g) {
+  var graphLabel = g.graph();
+  g.removeNode(graphLabel.nestingRoot);
+  delete graphLabel.nestingRoot;
+  _.forEach(g.edges(), function(e) {
+    var edge = g.edge(e);
+    if (edge.nestingEdge) {
+      g.removeEdge(e);
+    }
+  });
+}
+
+
+/***/ }),
+
+/***/ "251b":
+/***/ (function(module, exports, __webpack_require__) {
+
+// extracted by mini-css-extract-plugin
+
+/***/ }),
+
+/***/ "2524":
+/***/ (function(module, exports, __webpack_require__) {
+
+var nativeCreate = __webpack_require__("6044");
+
+/** Used to stand-in for `undefined` hash values. */
+var HASH_UNDEFINED = '__lodash_hash_undefined__';
+
+/**
+ * Sets the hash `key` to `value`.
+ *
+ * @private
+ * @name set
+ * @memberOf Hash
+ * @param {string} key The key of the value to set.
+ * @param {*} value The value to set.
+ * @returns {Object} Returns the hash instance.
+ */
+function hashSet(key, value) {
+  var data = this.__data__;
+  this.size += this.has(key) ? 0 : 1;
+  data[key] = (nativeCreate && value === undefined) ? HASH_UNDEFINED : value;
+  return this;
+}
+
+module.exports = hashSet;
+
+
+/***/ }),
+
 /***/ "2532":
 /***/ (function(module, exports, __webpack_require__) {
 
@@ -13764,6 +14993,63 @@ $({ target: 'String', proto: true, forced: !correctIsRegExpLogic('includes') }, 
       .indexOf(toString(notARegExp(searchString)), arguments.length > 1 ? arguments[1] : undefined);
   }
 });
+
+
+/***/ }),
+
+/***/ "253c":
+/***/ (function(module, exports, __webpack_require__) {
+
+var baseGetTag = __webpack_require__("3729"),
+    isObjectLike = __webpack_require__("1310");
+
+/** `Object#toString` result references. */
+var argsTag = '[object Arguments]';
+
+/**
+ * The base implementation of `_.isArguments`.
+ *
+ * @private
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if `value` is an `arguments` object,
+ */
+function baseIsArguments(value) {
+  return isObjectLike(value) && baseGetTag(value) == argsTag;
+}
+
+module.exports = baseIsArguments;
+
+
+/***/ }),
+
+/***/ "2593":
+/***/ (function(module, exports, __webpack_require__) {
+
+var basePick = __webpack_require__("15f3"),
+    flatRest = __webpack_require__("c6cf");
+
+/**
+ * Creates an object composed of the picked `object` properties.
+ *
+ * @static
+ * @since 0.1.0
+ * @memberOf _
+ * @category Object
+ * @param {Object} object The source object.
+ * @param {...(string|string[])} [paths] The property paths to pick.
+ * @returns {Object} Returns the new object.
+ * @example
+ *
+ * var object = { 'a': 1, 'b': '2', 'c': 3 };
+ *
+ * _.pick(object, ['a', 'c']);
+ * // => { 'a': 1, 'c': 3 }
+ */
+var pick = flatRest(function(object, paths) {
+  return object == null ? {} : basePick(object, paths);
+});
+
+module.exports = pick;
 
 
 /***/ }),
@@ -13829,10 +15115,279 @@ module.exports = function (CONSTRUCTOR_NAME) {
 
 /***/ }),
 
+/***/ "266a":
+/***/ (function(module, exports, __webpack_require__) {
+
+var arrayMap = __webpack_require__("7948");
+
+/**
+ * The base implementation of `_.values` and `_.valuesIn` which creates an
+ * array of `object` property values corresponding to the property names
+ * of `props`.
+ *
+ * @private
+ * @param {Object} object The object to query.
+ * @param {Array} props The property names to get values for.
+ * @returns {Object} Returns the array of property values.
+ */
+function baseValues(object, props) {
+  return arrayMap(props, function(key) {
+    return object[key];
+  });
+}
+
+module.exports = baseValues;
+
+
+/***/ }),
+
+/***/ "26e8":
+/***/ (function(module, exports) {
+
+/**
+ * The base implementation of `_.hasIn` without support for deep paths.
+ *
+ * @private
+ * @param {Object} [object] The object to query.
+ * @param {Array|string} key The key to check.
+ * @returns {boolean} Returns `true` if `key` exists, else `false`.
+ */
+function baseHasIn(object, key) {
+  return object != null && key in Object(object);
+}
+
+module.exports = baseHasIn;
+
+
+/***/ }),
+
+/***/ "2769":
+/***/ (function(module, exports, __webpack_require__) {
+
+var createFind = __webpack_require__("5ca0"),
+    findIndex = __webpack_require__("51f5");
+
+/**
+ * Iterates over elements of `collection`, returning the first element
+ * `predicate` returns truthy for. The predicate is invoked with three
+ * arguments: (value, index|key, collection).
+ *
+ * @static
+ * @memberOf _
+ * @since 0.1.0
+ * @category Collection
+ * @param {Array|Object} collection The collection to inspect.
+ * @param {Function} [predicate=_.identity] The function invoked per iteration.
+ * @param {number} [fromIndex=0] The index to search from.
+ * @returns {*} Returns the matched element, else `undefined`.
+ * @example
+ *
+ * var users = [
+ *   { 'user': 'barney',  'age': 36, 'active': true },
+ *   { 'user': 'fred',    'age': 40, 'active': false },
+ *   { 'user': 'pebbles', 'age': 1,  'active': true }
+ * ];
+ *
+ * _.find(users, function(o) { return o.age < 40; });
+ * // => object for 'barney'
+ *
+ * // The `_.matches` iteratee shorthand.
+ * _.find(users, { 'age': 1, 'active': true });
+ * // => object for 'pebbles'
+ *
+ * // The `_.matchesProperty` iteratee shorthand.
+ * _.find(users, ['active', false]);
+ * // => object for 'fred'
+ *
+ * // The `_.property` iteratee shorthand.
+ * _.find(users, 'active');
+ * // => object for 'barney'
+ */
+var find = createFind(findIndex);
+
+module.exports = find;
+
+
+/***/ }),
+
 /***/ "285e":
 /***/ (function(module, exports, __webpack_require__) {
 
 // extracted by mini-css-extract-plugin
+
+/***/ }),
+
+/***/ "28c9":
+/***/ (function(module, exports) {
+
+/**
+ * Removes all key-value entries from the list cache.
+ *
+ * @private
+ * @name clear
+ * @memberOf ListCache
+ */
+function listCacheClear() {
+  this.__data__ = [];
+  this.size = 0;
+}
+
+module.exports = listCacheClear;
+
+
+/***/ }),
+
+/***/ "299f":
+/***/ (function(module, exports, __webpack_require__) {
+
+var _ = __webpack_require__("6f9c");
+var Graph = __webpack_require__("17d5").Graph;
+var List = __webpack_require__("4589");
+
+/*
+ * A greedy heuristic for finding a feedback arc set for a graph. A feedback
+ * arc set is a set of edges that can be removed to make a graph acyclic.
+ * The algorithm comes from: P. Eades, X. Lin, and W. F. Smyth, "A fast and
+ * effective heuristic for the feedback arc set problem." This implementation
+ * adjusts that from the paper to allow for weighted edges.
+ */
+module.exports = greedyFAS;
+
+var DEFAULT_WEIGHT_FN = _.constant(1);
+
+function greedyFAS(g, weightFn) {
+  if (g.nodeCount() <= 1) {
+    return [];
+  }
+  var state = buildState(g, weightFn || DEFAULT_WEIGHT_FN);
+  var results = doGreedyFAS(state.graph, state.buckets, state.zeroIdx);
+
+  // Expand multi-edges
+  return _.flatten(_.map(results, function(e) {
+    return g.outEdges(e.v, e.w);
+  }), true);
+}
+
+function doGreedyFAS(g, buckets, zeroIdx) {
+  var results = [];
+  var sources = buckets[buckets.length - 1];
+  var sinks = buckets[0];
+
+  var entry;
+  while (g.nodeCount()) {
+    while ((entry = sinks.dequeue()))   { removeNode(g, buckets, zeroIdx, entry); }
+    while ((entry = sources.dequeue())) { removeNode(g, buckets, zeroIdx, entry); }
+    if (g.nodeCount()) {
+      for (var i = buckets.length - 2; i > 0; --i) {
+        entry = buckets[i].dequeue();
+        if (entry) {
+          results = results.concat(removeNode(g, buckets, zeroIdx, entry, true));
+          break;
+        }
+      }
+    }
+  }
+
+  return results;
+}
+
+function removeNode(g, buckets, zeroIdx, entry, collectPredecessors) {
+  var results = collectPredecessors ? [] : undefined;
+
+  _.forEach(g.inEdges(entry.v), function(edge) {
+    var weight = g.edge(edge);
+    var uEntry = g.node(edge.v);
+
+    if (collectPredecessors) {
+      results.push({ v: edge.v, w: edge.w });
+    }
+
+    uEntry.out -= weight;
+    assignBucket(buckets, zeroIdx, uEntry);
+  });
+
+  _.forEach(g.outEdges(entry.v), function(edge) {
+    var weight = g.edge(edge);
+    var w = edge.w;
+    var wEntry = g.node(w);
+    wEntry["in"] -= weight;
+    assignBucket(buckets, zeroIdx, wEntry);
+  });
+
+  g.removeNode(entry.v);
+
+  return results;
+}
+
+function buildState(g, weightFn) {
+  var fasGraph = new Graph();
+  var maxIn = 0;
+  var maxOut = 0;
+
+  _.forEach(g.nodes(), function(v) {
+    fasGraph.setNode(v, { v: v, "in": 0, out: 0 });
+  });
+
+  // Aggregate weights on nodes, but also sum the weights across multi-edges
+  // into a single edge for the fasGraph.
+  _.forEach(g.edges(), function(e) {
+    var prevWeight = fasGraph.edge(e.v, e.w) || 0;
+    var weight = weightFn(e);
+    var edgeWeight = prevWeight + weight;
+    fasGraph.setEdge(e.v, e.w, edgeWeight);
+    maxOut = Math.max(maxOut, fasGraph.node(e.v).out += weight);
+    maxIn  = Math.max(maxIn,  fasGraph.node(e.w)["in"]  += weight);
+  });
+
+  var buckets = _.range(maxOut + maxIn + 3).map(function() { return new List(); });
+  var zeroIdx = maxIn + 1;
+
+  _.forEach(fasGraph.nodes(), function(v) {
+    assignBucket(buckets, zeroIdx, fasGraph.node(v));
+  });
+
+  return { graph: fasGraph, buckets: buckets, zeroIdx: zeroIdx };
+}
+
+function assignBucket(buckets, zeroIdx, entry) {
+  if (!entry.out) {
+    buckets[0].enqueue(entry);
+  } else if (!entry["in"]) {
+    buckets[buckets.length - 1].enqueue(entry);
+  } else {
+    buckets[entry.out - entry["in"] + zeroIdx].enqueue(entry);
+  }
+}
+
+
+/***/ }),
+
+/***/ "29f3":
+/***/ (function(module, exports) {
+
+/** Used for built-in method references. */
+var objectProto = Object.prototype;
+
+/**
+ * Used to resolve the
+ * [`toStringTag`](http://ecma-international.org/ecma-262/7.0/#sec-object.prototype.tostring)
+ * of values.
+ */
+var nativeObjectToString = objectProto.toString;
+
+/**
+ * Converts `value` to a string using `Object.prototype.toString`.
+ *
+ * @private
+ * @param {*} value The value to convert.
+ * @returns {string} Returns the converted string.
+ */
+function objectToString(value) {
+  return nativeObjectToString.call(value);
+}
+
+module.exports = objectToString;
+
 
 /***/ }),
 
@@ -13871,6 +15426,124 @@ module.exports = function (iterator, kind, value) {
   anObject(innerResult);
   return value;
 };
+
+
+/***/ }),
+
+/***/ "2a9f":
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+var _ = __webpack_require__("6f9c");
+var initOrder = __webpack_require__("e632");
+var crossCount = __webpack_require__("d780");
+var sortSubgraph = __webpack_require__("38e2");
+var buildLayerGraph = __webpack_require__("8817");
+var addSubgraphConstraints = __webpack_require__("d4f3");
+var Graph = __webpack_require__("17d5").Graph;
+var util = __webpack_require__("b50e");
+
+module.exports = order;
+
+/*
+ * Applies heuristics to minimize edge crossings in the graph and sets the best
+ * order solution as an order attribute on each node.
+ *
+ * Pre-conditions:
+ *
+ *    1. Graph must be DAG
+ *    2. Graph nodes must be objects with a "rank" attribute
+ *    3. Graph edges must have the "weight" attribute
+ *
+ * Post-conditions:
+ *
+ *    1. Graph nodes will have an "order" attribute based on the results of the
+ *       algorithm.
+ */
+function order(g) {
+  var maxRank = util.maxRank(g),
+    downLayerGraphs = buildLayerGraphs(g, _.range(1, maxRank + 1), "inEdges"),
+    upLayerGraphs = buildLayerGraphs(g, _.range(maxRank - 1, -1, -1), "outEdges");
+
+  var layering = initOrder(g);
+  assignOrder(g, layering);
+
+  var bestCC = Number.POSITIVE_INFINITY,
+    best;
+
+  for (var i = 0, lastBest = 0; lastBest < 4; ++i, ++lastBest) {
+    sweepLayerGraphs(i % 2 ? downLayerGraphs : upLayerGraphs, i % 4 >= 2);
+
+    layering = util.buildLayerMatrix(g);
+    var cc = crossCount(g, layering);
+    if (cc < bestCC) {
+      lastBest = 0;
+      best = _.cloneDeep(layering);
+      bestCC = cc;
+    }
+  }
+
+  assignOrder(g, best);
+}
+
+function buildLayerGraphs(g, ranks, relationship) {
+  return _.map(ranks, function(rank) {
+    return buildLayerGraph(g, rank, relationship);
+  });
+}
+
+function sweepLayerGraphs(layerGraphs, biasRight) {
+  var cg = new Graph();
+  _.forEach(layerGraphs, function(lg) {
+    var root = lg.graph().root;
+    var sorted = sortSubgraph(lg, root, cg, biasRight);
+    _.forEach(sorted.vs, function(v, i) {
+      lg.node(v).order = i;
+    });
+    addSubgraphConstraints(lg, cg, sorted.vs);
+  });
+}
+
+function assignOrder(g, layering) {
+  _.forEach(layering, function(layer) {
+    _.forEach(layer, function(v, i) {
+      g.node(v).order = i;
+    });
+  });
+}
+
+
+/***/ }),
+
+/***/ "2b03":
+/***/ (function(module, exports) {
+
+/**
+ * The base implementation of `_.findIndex` and `_.findLastIndex` without
+ * support for iteratee shorthands.
+ *
+ * @private
+ * @param {Array} array The array to inspect.
+ * @param {Function} predicate The function invoked per iteration.
+ * @param {number} fromIndex The index to search from.
+ * @param {boolean} [fromRight] Specify iterating from right to left.
+ * @returns {number} Returns the index of the matched value, else `-1`.
+ */
+function baseFindIndex(array, predicate, fromIndex, fromRight) {
+  var length = array.length,
+      index = fromIndex + (fromRight ? 1 : -1);
+
+  while ((fromRight ? index-- : ++index < length)) {
+    if (predicate(array[index], index, array)) {
+      return index;
+    }
+  }
+  return -1;
+}
+
+module.exports = baseFindIndex;
 
 
 /***/ }),
@@ -14901,6 +16574,22 @@ $({ global: true, forced: !USE_NATIVE_URL, sham: !DESCRIPTORS }, {
 
 /***/ }),
 
+/***/ "2b3e":
+/***/ (function(module, exports, __webpack_require__) {
+
+var freeGlobal = __webpack_require__("585a");
+
+/** Detect free variable `self`. */
+var freeSelf = typeof self == 'object' && self && self.Object === Object && self;
+
+/** Used as a reference to the global object. */
+var root = freeGlobal || freeSelf || Function('return this')();
+
+module.exports = root;
+
+
+/***/ }),
+
 /***/ "2c2f":
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
@@ -14908,6 +16597,85 @@ $({ global: true, forced: !USE_NATIVE_URL, sham: !DESCRIPTORS }, {
 /* harmony import */ var _node_modules_mini_css_extract_plugin_dist_loader_js_ref_8_oneOf_1_0_node_modules_css_loader_dist_cjs_js_ref_8_oneOf_1_1_node_modules_vue_loader_lib_loaders_stylePostLoader_js_node_modules_postcss_loader_src_index_js_ref_8_oneOf_1_2_node_modules_sass_loader_dist_cjs_js_ref_8_oneOf_1_3_node_modules_cache_loader_dist_cjs_js_ref_0_0_node_modules_vue_loader_lib_index_js_vue_loader_options_EditorFields_vue_vue_type_style_index_0_lang_scss___WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__("aede");
 /* harmony import */ var _node_modules_mini_css_extract_plugin_dist_loader_js_ref_8_oneOf_1_0_node_modules_css_loader_dist_cjs_js_ref_8_oneOf_1_1_node_modules_vue_loader_lib_loaders_stylePostLoader_js_node_modules_postcss_loader_src_index_js_ref_8_oneOf_1_2_node_modules_sass_loader_dist_cjs_js_ref_8_oneOf_1_3_node_modules_cache_loader_dist_cjs_js_ref_0_0_node_modules_vue_loader_lib_index_js_vue_loader_options_EditorFields_vue_vue_type_style_index_0_lang_scss___WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(_node_modules_mini_css_extract_plugin_dist_loader_js_ref_8_oneOf_1_0_node_modules_css_loader_dist_cjs_js_ref_8_oneOf_1_1_node_modules_vue_loader_lib_loaders_stylePostLoader_js_node_modules_postcss_loader_src_index_js_ref_8_oneOf_1_2_node_modules_sass_loader_dist_cjs_js_ref_8_oneOf_1_3_node_modules_cache_loader_dist_cjs_js_ref_0_0_node_modules_vue_loader_lib_index_js_vue_loader_options_EditorFields_vue_vue_type_style_index_0_lang_scss___WEBPACK_IMPORTED_MODULE_0__);
 /* unused harmony reexport * */
+
+
+/***/ }),
+
+/***/ "2c66":
+/***/ (function(module, exports, __webpack_require__) {
+
+var SetCache = __webpack_require__("d612"),
+    arrayIncludes = __webpack_require__("8db3"),
+    arrayIncludesWith = __webpack_require__("5edf"),
+    cacheHas = __webpack_require__("c584"),
+    createSet = __webpack_require__("750a"),
+    setToArray = __webpack_require__("ac41");
+
+/** Used as the size to enable large array optimizations. */
+var LARGE_ARRAY_SIZE = 200;
+
+/**
+ * The base implementation of `_.uniqBy` without support for iteratee shorthands.
+ *
+ * @private
+ * @param {Array} array The array to inspect.
+ * @param {Function} [iteratee] The iteratee invoked per element.
+ * @param {Function} [comparator] The comparator invoked per element.
+ * @returns {Array} Returns the new duplicate free array.
+ */
+function baseUniq(array, iteratee, comparator) {
+  var index = -1,
+      includes = arrayIncludes,
+      length = array.length,
+      isCommon = true,
+      result = [],
+      seen = result;
+
+  if (comparator) {
+    isCommon = false;
+    includes = arrayIncludesWith;
+  }
+  else if (length >= LARGE_ARRAY_SIZE) {
+    var set = iteratee ? null : createSet(array);
+    if (set) {
+      return setToArray(set);
+    }
+    isCommon = false;
+    includes = cacheHas;
+    seen = new SetCache;
+  }
+  else {
+    seen = iteratee ? [] : result;
+  }
+  outer:
+  while (++index < length) {
+    var value = array[index],
+        computed = iteratee ? iteratee(value) : value;
+
+    value = (comparator || value !== 0) ? value : 0;
+    if (isCommon && computed === computed) {
+      var seenIndex = seen.length;
+      while (seenIndex--) {
+        if (seen[seenIndex] === computed) {
+          continue outer;
+        }
+      }
+      if (iteratee) {
+        seen.push(computed);
+      }
+      result.push(value);
+    }
+    else if (!includes(seen, computed, comparator)) {
+      if (seen !== result) {
+        seen.push(computed);
+      }
+      result.push(value);
+    }
+  }
+  return result;
+}
+
+module.exports = baseUniq;
 
 
 /***/ }),
@@ -15055,6 +16823,95 @@ if (v8) {
 }
 
 module.exports = version && +version;
+
+
+/***/ }),
+
+/***/ "2d7c":
+/***/ (function(module, exports) {
+
+/**
+ * A specialized version of `_.filter` for arrays without support for
+ * iteratee shorthands.
+ *
+ * @private
+ * @param {Array} [array] The array to iterate over.
+ * @param {Function} predicate The function invoked per iteration.
+ * @returns {Array} Returns the new filtered array.
+ */
+function arrayFilter(array, predicate) {
+  var index = -1,
+      length = array == null ? 0 : array.length,
+      resIndex = 0,
+      result = [];
+
+  while (++index < length) {
+    var value = array[index];
+    if (predicate(value, index, array)) {
+      result[resIndex++] = value;
+    }
+  }
+  return result;
+}
+
+module.exports = arrayFilter;
+
+
+/***/ }),
+
+/***/ "2dcb":
+/***/ (function(module, exports, __webpack_require__) {
+
+var overArg = __webpack_require__("91e9");
+
+/** Built-in value references. */
+var getPrototype = overArg(Object.getPrototypeOf, Object);
+
+module.exports = getPrototype;
+
+
+/***/ }),
+
+/***/ "2ec1":
+/***/ (function(module, exports, __webpack_require__) {
+
+var baseRest = __webpack_require__("100e"),
+    isIterateeCall = __webpack_require__("9aff");
+
+/**
+ * Creates a function like `_.assign`.
+ *
+ * @private
+ * @param {Function} assigner The function to assign values.
+ * @returns {Function} Returns the new assigner function.
+ */
+function createAssigner(assigner) {
+  return baseRest(function(object, sources) {
+    var index = -1,
+        length = sources.length,
+        customizer = length > 1 ? sources[length - 1] : undefined,
+        guard = length > 2 ? sources[2] : undefined;
+
+    customizer = (assigner.length > 3 && typeof customizer == 'function')
+      ? (length--, customizer)
+      : undefined;
+
+    if (guard && isIterateeCall(sources[0], sources[1], guard)) {
+      customizer = length < 3 ? undefined : customizer;
+      length = 1;
+    }
+    object = Object(object);
+    while (++index < length) {
+      var source = sources[index];
+      if (source) {
+        assigner(object, source, index, customizer);
+      }
+    }
+    return object;
+  });
+}
+
+module.exports = createAssigner;
 
 
 /***/ }),
@@ -32268,10 +34125,188 @@ module.exports = version && +version;
 
 /***/ }),
 
+/***/ "2fcc":
+/***/ (function(module, exports) {
+
+/**
+ * Removes `key` and its value from the stack.
+ *
+ * @private
+ * @name delete
+ * @memberOf Stack
+ * @param {string} key The key of the value to remove.
+ * @returns {boolean} Returns `true` if the entry was removed, else `false`.
+ */
+function stackDelete(key) {
+  var data = this.__data__,
+      result = data['delete'](key);
+
+  this.size = data.size;
+  return result;
+}
+
+module.exports = stackDelete;
+
+
+/***/ }),
+
+/***/ "30c9":
+/***/ (function(module, exports, __webpack_require__) {
+
+var isFunction = __webpack_require__("9520"),
+    isLength = __webpack_require__("b218");
+
+/**
+ * Checks if `value` is array-like. A value is considered array-like if it's
+ * not a function and has a `value.length` that's an integer greater than or
+ * equal to `0` and less than or equal to `Number.MAX_SAFE_INTEGER`.
+ *
+ * @static
+ * @memberOf _
+ * @since 4.0.0
+ * @category Lang
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if `value` is array-like, else `false`.
+ * @example
+ *
+ * _.isArrayLike([1, 2, 3]);
+ * // => true
+ *
+ * _.isArrayLike(document.body.children);
+ * // => true
+ *
+ * _.isArrayLike('abc');
+ * // => true
+ *
+ * _.isArrayLike(_.noop);
+ * // => false
+ */
+function isArrayLike(value) {
+  return value != null && isLength(value.length) && !isFunction(value);
+}
+
+module.exports = isArrayLike;
+
+
+/***/ }),
+
+/***/ "32b3":
+/***/ (function(module, exports, __webpack_require__) {
+
+var baseAssignValue = __webpack_require__("872a"),
+    eq = __webpack_require__("9638");
+
+/** Used for built-in method references. */
+var objectProto = Object.prototype;
+
+/** Used to check objects for own properties. */
+var hasOwnProperty = objectProto.hasOwnProperty;
+
+/**
+ * Assigns `value` to `key` of `object` if the existing value is not equivalent
+ * using [`SameValueZero`](http://ecma-international.org/ecma-262/7.0/#sec-samevaluezero)
+ * for equality comparisons.
+ *
+ * @private
+ * @param {Object} object The object to modify.
+ * @param {string} key The key of the property to assign.
+ * @param {*} value The value to assign.
+ */
+function assignValue(object, key, value) {
+  var objValue = object[key];
+  if (!(hasOwnProperty.call(object, key) && eq(objValue, value)) ||
+      (value === undefined && !(key in object))) {
+    baseAssignValue(object, key, value);
+  }
+}
+
+module.exports = assignValue;
+
+
+/***/ }),
+
+/***/ "32f4":
+/***/ (function(module, exports, __webpack_require__) {
+
+var arrayFilter = __webpack_require__("2d7c"),
+    stubArray = __webpack_require__("d327");
+
+/** Used for built-in method references. */
+var objectProto = Object.prototype;
+
+/** Built-in value references. */
+var propertyIsEnumerable = objectProto.propertyIsEnumerable;
+
+/* Built-in method references for those with the same name as other `lodash` methods. */
+var nativeGetSymbols = Object.getOwnPropertySymbols;
+
+/**
+ * Creates an array of the own enumerable symbols of `object`.
+ *
+ * @private
+ * @param {Object} object The object to query.
+ * @returns {Array} Returns the array of symbols.
+ */
+var getSymbols = !nativeGetSymbols ? stubArray : function(object) {
+  if (object == null) {
+    return [];
+  }
+  object = Object(object);
+  return arrayFilter(nativeGetSymbols(object), function(symbol) {
+    return propertyIsEnumerable.call(object, symbol);
+  });
+};
+
+module.exports = getSymbols;
+
+
+/***/ }),
+
 /***/ "3396":
 /***/ (function(module, exports, __webpack_require__) {
 
 // extracted by mini-css-extract-plugin
+
+/***/ }),
+
+/***/ "33de":
+/***/ (function(module, exports, __webpack_require__) {
+
+/* global window */
+
+var lodash;
+
+if (true) {
+  try {
+    lodash = {
+      clone: __webpack_require__("b8ce"),
+      constant: __webpack_require__("72f0"),
+      each: __webpack_require__("c641"),
+      filter: __webpack_require__("9380"),
+      has:  __webpack_require__("3852"),
+      isArray: __webpack_require__("6747"),
+      isEmpty: __webpack_require__("13ea"),
+      isFunction: __webpack_require__("9520"),
+      isUndefined: __webpack_require__("4cfe"),
+      keys: __webpack_require__("ec69"),
+      map: __webpack_require__("dd61"),
+      reduce: __webpack_require__("c5a2"),
+      size: __webpack_require__("d623"),
+      transform: __webpack_require__("50ca"),
+      union: __webpack_require__("bfc7"),
+      values: __webpack_require__("3ff1")
+    };
+  } catch (e) {
+    // continue regardless of error
+  }
+}
+
+if (!lodash) {
+  lodash = window._;
+}
+
+module.exports = lodash;
+
 
 /***/ }),
 
@@ -32319,6 +34354,67 @@ module.exports = getBuiltIn('navigator', 'userAgent') || '';
 
 /***/ }),
 
+/***/ "34ac":
+/***/ (function(module, exports, __webpack_require__) {
+
+var isFunction = __webpack_require__("9520"),
+    isMasked = __webpack_require__("1368"),
+    isObject = __webpack_require__("1a8c"),
+    toSource = __webpack_require__("dc57");
+
+/**
+ * Used to match `RegExp`
+ * [syntax characters](http://ecma-international.org/ecma-262/7.0/#sec-patterns).
+ */
+var reRegExpChar = /[\\^$.*+?()[\]{}|]/g;
+
+/** Used to detect host constructors (Safari). */
+var reIsHostCtor = /^\[object .+?Constructor\]$/;
+
+/** Used for built-in method references. */
+var funcProto = Function.prototype,
+    objectProto = Object.prototype;
+
+/** Used to resolve the decompiled source of functions. */
+var funcToString = funcProto.toString;
+
+/** Used to check objects for own properties. */
+var hasOwnProperty = objectProto.hasOwnProperty;
+
+/** Used to detect if a method is native. */
+var reIsNative = RegExp('^' +
+  funcToString.call(hasOwnProperty).replace(reRegExpChar, '\\$&')
+  .replace(/hasOwnProperty|(function).*?(?=\\\()| for .+?(?=\\\])/g, '$1.*?') + '$'
+);
+
+/**
+ * The base implementation of `_.isNative` without bad shim checks.
+ *
+ * @private
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if `value` is a native function,
+ *  else `false`.
+ */
+function baseIsNative(value) {
+  if (!isObject(value) || isMasked(value)) {
+    return false;
+  }
+  var pattern = isFunction(value) ? reIsNative : reIsHostCtor;
+  return pattern.test(toSource(value));
+}
+
+module.exports = baseIsNative;
+
+
+/***/ }),
+
+/***/ "3558":
+/***/ (function(module, exports, __webpack_require__) {
+
+// extracted by mini-css-extract-plugin
+
+/***/ }),
+
 /***/ "3585":
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
@@ -32348,6 +34444,61 @@ module.exports = function (it) {
 
 /***/ }),
 
+/***/ "3698":
+/***/ (function(module, exports) {
+
+/**
+ * Gets the value at `key` of `object`.
+ *
+ * @private
+ * @param {Object} [object] The object to query.
+ * @param {string} key The key of the property to get.
+ * @returns {*} Returns the property value.
+ */
+function getValue(object, key) {
+  return object == null ? undefined : object[key];
+}
+
+module.exports = getValue;
+
+
+/***/ }),
+
+/***/ "3729":
+/***/ (function(module, exports, __webpack_require__) {
+
+var Symbol = __webpack_require__("9e69"),
+    getRawTag = __webpack_require__("00fd"),
+    objectToString = __webpack_require__("29f3");
+
+/** `Object#toString` result references. */
+var nullTag = '[object Null]',
+    undefinedTag = '[object Undefined]';
+
+/** Built-in value references. */
+var symToStringTag = Symbol ? Symbol.toStringTag : undefined;
+
+/**
+ * The base implementation of `getTag` without fallbacks for buggy environments.
+ *
+ * @private
+ * @param {*} value The value to query.
+ * @returns {string} Returns the `toStringTag`.
+ */
+function baseGetTag(value) {
+  if (value == null) {
+    return value === undefined ? undefinedTag : nullTag;
+  }
+  return (symToStringTag && symToStringTag in Object(value))
+    ? getRawTag(value)
+    : objectToString(value);
+}
+
+module.exports = baseGetTag;
+
+
+/***/ }),
+
 /***/ "37e8":
 /***/ (function(module, exports, __webpack_require__) {
 
@@ -32368,6 +34519,367 @@ module.exports = DESCRIPTORS ? Object.defineProperties : function defineProperti
   while (length > index) definePropertyModule.f(O, key = keys[index++], Properties[key]);
   return O;
 };
+
+
+/***/ }),
+
+/***/ "3818":
+/***/ (function(module, exports, __webpack_require__) {
+
+var Stack = __webpack_require__("7e64"),
+    arrayEach = __webpack_require__("8057"),
+    assignValue = __webpack_require__("32b3"),
+    baseAssign = __webpack_require__("5b01"),
+    baseAssignIn = __webpack_require__("0f0f"),
+    cloneBuffer = __webpack_require__("e5383"),
+    copyArray = __webpack_require__("4359"),
+    copySymbols = __webpack_require__("54eb"),
+    copySymbolsIn = __webpack_require__("1041"),
+    getAllKeys = __webpack_require__("a994"),
+    getAllKeysIn = __webpack_require__("1bac"),
+    getTag = __webpack_require__("42a2"),
+    initCloneArray = __webpack_require__("c87c"),
+    initCloneByTag = __webpack_require__("c2b6"),
+    initCloneObject = __webpack_require__("fa21"),
+    isArray = __webpack_require__("6747"),
+    isBuffer = __webpack_require__("0d24"),
+    isMap = __webpack_require__("cc45"),
+    isObject = __webpack_require__("1a8c"),
+    isSet = __webpack_require__("d7ee"),
+    keys = __webpack_require__("ec69"),
+    keysIn = __webpack_require__("9934");
+
+/** Used to compose bitmasks for cloning. */
+var CLONE_DEEP_FLAG = 1,
+    CLONE_FLAT_FLAG = 2,
+    CLONE_SYMBOLS_FLAG = 4;
+
+/** `Object#toString` result references. */
+var argsTag = '[object Arguments]',
+    arrayTag = '[object Array]',
+    boolTag = '[object Boolean]',
+    dateTag = '[object Date]',
+    errorTag = '[object Error]',
+    funcTag = '[object Function]',
+    genTag = '[object GeneratorFunction]',
+    mapTag = '[object Map]',
+    numberTag = '[object Number]',
+    objectTag = '[object Object]',
+    regexpTag = '[object RegExp]',
+    setTag = '[object Set]',
+    stringTag = '[object String]',
+    symbolTag = '[object Symbol]',
+    weakMapTag = '[object WeakMap]';
+
+var arrayBufferTag = '[object ArrayBuffer]',
+    dataViewTag = '[object DataView]',
+    float32Tag = '[object Float32Array]',
+    float64Tag = '[object Float64Array]',
+    int8Tag = '[object Int8Array]',
+    int16Tag = '[object Int16Array]',
+    int32Tag = '[object Int32Array]',
+    uint8Tag = '[object Uint8Array]',
+    uint8ClampedTag = '[object Uint8ClampedArray]',
+    uint16Tag = '[object Uint16Array]',
+    uint32Tag = '[object Uint32Array]';
+
+/** Used to identify `toStringTag` values supported by `_.clone`. */
+var cloneableTags = {};
+cloneableTags[argsTag] = cloneableTags[arrayTag] =
+cloneableTags[arrayBufferTag] = cloneableTags[dataViewTag] =
+cloneableTags[boolTag] = cloneableTags[dateTag] =
+cloneableTags[float32Tag] = cloneableTags[float64Tag] =
+cloneableTags[int8Tag] = cloneableTags[int16Tag] =
+cloneableTags[int32Tag] = cloneableTags[mapTag] =
+cloneableTags[numberTag] = cloneableTags[objectTag] =
+cloneableTags[regexpTag] = cloneableTags[setTag] =
+cloneableTags[stringTag] = cloneableTags[symbolTag] =
+cloneableTags[uint8Tag] = cloneableTags[uint8ClampedTag] =
+cloneableTags[uint16Tag] = cloneableTags[uint32Tag] = true;
+cloneableTags[errorTag] = cloneableTags[funcTag] =
+cloneableTags[weakMapTag] = false;
+
+/**
+ * The base implementation of `_.clone` and `_.cloneDeep` which tracks
+ * traversed objects.
+ *
+ * @private
+ * @param {*} value The value to clone.
+ * @param {boolean} bitmask The bitmask flags.
+ *  1 - Deep clone
+ *  2 - Flatten inherited properties
+ *  4 - Clone symbols
+ * @param {Function} [customizer] The function to customize cloning.
+ * @param {string} [key] The key of `value`.
+ * @param {Object} [object] The parent object of `value`.
+ * @param {Object} [stack] Tracks traversed objects and their clone counterparts.
+ * @returns {*} Returns the cloned value.
+ */
+function baseClone(value, bitmask, customizer, key, object, stack) {
+  var result,
+      isDeep = bitmask & CLONE_DEEP_FLAG,
+      isFlat = bitmask & CLONE_FLAT_FLAG,
+      isFull = bitmask & CLONE_SYMBOLS_FLAG;
+
+  if (customizer) {
+    result = object ? customizer(value, key, object, stack) : customizer(value);
+  }
+  if (result !== undefined) {
+    return result;
+  }
+  if (!isObject(value)) {
+    return value;
+  }
+  var isArr = isArray(value);
+  if (isArr) {
+    result = initCloneArray(value);
+    if (!isDeep) {
+      return copyArray(value, result);
+    }
+  } else {
+    var tag = getTag(value),
+        isFunc = tag == funcTag || tag == genTag;
+
+    if (isBuffer(value)) {
+      return cloneBuffer(value, isDeep);
+    }
+    if (tag == objectTag || tag == argsTag || (isFunc && !object)) {
+      result = (isFlat || isFunc) ? {} : initCloneObject(value);
+      if (!isDeep) {
+        return isFlat
+          ? copySymbolsIn(value, baseAssignIn(result, value))
+          : copySymbols(value, baseAssign(result, value));
+      }
+    } else {
+      if (!cloneableTags[tag]) {
+        return object ? value : {};
+      }
+      result = initCloneByTag(value, tag, isDeep);
+    }
+  }
+  // Check for circular references and return its corresponding clone.
+  stack || (stack = new Stack);
+  var stacked = stack.get(value);
+  if (stacked) {
+    return stacked;
+  }
+  stack.set(value, result);
+
+  if (isSet(value)) {
+    value.forEach(function(subValue) {
+      result.add(baseClone(subValue, bitmask, customizer, subValue, value, stack));
+    });
+  } else if (isMap(value)) {
+    value.forEach(function(subValue, key) {
+      result.set(key, baseClone(subValue, bitmask, customizer, key, value, stack));
+    });
+  }
+
+  var keysFunc = isFull
+    ? (isFlat ? getAllKeysIn : getAllKeys)
+    : (isFlat ? keysIn : keys);
+
+  var props = isArr ? undefined : keysFunc(value);
+  arrayEach(props || value, function(subValue, key) {
+    if (props) {
+      key = subValue;
+      subValue = value[key];
+    }
+    // Recursively populate clone (susceptible to call stack limits).
+    assignValue(result, key, baseClone(subValue, bitmask, customizer, key, value, stack));
+  });
+  return result;
+}
+
+module.exports = baseClone;
+
+
+/***/ }),
+
+/***/ "3852":
+/***/ (function(module, exports, __webpack_require__) {
+
+var baseHas = __webpack_require__("96f3"),
+    hasPath = __webpack_require__("e2c0");
+
+/**
+ * Checks if `path` is a direct property of `object`.
+ *
+ * @static
+ * @since 0.1.0
+ * @memberOf _
+ * @category Object
+ * @param {Object} object The object to query.
+ * @param {Array|string} path The path to check.
+ * @returns {boolean} Returns `true` if `path` exists, else `false`.
+ * @example
+ *
+ * var object = { 'a': { 'b': 2 } };
+ * var other = _.create({ 'a': _.create({ 'b': 2 }) });
+ *
+ * _.has(object, 'a');
+ * // => true
+ *
+ * _.has(object, 'a.b');
+ * // => true
+ *
+ * _.has(object, ['a', 'b']);
+ * // => true
+ *
+ * _.has(other, 'a');
+ * // => false
+ */
+function has(object, path) {
+  return object != null && hasPath(object, path, baseHas);
+}
+
+module.exports = has;
+
+
+/***/ }),
+
+/***/ "38e2":
+/***/ (function(module, exports, __webpack_require__) {
+
+var _ = __webpack_require__("6f9c");
+var barycenter = __webpack_require__("1f3a");
+var resolveConflicts = __webpack_require__("d9f3");
+var sort = __webpack_require__("f352");
+
+module.exports = sortSubgraph;
+
+function sortSubgraph(g, v, cg, biasRight) {
+  var movable = g.children(v);
+  var node = g.node(v);
+  var bl = node ? node.borderLeft : undefined;
+  var br = node ? node.borderRight: undefined;
+  var subgraphs = {};
+
+  if (bl) {
+    movable = _.filter(movable, function(w) {
+      return w !== bl && w !== br;
+    });
+  }
+
+  var barycenters = barycenter(g, movable);
+  _.forEach(barycenters, function(entry) {
+    if (g.children(entry.v).length) {
+      var subgraphResult = sortSubgraph(g, entry.v, cg, biasRight);
+      subgraphs[entry.v] = subgraphResult;
+      if (_.has(subgraphResult, "barycenter")) {
+        mergeBarycenters(entry, subgraphResult);
+      }
+    }
+  });
+
+  var entries = resolveConflicts(barycenters, cg);
+  expandSubgraphs(entries, subgraphs);
+
+  var result = sort(entries, biasRight);
+
+  if (bl) {
+    result.vs = _.flatten([bl, result.vs, br], true);
+    if (g.predecessors(bl).length) {
+      var blPred = g.node(g.predecessors(bl)[0]),
+        brPred = g.node(g.predecessors(br)[0]);
+      if (!_.has(result, "barycenter")) {
+        result.barycenter = 0;
+        result.weight = 0;
+      }
+      result.barycenter = (result.barycenter * result.weight +
+                           blPred.order + brPred.order) / (result.weight + 2);
+      result.weight += 2;
+    }
+  }
+
+  return result;
+}
+
+function expandSubgraphs(entries, subgraphs) {
+  _.forEach(entries, function(entry) {
+    entry.vs = _.flatten(entry.vs.map(function(v) {
+      if (subgraphs[v]) {
+        return subgraphs[v].vs;
+      }
+      return v;
+    }), true);
+  });
+}
+
+function mergeBarycenters(target, other) {
+  if (!_.isUndefined(target.barycenter)) {
+    target.barycenter = (target.barycenter * target.weight +
+                         other.barycenter * other.weight) /
+                        (target.weight + other.weight);
+    target.weight += other.weight;
+  } else {
+    target.barycenter = other.barycenter;
+    target.weight = other.weight;
+  }
+}
+
+
+/***/ }),
+
+/***/ "39ff":
+/***/ (function(module, exports, __webpack_require__) {
+
+var getNative = __webpack_require__("0b07"),
+    root = __webpack_require__("2b3e");
+
+/* Built-in method references that are verified to be native. */
+var WeakMap = getNative(root, 'WeakMap');
+
+module.exports = WeakMap;
+
+
+/***/ }),
+
+/***/ "3b4a":
+/***/ (function(module, exports, __webpack_require__) {
+
+var getNative = __webpack_require__("0b07");
+
+var defineProperty = (function() {
+  try {
+    var func = getNative(Object, 'defineProperty');
+    func({}, '', {});
+    return func;
+  } catch (e) {}
+}());
+
+module.exports = defineProperty;
+
+
+/***/ }),
+
+/***/ "3bb4":
+/***/ (function(module, exports, __webpack_require__) {
+
+var isStrictComparable = __webpack_require__("08cc"),
+    keys = __webpack_require__("ec69");
+
+/**
+ * Gets the property names, values, and compare flags of `object`.
+ *
+ * @private
+ * @param {Object} object The object to query.
+ * @returns {Array} Returns the match data of `object`.
+ */
+function getMatchData(object) {
+  var result = keys(object),
+      length = result.length;
+
+  while (length--) {
+    var key = result[length],
+        value = object[key];
+
+    result[length] = [key, value, isStrictComparable(value)];
+  }
+  return result;
+}
+
+module.exports = getMatchData;
 
 
 /***/ }),
@@ -32432,12 +34944,365 @@ module.exports = {};
 
 /***/ }),
 
+/***/ "3ff1":
+/***/ (function(module, exports, __webpack_require__) {
+
+var baseValues = __webpack_require__("266a"),
+    keys = __webpack_require__("ec69");
+
+/**
+ * Creates an array of the own enumerable string keyed property values of `object`.
+ *
+ * **Note:** Non-object values are coerced to objects.
+ *
+ * @static
+ * @since 0.1.0
+ * @memberOf _
+ * @category Object
+ * @param {Object} object The object to query.
+ * @returns {Array} Returns the array of property values.
+ * @example
+ *
+ * function Foo() {
+ *   this.a = 1;
+ *   this.b = 2;
+ * }
+ *
+ * Foo.prototype.c = 3;
+ *
+ * _.values(new Foo);
+ * // => [1, 2] (iteration order is not guaranteed)
+ *
+ * _.values('hi');
+ * // => ['h', 'i']
+ */
+function values(object) {
+  return object == null ? [] : baseValues(object, keys(object));
+}
+
+module.exports = values;
+
+
+/***/ }),
+
+/***/ "408c":
+/***/ (function(module, exports, __webpack_require__) {
+
+var root = __webpack_require__("2b3e");
+
+/**
+ * Gets the timestamp of the number of milliseconds that have elapsed since
+ * the Unix epoch (1 January 1970 00:00:00 UTC).
+ *
+ * @static
+ * @memberOf _
+ * @since 2.4.0
+ * @category Date
+ * @returns {number} Returns the timestamp.
+ * @example
+ *
+ * _.defer(function(stamp) {
+ *   console.log(_.now() - stamp);
+ * }, _.now());
+ * // => Logs the number of milliseconds it took for the deferred invocation.
+ */
+var now = function() {
+  return root.Date.now();
+};
+
+module.exports = now;
+
+
+/***/ }),
+
+/***/ "41c3":
+/***/ (function(module, exports, __webpack_require__) {
+
+var isObject = __webpack_require__("1a8c"),
+    isPrototype = __webpack_require__("eac5"),
+    nativeKeysIn = __webpack_require__("ec8c");
+
+/** Used for built-in method references. */
+var objectProto = Object.prototype;
+
+/** Used to check objects for own properties. */
+var hasOwnProperty = objectProto.hasOwnProperty;
+
+/**
+ * The base implementation of `_.keysIn` which doesn't treat sparse arrays as dense.
+ *
+ * @private
+ * @param {Object} object The object to query.
+ * @returns {Array} Returns the array of property names.
+ */
+function baseKeysIn(object) {
+  if (!isObject(object)) {
+    return nativeKeysIn(object);
+  }
+  var isProto = isPrototype(object),
+      result = [];
+
+  for (var key in object) {
+    if (!(key == 'constructor' && (isProto || !hasOwnProperty.call(object, key)))) {
+      result.push(key);
+    }
+  }
+  return result;
+}
+
+module.exports = baseKeysIn;
+
+
+/***/ }),
+
+/***/ "4245":
+/***/ (function(module, exports, __webpack_require__) {
+
+var isKeyable = __webpack_require__("1290");
+
+/**
+ * Gets the data for `map`.
+ *
+ * @private
+ * @param {Object} map The map to query.
+ * @param {string} key The reference key.
+ * @returns {*} Returns the map data.
+ */
+function getMapData(map, key) {
+  var data = map.__data__;
+  return isKeyable(key)
+    ? data[typeof key == 'string' ? 'string' : 'hash']
+    : data.map;
+}
+
+module.exports = getMapData;
+
+
+/***/ }),
+
+/***/ "42454":
+/***/ (function(module, exports, __webpack_require__) {
+
+var baseMerge = __webpack_require__("f909"),
+    createAssigner = __webpack_require__("2ec1");
+
+/**
+ * This method is like `_.assign` except that it recursively merges own and
+ * inherited enumerable string keyed properties of source objects into the
+ * destination object. Source properties that resolve to `undefined` are
+ * skipped if a destination value exists. Array and plain object properties
+ * are merged recursively. Other objects and value types are overridden by
+ * assignment. Source objects are applied from left to right. Subsequent
+ * sources overwrite property assignments of previous sources.
+ *
+ * **Note:** This method mutates `object`.
+ *
+ * @static
+ * @memberOf _
+ * @since 0.5.0
+ * @category Object
+ * @param {Object} object The destination object.
+ * @param {...Object} [sources] The source objects.
+ * @returns {Object} Returns `object`.
+ * @example
+ *
+ * var object = {
+ *   'a': [{ 'b': 2 }, { 'd': 4 }]
+ * };
+ *
+ * var other = {
+ *   'a': [{ 'c': 3 }, { 'e': 5 }]
+ * };
+ *
+ * _.merge(object, other);
+ * // => { 'a': [{ 'b': 2, 'c': 3 }, { 'd': 4, 'e': 5 }] }
+ */
+var merge = createAssigner(function(object, source, srcIndex) {
+  baseMerge(object, source, srcIndex);
+});
+
+module.exports = merge;
+
+
+/***/ }),
+
+/***/ "4284":
+/***/ (function(module, exports) {
+
+/**
+ * A specialized version of `_.some` for arrays without support for iteratee
+ * shorthands.
+ *
+ * @private
+ * @param {Array} [array] The array to iterate over.
+ * @param {Function} predicate The function invoked per iteration.
+ * @returns {boolean} Returns `true` if any element passes the predicate check,
+ *  else `false`.
+ */
+function arraySome(array, predicate) {
+  var index = -1,
+      length = array == null ? 0 : array.length;
+
+  while (++index < length) {
+    if (predicate(array[index], index, array)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+module.exports = arraySome;
+
+
+/***/ }),
+
 /***/ "428f":
 /***/ (function(module, exports, __webpack_require__) {
 
 var global = __webpack_require__("da84");
 
 module.exports = global;
+
+
+/***/ }),
+
+/***/ "42a2":
+/***/ (function(module, exports, __webpack_require__) {
+
+var DataView = __webpack_require__("b5a7"),
+    Map = __webpack_require__("79bc"),
+    Promise = __webpack_require__("1cec"),
+    Set = __webpack_require__("c869"),
+    WeakMap = __webpack_require__("39ff"),
+    baseGetTag = __webpack_require__("3729"),
+    toSource = __webpack_require__("dc57");
+
+/** `Object#toString` result references. */
+var mapTag = '[object Map]',
+    objectTag = '[object Object]',
+    promiseTag = '[object Promise]',
+    setTag = '[object Set]',
+    weakMapTag = '[object WeakMap]';
+
+var dataViewTag = '[object DataView]';
+
+/** Used to detect maps, sets, and weakmaps. */
+var dataViewCtorString = toSource(DataView),
+    mapCtorString = toSource(Map),
+    promiseCtorString = toSource(Promise),
+    setCtorString = toSource(Set),
+    weakMapCtorString = toSource(WeakMap);
+
+/**
+ * Gets the `toStringTag` of `value`.
+ *
+ * @private
+ * @param {*} value The value to query.
+ * @returns {string} Returns the `toStringTag`.
+ */
+var getTag = baseGetTag;
+
+// Fallback for data views, maps, sets, and weak maps in IE 11 and promises in Node.js < 6.
+if ((DataView && getTag(new DataView(new ArrayBuffer(1))) != dataViewTag) ||
+    (Map && getTag(new Map) != mapTag) ||
+    (Promise && getTag(Promise.resolve()) != promiseTag) ||
+    (Set && getTag(new Set) != setTag) ||
+    (WeakMap && getTag(new WeakMap) != weakMapTag)) {
+  getTag = function(value) {
+    var result = baseGetTag(value),
+        Ctor = result == objectTag ? value.constructor : undefined,
+        ctorString = Ctor ? toSource(Ctor) : '';
+
+    if (ctorString) {
+      switch (ctorString) {
+        case dataViewCtorString: return dataViewTag;
+        case mapCtorString: return mapTag;
+        case promiseCtorString: return promiseTag;
+        case setCtorString: return setTag;
+        case weakMapCtorString: return weakMapTag;
+      }
+    }
+    return result;
+  };
+}
+
+module.exports = getTag;
+
+
+/***/ }),
+
+/***/ "4359":
+/***/ (function(module, exports) {
+
+/**
+ * Copies the values of `source` to `array`.
+ *
+ * @private
+ * @param {Array} source The array to copy values from.
+ * @param {Array} [array=[]] The array to copy values to.
+ * @returns {Array} Returns `array`.
+ */
+function copyArray(source, array) {
+  var index = -1,
+      length = source.length;
+
+  array || (array = Array(length));
+  while (++index < length) {
+    array[index] = source[index];
+  }
+  return array;
+}
+
+module.exports = copyArray;
+
+
+/***/ }),
+
+/***/ "43e8":
+/***/ (function(module, exports, __webpack_require__) {
+
+var topsort = __webpack_require__("8185");
+
+module.exports = isAcyclic;
+
+function isAcyclic(g) {
+  try {
+    topsort(g);
+  } catch (e) {
+    if (e instanceof topsort.CycleException) {
+      return false;
+    }
+    throw e;
+  }
+  return true;
+}
+
+
+/***/ }),
+
+/***/ "4416":
+/***/ (function(module, exports) {
+
+/**
+ * Gets the last element of `array`.
+ *
+ * @static
+ * @memberOf _
+ * @since 0.1.0
+ * @category Array
+ * @param {Array} array The array to query.
+ * @returns {*} Returns the last element of `array`.
+ * @example
+ *
+ * _.last([1, 2, 3]);
+ * // => 3
+ */
+function last(array) {
+  var length = array == null ? 0 : array.length;
+  return length ? array[length - 1] : undefined;
+}
+
+module.exports = last;
 
 
 /***/ }),
@@ -64205,6 +67070,240 @@ module.exports = function (it) {
 
 /***/ }),
 
+/***/ "4589":
+/***/ (function(module, exports) {
+
+/*
+ * Simple doubly linked list implementation derived from Cormen, et al.,
+ * "Introduction to Algorithms".
+ */
+
+module.exports = List;
+
+function List() {
+  var sentinel = {};
+  sentinel._next = sentinel._prev = sentinel;
+  this._sentinel = sentinel;
+}
+
+List.prototype.dequeue = function() {
+  var sentinel = this._sentinel;
+  var entry = sentinel._prev;
+  if (entry !== sentinel) {
+    unlink(entry);
+    return entry;
+  }
+};
+
+List.prototype.enqueue = function(entry) {
+  var sentinel = this._sentinel;
+  if (entry._prev && entry._next) {
+    unlink(entry);
+  }
+  entry._next = sentinel._next;
+  sentinel._next._prev = entry;
+  sentinel._next = entry;
+  entry._prev = sentinel;
+};
+
+List.prototype.toString = function() {
+  var strs = [];
+  var sentinel = this._sentinel;
+  var curr = sentinel._prev;
+  while (curr !== sentinel) {
+    strs.push(JSON.stringify(curr, filterOutLinks));
+    curr = curr._prev;
+  }
+  return "[" + strs.join(", ") + "]";
+};
+
+function unlink(entry) {
+  entry._prev._next = entry._next;
+  entry._next._prev = entry._prev;
+  delete entry._next;
+  delete entry._prev;
+}
+
+function filterOutLinks(k, v) {
+  if (k !== "_next" && k !== "_prev") {
+    return v;
+  }
+}
+
+
+/***/ }),
+
+/***/ "45ee":
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+var _ = __webpack_require__("6f9c");
+var util = __webpack_require__("b50e");
+
+module.exports = {
+  run: run,
+  undo: undo
+};
+
+/*
+ * Breaks any long edges in the graph into short segments that span 1 layer
+ * each. This operation is undoable with the denormalize function.
+ *
+ * Pre-conditions:
+ *
+ *    1. The input graph is a DAG.
+ *    2. Each node in the graph has a "rank" property.
+ *
+ * Post-condition:
+ *
+ *    1. All edges in the graph have a length of 1.
+ *    2. Dummy nodes are added where edges have been split into segments.
+ *    3. The graph is augmented with a "dummyChains" attribute which contains
+ *       the first dummy in each chain of dummy nodes produced.
+ */
+function run(g) {
+  g.graph().dummyChains = [];
+  _.forEach(g.edges(), function(edge) { normalizeEdge(g, edge); });
+}
+
+function normalizeEdge(g, e) {
+  var v = e.v;
+  var vRank = g.node(v).rank;
+  var w = e.w;
+  var wRank = g.node(w).rank;
+  var name = e.name;
+  var edgeLabel = g.edge(e);
+  var labelRank = edgeLabel.labelRank;
+
+  if (wRank === vRank + 1) return;
+
+  g.removeEdge(e);
+
+  var dummy, attrs, i;
+  for (i = 0, ++vRank; vRank < wRank; ++i, ++vRank) {
+    edgeLabel.points = [];
+    attrs = {
+      width: 0, height: 0,
+      edgeLabel: edgeLabel, edgeObj: e,
+      rank: vRank
+    };
+    dummy = util.addDummyNode(g, "edge", attrs, "_d");
+    if (vRank === labelRank) {
+      attrs.width = edgeLabel.width;
+      attrs.height = edgeLabel.height;
+      attrs.dummy = "edge-label";
+      attrs.labelpos = edgeLabel.labelpos;
+    }
+    g.setEdge(v, dummy, { weight: edgeLabel.weight }, name);
+    if (i === 0) {
+      g.graph().dummyChains.push(dummy);
+    }
+    v = dummy;
+  }
+
+  g.setEdge(v, w, { weight: edgeLabel.weight }, name);
+}
+
+function undo(g) {
+  _.forEach(g.graph().dummyChains, function(v) {
+    var node = g.node(v);
+    var origLabel = node.edgeLabel;
+    var w;
+    g.setEdge(node.edgeObj, origLabel);
+    while (node.dummy) {
+      w = g.successors(v)[0];
+      g.removeNode(v);
+      origLabel.points.push({ x: node.x, y: node.y });
+      if (node.dummy === "edge-label") {
+        origLabel.x = node.x;
+        origLabel.y = node.y;
+        origLabel.width = node.width;
+        origLabel.height = node.height;
+      }
+      v = w;
+      node = g.node(v);
+    }
+  });
+}
+
+
+/***/ }),
+
+/***/ "4730":
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+/* harmony import */ var _node_modules_mini_css_extract_plugin_dist_loader_js_ref_8_oneOf_1_0_node_modules_css_loader_dist_cjs_js_ref_8_oneOf_1_1_node_modules_vue_loader_lib_loaders_stylePostLoader_js_node_modules_postcss_loader_src_index_js_ref_8_oneOf_1_2_node_modules_sass_loader_dist_cjs_js_ref_8_oneOf_1_3_node_modules_cache_loader_dist_cjs_js_ref_0_0_node_modules_vue_loader_lib_index_js_vue_loader_options_TooltipRoot_vue_vue_type_style_index_0_lang_scss___WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__("5b0c");
+/* harmony import */ var _node_modules_mini_css_extract_plugin_dist_loader_js_ref_8_oneOf_1_0_node_modules_css_loader_dist_cjs_js_ref_8_oneOf_1_1_node_modules_vue_loader_lib_loaders_stylePostLoader_js_node_modules_postcss_loader_src_index_js_ref_8_oneOf_1_2_node_modules_sass_loader_dist_cjs_js_ref_8_oneOf_1_3_node_modules_cache_loader_dist_cjs_js_ref_0_0_node_modules_vue_loader_lib_index_js_vue_loader_options_TooltipRoot_vue_vue_type_style_index_0_lang_scss___WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(_node_modules_mini_css_extract_plugin_dist_loader_js_ref_8_oneOf_1_0_node_modules_css_loader_dist_cjs_js_ref_8_oneOf_1_1_node_modules_vue_loader_lib_loaders_stylePostLoader_js_node_modules_postcss_loader_src_index_js_ref_8_oneOf_1_2_node_modules_sass_loader_dist_cjs_js_ref_8_oneOf_1_3_node_modules_cache_loader_dist_cjs_js_ref_0_0_node_modules_vue_loader_lib_index_js_vue_loader_options_TooltipRoot_vue_vue_type_style_index_0_lang_scss___WEBPACK_IMPORTED_MODULE_0__);
+/* unused harmony reexport * */
+
+
+/***/ }),
+
+/***/ "4796":
+/***/ (function(module, exports) {
+
+/* Built-in method references for those with the same name as other `lodash` methods. */
+var nativeCeil = Math.ceil,
+    nativeMax = Math.max;
+
+/**
+ * The base implementation of `_.range` and `_.rangeRight` which doesn't
+ * coerce arguments.
+ *
+ * @private
+ * @param {number} start The start of the range.
+ * @param {number} end The end of the range.
+ * @param {number} step The value to increment or decrement by.
+ * @param {boolean} [fromRight] Specify iterating from right to left.
+ * @returns {Array} Returns the range of numbers.
+ */
+function baseRange(start, end, step, fromRight) {
+  var index = -1,
+      length = nativeMax(nativeCeil((end - start) / (step || 1)), 0),
+      result = Array(length);
+
+  while (length--) {
+    result[fromRight ? length : ++index] = start;
+    start += step;
+  }
+  return result;
+}
+
+module.exports = baseRange;
+
+
+/***/ }),
+
+/***/ "47f5":
+/***/ (function(module, exports, __webpack_require__) {
+
+var baseFindIndex = __webpack_require__("2b03"),
+    baseIsNaN = __webpack_require__("d9a8"),
+    strictIndexOf = __webpack_require__("099a");
+
+/**
+ * The base implementation of `_.indexOf` without `fromIndex` bounds checks.
+ *
+ * @private
+ * @param {Array} array The array to inspect.
+ * @param {*} value The value to search for.
+ * @param {number} fromIndex The index to search from.
+ * @returns {number} Returns the index of the matched value, else `-1`.
+ */
+function baseIndexOf(array, value, fromIndex) {
+  return value === value
+    ? strictIndexOf(array, value, fromIndex)
+    : baseFindIndex(array, baseIsNaN, fromIndex);
+}
+
+module.exports = baseIndexOf;
+
+
+/***/ }),
+
 /***/ "4840":
 /***/ (function(module, exports, __webpack_require__) {
 
@@ -64239,6 +67338,27 @@ module.exports = function (input, pref) {
   if (pref !== 'string' && typeof (fn = input.toString) == 'function' && !isObject(val = fn.call(input))) return val;
   throw TypeError("Can't convert object to primitive value");
 };
+
+
+/***/ }),
+
+/***/ "48a0":
+/***/ (function(module, exports, __webpack_require__) {
+
+var baseForOwn = __webpack_require__("242e"),
+    createBaseEach = __webpack_require__("950a");
+
+/**
+ * The base implementation of `_.forEach` without support for iteratee shorthands.
+ *
+ * @private
+ * @param {Array|Object} collection The collection to iterate over.
+ * @param {Function} iteratee The function invoked per iteration.
+ * @returns {Array|Object} Returns `collection`.
+ */
+var baseEach = createBaseEach(baseForOwn);
+
+module.exports = baseEach;
 
 
 /***/ }),
@@ -64279,6 +67399,28 @@ $({ target: 'String', proto: true, forced: forcedStringTrimMethod('trim') }, {
     return $trim(this);
   }
 });
+
+
+/***/ }),
+
+/***/ "49f4":
+/***/ (function(module, exports, __webpack_require__) {
+
+var nativeCreate = __webpack_require__("6044");
+
+/**
+ * Removes all key-value entries from the hash.
+ *
+ * @private
+ * @name clear
+ * @memberOf Hash
+ */
+function hashClear() {
+  this.__data__ = nativeCreate ? nativeCreate(null) : {};
+  this.size = 0;
+}
+
+module.exports = hashClear;
 
 
 /***/ }),
@@ -64341,10 +67483,108 @@ $({ target: 'Reflect', stat: true, forced: FORCED, sham: FORCED }, {
 
 /***/ }),
 
+/***/ "4b17":
+/***/ (function(module, exports, __webpack_require__) {
+
+var toFinite = __webpack_require__("6428");
+
+/**
+ * Converts `value` to an integer.
+ *
+ * **Note:** This method is loosely based on
+ * [`ToInteger`](http://www.ecma-international.org/ecma-262/7.0/#sec-tointeger).
+ *
+ * @static
+ * @memberOf _
+ * @since 4.0.0
+ * @category Lang
+ * @param {*} value The value to convert.
+ * @returns {number} Returns the converted integer.
+ * @example
+ *
+ * _.toInteger(3.2);
+ * // => 3
+ *
+ * _.toInteger(Number.MIN_VALUE);
+ * // => 0
+ *
+ * _.toInteger(Infinity);
+ * // => 1.7976931348623157e+308
+ *
+ * _.toInteger('3.2');
+ * // => 3
+ */
+function toInteger(value) {
+  var result = toFinite(value),
+      remainder = result % 1;
+
+  return result === result ? (remainder ? result - remainder : result) : 0;
+}
+
+module.exports = toInteger;
+
+
+/***/ }),
+
 /***/ "4c04":
 /***/ (function(module, exports, __webpack_require__) {
 
 // extracted by mini-css-extract-plugin
+
+/***/ }),
+
+/***/ "4cef":
+/***/ (function(module, exports) {
+
+/** Used to match a single whitespace character. */
+var reWhitespace = /\s/;
+
+/**
+ * Used by `_.trim` and `_.trimEnd` to get the index of the last non-whitespace
+ * character of `string`.
+ *
+ * @private
+ * @param {string} string The string to inspect.
+ * @returns {number} Returns the index of the last non-whitespace character.
+ */
+function trimmedEndIndex(string) {
+  var index = string.length;
+
+  while (index-- && reWhitespace.test(string.charAt(index))) {}
+  return index;
+}
+
+module.exports = trimmedEndIndex;
+
+
+/***/ }),
+
+/***/ "4cfe":
+/***/ (function(module, exports) {
+
+/**
+ * Checks if `value` is `undefined`.
+ *
+ * @static
+ * @since 0.1.0
+ * @memberOf _
+ * @category Lang
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if `value` is `undefined`, else `false`.
+ * @example
+ *
+ * _.isUndefined(void 0);
+ * // => true
+ *
+ * _.isUndefined(null);
+ * // => false
+ */
+function isUndefined(value) {
+  return value === undefined;
+}
+
+module.exports = isUndefined;
+
 
 /***/ }),
 
@@ -64383,6 +67623,42 @@ module.exports = {
   // https://tc39.es/ecma262/#sec-array.prototype.indexof
   indexOf: createMethod(false)
 };
+
+
+/***/ }),
+
+/***/ "4d74":
+/***/ (function(module, exports, __webpack_require__) {
+
+// extracted by mini-css-extract-plugin
+
+/***/ }),
+
+/***/ "4d8c":
+/***/ (function(module, exports, __webpack_require__) {
+
+var baseFlatten = __webpack_require__("5c69");
+
+/**
+ * Flattens `array` a single level deep.
+ *
+ * @static
+ * @memberOf _
+ * @since 0.1.0
+ * @category Array
+ * @param {Array} array The array to flatten.
+ * @returns {Array} Returns the new flattened array.
+ * @example
+ *
+ * _.flatten([1, [2, [3, [4]], 5]]);
+ * // => [1, 2, [3, [4]], 5]
+ */
+function flatten(array) {
+  var length = array == null ? 0 : array.length;
+  return length ? baseFlatten(array, 1) : [];
+}
+
+module.exports = flatten;
 
 
 /***/ }),
@@ -64497,6 +67773,121 @@ module.exports = collection('Map', function (init) {
 
 /***/ }),
 
+/***/ "4f17":
+/***/ (function(module, exports, __webpack_require__) {
+
+var dfs = __webpack_require__("df2e");
+
+module.exports = postorder;
+
+function postorder(g, vs) {
+  return dfs(g, vs, "post");
+}
+
+
+/***/ }),
+
+/***/ "4f50":
+/***/ (function(module, exports, __webpack_require__) {
+
+var assignMergeValue = __webpack_require__("b760"),
+    cloneBuffer = __webpack_require__("e5383"),
+    cloneTypedArray = __webpack_require__("c8fe"),
+    copyArray = __webpack_require__("4359"),
+    initCloneObject = __webpack_require__("fa21"),
+    isArguments = __webpack_require__("d370"),
+    isArray = __webpack_require__("6747"),
+    isArrayLikeObject = __webpack_require__("dcbe"),
+    isBuffer = __webpack_require__("0d24"),
+    isFunction = __webpack_require__("9520"),
+    isObject = __webpack_require__("1a8c"),
+    isPlainObject = __webpack_require__("60ed"),
+    isTypedArray = __webpack_require__("73ac"),
+    safeGet = __webpack_require__("8adb"),
+    toPlainObject = __webpack_require__("8de2");
+
+/**
+ * A specialized version of `baseMerge` for arrays and objects which performs
+ * deep merges and tracks traversed objects enabling objects with circular
+ * references to be merged.
+ *
+ * @private
+ * @param {Object} object The destination object.
+ * @param {Object} source The source object.
+ * @param {string} key The key of the value to merge.
+ * @param {number} srcIndex The index of `source`.
+ * @param {Function} mergeFunc The function to merge values.
+ * @param {Function} [customizer] The function to customize assigned values.
+ * @param {Object} [stack] Tracks traversed source values and their merged
+ *  counterparts.
+ */
+function baseMergeDeep(object, source, key, srcIndex, mergeFunc, customizer, stack) {
+  var objValue = safeGet(object, key),
+      srcValue = safeGet(source, key),
+      stacked = stack.get(srcValue);
+
+  if (stacked) {
+    assignMergeValue(object, key, stacked);
+    return;
+  }
+  var newValue = customizer
+    ? customizer(objValue, srcValue, (key + ''), object, source, stack)
+    : undefined;
+
+  var isCommon = newValue === undefined;
+
+  if (isCommon) {
+    var isArr = isArray(srcValue),
+        isBuff = !isArr && isBuffer(srcValue),
+        isTyped = !isArr && !isBuff && isTypedArray(srcValue);
+
+    newValue = srcValue;
+    if (isArr || isBuff || isTyped) {
+      if (isArray(objValue)) {
+        newValue = objValue;
+      }
+      else if (isArrayLikeObject(objValue)) {
+        newValue = copyArray(objValue);
+      }
+      else if (isBuff) {
+        isCommon = false;
+        newValue = cloneBuffer(srcValue, true);
+      }
+      else if (isTyped) {
+        isCommon = false;
+        newValue = cloneTypedArray(srcValue, true);
+      }
+      else {
+        newValue = [];
+      }
+    }
+    else if (isPlainObject(srcValue) || isArguments(srcValue)) {
+      newValue = objValue;
+      if (isArguments(objValue)) {
+        newValue = toPlainObject(objValue);
+      }
+      else if (!isObject(objValue) || isFunction(objValue)) {
+        newValue = initCloneObject(srcValue);
+      }
+    }
+    else {
+      isCommon = false;
+    }
+  }
+  if (isCommon) {
+    // Recursively merge objects and arrays (susceptible to call stack limits).
+    stack.set(srcValue, newValue);
+    mergeFunc(newValue, srcValue, srcIndex, customizer, stack);
+    stack['delete'](srcValue);
+  }
+  assignMergeValue(object, key, newValue);
+}
+
+module.exports = baseMergeDeep;
+
+
+/***/ }),
+
 /***/ "50c4":
 /***/ (function(module, exports, __webpack_require__) {
 
@@ -64513,6 +67904,105 @@ module.exports = function (argument) {
 
 /***/ }),
 
+/***/ "50ca":
+/***/ (function(module, exports, __webpack_require__) {
+
+var arrayEach = __webpack_require__("8057"),
+    baseCreate = __webpack_require__("7530"),
+    baseForOwn = __webpack_require__("242e"),
+    baseIteratee = __webpack_require__("badf"),
+    getPrototype = __webpack_require__("2dcb"),
+    isArray = __webpack_require__("6747"),
+    isBuffer = __webpack_require__("0d24"),
+    isFunction = __webpack_require__("9520"),
+    isObject = __webpack_require__("1a8c"),
+    isTypedArray = __webpack_require__("73ac");
+
+/**
+ * An alternative to `_.reduce`; this method transforms `object` to a new
+ * `accumulator` object which is the result of running each of its own
+ * enumerable string keyed properties thru `iteratee`, with each invocation
+ * potentially mutating the `accumulator` object. If `accumulator` is not
+ * provided, a new object with the same `[[Prototype]]` will be used. The
+ * iteratee is invoked with four arguments: (accumulator, value, key, object).
+ * Iteratee functions may exit iteration early by explicitly returning `false`.
+ *
+ * @static
+ * @memberOf _
+ * @since 1.3.0
+ * @category Object
+ * @param {Object} object The object to iterate over.
+ * @param {Function} [iteratee=_.identity] The function invoked per iteration.
+ * @param {*} [accumulator] The custom accumulator value.
+ * @returns {*} Returns the accumulated value.
+ * @example
+ *
+ * _.transform([2, 3, 4], function(result, n) {
+ *   result.push(n *= n);
+ *   return n % 2 == 0;
+ * }, []);
+ * // => [4, 9]
+ *
+ * _.transform({ 'a': 1, 'b': 2, 'c': 1 }, function(result, value, key) {
+ *   (result[value] || (result[value] = [])).push(key);
+ * }, {});
+ * // => { '1': ['a', 'c'], '2': ['b'] }
+ */
+function transform(object, iteratee, accumulator) {
+  var isArr = isArray(object),
+      isArrLike = isArr || isBuffer(object) || isTypedArray(object);
+
+  iteratee = baseIteratee(iteratee, 4);
+  if (accumulator == null) {
+    var Ctor = object && object.constructor;
+    if (isArrLike) {
+      accumulator = isArr ? new Ctor : [];
+    }
+    else if (isObject(object)) {
+      accumulator = isFunction(Ctor) ? baseCreate(getPrototype(object)) : {};
+    }
+    else {
+      accumulator = {};
+    }
+  }
+  (isArrLike ? arrayEach : baseForOwn)(object, function(value, index, object) {
+    return iteratee(accumulator, value, index, object);
+  });
+  return accumulator;
+}
+
+module.exports = transform;
+
+
+/***/ }),
+
+/***/ "50d8":
+/***/ (function(module, exports) {
+
+/**
+ * The base implementation of `_.times` without support for iteratee shorthands
+ * or max array length checks.
+ *
+ * @private
+ * @param {number} n The number of times to invoke `iteratee`.
+ * @param {Function} iteratee The function invoked per iteration.
+ * @returns {Array} Returns the array of results.
+ */
+function baseTimes(n, iteratee) {
+  var index = -1,
+      result = Array(n);
+
+  while (++index < n) {
+    result[index] = iteratee(index);
+  }
+  return result;
+}
+
+module.exports = baseTimes;
+
+
+/***/ }),
+
 /***/ "5135":
 /***/ (function(module, exports, __webpack_require__) {
 
@@ -64523,6 +68013,68 @@ var hasOwnProperty = {}.hasOwnProperty;
 module.exports = Object.hasOwn || function hasOwn(it, key) {
   return hasOwnProperty.call(toObject(it), key);
 };
+
+
+/***/ }),
+
+/***/ "51f5":
+/***/ (function(module, exports, __webpack_require__) {
+
+var baseFindIndex = __webpack_require__("2b03"),
+    baseIteratee = __webpack_require__("badf"),
+    toInteger = __webpack_require__("4b17");
+
+/* Built-in method references for those with the same name as other `lodash` methods. */
+var nativeMax = Math.max;
+
+/**
+ * This method is like `_.find` except that it returns the index of the first
+ * element `predicate` returns truthy for instead of the element itself.
+ *
+ * @static
+ * @memberOf _
+ * @since 1.1.0
+ * @category Array
+ * @param {Array} array The array to inspect.
+ * @param {Function} [predicate=_.identity] The function invoked per iteration.
+ * @param {number} [fromIndex=0] The index to search from.
+ * @returns {number} Returns the index of the found element, else `-1`.
+ * @example
+ *
+ * var users = [
+ *   { 'user': 'barney',  'active': false },
+ *   { 'user': 'fred',    'active': false },
+ *   { 'user': 'pebbles', 'active': true }
+ * ];
+ *
+ * _.findIndex(users, function(o) { return o.user == 'barney'; });
+ * // => 0
+ *
+ * // The `_.matches` iteratee shorthand.
+ * _.findIndex(users, { 'user': 'fred', 'active': false });
+ * // => 1
+ *
+ * // The `_.matchesProperty` iteratee shorthand.
+ * _.findIndex(users, ['active', false]);
+ * // => 0
+ *
+ * // The `_.property` iteratee shorthand.
+ * _.findIndex(users, 'active');
+ * // => 2
+ */
+function findIndex(array, predicate, fromIndex) {
+  var length = array == null ? 0 : array.length;
+  if (!length) {
+    return -1;
+  }
+  var index = fromIndex == null ? 0 : toInteger(fromIndex);
+  if (index < 0) {
+    index = nativeMax(length + index, 0);
+  }
+  return baseFindIndex(array, baseIteratee(predicate, 3), index);
+}
+
+module.exports = findIndex;
 
 
 /***/ }),
@@ -64662,6 +68214,81 @@ fixRegExpWellKnownSymbolLogic('replace', function (_, nativeReplace, maybeCallNa
 
 /***/ }),
 
+/***/ "5492":
+/***/ (function(module, exports, __webpack_require__) {
+
+var assignValue = __webpack_require__("32b3"),
+    baseZipObject = __webpack_require__("d70d");
+
+/**
+ * This method is like `_.fromPairs` except that it accepts two arrays,
+ * one of property identifiers and one of corresponding values.
+ *
+ * @static
+ * @memberOf _
+ * @since 0.4.0
+ * @category Array
+ * @param {Array} [props=[]] The property identifiers.
+ * @param {Array} [values=[]] The property values.
+ * @returns {Object} Returns the new object.
+ * @example
+ *
+ * _.zipObject(['a', 'b'], [1, 2]);
+ * // => { 'a': 1, 'b': 2 }
+ */
+function zipObject(props, values) {
+  return baseZipObject(props || [], values || [], assignValue);
+}
+
+module.exports = zipObject;
+
+
+/***/ }),
+
+/***/ "54eb":
+/***/ (function(module, exports, __webpack_require__) {
+
+var copyObject = __webpack_require__("8eeb"),
+    getSymbols = __webpack_require__("32f4");
+
+/**
+ * Copies own symbols of `source` to `object`.
+ *
+ * @private
+ * @param {Object} source The object to copy symbols from.
+ * @param {Object} [object={}] The object to copy symbols to.
+ * @returns {Object} Returns `object`.
+ */
+function copySymbols(source, object) {
+  return copyObject(source, getSymbols(source), object);
+}
+
+module.exports = copySymbols;
+
+
+/***/ }),
+
+/***/ "55a3":
+/***/ (function(module, exports) {
+
+/**
+ * Checks if a stack value for `key` exists.
+ *
+ * @private
+ * @name has
+ * @memberOf Stack
+ * @param {string} key The key of the entry to check.
+ * @returns {boolean} Returns `true` if an entry for `key` exists, else `false`.
+ */
+function stackHas(key) {
+  return this.__data__.has(key);
+}
+
+module.exports = stackHas;
+
+
+/***/ }),
+
 /***/ "55ae":
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
@@ -64718,6 +68345,52 @@ module.exports = function (argument) {
   return String(argument);
 };
 
+
+/***/ }),
+
+/***/ "57a5":
+/***/ (function(module, exports, __webpack_require__) {
+
+var overArg = __webpack_require__("91e9");
+
+/* Built-in method references for those with the same name as other `lodash` methods. */
+var nativeKeys = overArg(Object.keys, Object);
+
+module.exports = nativeKeys;
+
+
+/***/ }),
+
+/***/ "57dc":
+/***/ (function(module, exports) {
+
+/**
+ * The base implementation of `_.gt` which doesn't coerce arguments.
+ *
+ * @private
+ * @param {*} value The value to compare.
+ * @param {*} other The other value to compare.
+ * @returns {boolean} Returns `true` if `value` is greater than `other`,
+ *  else `false`.
+ */
+function baseGt(value, other) {
+  return value > other;
+}
+
+module.exports = baseGt;
+
+
+/***/ }),
+
+/***/ "585a":
+/***/ (function(module, exports, __webpack_require__) {
+
+/* WEBPACK VAR INJECTION */(function(global) {/** Detect free variable `global` from Node.js. */
+var freeGlobal = typeof global == 'object' && global && global.Object === Object && global;
+
+module.exports = freeGlobal;
+
+/* WEBPACK VAR INJECTION */}.call(this, __webpack_require__("c8ba")))
 
 /***/ }),
 
@@ -64778,6 +68451,36 @@ module.exports = {
 
 /***/ }),
 
+/***/ "58f7":
+/***/ (function(module, exports) {
+
+/**
+ * The base implementation of `_.reduce` and `_.reduceRight`, without support
+ * for iteratee shorthands, which iterates over `collection` using `eachFunc`.
+ *
+ * @private
+ * @param {Array|Object} collection The collection to iterate over.
+ * @param {Function} iteratee The function invoked per iteration.
+ * @param {*} accumulator The initial value.
+ * @param {boolean} initAccum Specify using the first or last element of
+ *  `collection` as the initial value.
+ * @param {Function} eachFunc The function to iterate over `collection`.
+ * @returns {*} Returns the accumulated value.
+ */
+function baseReduce(collection, iteratee, accumulator, initAccum, eachFunc) {
+  eachFunc(collection, function(value, index, collection) {
+    accumulator = initAccum
+      ? (initAccum = false, value)
+      : iteratee(accumulator, value, index, collection);
+  });
+  return accumulator;
+}
+
+module.exports = baseReduce;
+
+
+/***/ }),
+
 /***/ "5a34":
 /***/ (function(module, exports, __webpack_require__) {
 
@@ -64788,6 +68491,59 @@ module.exports = function (it) {
     throw TypeError("The method doesn't accept regular expressions");
   } return it;
 };
+
+
+/***/ }),
+
+/***/ "5a3a":
+/***/ (function(module, exports, __webpack_require__) {
+
+var createRange = __webpack_require__("1cba");
+
+/**
+ * Creates an array of numbers (positive and/or negative) progressing from
+ * `start` up to, but not including, `end`. A step of `-1` is used if a negative
+ * `start` is specified without an `end` or `step`. If `end` is not specified,
+ * it's set to `start` with `start` then set to `0`.
+ *
+ * **Note:** JavaScript follows the IEEE-754 standard for resolving
+ * floating-point values which can produce unexpected results.
+ *
+ * @static
+ * @since 0.1.0
+ * @memberOf _
+ * @category Util
+ * @param {number} [start=0] The start of the range.
+ * @param {number} end The end of the range.
+ * @param {number} [step=1] The value to increment or decrement by.
+ * @returns {Array} Returns the range of numbers.
+ * @see _.inRange, _.rangeRight
+ * @example
+ *
+ * _.range(4);
+ * // => [0, 1, 2, 3]
+ *
+ * _.range(-4);
+ * // => [0, -1, -2, -3]
+ *
+ * _.range(1, 5);
+ * // => [1, 2, 3, 4]
+ *
+ * _.range(0, 20, 5);
+ * // => [0, 5, 10, 15]
+ *
+ * _.range(0, -4, -1);
+ * // => [0, -1, -2, -3]
+ *
+ * _.range(1, 4, 0);
+ * // => [1, 1, 1]
+ *
+ * _.range(0);
+ * // => []
+ */
+var range = createRange();
+
+module.exports = range;
 
 
 /***/ }),
@@ -64803,6 +68559,82 @@ module.exports = function (it) {
 
 /***/ }),
 
+/***/ "5b01":
+/***/ (function(module, exports, __webpack_require__) {
+
+var copyObject = __webpack_require__("8eeb"),
+    keys = __webpack_require__("ec69");
+
+/**
+ * The base implementation of `_.assign` without support for multiple sources
+ * or `customizer` functions.
+ *
+ * @private
+ * @param {Object} object The destination object.
+ * @param {Object} source The source object.
+ * @returns {Object} Returns `object`.
+ */
+function baseAssign(object, source) {
+  return object && copyObject(source, keys(source), object);
+}
+
+module.exports = baseAssign;
+
+
+/***/ }),
+
+/***/ "5b0c":
+/***/ (function(module, exports, __webpack_require__) {
+
+// extracted by mini-css-extract-plugin
+
+/***/ }),
+
+/***/ "5c69":
+/***/ (function(module, exports, __webpack_require__) {
+
+var arrayPush = __webpack_require__("087d"),
+    isFlattenable = __webpack_require__("0621");
+
+/**
+ * The base implementation of `_.flatten` with support for restricting flattening.
+ *
+ * @private
+ * @param {Array} array The array to flatten.
+ * @param {number} depth The maximum recursion depth.
+ * @param {boolean} [predicate=isFlattenable] The function invoked per iteration.
+ * @param {boolean} [isStrict] Restrict to values that pass `predicate` checks.
+ * @param {Array} [result=[]] The initial result value.
+ * @returns {Array} Returns the new flattened array.
+ */
+function baseFlatten(array, depth, predicate, isStrict, result) {
+  var index = -1,
+      length = array.length;
+
+  predicate || (predicate = isFlattenable);
+  result || (result = []);
+
+  while (++index < length) {
+    var value = array[index];
+    if (depth > 0 && predicate(value)) {
+      if (depth > 1) {
+        // Recursively flatten arrays (susceptible to call stack limits).
+        baseFlatten(value, depth - 1, predicate, isStrict, result);
+      } else {
+        arrayPush(result, value);
+      }
+    } else if (!isStrict) {
+      result[result.length] = value;
+    }
+  }
+  return result;
+}
+
+module.exports = baseFlatten;
+
+
+/***/ }),
+
 /***/ "5c6c":
 /***/ (function(module, exports) {
 
@@ -64814,6 +68646,61 @@ module.exports = function (bitmap, value) {
     value: value
   };
 };
+
+
+/***/ }),
+
+/***/ "5ca0":
+/***/ (function(module, exports, __webpack_require__) {
+
+var baseIteratee = __webpack_require__("badf"),
+    isArrayLike = __webpack_require__("30c9"),
+    keys = __webpack_require__("ec69");
+
+/**
+ * Creates a `_.find` or `_.findLast` function.
+ *
+ * @private
+ * @param {Function} findIndexFunc The function to find the collection index.
+ * @returns {Function} Returns the new find function.
+ */
+function createFind(findIndexFunc) {
+  return function(collection, predicate, fromIndex) {
+    var iterable = Object(collection);
+    if (!isArrayLike(collection)) {
+      var iteratee = baseIteratee(predicate, 3);
+      collection = keys(collection);
+      predicate = function(key) { return iteratee(iterable[key], key, iterable); };
+    }
+    var index = findIndexFunc(collection, predicate, fromIndex);
+    return index > -1 ? iterable[iteratee ? collection[index] : index] : undefined;
+  };
+}
+
+module.exports = createFind;
+
+
+/***/ }),
+
+/***/ "5d89":
+/***/ (function(module, exports, __webpack_require__) {
+
+var cloneArrayBuffer = __webpack_require__("f8af");
+
+/**
+ * Creates a clone of `dataView`.
+ *
+ * @private
+ * @param {Object} dataView The data view to clone.
+ * @param {boolean} [isDeep] Specify a deep clone.
+ * @returns {Object} Returns the cloned data view.
+ */
+function cloneDataView(dataView, isDeep) {
+  var buffer = isDeep ? cloneArrayBuffer(dataView.buffer) : dataView.buffer;
+  return new dataView.constructor(buffer, dataView.byteOffset, dataView.byteLength);
+}
+
+module.exports = cloneDataView;
 
 
 /***/ }),
@@ -64843,6 +68730,74 @@ $({ target: 'Array', proto: true }, {
     return A;
   }
 });
+
+
+/***/ }),
+
+/***/ "5e2e":
+/***/ (function(module, exports, __webpack_require__) {
+
+var listCacheClear = __webpack_require__("28c9"),
+    listCacheDelete = __webpack_require__("69d5"),
+    listCacheGet = __webpack_require__("b4c0"),
+    listCacheHas = __webpack_require__("fba5"),
+    listCacheSet = __webpack_require__("67ca");
+
+/**
+ * Creates an list cache object.
+ *
+ * @private
+ * @constructor
+ * @param {Array} [entries] The key-value pairs to cache.
+ */
+function ListCache(entries) {
+  var index = -1,
+      length = entries == null ? 0 : entries.length;
+
+  this.clear();
+  while (++index < length) {
+    var entry = entries[index];
+    this.set(entry[0], entry[1]);
+  }
+}
+
+// Add methods to `ListCache`.
+ListCache.prototype.clear = listCacheClear;
+ListCache.prototype['delete'] = listCacheDelete;
+ListCache.prototype.get = listCacheGet;
+ListCache.prototype.has = listCacheHas;
+ListCache.prototype.set = listCacheSet;
+
+module.exports = ListCache;
+
+
+/***/ }),
+
+/***/ "5edf":
+/***/ (function(module, exports) {
+
+/**
+ * This function is like `arrayIncludes` except that it accepts a comparator.
+ *
+ * @private
+ * @param {Array} [array] The array to inspect.
+ * @param {*} target The value to search for.
+ * @param {Function} comparator The comparator invoked per element.
+ * @returns {boolean} Returns `true` if `target` is found, else `false`.
+ */
+function arrayIncludesWith(array, value, comparator) {
+  var index = -1,
+      length = array == null ? 0 : array.length;
+
+  while (++index < length) {
+    if (comparator(value, array[index])) {
+      return true;
+    }
+  }
+  return false;
+}
+
+module.exports = arrayIncludesWith;
 
 
 /***/ }),
@@ -65030,6 +68985,19 @@ module.exports = function (input) {
 
 /***/ }),
 
+/***/ "6044":
+/***/ (function(module, exports, __webpack_require__) {
+
+var getNative = __webpack_require__("0b07");
+
+/* Built-in method references that are verified to be native. */
+var nativeCreate = getNative(Object, 'create');
+
+module.exports = nativeCreate;
+
+
+/***/ }),
+
 /***/ "605d":
 /***/ (function(module, exports, __webpack_require__) {
 
@@ -65128,10 +69096,138 @@ module.exports = !$assign || fails(function () {
 
 /***/ }),
 
+/***/ "60ed":
+/***/ (function(module, exports, __webpack_require__) {
+
+var baseGetTag = __webpack_require__("3729"),
+    getPrototype = __webpack_require__("2dcb"),
+    isObjectLike = __webpack_require__("1310");
+
+/** `Object#toString` result references. */
+var objectTag = '[object Object]';
+
+/** Used for built-in method references. */
+var funcProto = Function.prototype,
+    objectProto = Object.prototype;
+
+/** Used to resolve the decompiled source of functions. */
+var funcToString = funcProto.toString;
+
+/** Used to check objects for own properties. */
+var hasOwnProperty = objectProto.hasOwnProperty;
+
+/** Used to infer the `Object` constructor. */
+var objectCtorString = funcToString.call(Object);
+
+/**
+ * Checks if `value` is a plain object, that is, an object created by the
+ * `Object` constructor or one with a `[[Prototype]]` of `null`.
+ *
+ * @static
+ * @memberOf _
+ * @since 0.8.0
+ * @category Lang
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if `value` is a plain object, else `false`.
+ * @example
+ *
+ * function Foo() {
+ *   this.a = 1;
+ * }
+ *
+ * _.isPlainObject(new Foo);
+ * // => false
+ *
+ * _.isPlainObject([1, 2, 3]);
+ * // => false
+ *
+ * _.isPlainObject({ 'x': 0, 'y': 0 });
+ * // => true
+ *
+ * _.isPlainObject(Object.create(null));
+ * // => true
+ */
+function isPlainObject(value) {
+  if (!isObjectLike(value) || baseGetTag(value) != objectTag) {
+    return false;
+  }
+  var proto = getPrototype(value);
+  if (proto === null) {
+    return true;
+  }
+  var Ctor = hasOwnProperty.call(proto, 'constructor') && proto.constructor;
+  return typeof Ctor == 'function' && Ctor instanceof Ctor &&
+    funcToString.call(Ctor) == objectCtorString;
+}
+
+module.exports = isPlainObject;
+
+
+/***/ }),
+
 /***/ "6170":
 /***/ (function(module, exports, __webpack_require__) {
 
 // extracted by mini-css-extract-plugin
+
+/***/ }),
+
+/***/ "61e9":
+/***/ (function(module, exports, __webpack_require__) {
+
+var _ = __webpack_require__("33de");
+var Graph = __webpack_require__("9671");
+var PriorityQueue = __webpack_require__("01eb");
+
+module.exports = prim;
+
+function prim(g, weightFunc) {
+  var result = new Graph();
+  var parents = {};
+  var pq = new PriorityQueue();
+  var v;
+
+  function updateNeighbors(edge) {
+    var w = edge.v === v ? edge.w : edge.v;
+    var pri = pq.priority(w);
+    if (pri !== undefined) {
+      var edgeWeight = weightFunc(edge);
+      if (edgeWeight < pri) {
+        parents[w] = v;
+        pq.decrease(w, edgeWeight);
+      }
+    }
+  }
+
+  if (g.nodeCount() === 0) {
+    return result;
+  }
+
+  _.each(g.nodes(), function(v) {
+    pq.add(v, Number.POSITIVE_INFINITY);
+    result.setNode(v);
+  });
+
+  // Start from an arbitrary node
+  pq.decrease(g.nodes()[0], 0);
+
+  var init = false;
+  while (pq.size() > 0) {
+    v = pq.removeMin();
+    if (_.has(parents, v)) {
+      result.setEdge(v, parents[v]);
+    } else if (init) {
+      throw new Error("Input graph is not connected: " + g);
+    } else {
+      init = true;
+    }
+
+    g.nodeEdges(v).forEach(updateNeighbors);
+  }
+
+  return result;
+}
+
 
 /***/ }),
 
@@ -65171,6 +69267,84 @@ module.exports = function(module) {
 /* harmony import */ var _node_modules_mini_css_extract_plugin_dist_loader_js_ref_8_oneOf_1_0_node_modules_css_loader_dist_cjs_js_ref_8_oneOf_1_1_node_modules_vue_loader_lib_loaders_stylePostLoader_js_node_modules_postcss_loader_src_index_js_ref_8_oneOf_1_2_node_modules_sass_loader_dist_cjs_js_ref_8_oneOf_1_3_node_modules_cache_loader_dist_cjs_js_ref_0_0_node_modules_vue_loader_lib_index_js_vue_loader_options_EntitySearchBar_vue_vue_type_style_index_0_lang_scss___WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__("aeb4");
 /* harmony import */ var _node_modules_mini_css_extract_plugin_dist_loader_js_ref_8_oneOf_1_0_node_modules_css_loader_dist_cjs_js_ref_8_oneOf_1_1_node_modules_vue_loader_lib_loaders_stylePostLoader_js_node_modules_postcss_loader_src_index_js_ref_8_oneOf_1_2_node_modules_sass_loader_dist_cjs_js_ref_8_oneOf_1_3_node_modules_cache_loader_dist_cjs_js_ref_0_0_node_modules_vue_loader_lib_index_js_vue_loader_options_EntitySearchBar_vue_vue_type_style_index_0_lang_scss___WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(_node_modules_mini_css_extract_plugin_dist_loader_js_ref_8_oneOf_1_0_node_modules_css_loader_dist_cjs_js_ref_8_oneOf_1_1_node_modules_vue_loader_lib_loaders_stylePostLoader_js_node_modules_postcss_loader_src_index_js_ref_8_oneOf_1_2_node_modules_sass_loader_dist_cjs_js_ref_8_oneOf_1_3_node_modules_cache_loader_dist_cjs_js_ref_0_0_node_modules_vue_loader_lib_index_js_vue_loader_options_EntitySearchBar_vue_vue_type_style_index_0_lang_scss___WEBPACK_IMPORTED_MODULE_0__);
 /* unused harmony reexport * */
+
+
+/***/ }),
+
+/***/ "6428":
+/***/ (function(module, exports, __webpack_require__) {
+
+var toNumber = __webpack_require__("b4b0");
+
+/** Used as references for various `Number` constants. */
+var INFINITY = 1 / 0,
+    MAX_INTEGER = 1.7976931348623157e+308;
+
+/**
+ * Converts `value` to a finite number.
+ *
+ * @static
+ * @memberOf _
+ * @since 4.12.0
+ * @category Lang
+ * @param {*} value The value to convert.
+ * @returns {number} Returns the converted number.
+ * @example
+ *
+ * _.toFinite(3.2);
+ * // => 3.2
+ *
+ * _.toFinite(Number.MIN_VALUE);
+ * // => 5e-324
+ *
+ * _.toFinite(Infinity);
+ * // => 1.7976931348623157e+308
+ *
+ * _.toFinite('3.2');
+ * // => 3.2
+ */
+function toFinite(value) {
+  if (!value) {
+    return value === 0 ? value : 0;
+  }
+  value = toNumber(value);
+  if (value === INFINITY || value === -INFINITY) {
+    var sign = (value < 0 ? -1 : 1);
+    return sign * MAX_INTEGER;
+  }
+  return value === value ? value : 0;
+}
+
+module.exports = toFinite;
+
+
+/***/ }),
+
+/***/ "642a":
+/***/ (function(module, exports, __webpack_require__) {
+
+var baseIsMatch = __webpack_require__("966f"),
+    getMatchData = __webpack_require__("3bb4"),
+    matchesStrictComparable = __webpack_require__("20ec");
+
+/**
+ * The base implementation of `_.matches` which doesn't clone `source`.
+ *
+ * @private
+ * @param {Object} source The object of property values to match.
+ * @returns {Function} Returns the new spec function.
+ */
+function baseMatches(source) {
+  var matchData = getMatchData(source);
+  if (matchData.length == 1 && matchData[0][2]) {
+    return matchesStrictComparable(matchData[0][0], matchData[0][1]);
+  }
+  return function(object) {
+    return object === source || baseIsMatch(object, source, matchData);
+  };
+}
+
+module.exports = baseMatches;
 
 
 /***/ }),
@@ -65420,6 +69594,37 @@ module.exports = {
 
 /***/ }),
 
+/***/ "656b":
+/***/ (function(module, exports, __webpack_require__) {
+
+var castPath = __webpack_require__("e2e4"),
+    toKey = __webpack_require__("f4d6");
+
+/**
+ * The base implementation of `_.get` without support for default values.
+ *
+ * @private
+ * @param {Object} object The object to query.
+ * @param {Array|string} path The path of the property to get.
+ * @returns {*} Returns the resolved value.
+ */
+function baseGet(object, path) {
+  path = castPath(path, object);
+
+  var index = 0,
+      length = path.length;
+
+  while (object != null && index < length) {
+    object = object[toKey(path[index++])];
+  }
+  return (index && index == length) ? object : undefined;
+}
+
+module.exports = baseGet;
+
+
+/***/ }),
+
 /***/ "65f0":
 /***/ (function(module, exports, __webpack_require__) {
 
@@ -65441,6 +69646,196 @@ module.exports = function (originalArray, length) {
 /* harmony import */ var _node_modules_mini_css_extract_plugin_dist_loader_js_ref_8_oneOf_1_0_node_modules_css_loader_dist_cjs_js_ref_8_oneOf_1_1_node_modules_vue_loader_lib_loaders_stylePostLoader_js_node_modules_postcss_loader_src_index_js_ref_8_oneOf_1_2_node_modules_sass_loader_dist_cjs_js_ref_8_oneOf_1_3_node_modules_cache_loader_dist_cjs_js_ref_0_0_node_modules_vue_loader_lib_index_js_vue_loader_options_GraphContextMenu_vue_vue_type_style_index_0_lang_scss___WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__("6d37");
 /* harmony import */ var _node_modules_mini_css_extract_plugin_dist_loader_js_ref_8_oneOf_1_0_node_modules_css_loader_dist_cjs_js_ref_8_oneOf_1_1_node_modules_vue_loader_lib_loaders_stylePostLoader_js_node_modules_postcss_loader_src_index_js_ref_8_oneOf_1_2_node_modules_sass_loader_dist_cjs_js_ref_8_oneOf_1_3_node_modules_cache_loader_dist_cjs_js_ref_0_0_node_modules_vue_loader_lib_index_js_vue_loader_options_GraphContextMenu_vue_vue_type_style_index_0_lang_scss___WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(_node_modules_mini_css_extract_plugin_dist_loader_js_ref_8_oneOf_1_0_node_modules_css_loader_dist_cjs_js_ref_8_oneOf_1_1_node_modules_vue_loader_lib_loaders_stylePostLoader_js_node_modules_postcss_loader_src_index_js_ref_8_oneOf_1_2_node_modules_sass_loader_dist_cjs_js_ref_8_oneOf_1_3_node_modules_cache_loader_dist_cjs_js_ref_0_0_node_modules_vue_loader_lib_index_js_vue_loader_options_GraphContextMenu_vue_vue_type_style_index_0_lang_scss___WEBPACK_IMPORTED_MODULE_0__);
 /* unused harmony reexport * */
+
+
+/***/ }),
+
+/***/ "6736":
+/***/ (function(module, exports, __webpack_require__) {
+
+var _ = __webpack_require__("33de");
+
+module.exports = floydWarshall;
+
+var DEFAULT_WEIGHT_FUNC = _.constant(1);
+
+function floydWarshall(g, weightFn, edgeFn) {
+  return runFloydWarshall(g,
+    weightFn || DEFAULT_WEIGHT_FUNC,
+    edgeFn || function(v) { return g.outEdges(v); });
+}
+
+function runFloydWarshall(g, weightFn, edgeFn) {
+  var results = {};
+  var nodes = g.nodes();
+
+  nodes.forEach(function(v) {
+    results[v] = {};
+    results[v][v] = { distance: 0 };
+    nodes.forEach(function(w) {
+      if (v !== w) {
+        results[v][w] = { distance: Number.POSITIVE_INFINITY };
+      }
+    });
+    edgeFn(v).forEach(function(edge) {
+      var w = edge.v === v ? edge.w : edge.v;
+      var d = weightFn(edge);
+      results[v][w] = { distance: d, predecessor: v };
+    });
+  });
+
+  nodes.forEach(function(k) {
+    var rowK = results[k];
+    nodes.forEach(function(i) {
+      var rowI = results[i];
+      nodes.forEach(function(j) {
+        var ik = rowI[k];
+        var kj = rowK[j];
+        var ij = rowI[j];
+        var altDistance = ik.distance + kj.distance;
+        if (altDistance < ij.distance) {
+          ij.distance = altDistance;
+          ij.predecessor = kj.predecessor;
+        }
+      });
+    });
+  });
+
+  return results;
+}
+
+
+/***/ }),
+
+/***/ "6747":
+/***/ (function(module, exports) {
+
+/**
+ * Checks if `value` is classified as an `Array` object.
+ *
+ * @static
+ * @memberOf _
+ * @since 0.1.0
+ * @category Lang
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if `value` is an array, else `false`.
+ * @example
+ *
+ * _.isArray([1, 2, 3]);
+ * // => true
+ *
+ * _.isArray(document.body.children);
+ * // => false
+ *
+ * _.isArray('abc');
+ * // => false
+ *
+ * _.isArray(_.noop);
+ * // => false
+ */
+var isArray = Array.isArray;
+
+module.exports = isArray;
+
+
+/***/ }),
+
+/***/ "6751":
+/***/ (function(module, exports, __webpack_require__) {
+
+var asciiSize = __webpack_require__("c9ca"),
+    hasUnicode = __webpack_require__("aaec"),
+    unicodeSize = __webpack_require__("ab81");
+
+/**
+ * Gets the number of symbols in `string`.
+ *
+ * @private
+ * @param {string} string The string to inspect.
+ * @returns {number} Returns the string size.
+ */
+function stringSize(string) {
+  return hasUnicode(string)
+    ? unicodeSize(string)
+    : asciiSize(string);
+}
+
+module.exports = stringSize;
+
+
+/***/ }),
+
+/***/ "67ca":
+/***/ (function(module, exports, __webpack_require__) {
+
+var assocIndexOf = __webpack_require__("cb5a");
+
+/**
+ * Sets the list cache `key` to `value`.
+ *
+ * @private
+ * @name set
+ * @memberOf ListCache
+ * @param {string} key The key of the value to set.
+ * @param {*} value The value to set.
+ * @returns {Object} Returns the list cache instance.
+ */
+function listCacheSet(key, value) {
+  var data = this.__data__,
+      index = assocIndexOf(data, key);
+
+  if (index < 0) {
+    ++this.size;
+    data.push([key, value]);
+  } else {
+    data[index][1] = value;
+  }
+  return this;
+}
+
+module.exports = listCacheSet;
+
+
+/***/ }),
+
+/***/ "69d5":
+/***/ (function(module, exports, __webpack_require__) {
+
+var assocIndexOf = __webpack_require__("cb5a");
+
+/** Used for built-in method references. */
+var arrayProto = Array.prototype;
+
+/** Built-in value references. */
+var splice = arrayProto.splice;
+
+/**
+ * Removes `key` and its value from the list cache.
+ *
+ * @private
+ * @name delete
+ * @memberOf ListCache
+ * @param {string} key The key of the value to remove.
+ * @returns {boolean} Returns `true` if the entry was removed, else `false`.
+ */
+function listCacheDelete(key) {
+  var data = this.__data__,
+      index = assocIndexOf(data, key);
+
+  if (index < 0) {
+    return false;
+  }
+  var lastIndex = data.length - 1;
+  if (index == lastIndex) {
+    data.pop();
+  } else {
+    splice.call(data, index, 1);
+  }
+  --this.size;
+  return true;
+}
+
+module.exports = listCacheDelete;
 
 
 /***/ }),
@@ -65519,6 +69914,106 @@ module.exports = {
 
 /***/ }),
 
+/***/ "6a22":
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+/* harmony import */ var _node_modules_mini_css_extract_plugin_dist_loader_js_ref_8_oneOf_1_0_node_modules_css_loader_dist_cjs_js_ref_8_oneOf_1_1_node_modules_vue_loader_lib_loaders_stylePostLoader_js_node_modules_postcss_loader_src_index_js_ref_8_oneOf_1_2_node_modules_sass_loader_dist_cjs_js_ref_8_oneOf_1_3_node_modules_cache_loader_dist_cjs_js_ref_0_0_node_modules_vue_loader_lib_index_js_vue_loader_options_GraphEdge_vue_vue_type_style_index_0_lang_scss___WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__("c377");
+/* harmony import */ var _node_modules_mini_css_extract_plugin_dist_loader_js_ref_8_oneOf_1_0_node_modules_css_loader_dist_cjs_js_ref_8_oneOf_1_1_node_modules_vue_loader_lib_loaders_stylePostLoader_js_node_modules_postcss_loader_src_index_js_ref_8_oneOf_1_2_node_modules_sass_loader_dist_cjs_js_ref_8_oneOf_1_3_node_modules_cache_loader_dist_cjs_js_ref_0_0_node_modules_vue_loader_lib_index_js_vue_loader_options_GraphEdge_vue_vue_type_style_index_0_lang_scss___WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(_node_modules_mini_css_extract_plugin_dist_loader_js_ref_8_oneOf_1_0_node_modules_css_loader_dist_cjs_js_ref_8_oneOf_1_1_node_modules_vue_loader_lib_loaders_stylePostLoader_js_node_modules_postcss_loader_src_index_js_ref_8_oneOf_1_2_node_modules_sass_loader_dist_cjs_js_ref_8_oneOf_1_3_node_modules_cache_loader_dist_cjs_js_ref_0_0_node_modules_vue_loader_lib_index_js_vue_loader_options_GraphEdge_vue_vue_type_style_index_0_lang_scss___WEBPACK_IMPORTED_MODULE_0__);
+/* unused harmony reexport * */
+
+
+/***/ }),
+
+/***/ "6a5c":
+/***/ (function(module, exports, __webpack_require__) {
+
+var arrayMap = __webpack_require__("7948"),
+    baseGet = __webpack_require__("656b"),
+    baseIteratee = __webpack_require__("badf"),
+    baseMap = __webpack_require__("97d3"),
+    baseSortBy = __webpack_require__("d4b2"),
+    baseUnary = __webpack_require__("b047"),
+    compareMultiple = __webpack_require__("2164"),
+    identity = __webpack_require__("cd9d"),
+    isArray = __webpack_require__("6747");
+
+/**
+ * The base implementation of `_.orderBy` without param guards.
+ *
+ * @private
+ * @param {Array|Object} collection The collection to iterate over.
+ * @param {Function[]|Object[]|string[]} iteratees The iteratees to sort by.
+ * @param {string[]} orders The sort orders of `iteratees`.
+ * @returns {Array} Returns the new sorted array.
+ */
+function baseOrderBy(collection, iteratees, orders) {
+  if (iteratees.length) {
+    iteratees = arrayMap(iteratees, function(iteratee) {
+      if (isArray(iteratee)) {
+        return function(value) {
+          return baseGet(value, iteratee.length === 1 ? iteratee[0] : iteratee);
+        }
+      }
+      return iteratee;
+    });
+  } else {
+    iteratees = [identity];
+  }
+
+  var index = -1;
+  iteratees = arrayMap(iteratees, baseUnary(baseIteratee));
+
+  var result = baseMap(collection, function(value, key, collection) {
+    var criteria = arrayMap(iteratees, function(iteratee) {
+      return iteratee(value);
+    });
+    return { 'criteria': criteria, 'index': ++index, 'value': value };
+  });
+
+  return baseSortBy(result, function(object, other) {
+    return compareMultiple(object, other, orders);
+  });
+}
+
+module.exports = baseOrderBy;
+
+
+/***/ }),
+
+/***/ "6ac0":
+/***/ (function(module, exports) {
+
+/**
+ * A specialized version of `_.reduce` for arrays without support for
+ * iteratee shorthands.
+ *
+ * @private
+ * @param {Array} [array] The array to iterate over.
+ * @param {Function} iteratee The function invoked per iteration.
+ * @param {*} [accumulator] The initial value.
+ * @param {boolean} [initAccum] Specify using the first element of `array` as
+ *  the initial value.
+ * @returns {*} Returns the accumulated value.
+ */
+function arrayReduce(array, iteratee, accumulator, initAccum) {
+  var index = -1,
+      length = array == null ? 0 : array.length;
+
+  if (initAccum && length) {
+    accumulator = array[++index];
+  }
+  while (++index < length) {
+    accumulator = iteratee(accumulator, array[index], index, array);
+  }
+  return accumulator;
+}
+
+module.exports = arrayReduce;
+
+
+/***/ }),
+
 /***/ "6bbf":
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
@@ -65526,6 +70021,54 @@ module.exports = {
 /* harmony import */ var _node_modules_mini_css_extract_plugin_dist_loader_js_ref_8_oneOf_1_0_node_modules_css_loader_dist_cjs_js_ref_8_oneOf_1_1_node_modules_vue_loader_lib_loaders_stylePostLoader_js_node_modules_postcss_loader_src_index_js_ref_8_oneOf_1_2_node_modules_sass_loader_dist_cjs_js_ref_8_oneOf_1_3_node_modules_cache_loader_dist_cjs_js_ref_0_0_node_modules_vue_loader_lib_index_js_vue_loader_options_RadioField_vue_vue_type_style_index_0_lang_scss___WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__("4c04");
 /* harmony import */ var _node_modules_mini_css_extract_plugin_dist_loader_js_ref_8_oneOf_1_0_node_modules_css_loader_dist_cjs_js_ref_8_oneOf_1_1_node_modules_vue_loader_lib_loaders_stylePostLoader_js_node_modules_postcss_loader_src_index_js_ref_8_oneOf_1_2_node_modules_sass_loader_dist_cjs_js_ref_8_oneOf_1_3_node_modules_cache_loader_dist_cjs_js_ref_0_0_node_modules_vue_loader_lib_index_js_vue_loader_options_RadioField_vue_vue_type_style_index_0_lang_scss___WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(_node_modules_mini_css_extract_plugin_dist_loader_js_ref_8_oneOf_1_0_node_modules_css_loader_dist_cjs_js_ref_8_oneOf_1_1_node_modules_vue_loader_lib_loaders_stylePostLoader_js_node_modules_postcss_loader_src_index_js_ref_8_oneOf_1_2_node_modules_sass_loader_dist_cjs_js_ref_8_oneOf_1_3_node_modules_cache_loader_dist_cjs_js_ref_0_0_node_modules_vue_loader_lib_index_js_vue_loader_options_RadioField_vue_vue_type_style_index_0_lang_scss___WEBPACK_IMPORTED_MODULE_0__);
 /* unused harmony reexport * */
+
+
+/***/ }),
+
+/***/ "6cd4":
+/***/ (function(module, exports, __webpack_require__) {
+
+var arrayEach = __webpack_require__("8057"),
+    baseEach = __webpack_require__("48a0"),
+    castFunction = __webpack_require__("1304"),
+    isArray = __webpack_require__("6747");
+
+/**
+ * Iterates over elements of `collection` and invokes `iteratee` for each element.
+ * The iteratee is invoked with three arguments: (value, index|key, collection).
+ * Iteratee functions may exit iteration early by explicitly returning `false`.
+ *
+ * **Note:** As with other "Collections" methods, objects with a "length"
+ * property are iterated like arrays. To avoid this behavior use `_.forIn`
+ * or `_.forOwn` for object iteration.
+ *
+ * @static
+ * @memberOf _
+ * @since 0.1.0
+ * @alias each
+ * @category Collection
+ * @param {Array|Object} collection The collection to iterate over.
+ * @param {Function} [iteratee=_.identity] The function invoked per iteration.
+ * @returns {Array|Object} Returns `collection`.
+ * @see _.forEachRight
+ * @example
+ *
+ * _.forEach([1, 2], function(value) {
+ *   console.log(value);
+ * });
+ * // => Logs `1` then `2`.
+ *
+ * _.forEach({ 'a': 1, 'b': 2 }, function(value, key) {
+ *   console.log(key);
+ * });
+ * // => Logs 'a' then 'b' (iteration order is not guaranteed).
+ */
+function forEach(collection, iteratee) {
+  var func = isArray(collection) ? arrayEach : baseEach;
+  return func(collection, castFunction(iteratee));
+}
+
+module.exports = forEach;
 
 
 /***/ }),
@@ -65695,6 +70238,137 @@ var TEMPLATE = String(String).split('String');
 
 /***/ }),
 
+/***/ "6f6c":
+/***/ (function(module, exports) {
+
+/** Used to match `RegExp` flags from their coerced string values. */
+var reFlags = /\w*$/;
+
+/**
+ * Creates a clone of `regexp`.
+ *
+ * @private
+ * @param {Object} regexp The regexp to clone.
+ * @returns {Object} Returns the cloned regexp.
+ */
+function cloneRegExp(regexp) {
+  var result = new regexp.constructor(regexp.source, reFlags.exec(regexp));
+  result.lastIndex = regexp.lastIndex;
+  return result;
+}
+
+module.exports = cloneRegExp;
+
+
+/***/ }),
+
+/***/ "6f9c":
+/***/ (function(module, exports, __webpack_require__) {
+
+/* global window */
+
+var lodash;
+
+if (true) {
+  try {
+    lodash = {
+      cloneDeep: __webpack_require__("0644"),
+      constant: __webpack_require__("72f0"),
+      defaults: __webpack_require__("95ae"),
+      each: __webpack_require__("c641"),
+      filter: __webpack_require__("9380"),
+      find: __webpack_require__("2769"),
+      flatten: __webpack_require__("4d8c"),
+      forEach: __webpack_require__("6cd4"),
+      forIn: __webpack_require__("9948"),
+      has:  __webpack_require__("3852"),
+      isUndefined: __webpack_require__("4cfe"),
+      last: __webpack_require__("4416"),
+      map: __webpack_require__("dd61"),
+      mapValues: __webpack_require__("9e86"),
+      max: __webpack_require__("abdd"),
+      merge: __webpack_require__("42454"),
+      min: __webpack_require__("004e"),
+      minBy: __webpack_require__("80f6"),
+      now: __webpack_require__("408c"),
+      pick: __webpack_require__("2593"),
+      range: __webpack_require__("5a3a"),
+      reduce: __webpack_require__("c5a2"),
+      sortBy: __webpack_require__("c707"),
+      uniqueId: __webpack_require__("98dc"),
+      values: __webpack_require__("3ff1"),
+      zipObject: __webpack_require__("5492"),
+    };
+  } catch (e) {
+    // continue regardless of error
+  }
+}
+
+if (!lodash) {
+  lodash = window._;
+}
+
+module.exports = lodash;
+
+
+/***/ }),
+
+/***/ "6fcd":
+/***/ (function(module, exports, __webpack_require__) {
+
+var baseTimes = __webpack_require__("50d8"),
+    isArguments = __webpack_require__("d370"),
+    isArray = __webpack_require__("6747"),
+    isBuffer = __webpack_require__("0d24"),
+    isIndex = __webpack_require__("c098"),
+    isTypedArray = __webpack_require__("73ac");
+
+/** Used for built-in method references. */
+var objectProto = Object.prototype;
+
+/** Used to check objects for own properties. */
+var hasOwnProperty = objectProto.hasOwnProperty;
+
+/**
+ * Creates an array of the enumerable property names of the array-like `value`.
+ *
+ * @private
+ * @param {*} value The value to query.
+ * @param {boolean} inherited Specify returning inherited property names.
+ * @returns {Array} Returns the array of property names.
+ */
+function arrayLikeKeys(value, inherited) {
+  var isArr = isArray(value),
+      isArg = !isArr && isArguments(value),
+      isBuff = !isArr && !isArg && isBuffer(value),
+      isType = !isArr && !isArg && !isBuff && isTypedArray(value),
+      skipIndexes = isArr || isArg || isBuff || isType,
+      result = skipIndexes ? baseTimes(value.length, String) : [],
+      length = result.length;
+
+  for (var key in value) {
+    if ((inherited || hasOwnProperty.call(value, key)) &&
+        !(skipIndexes && (
+           // Safari 9 has enumerable `arguments.length` in strict mode.
+           key == 'length' ||
+           // Node.js 0.10 has enumerable non-index properties on buffers.
+           (isBuff && (key == 'offset' || key == 'parent')) ||
+           // PhantomJS 2 has enumerable non-index properties on typed arrays.
+           (isType && (key == 'buffer' || key == 'byteLength' || key == 'byteOffset')) ||
+           // Skip index properties.
+           isIndex(key, length)
+        ))) {
+      result.push(key);
+    }
+  }
+  return result;
+}
+
+module.exports = arrayLikeKeys;
+
+
+/***/ }),
+
 /***/ "7037":
 /***/ (function(module, exports, __webpack_require__) {
 
@@ -65761,10 +70435,100 @@ module.exports = function ($this, dummy, Wrapper) {
 
 /***/ }),
 
+/***/ "72af":
+/***/ (function(module, exports, __webpack_require__) {
+
+var createBaseFor = __webpack_require__("99cd");
+
+/**
+ * The base implementation of `baseForOwn` which iterates over `object`
+ * properties returned by `keysFunc` and invokes `iteratee` for each property.
+ * Iteratee functions may exit iteration early by explicitly returning `false`.
+ *
+ * @private
+ * @param {Object} object The object to iterate over.
+ * @param {Function} iteratee The function invoked per iteration.
+ * @param {Function} keysFunc The function to get the keys of `object`.
+ * @returns {Object} Returns `object`.
+ */
+var baseFor = createBaseFor();
+
+module.exports = baseFor;
+
+
+/***/ }),
+
+/***/ "72f0":
+/***/ (function(module, exports) {
+
+/**
+ * Creates a function that returns `value`.
+ *
+ * @static
+ * @memberOf _
+ * @since 2.4.0
+ * @category Util
+ * @param {*} value The value to return from the new function.
+ * @returns {Function} Returns the new constant function.
+ * @example
+ *
+ * var objects = _.times(2, _.constant({ 'a': 1 }));
+ *
+ * console.log(objects);
+ * // => [{ 'a': 1 }, { 'a': 1 }]
+ *
+ * console.log(objects[0] === objects[1]);
+ * // => true
+ */
+function constant(value) {
+  return function() {
+    return value;
+  };
+}
+
+module.exports = constant;
+
+
+/***/ }),
+
 /***/ "7346":
 /***/ (function(module, exports, __webpack_require__) {
 
 // extracted by mini-css-extract-plugin
+
+/***/ }),
+
+/***/ "73ac":
+/***/ (function(module, exports, __webpack_require__) {
+
+var baseIsTypedArray = __webpack_require__("743f"),
+    baseUnary = __webpack_require__("b047"),
+    nodeUtil = __webpack_require__("99d3");
+
+/* Node.js helper references. */
+var nodeIsTypedArray = nodeUtil && nodeUtil.isTypedArray;
+
+/**
+ * Checks if `value` is classified as a typed array.
+ *
+ * @static
+ * @memberOf _
+ * @since 3.0.0
+ * @category Lang
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if `value` is a typed array, else `false`.
+ * @example
+ *
+ * _.isTypedArray(new Uint8Array);
+ * // => true
+ *
+ * _.isTypedArray([]);
+ * // => false
+ */
+var isTypedArray = nodeIsTypedArray ? baseUnary(nodeIsTypedArray) : baseIsTypedArray;
+
+module.exports = isTypedArray;
+
 
 /***/ }),
 
@@ -65790,6 +70554,73 @@ exports.f = Object.getOwnPropertySymbols;
 
 /***/ }),
 
+/***/ "743f":
+/***/ (function(module, exports, __webpack_require__) {
+
+var baseGetTag = __webpack_require__("3729"),
+    isLength = __webpack_require__("b218"),
+    isObjectLike = __webpack_require__("1310");
+
+/** `Object#toString` result references. */
+var argsTag = '[object Arguments]',
+    arrayTag = '[object Array]',
+    boolTag = '[object Boolean]',
+    dateTag = '[object Date]',
+    errorTag = '[object Error]',
+    funcTag = '[object Function]',
+    mapTag = '[object Map]',
+    numberTag = '[object Number]',
+    objectTag = '[object Object]',
+    regexpTag = '[object RegExp]',
+    setTag = '[object Set]',
+    stringTag = '[object String]',
+    weakMapTag = '[object WeakMap]';
+
+var arrayBufferTag = '[object ArrayBuffer]',
+    dataViewTag = '[object DataView]',
+    float32Tag = '[object Float32Array]',
+    float64Tag = '[object Float64Array]',
+    int8Tag = '[object Int8Array]',
+    int16Tag = '[object Int16Array]',
+    int32Tag = '[object Int32Array]',
+    uint8Tag = '[object Uint8Array]',
+    uint8ClampedTag = '[object Uint8ClampedArray]',
+    uint16Tag = '[object Uint16Array]',
+    uint32Tag = '[object Uint32Array]';
+
+/** Used to identify `toStringTag` values of typed arrays. */
+var typedArrayTags = {};
+typedArrayTags[float32Tag] = typedArrayTags[float64Tag] =
+typedArrayTags[int8Tag] = typedArrayTags[int16Tag] =
+typedArrayTags[int32Tag] = typedArrayTags[uint8Tag] =
+typedArrayTags[uint8ClampedTag] = typedArrayTags[uint16Tag] =
+typedArrayTags[uint32Tag] = true;
+typedArrayTags[argsTag] = typedArrayTags[arrayTag] =
+typedArrayTags[arrayBufferTag] = typedArrayTags[boolTag] =
+typedArrayTags[dataViewTag] = typedArrayTags[dateTag] =
+typedArrayTags[errorTag] = typedArrayTags[funcTag] =
+typedArrayTags[mapTag] = typedArrayTags[numberTag] =
+typedArrayTags[objectTag] = typedArrayTags[regexpTag] =
+typedArrayTags[setTag] = typedArrayTags[stringTag] =
+typedArrayTags[weakMapTag] = false;
+
+/**
+ * The base implementation of `_.isTypedArray` without Node.js optimizations.
+ *
+ * @private
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if `value` is a typed array, else `false`.
+ */
+function baseIsTypedArray(value) {
+  return isObjectLike(value) &&
+    isLength(value.length) && !!typedArrayTags[baseGetTag(value)];
+}
+
+module.exports = baseIsTypedArray;
+
+
+/***/ }),
+
 /***/ "746f":
 /***/ (function(module, exports, __webpack_require__) {
 
@@ -65804,6 +70635,385 @@ module.exports = function (NAME) {
     value: wrappedWellKnownSymbolModule.f(NAME)
   });
 };
+
+
+/***/ }),
+
+/***/ "74e8":
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+var _ = __webpack_require__("6f9c");
+var feasibleTree = __webpack_require__("1845");
+var slack = __webpack_require__("e849").slack;
+var initRank = __webpack_require__("e849").longestPath;
+var preorder = __webpack_require__("17d5").alg.preorder;
+var postorder = __webpack_require__("17d5").alg.postorder;
+var simplify = __webpack_require__("b50e").simplify;
+
+module.exports = networkSimplex;
+
+// Expose some internals for testing purposes
+networkSimplex.initLowLimValues = initLowLimValues;
+networkSimplex.initCutValues = initCutValues;
+networkSimplex.calcCutValue = calcCutValue;
+networkSimplex.leaveEdge = leaveEdge;
+networkSimplex.enterEdge = enterEdge;
+networkSimplex.exchangeEdges = exchangeEdges;
+
+/*
+ * The network simplex algorithm assigns ranks to each node in the input graph
+ * and iteratively improves the ranking to reduce the length of edges.
+ *
+ * Preconditions:
+ *
+ *    1. The input graph must be a DAG.
+ *    2. All nodes in the graph must have an object value.
+ *    3. All edges in the graph must have "minlen" and "weight" attributes.
+ *
+ * Postconditions:
+ *
+ *    1. All nodes in the graph will have an assigned "rank" attribute that has
+ *       been optimized by the network simplex algorithm. Ranks start at 0.
+ *
+ *
+ * A rough sketch of the algorithm is as follows:
+ *
+ *    1. Assign initial ranks to each node. We use the longest path algorithm,
+ *       which assigns ranks to the lowest position possible. In general this
+ *       leads to very wide bottom ranks and unnecessarily long edges.
+ *    2. Construct a feasible tight tree. A tight tree is one such that all
+ *       edges in the tree have no slack (difference between length of edge
+ *       and minlen for the edge). This by itself greatly improves the assigned
+ *       rankings by shorting edges.
+ *    3. Iteratively find edges that have negative cut values. Generally a
+ *       negative cut value indicates that the edge could be removed and a new
+ *       tree edge could be added to produce a more compact graph.
+ *
+ * Much of the algorithms here are derived from Gansner, et al., "A Technique
+ * for Drawing Directed Graphs." The structure of the file roughly follows the
+ * structure of the overall algorithm.
+ */
+function networkSimplex(g) {
+  g = simplify(g);
+  initRank(g);
+  var t = feasibleTree(g);
+  initLowLimValues(t);
+  initCutValues(t, g);
+
+  var e, f;
+  while ((e = leaveEdge(t))) {
+    f = enterEdge(t, g, e);
+    exchangeEdges(t, g, e, f);
+  }
+}
+
+/*
+ * Initializes cut values for all edges in the tree.
+ */
+function initCutValues(t, g) {
+  var vs = postorder(t, t.nodes());
+  vs = vs.slice(0, vs.length - 1);
+  _.forEach(vs, function(v) {
+    assignCutValue(t, g, v);
+  });
+}
+
+function assignCutValue(t, g, child) {
+  var childLab = t.node(child);
+  var parent = childLab.parent;
+  t.edge(child, parent).cutvalue = calcCutValue(t, g, child);
+}
+
+/*
+ * Given the tight tree, its graph, and a child in the graph calculate and
+ * return the cut value for the edge between the child and its parent.
+ */
+function calcCutValue(t, g, child) {
+  var childLab = t.node(child);
+  var parent = childLab.parent;
+  // True if the child is on the tail end of the edge in the directed graph
+  var childIsTail = true;
+  // The graph's view of the tree edge we're inspecting
+  var graphEdge = g.edge(child, parent);
+  // The accumulated cut value for the edge between this node and its parent
+  var cutValue = 0;
+
+  if (!graphEdge) {
+    childIsTail = false;
+    graphEdge = g.edge(parent, child);
+  }
+
+  cutValue = graphEdge.weight;
+
+  _.forEach(g.nodeEdges(child), function(e) {
+    var isOutEdge = e.v === child,
+      other = isOutEdge ? e.w : e.v;
+
+    if (other !== parent) {
+      var pointsToHead = isOutEdge === childIsTail,
+        otherWeight = g.edge(e).weight;
+
+      cutValue += pointsToHead ? otherWeight : -otherWeight;
+      if (isTreeEdge(t, child, other)) {
+        var otherCutValue = t.edge(child, other).cutvalue;
+        cutValue += pointsToHead ? -otherCutValue : otherCutValue;
+      }
+    }
+  });
+
+  return cutValue;
+}
+
+function initLowLimValues(tree, root) {
+  if (arguments.length < 2) {
+    root = tree.nodes()[0];
+  }
+  dfsAssignLowLim(tree, {}, 1, root);
+}
+
+function dfsAssignLowLim(tree, visited, nextLim, v, parent) {
+  var low = nextLim;
+  var label = tree.node(v);
+
+  visited[v] = true;
+  _.forEach(tree.neighbors(v), function(w) {
+    if (!_.has(visited, w)) {
+      nextLim = dfsAssignLowLim(tree, visited, nextLim, w, v);
+    }
+  });
+
+  label.low = low;
+  label.lim = nextLim++;
+  if (parent) {
+    label.parent = parent;
+  } else {
+    // TODO should be able to remove this when we incrementally update low lim
+    delete label.parent;
+  }
+
+  return nextLim;
+}
+
+function leaveEdge(tree) {
+  return _.find(tree.edges(), function(e) {
+    return tree.edge(e).cutvalue < 0;
+  });
+}
+
+function enterEdge(t, g, edge) {
+  var v = edge.v;
+  var w = edge.w;
+
+  // For the rest of this function we assume that v is the tail and w is the
+  // head, so if we don't have this edge in the graph we should flip it to
+  // match the correct orientation.
+  if (!g.hasEdge(v, w)) {
+    v = edge.w;
+    w = edge.v;
+  }
+
+  var vLabel = t.node(v);
+  var wLabel = t.node(w);
+  var tailLabel = vLabel;
+  var flip = false;
+
+  // If the root is in the tail of the edge then we need to flip the logic that
+  // checks for the head and tail nodes in the candidates function below.
+  if (vLabel.lim > wLabel.lim) {
+    tailLabel = wLabel;
+    flip = true;
+  }
+
+  var candidates = _.filter(g.edges(), function(edge) {
+    return flip === isDescendant(t, t.node(edge.v), tailLabel) &&
+           flip !== isDescendant(t, t.node(edge.w), tailLabel);
+  });
+
+  return _.minBy(candidates, function(edge) { return slack(g, edge); });
+}
+
+function exchangeEdges(t, g, e, f) {
+  var v = e.v;
+  var w = e.w;
+  t.removeEdge(v, w);
+  t.setEdge(f.v, f.w, {});
+  initLowLimValues(t);
+  initCutValues(t, g);
+  updateRanks(t, g);
+}
+
+function updateRanks(t, g) {
+  var root = _.find(t.nodes(), function(v) { return !g.node(v).parent; });
+  var vs = preorder(t, root);
+  vs = vs.slice(1);
+  _.forEach(vs, function(v) {
+    var parent = t.node(v).parent,
+      edge = g.edge(v, parent),
+      flipped = false;
+
+    if (!edge) {
+      edge = g.edge(parent, v);
+      flipped = true;
+    }
+
+    g.node(v).rank = g.node(parent).rank + (flipped ? edge.minlen : -edge.minlen);
+  });
+}
+
+/*
+ * Returns true if the edge is in the tree.
+ */
+function isTreeEdge(tree, u, v) {
+  return tree.hasEdge(u, v);
+}
+
+/*
+ * Returns true if the specified node is descendant of the root node per the
+ * assigned low and lim attributes in the tree.
+ */
+function isDescendant(tree, vLabel, rootLabel) {
+  return rootLabel.low <= vLabel.lim && vLabel.lim <= rootLabel.lim;
+}
+
+
+/***/ }),
+
+/***/ "750a":
+/***/ (function(module, exports, __webpack_require__) {
+
+var Set = __webpack_require__("c869"),
+    noop = __webpack_require__("bcdf"),
+    setToArray = __webpack_require__("ac41");
+
+/** Used as references for various `Number` constants. */
+var INFINITY = 1 / 0;
+
+/**
+ * Creates a set object of `values`.
+ *
+ * @private
+ * @param {Array} values The values to add to the set.
+ * @returns {Object} Returns the new set.
+ */
+var createSet = !(Set && (1 / setToArray(new Set([,-0]))[1]) == INFINITY) ? noop : function(values) {
+  return new Set(values);
+};
+
+module.exports = createSet;
+
+
+/***/ }),
+
+/***/ "7530":
+/***/ (function(module, exports, __webpack_require__) {
+
+var isObject = __webpack_require__("1a8c");
+
+/** Built-in value references. */
+var objectCreate = Object.create;
+
+/**
+ * The base implementation of `_.create` without support for assigning
+ * properties to the created object.
+ *
+ * @private
+ * @param {Object} proto The object to inherit from.
+ * @returns {Object} Returns the new object.
+ */
+var baseCreate = (function() {
+  function object() {}
+  return function(proto) {
+    if (!isObject(proto)) {
+      return {};
+    }
+    if (objectCreate) {
+      return objectCreate(proto);
+    }
+    object.prototype = proto;
+    var result = new object;
+    object.prototype = undefined;
+    return result;
+  };
+}());
+
+module.exports = baseCreate;
+
+
+/***/ }),
+
+/***/ "76dd":
+/***/ (function(module, exports, __webpack_require__) {
+
+var baseToString = __webpack_require__("ce86");
+
+/**
+ * Converts `value` to a string. An empty string is returned for `null`
+ * and `undefined` values. The sign of `-0` is preserved.
+ *
+ * @static
+ * @memberOf _
+ * @since 4.0.0
+ * @category Lang
+ * @param {*} value The value to convert.
+ * @returns {string} Returns the converted string.
+ * @example
+ *
+ * _.toString(null);
+ * // => ''
+ *
+ * _.toString(-0);
+ * // => '-0'
+ *
+ * _.toString([1, 2, 3]);
+ * // => '1,2,3'
+ */
+function toString(value) {
+  return value == null ? '' : baseToString(value);
+}
+
+module.exports = toString;
+
+
+/***/ }),
+
+/***/ "76e9":
+/***/ (function(module, exports, __webpack_require__) {
+
+var isSymbol = __webpack_require__("ffd6");
+
+/**
+ * The base implementation of methods like `_.max` and `_.min` which accepts a
+ * `comparator` to determine the extremum value.
+ *
+ * @private
+ * @param {Array} array The array to iterate over.
+ * @param {Function} iteratee The iteratee invoked per iteration.
+ * @param {Function} comparator The comparator used to compare values.
+ * @returns {*} Returns the extremum value.
+ */
+function baseExtremum(array, iteratee, comparator) {
+  var index = -1,
+      length = array.length;
+
+  while (++index < length) {
+    var value = array[index],
+        current = iteratee(value);
+
+    if (current != null && (computed === undefined
+          ? (current === current && !isSymbol(current))
+          : comparator(current, computed)
+        )) {
+      var computed = current,
+          result = value;
+    }
+  }
+  return result;
+}
+
+module.exports = baseExtremum;
 
 
 /***/ }),
@@ -65825,6 +71035,478 @@ module.exports = [
 
 /***/ }),
 
+/***/ "7948":
+/***/ (function(module, exports) {
+
+/**
+ * A specialized version of `_.map` for arrays without support for iteratee
+ * shorthands.
+ *
+ * @private
+ * @param {Array} [array] The array to iterate over.
+ * @param {Function} iteratee The function invoked per iteration.
+ * @returns {Array} Returns the new mapped array.
+ */
+function arrayMap(array, iteratee) {
+  var index = -1,
+      length = array == null ? 0 : array.length,
+      result = Array(length);
+
+  while (++index < length) {
+    result[index] = iteratee(array[index], index, array);
+  }
+  return result;
+}
+
+module.exports = arrayMap;
+
+
+/***/ }),
+
+/***/ "79bc":
+/***/ (function(module, exports, __webpack_require__) {
+
+var getNative = __webpack_require__("0b07"),
+    root = __webpack_require__("2b3e");
+
+/* Built-in method references that are verified to be native. */
+var Map = getNative(root, 'Map');
+
+module.exports = Map;
+
+
+/***/ }),
+
+/***/ "7a48":
+/***/ (function(module, exports, __webpack_require__) {
+
+var nativeCreate = __webpack_require__("6044");
+
+/** Used for built-in method references. */
+var objectProto = Object.prototype;
+
+/** Used to check objects for own properties. */
+var hasOwnProperty = objectProto.hasOwnProperty;
+
+/**
+ * Checks if a hash value for `key` exists.
+ *
+ * @private
+ * @name has
+ * @memberOf Hash
+ * @param {string} key The key of the entry to check.
+ * @returns {boolean} Returns `true` if an entry for `key` exists, else `false`.
+ */
+function hashHas(key) {
+  var data = this.__data__;
+  return nativeCreate ? (data[key] !== undefined) : hasOwnProperty.call(data, key);
+}
+
+module.exports = hashHas;
+
+
+/***/ }),
+
+/***/ "7a9c":
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+var _ = __webpack_require__("6f9c");
+var acyclic = __webpack_require__("a6d1");
+var normalize = __webpack_require__("45ee");
+var rank = __webpack_require__("0b8b");
+var normalizeRanks = __webpack_require__("b50e").normalizeRanks;
+var parentDummyChains = __webpack_require__("f1cd");
+var removeEmptyRanks = __webpack_require__("b50e").removeEmptyRanks;
+var nestingGraph = __webpack_require__("251a");
+var addBorderSegments = __webpack_require__("220e");
+var coordinateSystem = __webpack_require__("a864");
+var order = __webpack_require__("2a9f");
+var position = __webpack_require__("2325");
+var util = __webpack_require__("b50e");
+var Graph = __webpack_require__("17d5").Graph;
+
+module.exports = layout;
+
+function layout(g, opts) {
+  var time = opts && opts.debugTiming ? util.time : util.notime;
+  time("layout", function() {
+    var layoutGraph = 
+      time("  buildLayoutGraph", function() { return buildLayoutGraph(g); });
+    time("  runLayout",        function() { runLayout(layoutGraph, time); });
+    time("  updateInputGraph", function() { updateInputGraph(g, layoutGraph); });
+  });
+}
+
+function runLayout(g, time) {
+  time("    makeSpaceForEdgeLabels", function() { makeSpaceForEdgeLabels(g); });
+  time("    removeSelfEdges",        function() { removeSelfEdges(g); });
+  time("    acyclic",                function() { acyclic.run(g); });
+  time("    nestingGraph.run",       function() { nestingGraph.run(g); });
+  time("    rank",                   function() { rank(util.asNonCompoundGraph(g)); });
+  time("    injectEdgeLabelProxies", function() { injectEdgeLabelProxies(g); });
+  time("    removeEmptyRanks",       function() { removeEmptyRanks(g); });
+  time("    nestingGraph.cleanup",   function() { nestingGraph.cleanup(g); });
+  time("    normalizeRanks",         function() { normalizeRanks(g); });
+  time("    assignRankMinMax",       function() { assignRankMinMax(g); });
+  time("    removeEdgeLabelProxies", function() { removeEdgeLabelProxies(g); });
+  time("    normalize.run",          function() { normalize.run(g); });
+  time("    parentDummyChains",      function() { parentDummyChains(g); });
+  time("    addBorderSegments",      function() { addBorderSegments(g); });
+  time("    order",                  function() { order(g); });
+  time("    insertSelfEdges",        function() { insertSelfEdges(g); });
+  time("    adjustCoordinateSystem", function() { coordinateSystem.adjust(g); });
+  time("    position",               function() { position(g); });
+  time("    positionSelfEdges",      function() { positionSelfEdges(g); });
+  time("    removeBorderNodes",      function() { removeBorderNodes(g); });
+  time("    normalize.undo",         function() { normalize.undo(g); });
+  time("    fixupEdgeLabelCoords",   function() { fixupEdgeLabelCoords(g); });
+  time("    undoCoordinateSystem",   function() { coordinateSystem.undo(g); });
+  time("    translateGraph",         function() { translateGraph(g); });
+  time("    assignNodeIntersects",   function() { assignNodeIntersects(g); });
+  time("    reversePoints",          function() { reversePointsForReversedEdges(g); });
+  time("    acyclic.undo",           function() { acyclic.undo(g); });
+}
+
+/*
+ * Copies final layout information from the layout graph back to the input
+ * graph. This process only copies whitelisted attributes from the layout graph
+ * to the input graph, so it serves as a good place to determine what
+ * attributes can influence layout.
+ */
+function updateInputGraph(inputGraph, layoutGraph) {
+  _.forEach(inputGraph.nodes(), function(v) {
+    var inputLabel = inputGraph.node(v);
+    var layoutLabel = layoutGraph.node(v);
+
+    if (inputLabel) {
+      inputLabel.x = layoutLabel.x;
+      inputLabel.y = layoutLabel.y;
+
+      if (layoutGraph.children(v).length) {
+        inputLabel.width = layoutLabel.width;
+        inputLabel.height = layoutLabel.height;
+      }
+    }
+  });
+
+  _.forEach(inputGraph.edges(), function(e) {
+    var inputLabel = inputGraph.edge(e);
+    var layoutLabel = layoutGraph.edge(e);
+
+    inputLabel.points = layoutLabel.points;
+    if (_.has(layoutLabel, "x")) {
+      inputLabel.x = layoutLabel.x;
+      inputLabel.y = layoutLabel.y;
+    }
+  });
+
+  inputGraph.graph().width = layoutGraph.graph().width;
+  inputGraph.graph().height = layoutGraph.graph().height;
+}
+
+var graphNumAttrs = ["nodesep", "edgesep", "ranksep", "marginx", "marginy"];
+var graphDefaults = { ranksep: 50, edgesep: 20, nodesep: 50, rankdir: "tb" };
+var graphAttrs = ["acyclicer", "ranker", "rankdir", "align"];
+var nodeNumAttrs = ["width", "height"];
+var nodeDefaults = { width: 0, height: 0 };
+var edgeNumAttrs = ["minlen", "weight", "width", "height", "labeloffset"];
+var edgeDefaults = {
+  minlen: 1, weight: 1, width: 0, height: 0,
+  labeloffset: 10, labelpos: "r"
+};
+var edgeAttrs = ["labelpos"];
+
+/*
+ * Constructs a new graph from the input graph, which can be used for layout.
+ * This process copies only whitelisted attributes from the input graph to the
+ * layout graph. Thus this function serves as a good place to determine what
+ * attributes can influence layout.
+ */
+function buildLayoutGraph(inputGraph) {
+  var g = new Graph({ multigraph: true, compound: true });
+  var graph = canonicalize(inputGraph.graph());
+
+  g.setGraph(_.merge({},
+    graphDefaults,
+    selectNumberAttrs(graph, graphNumAttrs),
+    _.pick(graph, graphAttrs)));
+
+  _.forEach(inputGraph.nodes(), function(v) {
+    var node = canonicalize(inputGraph.node(v));
+    g.setNode(v, _.defaults(selectNumberAttrs(node, nodeNumAttrs), nodeDefaults));
+    g.setParent(v, inputGraph.parent(v));
+  });
+
+  _.forEach(inputGraph.edges(), function(e) {
+    var edge = canonicalize(inputGraph.edge(e));
+    g.setEdge(e, _.merge({},
+      edgeDefaults,
+      selectNumberAttrs(edge, edgeNumAttrs),
+      _.pick(edge, edgeAttrs)));
+  });
+
+  return g;
+}
+
+/*
+ * This idea comes from the Gansner paper: to account for edge labels in our
+ * layout we split each rank in half by doubling minlen and halving ranksep.
+ * Then we can place labels at these mid-points between nodes.
+ *
+ * We also add some minimal padding to the width to push the label for the edge
+ * away from the edge itself a bit.
+ */
+function makeSpaceForEdgeLabels(g) {
+  var graph = g.graph();
+  graph.ranksep /= 2;
+  _.forEach(g.edges(), function(e) {
+    var edge = g.edge(e);
+    edge.minlen *= 2;
+    if (edge.labelpos.toLowerCase() !== "c") {
+      if (graph.rankdir === "TB" || graph.rankdir === "BT") {
+        edge.width += edge.labeloffset;
+      } else {
+        edge.height += edge.labeloffset;
+      }
+    }
+  });
+}
+
+/*
+ * Creates temporary dummy nodes that capture the rank in which each edge's
+ * label is going to, if it has one of non-zero width and height. We do this
+ * so that we can safely remove empty ranks while preserving balance for the
+ * label's position.
+ */
+function injectEdgeLabelProxies(g) {
+  _.forEach(g.edges(), function(e) {
+    var edge = g.edge(e);
+    if (edge.width && edge.height) {
+      var v = g.node(e.v);
+      var w = g.node(e.w);
+      var label = { rank: (w.rank - v.rank) / 2 + v.rank, e: e };
+      util.addDummyNode(g, "edge-proxy", label, "_ep");
+    }
+  });
+}
+
+function assignRankMinMax(g) {
+  var maxRank = 0;
+  _.forEach(g.nodes(), function(v) {
+    var node = g.node(v);
+    if (node.borderTop) {
+      node.minRank = g.node(node.borderTop).rank;
+      node.maxRank = g.node(node.borderBottom).rank;
+      maxRank = _.max(maxRank, node.maxRank);
+    }
+  });
+  g.graph().maxRank = maxRank;
+}
+
+function removeEdgeLabelProxies(g) {
+  _.forEach(g.nodes(), function(v) {
+    var node = g.node(v);
+    if (node.dummy === "edge-proxy") {
+      g.edge(node.e).labelRank = node.rank;
+      g.removeNode(v);
+    }
+  });
+}
+
+function translateGraph(g) {
+  var minX = Number.POSITIVE_INFINITY;
+  var maxX = 0;
+  var minY = Number.POSITIVE_INFINITY;
+  var maxY = 0;
+  var graphLabel = g.graph();
+  var marginX = graphLabel.marginx || 0;
+  var marginY = graphLabel.marginy || 0;
+
+  function getExtremes(attrs) {
+    var x = attrs.x;
+    var y = attrs.y;
+    var w = attrs.width;
+    var h = attrs.height;
+    minX = Math.min(minX, x - w / 2);
+    maxX = Math.max(maxX, x + w / 2);
+    minY = Math.min(minY, y - h / 2);
+    maxY = Math.max(maxY, y + h / 2);
+  }
+
+  _.forEach(g.nodes(), function(v) { getExtremes(g.node(v)); });
+  _.forEach(g.edges(), function(e) {
+    var edge = g.edge(e);
+    if (_.has(edge, "x")) {
+      getExtremes(edge);
+    }
+  });
+
+  minX -= marginX;
+  minY -= marginY;
+
+  _.forEach(g.nodes(), function(v) {
+    var node = g.node(v);
+    node.x -= minX;
+    node.y -= minY;
+  });
+
+  _.forEach(g.edges(), function(e) {
+    var edge = g.edge(e);
+    _.forEach(edge.points, function(p) {
+      p.x -= minX;
+      p.y -= minY;
+    });
+    if (_.has(edge, "x")) { edge.x -= minX; }
+    if (_.has(edge, "y")) { edge.y -= minY; }
+  });
+
+  graphLabel.width = maxX - minX + marginX;
+  graphLabel.height = maxY - minY + marginY;
+}
+
+function assignNodeIntersects(g) {
+  _.forEach(g.edges(), function(e) {
+    var edge = g.edge(e);
+    var nodeV = g.node(e.v);
+    var nodeW = g.node(e.w);
+    var p1, p2;
+    if (!edge.points) {
+      edge.points = [];
+      p1 = nodeW;
+      p2 = nodeV;
+    } else {
+      p1 = edge.points[0];
+      p2 = edge.points[edge.points.length - 1];
+    }
+    edge.points.unshift(util.intersectRect(nodeV, p1));
+    edge.points.push(util.intersectRect(nodeW, p2));
+  });
+}
+
+function fixupEdgeLabelCoords(g) {
+  _.forEach(g.edges(), function(e) {
+    var edge = g.edge(e);
+    if (_.has(edge, "x")) {
+      if (edge.labelpos === "l" || edge.labelpos === "r") {
+        edge.width -= edge.labeloffset;
+      }
+      switch (edge.labelpos) {
+      case "l": edge.x -= edge.width / 2 + edge.labeloffset; break;
+      case "r": edge.x += edge.width / 2 + edge.labeloffset; break;
+      }
+    }
+  });
+}
+
+function reversePointsForReversedEdges(g) {
+  _.forEach(g.edges(), function(e) {
+    var edge = g.edge(e);
+    if (edge.reversed) {
+      edge.points.reverse();
+    }
+  });
+}
+
+function removeBorderNodes(g) {
+  _.forEach(g.nodes(), function(v) {
+    if (g.children(v).length) {
+      var node = g.node(v);
+      var t = g.node(node.borderTop);
+      var b = g.node(node.borderBottom);
+      var l = g.node(_.last(node.borderLeft));
+      var r = g.node(_.last(node.borderRight));
+
+      node.width = Math.abs(r.x - l.x);
+      node.height = Math.abs(b.y - t.y);
+      node.x = l.x + node.width / 2;
+      node.y = t.y + node.height / 2;
+    }
+  });
+
+  _.forEach(g.nodes(), function(v) {
+    if (g.node(v).dummy === "border") {
+      g.removeNode(v);
+    }
+  });
+}
+
+function removeSelfEdges(g) {
+  _.forEach(g.edges(), function(e) {
+    if (e.v === e.w) {
+      var node = g.node(e.v);
+      if (!node.selfEdges) {
+        node.selfEdges = [];
+      }
+      node.selfEdges.push({ e: e, label: g.edge(e) });
+      g.removeEdge(e);
+    }
+  });
+}
+
+function insertSelfEdges(g) {
+  var layers = util.buildLayerMatrix(g);
+  _.forEach(layers, function(layer) {
+    var orderShift = 0;
+    _.forEach(layer, function(v, i) {
+      var node = g.node(v);
+      node.order = i + orderShift;
+      _.forEach(node.selfEdges, function(selfEdge) {
+        util.addDummyNode(g, "selfedge", {
+          width: selfEdge.label.width,
+          height: selfEdge.label.height,
+          rank: node.rank,
+          order: i + (++orderShift),
+          e: selfEdge.e,
+          label: selfEdge.label
+        }, "_se");
+      });
+      delete node.selfEdges;
+    });
+  });
+}
+
+function positionSelfEdges(g) {
+  _.forEach(g.nodes(), function(v) {
+    var node = g.node(v);
+    if (node.dummy === "selfedge") {
+      var selfNode = g.node(node.e.v);
+      var x = selfNode.x + selfNode.width / 2;
+      var y = selfNode.y;
+      var dx = node.x - x;
+      var dy = selfNode.height / 2;
+      g.setEdge(node.e, node.label);
+      g.removeNode(v);
+      node.label.points = [
+        { x: x + 2 * dx / 3, y: y - dy },
+        { x: x + 5 * dx / 6, y: y - dy },
+        { x: x +     dx    , y: y },
+        { x: x + 5 * dx / 6, y: y + dy },
+        { x: x + 2 * dx / 3, y: y + dy }
+      ];
+      node.label.x = node.x;
+      node.label.y = node.y;
+    }
+  });
+}
+
+function selectNumberAttrs(obj, attrs) {
+  return _.mapValues(_.pick(obj, attrs), Number);
+}
+
+function canonicalize(attrs) {
+  var newAttrs = {};
+  _.forEach(attrs, function(v, k) {
+    newAttrs[k.toLowerCase()] = v;
+  });
+  return newAttrs;
+}
+
+
+/***/ }),
+
 /***/ "7b0b":
 /***/ (function(module, exports, __webpack_require__) {
 
@@ -65835,6 +71517,163 @@ var requireObjectCoercible = __webpack_require__("1d80");
 module.exports = function (argument) {
   return Object(requireObjectCoercible(argument));
 };
+
+
+/***/ }),
+
+/***/ "7b83":
+/***/ (function(module, exports, __webpack_require__) {
+
+var mapCacheClear = __webpack_require__("7c64"),
+    mapCacheDelete = __webpack_require__("93ed"),
+    mapCacheGet = __webpack_require__("2478"),
+    mapCacheHas = __webpack_require__("a524"),
+    mapCacheSet = __webpack_require__("1fc8");
+
+/**
+ * Creates a map cache object to store key-value pairs.
+ *
+ * @private
+ * @constructor
+ * @param {Array} [entries] The key-value pairs to cache.
+ */
+function MapCache(entries) {
+  var index = -1,
+      length = entries == null ? 0 : entries.length;
+
+  this.clear();
+  while (++index < length) {
+    var entry = entries[index];
+    this.set(entry[0], entry[1]);
+  }
+}
+
+// Add methods to `MapCache`.
+MapCache.prototype.clear = mapCacheClear;
+MapCache.prototype['delete'] = mapCacheDelete;
+MapCache.prototype.get = mapCacheGet;
+MapCache.prototype.has = mapCacheHas;
+MapCache.prototype.set = mapCacheSet;
+
+module.exports = MapCache;
+
+
+/***/ }),
+
+/***/ "7b97":
+/***/ (function(module, exports, __webpack_require__) {
+
+var Stack = __webpack_require__("7e64"),
+    equalArrays = __webpack_require__("a2be"),
+    equalByTag = __webpack_require__("1c3c"),
+    equalObjects = __webpack_require__("b1e5"),
+    getTag = __webpack_require__("42a2"),
+    isArray = __webpack_require__("6747"),
+    isBuffer = __webpack_require__("0d24"),
+    isTypedArray = __webpack_require__("73ac");
+
+/** Used to compose bitmasks for value comparisons. */
+var COMPARE_PARTIAL_FLAG = 1;
+
+/** `Object#toString` result references. */
+var argsTag = '[object Arguments]',
+    arrayTag = '[object Array]',
+    objectTag = '[object Object]';
+
+/** Used for built-in method references. */
+var objectProto = Object.prototype;
+
+/** Used to check objects for own properties. */
+var hasOwnProperty = objectProto.hasOwnProperty;
+
+/**
+ * A specialized version of `baseIsEqual` for arrays and objects which performs
+ * deep comparisons and tracks traversed objects enabling objects with circular
+ * references to be compared.
+ *
+ * @private
+ * @param {Object} object The object to compare.
+ * @param {Object} other The other object to compare.
+ * @param {number} bitmask The bitmask flags. See `baseIsEqual` for more details.
+ * @param {Function} customizer The function to customize comparisons.
+ * @param {Function} equalFunc The function to determine equivalents of values.
+ * @param {Object} [stack] Tracks traversed `object` and `other` objects.
+ * @returns {boolean} Returns `true` if the objects are equivalent, else `false`.
+ */
+function baseIsEqualDeep(object, other, bitmask, customizer, equalFunc, stack) {
+  var objIsArr = isArray(object),
+      othIsArr = isArray(other),
+      objTag = objIsArr ? arrayTag : getTag(object),
+      othTag = othIsArr ? arrayTag : getTag(other);
+
+  objTag = objTag == argsTag ? objectTag : objTag;
+  othTag = othTag == argsTag ? objectTag : othTag;
+
+  var objIsObj = objTag == objectTag,
+      othIsObj = othTag == objectTag,
+      isSameTag = objTag == othTag;
+
+  if (isSameTag && isBuffer(object)) {
+    if (!isBuffer(other)) {
+      return false;
+    }
+    objIsArr = true;
+    objIsObj = false;
+  }
+  if (isSameTag && !objIsObj) {
+    stack || (stack = new Stack);
+    return (objIsArr || isTypedArray(object))
+      ? equalArrays(object, other, bitmask, customizer, equalFunc, stack)
+      : equalByTag(object, other, objTag, bitmask, customizer, equalFunc, stack);
+  }
+  if (!(bitmask & COMPARE_PARTIAL_FLAG)) {
+    var objIsWrapped = objIsObj && hasOwnProperty.call(object, '__wrapped__'),
+        othIsWrapped = othIsObj && hasOwnProperty.call(other, '__wrapped__');
+
+    if (objIsWrapped || othIsWrapped) {
+      var objUnwrapped = objIsWrapped ? object.value() : object,
+          othUnwrapped = othIsWrapped ? other.value() : other;
+
+      stack || (stack = new Stack);
+      return equalFunc(objUnwrapped, othUnwrapped, bitmask, customizer, stack);
+    }
+  }
+  if (!isSameTag) {
+    return false;
+  }
+  stack || (stack = new Stack);
+  return equalObjects(object, other, bitmask, customizer, equalFunc, stack);
+}
+
+module.exports = baseIsEqualDeep;
+
+
+/***/ }),
+
+/***/ "7c64":
+/***/ (function(module, exports, __webpack_require__) {
+
+var Hash = __webpack_require__("e24b"),
+    ListCache = __webpack_require__("5e2e"),
+    Map = __webpack_require__("79bc");
+
+/**
+ * Removes all key-value entries from the map.
+ *
+ * @private
+ * @name clear
+ * @memberOf MapCache
+ */
+function mapCacheClear() {
+  this.size = 0;
+  this.__data__ = {
+    'hash': new Hash,
+    'map': new (Map || ListCache),
+    'string': new Hash
+  };
+}
+
+module.exports = mapCacheClear;
 
 
 /***/ }),
@@ -65924,6 +71763,33 @@ module.exports = Object.create || function create(O, Properties) {
   } else result = NullProtoObject();
   return Properties === undefined ? result : defineProperties(result, Properties);
 };
+
+
+/***/ }),
+
+/***/ "7d1f":
+/***/ (function(module, exports, __webpack_require__) {
+
+var arrayPush = __webpack_require__("087d"),
+    isArray = __webpack_require__("6747");
+
+/**
+ * The base implementation of `getAllKeys` and `getAllKeysIn` which uses
+ * `keysFunc` and `symbolsFunc` to get the enumerable property names and
+ * symbols of `object`.
+ *
+ * @private
+ * @param {Object} object The object to query.
+ * @param {Function} keysFunc The function to get the keys of `object`.
+ * @param {Function} symbolsFunc The function to get the symbols of `object`.
+ * @returns {Array} Returns the array of property names and symbols.
+ */
+function baseGetAllKeys(object, keysFunc, symbolsFunc) {
+  var result = keysFunc(object);
+  return isArray(object) ? result : arrayPush(result, symbolsFunc(object));
+}
+
+module.exports = baseGetAllKeys;
 
 
 /***/ }),
@@ -66062,6 +71928,66 @@ module.exports = function (Iterable, NAME, IteratorConstructor, next, DEFAULT, I
 
 /***/ }),
 
+/***/ "7e64":
+/***/ (function(module, exports, __webpack_require__) {
+
+var ListCache = __webpack_require__("5e2e"),
+    stackClear = __webpack_require__("efb6"),
+    stackDelete = __webpack_require__("2fcc"),
+    stackGet = __webpack_require__("802a"),
+    stackHas = __webpack_require__("55a3"),
+    stackSet = __webpack_require__("d02c");
+
+/**
+ * Creates a stack cache object to store key-value pairs.
+ *
+ * @private
+ * @constructor
+ * @param {Array} [entries] The key-value pairs to cache.
+ */
+function Stack(entries) {
+  var data = this.__data__ = new ListCache(entries);
+  this.size = data.size;
+}
+
+// Add methods to `Stack`.
+Stack.prototype.clear = stackClear;
+Stack.prototype['delete'] = stackDelete;
+Stack.prototype.get = stackGet;
+Stack.prototype.has = stackHas;
+Stack.prototype.set = stackSet;
+
+module.exports = Stack;
+
+
+/***/ }),
+
+/***/ "7ed2":
+/***/ (function(module, exports) {
+
+/** Used to stand-in for `undefined` hash values. */
+var HASH_UNDEFINED = '__lodash_hash_undefined__';
+
+/**
+ * Adds `value` to the array cache.
+ *
+ * @private
+ * @name add
+ * @memberOf SetCache
+ * @alias push
+ * @param {*} value The value to cache.
+ * @returns {Object} Returns the cache instance.
+ */
+function setCacheAdd(value) {
+  this.__data__.set(value, HASH_UNDEFINED);
+  return this;
+}
+
+module.exports = setCacheAdd;
+
+
+/***/ }),
+
 /***/ "7f35":
 /***/ (function(module, exports, __webpack_require__) {
 
@@ -66090,6 +72016,138 @@ module.exports = typeof WeakMap === 'function' && /native code/.test(inspectSour
 /* harmony import */ var _node_modules_mini_css_extract_plugin_dist_loader_js_ref_8_oneOf_1_0_node_modules_css_loader_dist_cjs_js_ref_8_oneOf_1_1_node_modules_vue_loader_lib_loaders_stylePostLoader_js_node_modules_postcss_loader_src_index_js_ref_8_oneOf_1_2_node_modules_sass_loader_dist_cjs_js_ref_8_oneOf_1_3_node_modules_cache_loader_dist_cjs_js_ref_0_0_node_modules_vue_loader_lib_index_js_vue_loader_options_Customizer_vue_vue_type_style_index_0_lang_scss___WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(_node_modules_mini_css_extract_plugin_dist_loader_js_ref_8_oneOf_1_0_node_modules_css_loader_dist_cjs_js_ref_8_oneOf_1_1_node_modules_vue_loader_lib_loaders_stylePostLoader_js_node_modules_postcss_loader_src_index_js_ref_8_oneOf_1_2_node_modules_sass_loader_dist_cjs_js_ref_8_oneOf_1_3_node_modules_cache_loader_dist_cjs_js_ref_0_0_node_modules_vue_loader_lib_index_js_vue_loader_options_Customizer_vue_vue_type_style_index_0_lang_scss___WEBPACK_IMPORTED_MODULE_0__);
 /* unused harmony reexport * */
 
+
+/***/ }),
+
+/***/ "802a":
+/***/ (function(module, exports) {
+
+/**
+ * Gets the stack value for `key`.
+ *
+ * @private
+ * @name get
+ * @memberOf Stack
+ * @param {string} key The key of the value to get.
+ * @returns {*} Returns the entry value.
+ */
+function stackGet(key) {
+  return this.__data__.get(key);
+}
+
+module.exports = stackGet;
+
+
+/***/ }),
+
+/***/ "8057":
+/***/ (function(module, exports) {
+
+/**
+ * A specialized version of `_.forEach` for arrays without support for
+ * iteratee shorthands.
+ *
+ * @private
+ * @param {Array} [array] The array to iterate over.
+ * @param {Function} iteratee The function invoked per iteration.
+ * @returns {Array} Returns `array`.
+ */
+function arrayEach(array, iteratee) {
+  var index = -1,
+      length = array == null ? 0 : array.length;
+
+  while (++index < length) {
+    if (iteratee(array[index], index, array) === false) {
+      break;
+    }
+  }
+  return array;
+}
+
+module.exports = arrayEach;
+
+
+/***/ }),
+
+/***/ "80f6":
+/***/ (function(module, exports, __webpack_require__) {
+
+var baseExtremum = __webpack_require__("76e9"),
+    baseIteratee = __webpack_require__("badf"),
+    baseLt = __webpack_require__("8d20");
+
+/**
+ * This method is like `_.min` except that it accepts `iteratee` which is
+ * invoked for each element in `array` to generate the criterion by which
+ * the value is ranked. The iteratee is invoked with one argument: (value).
+ *
+ * @static
+ * @memberOf _
+ * @since 4.0.0
+ * @category Math
+ * @param {Array} array The array to iterate over.
+ * @param {Function} [iteratee=_.identity] The iteratee invoked per element.
+ * @returns {*} Returns the minimum value.
+ * @example
+ *
+ * var objects = [{ 'n': 1 }, { 'n': 2 }];
+ *
+ * _.minBy(objects, function(o) { return o.n; });
+ * // => { 'n': 1 }
+ *
+ * // The `_.property` iteratee shorthand.
+ * _.minBy(objects, 'n');
+ * // => { 'n': 1 }
+ */
+function minBy(array, iteratee) {
+  return (array && array.length)
+    ? baseExtremum(array, baseIteratee(iteratee, 2), baseLt)
+    : undefined;
+}
+
+module.exports = minBy;
+
+
+/***/ }),
+
+/***/ "8185":
+/***/ (function(module, exports, __webpack_require__) {
+
+var _ = __webpack_require__("33de");
+
+module.exports = topsort;
+topsort.CycleException = CycleException;
+
+function topsort(g) {
+  var visited = {};
+  var stack = {};
+  var results = [];
+
+  function visit(node) {
+    if (_.has(stack, node)) {
+      throw new CycleException();
+    }
+
+    if (!_.has(visited, node)) {
+      stack[node] = true;
+      visited[node] = true;
+      _.each(g.predecessors(node), visit);
+      delete stack[node];
+      results.push(node);
+    }
+  }
+
+  _.each(g.sinks(), visit);
+
+  if (_.size(visited) !== g.nodeCount()) {
+    throw new CycleException();
+  }
+
+  return results;
+}
+
+function CycleException() {}
+CycleException.prototype = new Error(); // must be an instance of Error to pass testing
 
 /***/ }),
 
@@ -66200,6 +72258,75 @@ fixRegExpWellKnownSymbolLogic('search', function (SEARCH, nativeSearch, maybeCal
 
 /***/ }),
 
+/***/ "85e35":
+/***/ (function(module, exports) {
+
+/**
+ * A faster alternative to `Function#apply`, this function invokes `func`
+ * with the `this` binding of `thisArg` and the arguments of `args`.
+ *
+ * @private
+ * @param {Function} func The function to invoke.
+ * @param {*} thisArg The `this` binding of `func`.
+ * @param {Array} args The arguments to invoke `func` with.
+ * @returns {*} Returns the result of `func`.
+ */
+function apply(func, thisArg, args) {
+  switch (args.length) {
+    case 0: return func.call(thisArg);
+    case 1: return func.call(thisArg, args[0]);
+    case 2: return func.call(thisArg, args[0], args[1]);
+    case 3: return func.call(thisArg, args[0], args[1], args[2]);
+  }
+  return func.apply(thisArg, args);
+}
+
+module.exports = apply;
+
+
+/***/ }),
+
+/***/ "8604":
+/***/ (function(module, exports, __webpack_require__) {
+
+var baseHasIn = __webpack_require__("26e8"),
+    hasPath = __webpack_require__("e2c0");
+
+/**
+ * Checks if `path` is a direct or inherited property of `object`.
+ *
+ * @static
+ * @memberOf _
+ * @since 4.0.0
+ * @category Object
+ * @param {Object} object The object to query.
+ * @param {Array|string} path The path to check.
+ * @returns {boolean} Returns `true` if `path` exists, else `false`.
+ * @example
+ *
+ * var object = _.create({ 'a': _.create({ 'b': 2 }) });
+ *
+ * _.hasIn(object, 'a');
+ * // => true
+ *
+ * _.hasIn(object, 'a.b');
+ * // => true
+ *
+ * _.hasIn(object, ['a', 'b']);
+ * // => true
+ *
+ * _.hasIn(object, 'b');
+ * // => false
+ */
+function hasIn(object, path) {
+  return object != null && hasPath(object, path, baseHasIn);
+}
+
+module.exports = hasIn;
+
+
+/***/ }),
+
 /***/ "861d":
 /***/ (function(module, exports) {
 
@@ -66214,6 +72341,118 @@ module.exports = function (it) {
 /***/ (function(module, exports, __webpack_require__) {
 
 // extracted by mini-css-extract-plugin
+
+/***/ }),
+
+/***/ "872a":
+/***/ (function(module, exports, __webpack_require__) {
+
+var defineProperty = __webpack_require__("3b4a");
+
+/**
+ * The base implementation of `assignValue` and `assignMergeValue` without
+ * value checks.
+ *
+ * @private
+ * @param {Object} object The object to modify.
+ * @param {string} key The key of the property to assign.
+ * @param {*} value The value to assign.
+ */
+function baseAssignValue(object, key, value) {
+  if (key == '__proto__' && defineProperty) {
+    defineProperty(object, key, {
+      'configurable': true,
+      'enumerable': true,
+      'value': value,
+      'writable': true
+    });
+  } else {
+    object[key] = value;
+  }
+}
+
+module.exports = baseAssignValue;
+
+
+/***/ }),
+
+/***/ "8817":
+/***/ (function(module, exports, __webpack_require__) {
+
+var _ = __webpack_require__("6f9c");
+var Graph = __webpack_require__("17d5").Graph;
+
+module.exports = buildLayerGraph;
+
+/*
+ * Constructs a graph that can be used to sort a layer of nodes. The graph will
+ * contain all base and subgraph nodes from the request layer in their original
+ * hierarchy and any edges that are incident on these nodes and are of the type
+ * requested by the "relationship" parameter.
+ *
+ * Nodes from the requested rank that do not have parents are assigned a root
+ * node in the output graph, which is set in the root graph attribute. This
+ * makes it easy to walk the hierarchy of movable nodes during ordering.
+ *
+ * Pre-conditions:
+ *
+ *    1. Input graph is a DAG
+ *    2. Base nodes in the input graph have a rank attribute
+ *    3. Subgraph nodes in the input graph has minRank and maxRank attributes
+ *    4. Edges have an assigned weight
+ *
+ * Post-conditions:
+ *
+ *    1. Output graph has all nodes in the movable rank with preserved
+ *       hierarchy.
+ *    2. Root nodes in the movable layer are made children of the node
+ *       indicated by the root attribute of the graph.
+ *    3. Non-movable nodes incident on movable nodes, selected by the
+ *       relationship parameter, are included in the graph (without hierarchy).
+ *    4. Edges incident on movable nodes, selected by the relationship
+ *       parameter, are added to the output graph.
+ *    5. The weights for copied edges are aggregated as need, since the output
+ *       graph is not a multi-graph.
+ */
+function buildLayerGraph(g, rank, relationship) {
+  var root = createRootNode(g),
+    result = new Graph({ compound: true }).setGraph({ root: root })
+      .setDefaultNodeLabel(function(v) { return g.node(v); });
+
+  _.forEach(g.nodes(), function(v) {
+    var node = g.node(v),
+      parent = g.parent(v);
+
+    if (node.rank === rank || node.minRank <= rank && rank <= node.maxRank) {
+      result.setNode(v);
+      result.setParent(v, parent || root);
+
+      // This assumes we have only short edges!
+      _.forEach(g[relationship](v), function(e) {
+        var u = e.v === v ? e.w : e.v,
+          edge = result.edge(u, v),
+          weight = !_.isUndefined(edge) ? edge.weight : 0;
+        result.setEdge(u, v, { weight: g.edge(e).weight + weight });
+      });
+
+      if (_.has(node, "minRank")) {
+        result.setNode(v, {
+          borderLeft: node.borderLeft[rank],
+          borderRight: node.borderRight[rank]
+        });
+      }
+    }
+  });
+
+  return result;
+}
+
+function createRootNode(g) {
+  var v;
+  while (g.hasNode((v = _.uniqueId("_root"))));
+  return v;
+}
+
 
 /***/ }),
 
@@ -66328,6 +72567,43 @@ module.exports = store.inspectSource;
 
 /***/ }),
 
+/***/ "89d9":
+/***/ (function(module, exports, __webpack_require__) {
+
+var baseGet = __webpack_require__("656b"),
+    baseSet = __webpack_require__("159a"),
+    castPath = __webpack_require__("e2e4");
+
+/**
+ * The base implementation of  `_.pickBy` without support for iteratee shorthands.
+ *
+ * @private
+ * @param {Object} object The source object.
+ * @param {string[]} paths The property paths to pick.
+ * @param {Function} predicate The function invoked per property.
+ * @returns {Object} Returns the new object.
+ */
+function basePickBy(object, paths, predicate) {
+  var index = -1,
+      length = paths.length,
+      result = {};
+
+  while (++index < length) {
+    var path = paths[index],
+        value = baseGet(object, path);
+
+    if (predicate(value, path)) {
+      baseSet(result, castPath(path, object), value);
+    }
+  }
+  return result;
+}
+
+module.exports = basePickBy;
+
+
+/***/ }),
+
 /***/ "8a79":
 /***/ (function(module, exports, __webpack_require__) {
 
@@ -66388,6 +72664,34 @@ module.exports = function (S, index, unicode) {
 
 /***/ }),
 
+/***/ "8adb":
+/***/ (function(module, exports) {
+
+/**
+ * Gets the value at `key`, unless `key` is "__proto__" or "constructor".
+ *
+ * @private
+ * @param {Object} object The object to query.
+ * @param {string} key The key of the property to get.
+ * @returns {*} Returns the property value.
+ */
+function safeGet(object, key) {
+  if (key === 'constructor' && typeof object[key] === 'function') {
+    return;
+  }
+
+  if (key == '__proto__') {
+    return;
+  }
+
+  return object[key];
+}
+
+module.exports = safeGet;
+
+
+/***/ }),
+
 /***/ "8bbf":
 /***/ (function(module, exports) {
 
@@ -66402,6 +72706,543 @@ module.exports = __WEBPACK_EXTERNAL_MODULE__8bbf__;
 
 /***/ }),
 
+/***/ "8c55":
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+var _ = __webpack_require__("6f9c");
+var Graph = __webpack_require__("17d5").Graph;
+var util = __webpack_require__("b50e");
+
+/*
+ * This module provides coordinate assignment based on Brandes and Köpf, "Fast
+ * and Simple Horizontal Coordinate Assignment."
+ */
+
+module.exports = {
+  positionX: positionX,
+  findType1Conflicts: findType1Conflicts,
+  findType2Conflicts: findType2Conflicts,
+  addConflict: addConflict,
+  hasConflict: hasConflict,
+  verticalAlignment: verticalAlignment,
+  horizontalCompaction: horizontalCompaction,
+  alignCoordinates: alignCoordinates,
+  findSmallestWidthAlignment: findSmallestWidthAlignment,
+  balance: balance
+};
+
+/*
+ * Marks all edges in the graph with a type-1 conflict with the "type1Conflict"
+ * property. A type-1 conflict is one where a non-inner segment crosses an
+ * inner segment. An inner segment is an edge with both incident nodes marked
+ * with the "dummy" property.
+ *
+ * This algorithm scans layer by layer, starting with the second, for type-1
+ * conflicts between the current layer and the previous layer. For each layer
+ * it scans the nodes from left to right until it reaches one that is incident
+ * on an inner segment. It then scans predecessors to determine if they have
+ * edges that cross that inner segment. At the end a final scan is done for all
+ * nodes on the current rank to see if they cross the last visited inner
+ * segment.
+ *
+ * This algorithm (safely) assumes that a dummy node will only be incident on a
+ * single node in the layers being scanned.
+ */
+function findType1Conflicts(g, layering) {
+  var conflicts = {};
+
+  function visitLayer(prevLayer, layer) {
+    var
+      // last visited node in the previous layer that is incident on an inner
+      // segment.
+      k0 = 0,
+      // Tracks the last node in this layer scanned for crossings with a type-1
+      // segment.
+      scanPos = 0,
+      prevLayerLength = prevLayer.length,
+      lastNode = _.last(layer);
+
+    _.forEach(layer, function(v, i) {
+      var w = findOtherInnerSegmentNode(g, v),
+        k1 = w ? g.node(w).order : prevLayerLength;
+
+      if (w || v === lastNode) {
+        _.forEach(layer.slice(scanPos, i +1), function(scanNode) {
+          _.forEach(g.predecessors(scanNode), function(u) {
+            var uLabel = g.node(u),
+              uPos = uLabel.order;
+            if ((uPos < k0 || k1 < uPos) &&
+                !(uLabel.dummy && g.node(scanNode).dummy)) {
+              addConflict(conflicts, u, scanNode);
+            }
+          });
+        });
+        scanPos = i + 1;
+        k0 = k1;
+      }
+    });
+
+    return layer;
+  }
+
+  _.reduce(layering, visitLayer);
+  return conflicts;
+}
+
+function findType2Conflicts(g, layering) {
+  var conflicts = {};
+
+  function scan(south, southPos, southEnd, prevNorthBorder, nextNorthBorder) {
+    var v;
+    _.forEach(_.range(southPos, southEnd), function(i) {
+      v = south[i];
+      if (g.node(v).dummy) {
+        _.forEach(g.predecessors(v), function(u) {
+          var uNode = g.node(u);
+          if (uNode.dummy &&
+              (uNode.order < prevNorthBorder || uNode.order > nextNorthBorder)) {
+            addConflict(conflicts, u, v);
+          }
+        });
+      }
+    });
+  }
+
+
+  function visitLayer(north, south) {
+    var prevNorthPos = -1,
+      nextNorthPos,
+      southPos = 0;
+
+    _.forEach(south, function(v, southLookahead) {
+      if (g.node(v).dummy === "border") {
+        var predecessors = g.predecessors(v);
+        if (predecessors.length) {
+          nextNorthPos = g.node(predecessors[0]).order;
+          scan(south, southPos, southLookahead, prevNorthPos, nextNorthPos);
+          southPos = southLookahead;
+          prevNorthPos = nextNorthPos;
+        }
+      }
+      scan(south, southPos, south.length, nextNorthPos, north.length);
+    });
+
+    return south;
+  }
+
+  _.reduce(layering, visitLayer);
+  return conflicts;
+}
+
+function findOtherInnerSegmentNode(g, v) {
+  if (g.node(v).dummy) {
+    return _.find(g.predecessors(v), function(u) {
+      return g.node(u).dummy;
+    });
+  }
+}
+
+function addConflict(conflicts, v, w) {
+  if (v > w) {
+    var tmp = v;
+    v = w;
+    w = tmp;
+  }
+
+  var conflictsV = conflicts[v];
+  if (!conflictsV) {
+    conflicts[v] = conflictsV = {};
+  }
+  conflictsV[w] = true;
+}
+
+function hasConflict(conflicts, v, w) {
+  if (v > w) {
+    var tmp = v;
+    v = w;
+    w = tmp;
+  }
+  return _.has(conflicts[v], w);
+}
+
+/*
+ * Try to align nodes into vertical "blocks" where possible. This algorithm
+ * attempts to align a node with one of its median neighbors. If the edge
+ * connecting a neighbor is a type-1 conflict then we ignore that possibility.
+ * If a previous node has already formed a block with a node after the node
+ * we're trying to form a block with, we also ignore that possibility - our
+ * blocks would be split in that scenario.
+ */
+function verticalAlignment(g, layering, conflicts, neighborFn) {
+  var root = {},
+    align = {},
+    pos = {};
+
+  // We cache the position here based on the layering because the graph and
+  // layering may be out of sync. The layering matrix is manipulated to
+  // generate different extreme alignments.
+  _.forEach(layering, function(layer) {
+    _.forEach(layer, function(v, order) {
+      root[v] = v;
+      align[v] = v;
+      pos[v] = order;
+    });
+  });
+
+  _.forEach(layering, function(layer) {
+    var prevIdx = -1;
+    _.forEach(layer, function(v) {
+      var ws = neighborFn(v);
+      if (ws.length) {
+        ws = _.sortBy(ws, function(w) { return pos[w]; });
+        var mp = (ws.length - 1) / 2;
+        for (var i = Math.floor(mp), il = Math.ceil(mp); i <= il; ++i) {
+          var w = ws[i];
+          if (align[v] === v &&
+              prevIdx < pos[w] &&
+              !hasConflict(conflicts, v, w)) {
+            align[w] = v;
+            align[v] = root[v] = root[w];
+            prevIdx = pos[w];
+          }
+        }
+      }
+    });
+  });
+
+  return { root: root, align: align };
+}
+
+function horizontalCompaction(g, layering, root, align, reverseSep) {
+  // This portion of the algorithm differs from BK due to a number of problems.
+  // Instead of their algorithm we construct a new block graph and do two
+  // sweeps. The first sweep places blocks with the smallest possible
+  // coordinates. The second sweep removes unused space by moving blocks to the
+  // greatest coordinates without violating separation.
+  var xs = {},
+    blockG = buildBlockGraph(g, layering, root, reverseSep),
+    borderType = reverseSep ? "borderLeft" : "borderRight";
+
+  function iterate(setXsFunc, nextNodesFunc) {
+    var stack = blockG.nodes();
+    var elem = stack.pop();
+    var visited = {};
+    while (elem) {
+      if (visited[elem]) {
+        setXsFunc(elem);
+      } else {
+        visited[elem] = true;
+        stack.push(elem);
+        stack = stack.concat(nextNodesFunc(elem));
+      }
+
+      elem = stack.pop();
+    }
+  }
+
+  // First pass, assign smallest coordinates
+  function pass1(elem) {
+    xs[elem] = blockG.inEdges(elem).reduce(function(acc, e) {
+      return Math.max(acc, xs[e.v] + blockG.edge(e));
+    }, 0);
+  }
+
+  // Second pass, assign greatest coordinates
+  function pass2(elem) {
+    var min = blockG.outEdges(elem).reduce(function(acc, e) {
+      return Math.min(acc, xs[e.w] - blockG.edge(e));
+    }, Number.POSITIVE_INFINITY);
+
+    var node = g.node(elem);
+    if (min !== Number.POSITIVE_INFINITY && node.borderType !== borderType) {
+      xs[elem] = Math.max(xs[elem], min);
+    }
+  }
+
+  iterate(pass1, blockG.predecessors.bind(blockG));
+  iterate(pass2, blockG.successors.bind(blockG));
+
+  // Assign x coordinates to all nodes
+  _.forEach(align, function(v) {
+    xs[v] = xs[root[v]];
+  });
+
+  return xs;
+}
+
+
+function buildBlockGraph(g, layering, root, reverseSep) {
+  var blockGraph = new Graph(),
+    graphLabel = g.graph(),
+    sepFn = sep(graphLabel.nodesep, graphLabel.edgesep, reverseSep);
+
+  _.forEach(layering, function(layer) {
+    var u;
+    _.forEach(layer, function(v) {
+      var vRoot = root[v];
+      blockGraph.setNode(vRoot);
+      if (u) {
+        var uRoot = root[u],
+          prevMax = blockGraph.edge(uRoot, vRoot);
+        blockGraph.setEdge(uRoot, vRoot, Math.max(sepFn(g, v, u), prevMax || 0));
+      }
+      u = v;
+    });
+  });
+
+  return blockGraph;
+}
+
+/*
+ * Returns the alignment that has the smallest width of the given alignments.
+ */
+function findSmallestWidthAlignment(g, xss) {
+  return _.minBy(_.values(xss), function (xs) {
+    var max = Number.NEGATIVE_INFINITY;
+    var min = Number.POSITIVE_INFINITY;
+
+    _.forIn(xs, function (x, v) {
+      var halfWidth = width(g, v) / 2;
+
+      max = Math.max(x + halfWidth, max);
+      min = Math.min(x - halfWidth, min);
+    });
+
+    return max - min;
+  });
+}
+
+/*
+ * Align the coordinates of each of the layout alignments such that
+ * left-biased alignments have their minimum coordinate at the same point as
+ * the minimum coordinate of the smallest width alignment and right-biased
+ * alignments have their maximum coordinate at the same point as the maximum
+ * coordinate of the smallest width alignment.
+ */
+function alignCoordinates(xss, alignTo) {
+  var alignToVals = _.values(alignTo),
+    alignToMin = _.min(alignToVals),
+    alignToMax = _.max(alignToVals);
+
+  _.forEach(["u", "d"], function(vert) {
+    _.forEach(["l", "r"], function(horiz) {
+      var alignment = vert + horiz,
+        xs = xss[alignment],
+        delta;
+      if (xs === alignTo) return;
+
+      var xsVals = _.values(xs);
+      delta = horiz === "l" ? alignToMin - _.min(xsVals) : alignToMax - _.max(xsVals);
+
+      if (delta) {
+        xss[alignment] = _.mapValues(xs, function(x) { return x + delta; });
+      }
+    });
+  });
+}
+
+function balance(xss, align) {
+  return _.mapValues(xss.ul, function(ignore, v) {
+    if (align) {
+      return xss[align.toLowerCase()][v];
+    } else {
+      var xs = _.sortBy(_.map(xss, v));
+      return (xs[1] + xs[2]) / 2;
+    }
+  });
+}
+
+function positionX(g) {
+  var layering = util.buildLayerMatrix(g);
+  var conflicts = _.merge(
+    findType1Conflicts(g, layering),
+    findType2Conflicts(g, layering));
+
+  var xss = {};
+  var adjustedLayering;
+  _.forEach(["u", "d"], function(vert) {
+    adjustedLayering = vert === "u" ? layering : _.values(layering).reverse();
+    _.forEach(["l", "r"], function(horiz) {
+      if (horiz === "r") {
+        adjustedLayering = _.map(adjustedLayering, function(inner) {
+          return _.values(inner).reverse();
+        });
+      }
+
+      var neighborFn = (vert === "u" ? g.predecessors : g.successors).bind(g);
+      var align = verticalAlignment(g, adjustedLayering, conflicts, neighborFn);
+      var xs = horizontalCompaction(g, adjustedLayering,
+        align.root, align.align, horiz === "r");
+      if (horiz === "r") {
+        xs = _.mapValues(xs, function(x) { return -x; });
+      }
+      xss[vert + horiz] = xs;
+    });
+  });
+
+  var smallestWidth = findSmallestWidthAlignment(g, xss);
+  alignCoordinates(xss, smallestWidth);
+  return balance(xss, g.graph().align);
+}
+
+function sep(nodeSep, edgeSep, reverseSep) {
+  return function(g, v, w) {
+    var vLabel = g.node(v);
+    var wLabel = g.node(w);
+    var sum = 0;
+    var delta;
+
+    sum += vLabel.width / 2;
+    if (_.has(vLabel, "labelpos")) {
+      switch (vLabel.labelpos.toLowerCase()) {
+      case "l": delta = -vLabel.width / 2; break;
+      case "r": delta = vLabel.width / 2; break;
+      }
+    }
+    if (delta) {
+      sum += reverseSep ? delta : -delta;
+    }
+    delta = 0;
+
+    sum += (vLabel.dummy ? edgeSep : nodeSep) / 2;
+    sum += (wLabel.dummy ? edgeSep : nodeSep) / 2;
+
+    sum += wLabel.width / 2;
+    if (_.has(wLabel, "labelpos")) {
+      switch (wLabel.labelpos.toLowerCase()) {
+      case "l": delta = wLabel.width / 2; break;
+      case "r": delta = -wLabel.width / 2; break;
+      }
+    }
+    if (delta) {
+      sum += reverseSep ? delta : -delta;
+    }
+    delta = 0;
+
+    return sum;
+  };
+}
+
+function width(g, v) {
+  return g.node(v).width;
+}
+
+
+/***/ }),
+
+/***/ "8d20":
+/***/ (function(module, exports) {
+
+/**
+ * The base implementation of `_.lt` which doesn't coerce arguments.
+ *
+ * @private
+ * @param {*} value The value to compare.
+ * @param {*} other The other value to compare.
+ * @returns {boolean} Returns `true` if `value` is less than `other`,
+ *  else `false`.
+ */
+function baseLt(value, other) {
+  return value < other;
+}
+
+module.exports = baseLt;
+
+
+/***/ }),
+
+/***/ "8d74":
+/***/ (function(module, exports, __webpack_require__) {
+
+var trimmedEndIndex = __webpack_require__("4cef");
+
+/** Used to match leading whitespace. */
+var reTrimStart = /^\s+/;
+
+/**
+ * The base implementation of `_.trim`.
+ *
+ * @private
+ * @param {string} string The string to trim.
+ * @returns {string} Returns the trimmed string.
+ */
+function baseTrim(string) {
+  return string
+    ? string.slice(0, trimmedEndIndex(string) + 1).replace(reTrimStart, '')
+    : string;
+}
+
+module.exports = baseTrim;
+
+
+/***/ }),
+
+/***/ "8db3":
+/***/ (function(module, exports, __webpack_require__) {
+
+var baseIndexOf = __webpack_require__("47f5");
+
+/**
+ * A specialized version of `_.includes` for arrays without support for
+ * specifying an index to search from.
+ *
+ * @private
+ * @param {Array} [array] The array to inspect.
+ * @param {*} target The value to search for.
+ * @returns {boolean} Returns `true` if `target` is found, else `false`.
+ */
+function arrayIncludes(array, value) {
+  var length = array == null ? 0 : array.length;
+  return !!length && baseIndexOf(array, value, 0) > -1;
+}
+
+module.exports = arrayIncludes;
+
+
+/***/ }),
+
+/***/ "8de2":
+/***/ (function(module, exports, __webpack_require__) {
+
+var copyObject = __webpack_require__("8eeb"),
+    keysIn = __webpack_require__("9934");
+
+/**
+ * Converts `value` to a plain object flattening inherited enumerable string
+ * keyed properties of `value` to own properties of the plain object.
+ *
+ * @static
+ * @memberOf _
+ * @since 3.0.0
+ * @category Lang
+ * @param {*} value The value to convert.
+ * @returns {Object} Returns the converted plain object.
+ * @example
+ *
+ * function Foo() {
+ *   this.b = 2;
+ * }
+ *
+ * Foo.prototype.c = 3;
+ *
+ * _.assign({ 'a': 1 }, new Foo);
+ * // => { 'a': 1, 'b': 2 }
+ *
+ * _.assign({ 'a': 1 }, _.toPlainObject(new Foo));
+ * // => { 'a': 1, 'b': 2, 'c': 3 }
+ */
+function toPlainObject(value) {
+  return copyObject(value, keysIn(value));
+}
+
+module.exports = toPlainObject;
+
+
+/***/ }),
+
 /***/ "8e9e":
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
@@ -66409,6 +73250,53 @@ module.exports = __WEBPACK_EXTERNAL_MODULE__8bbf__;
 /* harmony import */ var _node_modules_mini_css_extract_plugin_dist_loader_js_ref_8_oneOf_1_0_node_modules_css_loader_dist_cjs_js_ref_8_oneOf_1_1_node_modules_vue_loader_lib_loaders_stylePostLoader_js_node_modules_postcss_loader_src_index_js_ref_8_oneOf_1_2_node_modules_sass_loader_dist_cjs_js_ref_8_oneOf_1_3_node_modules_cache_loader_dist_cjs_js_ref_0_0_node_modules_vue_loader_lib_index_js_vue_loader_options_CustomizerFieldGroupDropdownButton_vue_vue_type_style_index_0_lang_scss___WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__("8be7");
 /* harmony import */ var _node_modules_mini_css_extract_plugin_dist_loader_js_ref_8_oneOf_1_0_node_modules_css_loader_dist_cjs_js_ref_8_oneOf_1_1_node_modules_vue_loader_lib_loaders_stylePostLoader_js_node_modules_postcss_loader_src_index_js_ref_8_oneOf_1_2_node_modules_sass_loader_dist_cjs_js_ref_8_oneOf_1_3_node_modules_cache_loader_dist_cjs_js_ref_0_0_node_modules_vue_loader_lib_index_js_vue_loader_options_CustomizerFieldGroupDropdownButton_vue_vue_type_style_index_0_lang_scss___WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(_node_modules_mini_css_extract_plugin_dist_loader_js_ref_8_oneOf_1_0_node_modules_css_loader_dist_cjs_js_ref_8_oneOf_1_1_node_modules_vue_loader_lib_loaders_stylePostLoader_js_node_modules_postcss_loader_src_index_js_ref_8_oneOf_1_2_node_modules_sass_loader_dist_cjs_js_ref_8_oneOf_1_3_node_modules_cache_loader_dist_cjs_js_ref_0_0_node_modules_vue_loader_lib_index_js_vue_loader_options_CustomizerFieldGroupDropdownButton_vue_vue_type_style_index_0_lang_scss___WEBPACK_IMPORTED_MODULE_0__);
 /* unused harmony reexport * */
+
+
+/***/ }),
+
+/***/ "8eeb":
+/***/ (function(module, exports, __webpack_require__) {
+
+var assignValue = __webpack_require__("32b3"),
+    baseAssignValue = __webpack_require__("872a");
+
+/**
+ * Copies properties of `source` to `object`.
+ *
+ * @private
+ * @param {Object} source The object to copy properties from.
+ * @param {Array} props The property identifiers to copy.
+ * @param {Object} [object={}] The object to copy properties to.
+ * @param {Function} [customizer] The function to customize copied values.
+ * @returns {Object} Returns `object`.
+ */
+function copyObject(source, props, object, customizer) {
+  var isNew = !object;
+  object || (object = {});
+
+  var index = -1,
+      length = props.length;
+
+  while (++index < length) {
+    var key = props[index];
+
+    var newValue = customizer
+      ? customizer(object[key], source[key], key, object, source)
+      : undefined;
+
+    if (newValue === undefined) {
+      newValue = source[key];
+    }
+    if (isNew) {
+      baseAssignValue(object, key, newValue);
+    } else {
+      assignValue(object, key, newValue);
+    }
+  }
+  return object;
+}
+
+module.exports = copyObject;
 
 
 /***/ }),
@@ -66439,6 +73327,36 @@ module.exports = DESCRIPTORS ? function (object, key, value) {
   object[key] = value;
   return object;
 };
+
+
+/***/ }),
+
+/***/ "91e9":
+/***/ (function(module, exports) {
+
+/**
+ * Creates a unary function that invokes `func` with its argument transformed.
+ *
+ * @private
+ * @param {Function} func The function to wrap.
+ * @param {Function} transform The argument transform.
+ * @returns {Function} Returns the new function.
+ */
+function overArg(func, transform) {
+  return function(arg) {
+    return func(transform(arg));
+  };
+}
+
+module.exports = overArg;
+
+
+/***/ }),
+
+/***/ "9214":
+/***/ (function(module, exports) {
+
+module.exports = "0.8.5";
 
 
 /***/ }),
@@ -66564,6 +73482,101 @@ module.exports = patchedExec;
 
 /***/ }),
 
+/***/ "9370":
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+/* harmony import */ var _node_modules_mini_css_extract_plugin_dist_loader_js_ref_8_oneOf_1_0_node_modules_css_loader_dist_cjs_js_ref_8_oneOf_1_1_node_modules_vue_loader_lib_loaders_stylePostLoader_js_node_modules_postcss_loader_src_index_js_ref_8_oneOf_1_2_node_modules_sass_loader_dist_cjs_js_ref_8_oneOf_1_3_node_modules_cache_loader_dist_cjs_js_ref_0_0_node_modules_vue_loader_lib_index_js_vue_loader_options_Toast_vue_vue_type_style_index_0_lang_scss___WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__("0967");
+/* harmony import */ var _node_modules_mini_css_extract_plugin_dist_loader_js_ref_8_oneOf_1_0_node_modules_css_loader_dist_cjs_js_ref_8_oneOf_1_1_node_modules_vue_loader_lib_loaders_stylePostLoader_js_node_modules_postcss_loader_src_index_js_ref_8_oneOf_1_2_node_modules_sass_loader_dist_cjs_js_ref_8_oneOf_1_3_node_modules_cache_loader_dist_cjs_js_ref_0_0_node_modules_vue_loader_lib_index_js_vue_loader_options_Toast_vue_vue_type_style_index_0_lang_scss___WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(_node_modules_mini_css_extract_plugin_dist_loader_js_ref_8_oneOf_1_0_node_modules_css_loader_dist_cjs_js_ref_8_oneOf_1_1_node_modules_vue_loader_lib_loaders_stylePostLoader_js_node_modules_postcss_loader_src_index_js_ref_8_oneOf_1_2_node_modules_sass_loader_dist_cjs_js_ref_8_oneOf_1_3_node_modules_cache_loader_dist_cjs_js_ref_0_0_node_modules_vue_loader_lib_index_js_vue_loader_options_Toast_vue_vue_type_style_index_0_lang_scss___WEBPACK_IMPORTED_MODULE_0__);
+/* unused harmony reexport * */
+
+
+/***/ }),
+
+/***/ "9380":
+/***/ (function(module, exports, __webpack_require__) {
+
+var arrayFilter = __webpack_require__("2d7c"),
+    baseFilter = __webpack_require__("9f74"),
+    baseIteratee = __webpack_require__("badf"),
+    isArray = __webpack_require__("6747");
+
+/**
+ * Iterates over elements of `collection`, returning an array of all elements
+ * `predicate` returns truthy for. The predicate is invoked with three
+ * arguments: (value, index|key, collection).
+ *
+ * **Note:** Unlike `_.remove`, this method returns a new array.
+ *
+ * @static
+ * @memberOf _
+ * @since 0.1.0
+ * @category Collection
+ * @param {Array|Object} collection The collection to iterate over.
+ * @param {Function} [predicate=_.identity] The function invoked per iteration.
+ * @returns {Array} Returns the new filtered array.
+ * @see _.reject
+ * @example
+ *
+ * var users = [
+ *   { 'user': 'barney', 'age': 36, 'active': true },
+ *   { 'user': 'fred',   'age': 40, 'active': false }
+ * ];
+ *
+ * _.filter(users, function(o) { return !o.active; });
+ * // => objects for ['fred']
+ *
+ * // The `_.matches` iteratee shorthand.
+ * _.filter(users, { 'age': 36, 'active': true });
+ * // => objects for ['barney']
+ *
+ * // The `_.matchesProperty` iteratee shorthand.
+ * _.filter(users, ['active', false]);
+ * // => objects for ['fred']
+ *
+ * // The `_.property` iteratee shorthand.
+ * _.filter(users, 'active');
+ * // => objects for ['barney']
+ *
+ * // Combining several predicates using `_.overEvery` or `_.overSome`.
+ * _.filter(users, _.overSome([{ 'age': 36 }, ['age', 40]]));
+ * // => objects for ['fred', 'barney']
+ */
+function filter(collection, predicate) {
+  var func = isArray(collection) ? arrayFilter : baseFilter;
+  return func(collection, baseIteratee(predicate, 3));
+}
+
+module.exports = filter;
+
+
+/***/ }),
+
+/***/ "93ed":
+/***/ (function(module, exports, __webpack_require__) {
+
+var getMapData = __webpack_require__("4245");
+
+/**
+ * Removes `key` and its value from the map.
+ *
+ * @private
+ * @name delete
+ * @memberOf MapCache
+ * @param {string} key The key of the value to remove.
+ * @returns {boolean} Returns `true` if the entry was removed, else `false`.
+ */
+function mapCacheDelete(key) {
+  var result = getMapData(this, key)['delete'](key);
+  this.size -= result ? 1 : 0;
+  return result;
+}
+
+module.exports = mapCacheDelete;
+
+
+/***/ }),
+
 /***/ "94ca":
 /***/ (function(module, exports, __webpack_require__) {
 
@@ -66588,6 +73601,824 @@ var NATIVE = isForced.NATIVE = 'N';
 var POLYFILL = isForced.POLYFILL = 'P';
 
 module.exports = isForced;
+
+
+/***/ }),
+
+/***/ "950a":
+/***/ (function(module, exports, __webpack_require__) {
+
+var isArrayLike = __webpack_require__("30c9");
+
+/**
+ * Creates a `baseEach` or `baseEachRight` function.
+ *
+ * @private
+ * @param {Function} eachFunc The function to iterate over a collection.
+ * @param {boolean} [fromRight] Specify iterating from right to left.
+ * @returns {Function} Returns the new base function.
+ */
+function createBaseEach(eachFunc, fromRight) {
+  return function(collection, iteratee) {
+    if (collection == null) {
+      return collection;
+    }
+    if (!isArrayLike(collection)) {
+      return eachFunc(collection, iteratee);
+    }
+    var length = collection.length,
+        index = fromRight ? length : -1,
+        iterable = Object(collection);
+
+    while ((fromRight ? index-- : ++index < length)) {
+      if (iteratee(iterable[index], index, iterable) === false) {
+        break;
+      }
+    }
+    return collection;
+  };
+}
+
+module.exports = createBaseEach;
+
+
+/***/ }),
+
+/***/ "9520":
+/***/ (function(module, exports, __webpack_require__) {
+
+var baseGetTag = __webpack_require__("3729"),
+    isObject = __webpack_require__("1a8c");
+
+/** `Object#toString` result references. */
+var asyncTag = '[object AsyncFunction]',
+    funcTag = '[object Function]',
+    genTag = '[object GeneratorFunction]',
+    proxyTag = '[object Proxy]';
+
+/**
+ * Checks if `value` is classified as a `Function` object.
+ *
+ * @static
+ * @memberOf _
+ * @since 0.1.0
+ * @category Lang
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if `value` is a function, else `false`.
+ * @example
+ *
+ * _.isFunction(_);
+ * // => true
+ *
+ * _.isFunction(/abc/);
+ * // => false
+ */
+function isFunction(value) {
+  if (!isObject(value)) {
+    return false;
+  }
+  // The use of `Object#toString` avoids issues with the `typeof` operator
+  // in Safari 9 which returns 'object' for typed arrays and other constructors.
+  var tag = baseGetTag(value);
+  return tag == funcTag || tag == genTag || tag == asyncTag || tag == proxyTag;
+}
+
+module.exports = isFunction;
+
+
+/***/ }),
+
+/***/ "95ae":
+/***/ (function(module, exports, __webpack_require__) {
+
+var baseRest = __webpack_require__("100e"),
+    eq = __webpack_require__("9638"),
+    isIterateeCall = __webpack_require__("9aff"),
+    keysIn = __webpack_require__("9934");
+
+/** Used for built-in method references. */
+var objectProto = Object.prototype;
+
+/** Used to check objects for own properties. */
+var hasOwnProperty = objectProto.hasOwnProperty;
+
+/**
+ * Assigns own and inherited enumerable string keyed properties of source
+ * objects to the destination object for all destination properties that
+ * resolve to `undefined`. Source objects are applied from left to right.
+ * Once a property is set, additional values of the same property are ignored.
+ *
+ * **Note:** This method mutates `object`.
+ *
+ * @static
+ * @since 0.1.0
+ * @memberOf _
+ * @category Object
+ * @param {Object} object The destination object.
+ * @param {...Object} [sources] The source objects.
+ * @returns {Object} Returns `object`.
+ * @see _.defaultsDeep
+ * @example
+ *
+ * _.defaults({ 'a': 1 }, { 'b': 2 }, { 'a': 3 });
+ * // => { 'a': 1, 'b': 2 }
+ */
+var defaults = baseRest(function(object, sources) {
+  object = Object(object);
+
+  var index = -1;
+  var length = sources.length;
+  var guard = length > 2 ? sources[2] : undefined;
+
+  if (guard && isIterateeCall(sources[0], sources[1], guard)) {
+    length = 1;
+  }
+
+  while (++index < length) {
+    var source = sources[index];
+    var props = keysIn(source);
+    var propsIndex = -1;
+    var propsLength = props.length;
+
+    while (++propsIndex < propsLength) {
+      var key = props[propsIndex];
+      var value = object[key];
+
+      if (value === undefined ||
+          (eq(value, objectProto[key]) && !hasOwnProperty.call(object, key))) {
+        object[key] = source[key];
+      }
+    }
+  }
+
+  return object;
+});
+
+module.exports = defaults;
+
+
+/***/ }),
+
+/***/ "9638":
+/***/ (function(module, exports) {
+
+/**
+ * Performs a
+ * [`SameValueZero`](http://ecma-international.org/ecma-262/7.0/#sec-samevaluezero)
+ * comparison between two values to determine if they are equivalent.
+ *
+ * @static
+ * @memberOf _
+ * @since 4.0.0
+ * @category Lang
+ * @param {*} value The value to compare.
+ * @param {*} other The other value to compare.
+ * @returns {boolean} Returns `true` if the values are equivalent, else `false`.
+ * @example
+ *
+ * var object = { 'a': 1 };
+ * var other = { 'a': 1 };
+ *
+ * _.eq(object, object);
+ * // => true
+ *
+ * _.eq(object, other);
+ * // => false
+ *
+ * _.eq('a', 'a');
+ * // => true
+ *
+ * _.eq('a', Object('a'));
+ * // => false
+ *
+ * _.eq(NaN, NaN);
+ * // => true
+ */
+function eq(value, other) {
+  return value === other || (value !== value && other !== other);
+}
+
+module.exports = eq;
+
+
+/***/ }),
+
+/***/ "966f":
+/***/ (function(module, exports, __webpack_require__) {
+
+var Stack = __webpack_require__("7e64"),
+    baseIsEqual = __webpack_require__("c05f");
+
+/** Used to compose bitmasks for value comparisons. */
+var COMPARE_PARTIAL_FLAG = 1,
+    COMPARE_UNORDERED_FLAG = 2;
+
+/**
+ * The base implementation of `_.isMatch` without support for iteratee shorthands.
+ *
+ * @private
+ * @param {Object} object The object to inspect.
+ * @param {Object} source The object of property values to match.
+ * @param {Array} matchData The property names, values, and compare flags to match.
+ * @param {Function} [customizer] The function to customize comparisons.
+ * @returns {boolean} Returns `true` if `object` is a match, else `false`.
+ */
+function baseIsMatch(object, source, matchData, customizer) {
+  var index = matchData.length,
+      length = index,
+      noCustomizer = !customizer;
+
+  if (object == null) {
+    return !length;
+  }
+  object = Object(object);
+  while (index--) {
+    var data = matchData[index];
+    if ((noCustomizer && data[2])
+          ? data[1] !== object[data[0]]
+          : !(data[0] in object)
+        ) {
+      return false;
+    }
+  }
+  while (++index < length) {
+    data = matchData[index];
+    var key = data[0],
+        objValue = object[key],
+        srcValue = data[1];
+
+    if (noCustomizer && data[2]) {
+      if (objValue === undefined && !(key in object)) {
+        return false;
+      }
+    } else {
+      var stack = new Stack;
+      if (customizer) {
+        var result = customizer(objValue, srcValue, key, object, source, stack);
+      }
+      if (!(result === undefined
+            ? baseIsEqual(srcValue, objValue, COMPARE_PARTIAL_FLAG | COMPARE_UNORDERED_FLAG, customizer, stack)
+            : result
+          )) {
+        return false;
+      }
+    }
+  }
+  return true;
+}
+
+module.exports = baseIsMatch;
+
+
+/***/ }),
+
+/***/ "9671":
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+var _ = __webpack_require__("33de");
+
+module.exports = Graph;
+
+var DEFAULT_EDGE_NAME = "\x00";
+var GRAPH_NODE = "\x00";
+var EDGE_KEY_DELIM = "\x01";
+
+// Implementation notes:
+//
+//  * Node id query functions should return string ids for the nodes
+//  * Edge id query functions should return an "edgeObj", edge object, that is
+//    composed of enough information to uniquely identify an edge: {v, w, name}.
+//  * Internally we use an "edgeId", a stringified form of the edgeObj, to
+//    reference edges. This is because we need a performant way to look these
+//    edges up and, object properties, which have string keys, are the closest
+//    we're going to get to a performant hashtable in JavaScript.
+
+function Graph(opts) {
+  this._isDirected = _.has(opts, "directed") ? opts.directed : true;
+  this._isMultigraph = _.has(opts, "multigraph") ? opts.multigraph : false;
+  this._isCompound = _.has(opts, "compound") ? opts.compound : false;
+
+  // Label for the graph itself
+  this._label = undefined;
+
+  // Defaults to be set when creating a new node
+  this._defaultNodeLabelFn = _.constant(undefined);
+
+  // Defaults to be set when creating a new edge
+  this._defaultEdgeLabelFn = _.constant(undefined);
+
+  // v -> label
+  this._nodes = {};
+
+  if (this._isCompound) {
+    // v -> parent
+    this._parent = {};
+
+    // v -> children
+    this._children = {};
+    this._children[GRAPH_NODE] = {};
+  }
+
+  // v -> edgeObj
+  this._in = {};
+
+  // u -> v -> Number
+  this._preds = {};
+
+  // v -> edgeObj
+  this._out = {};
+
+  // v -> w -> Number
+  this._sucs = {};
+
+  // e -> edgeObj
+  this._edgeObjs = {};
+
+  // e -> label
+  this._edgeLabels = {};
+}
+
+/* Number of nodes in the graph. Should only be changed by the implementation. */
+Graph.prototype._nodeCount = 0;
+
+/* Number of edges in the graph. Should only be changed by the implementation. */
+Graph.prototype._edgeCount = 0;
+
+
+/* === Graph functions ========= */
+
+Graph.prototype.isDirected = function() {
+  return this._isDirected;
+};
+
+Graph.prototype.isMultigraph = function() {
+  return this._isMultigraph;
+};
+
+Graph.prototype.isCompound = function() {
+  return this._isCompound;
+};
+
+Graph.prototype.setGraph = function(label) {
+  this._label = label;
+  return this;
+};
+
+Graph.prototype.graph = function() {
+  return this._label;
+};
+
+
+/* === Node functions ========== */
+
+Graph.prototype.setDefaultNodeLabel = function(newDefault) {
+  if (!_.isFunction(newDefault)) {
+    newDefault = _.constant(newDefault);
+  }
+  this._defaultNodeLabelFn = newDefault;
+  return this;
+};
+
+Graph.prototype.nodeCount = function() {
+  return this._nodeCount;
+};
+
+Graph.prototype.nodes = function() {
+  return _.keys(this._nodes);
+};
+
+Graph.prototype.sources = function() {
+  var self = this;
+  return _.filter(this.nodes(), function(v) {
+    return _.isEmpty(self._in[v]);
+  });
+};
+
+Graph.prototype.sinks = function() {
+  var self = this;
+  return _.filter(this.nodes(), function(v) {
+    return _.isEmpty(self._out[v]);
+  });
+};
+
+Graph.prototype.setNodes = function(vs, value) {
+  var args = arguments;
+  var self = this;
+  _.each(vs, function(v) {
+    if (args.length > 1) {
+      self.setNode(v, value);
+    } else {
+      self.setNode(v);
+    }
+  });
+  return this;
+};
+
+Graph.prototype.setNode = function(v, value) {
+  if (_.has(this._nodes, v)) {
+    if (arguments.length > 1) {
+      this._nodes[v] = value;
+    }
+    return this;
+  }
+
+  this._nodes[v] = arguments.length > 1 ? value : this._defaultNodeLabelFn(v);
+  if (this._isCompound) {
+    this._parent[v] = GRAPH_NODE;
+    this._children[v] = {};
+    this._children[GRAPH_NODE][v] = true;
+  }
+  this._in[v] = {};
+  this._preds[v] = {};
+  this._out[v] = {};
+  this._sucs[v] = {};
+  ++this._nodeCount;
+  return this;
+};
+
+Graph.prototype.node = function(v) {
+  return this._nodes[v];
+};
+
+Graph.prototype.hasNode = function(v) {
+  return _.has(this._nodes, v);
+};
+
+Graph.prototype.removeNode =  function(v) {
+  var self = this;
+  if (_.has(this._nodes, v)) {
+    var removeEdge = function(e) { self.removeEdge(self._edgeObjs[e]); };
+    delete this._nodes[v];
+    if (this._isCompound) {
+      this._removeFromParentsChildList(v);
+      delete this._parent[v];
+      _.each(this.children(v), function(child) {
+        self.setParent(child);
+      });
+      delete this._children[v];
+    }
+    _.each(_.keys(this._in[v]), removeEdge);
+    delete this._in[v];
+    delete this._preds[v];
+    _.each(_.keys(this._out[v]), removeEdge);
+    delete this._out[v];
+    delete this._sucs[v];
+    --this._nodeCount;
+  }
+  return this;
+};
+
+Graph.prototype.setParent = function(v, parent) {
+  if (!this._isCompound) {
+    throw new Error("Cannot set parent in a non-compound graph");
+  }
+
+  if (_.isUndefined(parent)) {
+    parent = GRAPH_NODE;
+  } else {
+    // Coerce parent to string
+    parent += "";
+    for (var ancestor = parent;
+      !_.isUndefined(ancestor);
+      ancestor = this.parent(ancestor)) {
+      if (ancestor === v) {
+        throw new Error("Setting " + parent+ " as parent of " + v +
+                        " would create a cycle");
+      }
+    }
+
+    this.setNode(parent);
+  }
+
+  this.setNode(v);
+  this._removeFromParentsChildList(v);
+  this._parent[v] = parent;
+  this._children[parent][v] = true;
+  return this;
+};
+
+Graph.prototype._removeFromParentsChildList = function(v) {
+  delete this._children[this._parent[v]][v];
+};
+
+Graph.prototype.parent = function(v) {
+  if (this._isCompound) {
+    var parent = this._parent[v];
+    if (parent !== GRAPH_NODE) {
+      return parent;
+    }
+  }
+};
+
+Graph.prototype.children = function(v) {
+  if (_.isUndefined(v)) {
+    v = GRAPH_NODE;
+  }
+
+  if (this._isCompound) {
+    var children = this._children[v];
+    if (children) {
+      return _.keys(children);
+    }
+  } else if (v === GRAPH_NODE) {
+    return this.nodes();
+  } else if (this.hasNode(v)) {
+    return [];
+  }
+};
+
+Graph.prototype.predecessors = function(v) {
+  var predsV = this._preds[v];
+  if (predsV) {
+    return _.keys(predsV);
+  }
+};
+
+Graph.prototype.successors = function(v) {
+  var sucsV = this._sucs[v];
+  if (sucsV) {
+    return _.keys(sucsV);
+  }
+};
+
+Graph.prototype.neighbors = function(v) {
+  var preds = this.predecessors(v);
+  if (preds) {
+    return _.union(preds, this.successors(v));
+  }
+};
+
+Graph.prototype.isLeaf = function (v) {
+  var neighbors;
+  if (this.isDirected()) {
+    neighbors = this.successors(v);
+  } else {
+    neighbors = this.neighbors(v);
+  }
+  return neighbors.length === 0;
+};
+
+Graph.prototype.filterNodes = function(filter) {
+  var copy = new this.constructor({
+    directed: this._isDirected,
+    multigraph: this._isMultigraph,
+    compound: this._isCompound
+  });
+
+  copy.setGraph(this.graph());
+
+  var self = this;
+  _.each(this._nodes, function(value, v) {
+    if (filter(v)) {
+      copy.setNode(v, value);
+    }
+  });
+
+  _.each(this._edgeObjs, function(e) {
+    if (copy.hasNode(e.v) && copy.hasNode(e.w)) {
+      copy.setEdge(e, self.edge(e));
+    }
+  });
+
+  var parents = {};
+  function findParent(v) {
+    var parent = self.parent(v);
+    if (parent === undefined || copy.hasNode(parent)) {
+      parents[v] = parent;
+      return parent;
+    } else if (parent in parents) {
+      return parents[parent];
+    } else {
+      return findParent(parent);
+    }
+  }
+
+  if (this._isCompound) {
+    _.each(copy.nodes(), function(v) {
+      copy.setParent(v, findParent(v));
+    });
+  }
+
+  return copy;
+};
+
+/* === Edge functions ========== */
+
+Graph.prototype.setDefaultEdgeLabel = function(newDefault) {
+  if (!_.isFunction(newDefault)) {
+    newDefault = _.constant(newDefault);
+  }
+  this._defaultEdgeLabelFn = newDefault;
+  return this;
+};
+
+Graph.prototype.edgeCount = function() {
+  return this._edgeCount;
+};
+
+Graph.prototype.edges = function() {
+  return _.values(this._edgeObjs);
+};
+
+Graph.prototype.setPath = function(vs, value) {
+  var self = this;
+  var args = arguments;
+  _.reduce(vs, function(v, w) {
+    if (args.length > 1) {
+      self.setEdge(v, w, value);
+    } else {
+      self.setEdge(v, w);
+    }
+    return w;
+  });
+  return this;
+};
+
+/*
+ * setEdge(v, w, [value, [name]])
+ * setEdge({ v, w, [name] }, [value])
+ */
+Graph.prototype.setEdge = function() {
+  var v, w, name, value;
+  var valueSpecified = false;
+  var arg0 = arguments[0];
+
+  if (typeof arg0 === "object" && arg0 !== null && "v" in arg0) {
+    v = arg0.v;
+    w = arg0.w;
+    name = arg0.name;
+    if (arguments.length === 2) {
+      value = arguments[1];
+      valueSpecified = true;
+    }
+  } else {
+    v = arg0;
+    w = arguments[1];
+    name = arguments[3];
+    if (arguments.length > 2) {
+      value = arguments[2];
+      valueSpecified = true;
+    }
+  }
+
+  v = "" + v;
+  w = "" + w;
+  if (!_.isUndefined(name)) {
+    name = "" + name;
+  }
+
+  var e = edgeArgsToId(this._isDirected, v, w, name);
+  if (_.has(this._edgeLabels, e)) {
+    if (valueSpecified) {
+      this._edgeLabels[e] = value;
+    }
+    return this;
+  }
+
+  if (!_.isUndefined(name) && !this._isMultigraph) {
+    throw new Error("Cannot set a named edge when isMultigraph = false");
+  }
+
+  // It didn't exist, so we need to create it.
+  // First ensure the nodes exist.
+  this.setNode(v);
+  this.setNode(w);
+
+  this._edgeLabels[e] = valueSpecified ? value : this._defaultEdgeLabelFn(v, w, name);
+
+  var edgeObj = edgeArgsToObj(this._isDirected, v, w, name);
+  // Ensure we add undirected edges in a consistent way.
+  v = edgeObj.v;
+  w = edgeObj.w;
+
+  Object.freeze(edgeObj);
+  this._edgeObjs[e] = edgeObj;
+  incrementOrInitEntry(this._preds[w], v);
+  incrementOrInitEntry(this._sucs[v], w);
+  this._in[w][e] = edgeObj;
+  this._out[v][e] = edgeObj;
+  this._edgeCount++;
+  return this;
+};
+
+Graph.prototype.edge = function(v, w, name) {
+  var e = (arguments.length === 1
+    ? edgeObjToId(this._isDirected, arguments[0])
+    : edgeArgsToId(this._isDirected, v, w, name));
+  return this._edgeLabels[e];
+};
+
+Graph.prototype.hasEdge = function(v, w, name) {
+  var e = (arguments.length === 1
+    ? edgeObjToId(this._isDirected, arguments[0])
+    : edgeArgsToId(this._isDirected, v, w, name));
+  return _.has(this._edgeLabels, e);
+};
+
+Graph.prototype.removeEdge = function(v, w, name) {
+  var e = (arguments.length === 1
+    ? edgeObjToId(this._isDirected, arguments[0])
+    : edgeArgsToId(this._isDirected, v, w, name));
+  var edge = this._edgeObjs[e];
+  if (edge) {
+    v = edge.v;
+    w = edge.w;
+    delete this._edgeLabels[e];
+    delete this._edgeObjs[e];
+    decrementOrRemoveEntry(this._preds[w], v);
+    decrementOrRemoveEntry(this._sucs[v], w);
+    delete this._in[w][e];
+    delete this._out[v][e];
+    this._edgeCount--;
+  }
+  return this;
+};
+
+Graph.prototype.inEdges = function(v, u) {
+  var inV = this._in[v];
+  if (inV) {
+    var edges = _.values(inV);
+    if (!u) {
+      return edges;
+    }
+    return _.filter(edges, function(edge) { return edge.v === u; });
+  }
+};
+
+Graph.prototype.outEdges = function(v, w) {
+  var outV = this._out[v];
+  if (outV) {
+    var edges = _.values(outV);
+    if (!w) {
+      return edges;
+    }
+    return _.filter(edges, function(edge) { return edge.w === w; });
+  }
+};
+
+Graph.prototype.nodeEdges = function(v, w) {
+  var inEdges = this.inEdges(v, w);
+  if (inEdges) {
+    return inEdges.concat(this.outEdges(v, w));
+  }
+};
+
+function incrementOrInitEntry(map, k) {
+  if (map[k]) {
+    map[k]++;
+  } else {
+    map[k] = 1;
+  }
+}
+
+function decrementOrRemoveEntry(map, k) {
+  if (!--map[k]) { delete map[k]; }
+}
+
+function edgeArgsToId(isDirected, v_, w_, name) {
+  var v = "" + v_;
+  var w = "" + w_;
+  if (!isDirected && v > w) {
+    var tmp = v;
+    v = w;
+    w = tmp;
+  }
+  return v + EDGE_KEY_DELIM + w + EDGE_KEY_DELIM +
+             (_.isUndefined(name) ? DEFAULT_EDGE_NAME : name);
+}
+
+function edgeArgsToObj(isDirected, v_, w_, name) {
+  var v = "" + v_;
+  var w = "" + w_;
+  if (!isDirected && v > w) {
+    var tmp = v;
+    v = w;
+    w = tmp;
+  }
+  var edgeObj =  { v: v, w: w };
+  if (name) {
+    edgeObj.name = name;
+  }
+  return edgeObj;
+}
+
+function edgeObjToId(isDirected, edgeObj) {
+  return edgeArgsToId(isDirected, edgeObj.v, edgeObj.w, edgeObj.name);
+}
+
+
+/***/ }),
+
+/***/ "96c8":
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+/* harmony import */ var _node_modules_mini_css_extract_plugin_dist_loader_js_ref_8_oneOf_1_0_node_modules_css_loader_dist_cjs_js_ref_8_oneOf_1_1_node_modules_vue_loader_lib_loaders_stylePostLoader_js_node_modules_postcss_loader_src_index_js_ref_8_oneOf_1_2_node_modules_sass_loader_dist_cjs_js_ref_8_oneOf_1_3_node_modules_cache_loader_dist_cjs_js_ref_0_0_node_modules_vue_loader_lib_index_js_vue_loader_options_LoadDialog_vue_vue_type_style_index_0_lang_scss___WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__("f096");
+/* harmony import */ var _node_modules_mini_css_extract_plugin_dist_loader_js_ref_8_oneOf_1_0_node_modules_css_loader_dist_cjs_js_ref_8_oneOf_1_1_node_modules_vue_loader_lib_loaders_stylePostLoader_js_node_modules_postcss_loader_src_index_js_ref_8_oneOf_1_2_node_modules_sass_loader_dist_cjs_js_ref_8_oneOf_1_3_node_modules_cache_loader_dist_cjs_js_ref_0_0_node_modules_vue_loader_lib_index_js_vue_loader_options_LoadDialog_vue_vue_type_style_index_0_lang_scss___WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(_node_modules_mini_css_extract_plugin_dist_loader_js_ref_8_oneOf_1_0_node_modules_css_loader_dist_cjs_js_ref_8_oneOf_1_1_node_modules_vue_loader_lib_loaders_stylePostLoader_js_node_modules_postcss_loader_src_index_js_ref_8_oneOf_1_2_node_modules_sass_loader_dist_cjs_js_ref_8_oneOf_1_3_node_modules_cache_loader_dist_cjs_js_ref_0_0_node_modules_vue_loader_lib_index_js_vue_loader_options_LoadDialog_vue_vue_type_style_index_0_lang_scss___WEBPACK_IMPORTED_MODULE_0__);
+/* unused harmony reexport * */
 
 
 /***/ }),
@@ -67353,6 +75184,61 @@ try {
 
 /***/ }),
 
+/***/ "96f3":
+/***/ (function(module, exports) {
+
+/** Used for built-in method references. */
+var objectProto = Object.prototype;
+
+/** Used to check objects for own properties. */
+var hasOwnProperty = objectProto.hasOwnProperty;
+
+/**
+ * The base implementation of `_.has` without support for deep paths.
+ *
+ * @private
+ * @param {Object} [object] The object to query.
+ * @param {Array|string} key The key to check.
+ * @returns {boolean} Returns `true` if `key` exists, else `false`.
+ */
+function baseHas(object, key) {
+  return object != null && hasOwnProperty.call(object, key);
+}
+
+module.exports = baseHas;
+
+
+/***/ }),
+
+/***/ "97d3":
+/***/ (function(module, exports, __webpack_require__) {
+
+var baseEach = __webpack_require__("48a0"),
+    isArrayLike = __webpack_require__("30c9");
+
+/**
+ * The base implementation of `_.map` without support for iteratee shorthands.
+ *
+ * @private
+ * @param {Array|Object} collection The collection to iterate over.
+ * @param {Function} iteratee The function invoked per iteration.
+ * @returns {Array} Returns the new mapped array.
+ */
+function baseMap(collection, iteratee) {
+  var index = -1,
+      result = isArrayLike(collection) ? Array(collection.length) : [];
+
+  baseEach(collection, function(value, key, collection) {
+    result[++index] = iteratee(value, key, collection);
+  });
+  return result;
+}
+
+module.exports = baseMap;
+
+
+/***/ }),
+
 /***/ "9861":
 /***/ (function(module, exports, __webpack_require__) {
 
@@ -67728,6 +75614,126 @@ module.exports = {
 
 /***/ }),
 
+/***/ "98dc":
+/***/ (function(module, exports, __webpack_require__) {
+
+var toString = __webpack_require__("76dd");
+
+/** Used to generate unique IDs. */
+var idCounter = 0;
+
+/**
+ * Generates a unique ID. If `prefix` is given, the ID is appended to it.
+ *
+ * @static
+ * @since 0.1.0
+ * @memberOf _
+ * @category Util
+ * @param {string} [prefix=''] The value to prefix the ID with.
+ * @returns {string} Returns the unique ID.
+ * @example
+ *
+ * _.uniqueId('contact_');
+ * // => 'contact_104'
+ *
+ * _.uniqueId();
+ * // => '105'
+ */
+function uniqueId(prefix) {
+  var id = ++idCounter;
+  return toString(prefix) + id;
+}
+
+module.exports = uniqueId;
+
+
+/***/ }),
+
+/***/ "9934":
+/***/ (function(module, exports, __webpack_require__) {
+
+var arrayLikeKeys = __webpack_require__("6fcd"),
+    baseKeysIn = __webpack_require__("41c3"),
+    isArrayLike = __webpack_require__("30c9");
+
+/**
+ * Creates an array of the own and inherited enumerable property names of `object`.
+ *
+ * **Note:** Non-object values are coerced to objects.
+ *
+ * @static
+ * @memberOf _
+ * @since 3.0.0
+ * @category Object
+ * @param {Object} object The object to query.
+ * @returns {Array} Returns the array of property names.
+ * @example
+ *
+ * function Foo() {
+ *   this.a = 1;
+ *   this.b = 2;
+ * }
+ *
+ * Foo.prototype.c = 3;
+ *
+ * _.keysIn(new Foo);
+ * // => ['a', 'b', 'c'] (iteration order is not guaranteed)
+ */
+function keysIn(object) {
+  return isArrayLike(object) ? arrayLikeKeys(object, true) : baseKeysIn(object);
+}
+
+module.exports = keysIn;
+
+
+/***/ }),
+
+/***/ "9948":
+/***/ (function(module, exports, __webpack_require__) {
+
+var baseFor = __webpack_require__("72af"),
+    castFunction = __webpack_require__("1304"),
+    keysIn = __webpack_require__("9934");
+
+/**
+ * Iterates over own and inherited enumerable string keyed properties of an
+ * object and invokes `iteratee` for each property. The iteratee is invoked
+ * with three arguments: (value, key, object). Iteratee functions may exit
+ * iteration early by explicitly returning `false`.
+ *
+ * @static
+ * @memberOf _
+ * @since 0.3.0
+ * @category Object
+ * @param {Object} object The object to iterate over.
+ * @param {Function} [iteratee=_.identity] The function invoked per iteration.
+ * @returns {Object} Returns `object`.
+ * @see _.forInRight
+ * @example
+ *
+ * function Foo() {
+ *   this.a = 1;
+ *   this.b = 2;
+ * }
+ *
+ * Foo.prototype.c = 3;
+ *
+ * _.forIn(new Foo, function(value, key) {
+ *   console.log(key);
+ * });
+ * // => Logs 'a', 'b', then 'c' (iteration order is not guaranteed).
+ */
+function forIn(object, iteratee) {
+  return object == null
+    ? object
+    : baseFor(object, castFunction(iteratee), keysIn);
+}
+
+module.exports = forIn;
+
+
+/***/ }),
+
 /***/ "99af":
 /***/ (function(module, exports, __webpack_require__) {
 
@@ -67797,6 +75803,76 @@ $({ target: 'Array', proto: true, forced: FORCED }, {
 
 /***/ }),
 
+/***/ "99cd":
+/***/ (function(module, exports) {
+
+/**
+ * Creates a base function for methods like `_.forIn` and `_.forOwn`.
+ *
+ * @private
+ * @param {boolean} [fromRight] Specify iterating from right to left.
+ * @returns {Function} Returns the new base function.
+ */
+function createBaseFor(fromRight) {
+  return function(object, iteratee, keysFunc) {
+    var index = -1,
+        iterable = Object(object),
+        props = keysFunc(object),
+        length = props.length;
+
+    while (length--) {
+      var key = props[fromRight ? length : ++index];
+      if (iteratee(iterable[key], key, iterable) === false) {
+        break;
+      }
+    }
+    return object;
+  };
+}
+
+module.exports = createBaseFor;
+
+
+/***/ }),
+
+/***/ "99d3":
+/***/ (function(module, exports, __webpack_require__) {
+
+/* WEBPACK VAR INJECTION */(function(module) {var freeGlobal = __webpack_require__("585a");
+
+/** Detect free variable `exports`. */
+var freeExports =  true && exports && !exports.nodeType && exports;
+
+/** Detect free variable `module`. */
+var freeModule = freeExports && typeof module == 'object' && module && !module.nodeType && module;
+
+/** Detect the popular CommonJS extension `module.exports`. */
+var moduleExports = freeModule && freeModule.exports === freeExports;
+
+/** Detect free variable `process` from Node.js. */
+var freeProcess = moduleExports && freeGlobal.process;
+
+/** Used to access faster Node.js helpers. */
+var nodeUtil = (function() {
+  try {
+    // Use `util.types` for Node.js 10+.
+    var types = freeModule && freeModule.require && freeModule.require('util').types;
+
+    if (types) {
+      return types;
+    }
+
+    // Legacy `process.binding('util')` for Node.js < 10.
+    return freeProcess && freeProcess.binding && freeProcess.binding('util');
+  } catch (e) {}
+}());
+
+module.exports = nodeUtil;
+
+/* WEBPACK VAR INJECTION */}.call(this, __webpack_require__("62e4")(module)))
+
+/***/ }),
+
 /***/ "9a0c":
 /***/ (function(module, exports, __webpack_require__) {
 
@@ -67821,6 +75897,83 @@ module.exports = function (it, usingIterator) {
     throw TypeError(String(it) + ' is not iterable');
   } return anObject(iteratorMethod.call(it));
 };
+
+
+/***/ }),
+
+/***/ "9aff":
+/***/ (function(module, exports, __webpack_require__) {
+
+var eq = __webpack_require__("9638"),
+    isArrayLike = __webpack_require__("30c9"),
+    isIndex = __webpack_require__("c098"),
+    isObject = __webpack_require__("1a8c");
+
+/**
+ * Checks if the given arguments are from an iteratee call.
+ *
+ * @private
+ * @param {*} value The potential iteratee value argument.
+ * @param {*} index The potential iteratee index or key argument.
+ * @param {*} object The potential iteratee object argument.
+ * @returns {boolean} Returns `true` if the arguments are from an iteratee call,
+ *  else `false`.
+ */
+function isIterateeCall(value, index, object) {
+  if (!isObject(object)) {
+    return false;
+  }
+  var type = typeof index;
+  if (type == 'number'
+        ? (isArrayLike(object) && isIndex(index, object.length))
+        : (type == 'string' && index in object)
+      ) {
+    return eq(object[index], value);
+  }
+  return false;
+}
+
+module.exports = isIterateeCall;
+
+
+/***/ }),
+
+/***/ "9b02":
+/***/ (function(module, exports, __webpack_require__) {
+
+var baseGet = __webpack_require__("656b");
+
+/**
+ * Gets the value at `path` of `object`. If the resolved value is
+ * `undefined`, the `defaultValue` is returned in its place.
+ *
+ * @static
+ * @memberOf _
+ * @since 3.7.0
+ * @category Object
+ * @param {Object} object The object to query.
+ * @param {Array|string} path The path of the property to get.
+ * @param {*} [defaultValue] The value returned for `undefined` resolved values.
+ * @returns {*} Returns the resolved value.
+ * @example
+ *
+ * var object = { 'a': [{ 'b': { 'c': 3 } }] };
+ *
+ * _.get(object, 'a[0].b.c');
+ * // => 3
+ *
+ * _.get(object, ['a', '0', 'b', 'c']);
+ * // => 3
+ *
+ * _.get(object, 'a.b.c', 'default');
+ * // => 'default'
+ */
+function get(object, path, defaultValue) {
+  var result = object == null ? undefined : baseGet(object, path);
+  return result === undefined ? defaultValue : result;
+}
+
+module.exports = get;
 
 
 /***/ }),
@@ -67871,6 +76024,69 @@ exports.f = DESCRIPTORS ? $defineProperty : function defineProperty(O, P, Attrib
 
 /***/ }),
 
+/***/ "9e69":
+/***/ (function(module, exports, __webpack_require__) {
+
+var root = __webpack_require__("2b3e");
+
+/** Built-in value references. */
+var Symbol = root.Symbol;
+
+module.exports = Symbol;
+
+
+/***/ }),
+
+/***/ "9e86":
+/***/ (function(module, exports, __webpack_require__) {
+
+var baseAssignValue = __webpack_require__("872a"),
+    baseForOwn = __webpack_require__("242e"),
+    baseIteratee = __webpack_require__("badf");
+
+/**
+ * Creates an object with the same keys as `object` and values generated
+ * by running each own enumerable string keyed property of `object` thru
+ * `iteratee`. The iteratee is invoked with three arguments:
+ * (value, key, object).
+ *
+ * @static
+ * @memberOf _
+ * @since 2.4.0
+ * @category Object
+ * @param {Object} object The object to iterate over.
+ * @param {Function} [iteratee=_.identity] The function invoked per iteration.
+ * @returns {Object} Returns the new mapped object.
+ * @see _.mapKeys
+ * @example
+ *
+ * var users = {
+ *   'fred':    { 'user': 'fred',    'age': 40 },
+ *   'pebbles': { 'user': 'pebbles', 'age': 1 }
+ * };
+ *
+ * _.mapValues(users, function(o) { return o.age; });
+ * // => { 'fred': 40, 'pebbles': 1 } (iteration order is not guaranteed)
+ *
+ * // The `_.property` iteratee shorthand.
+ * _.mapValues(users, 'age');
+ * // => { 'fred': 40, 'pebbles': 1 } (iteration order is not guaranteed)
+ */
+function mapValues(object, iteratee) {
+  var result = {};
+  iteratee = baseIteratee(iteratee, 3);
+
+  baseForOwn(object, function(value, key, object) {
+    baseAssignValue(result, key, iteratee(value, key, object));
+  });
+  return result;
+}
+
+module.exports = mapValues;
+
+
+/***/ }),
+
 /***/ "9ed3":
 /***/ (function(module, exports, __webpack_require__) {
 
@@ -67891,6 +76107,34 @@ module.exports = function (IteratorConstructor, NAME, next) {
   Iterators[TO_STRING_TAG] = returnThis;
   return IteratorConstructor;
 };
+
+
+/***/ }),
+
+/***/ "9f74":
+/***/ (function(module, exports, __webpack_require__) {
+
+var baseEach = __webpack_require__("48a0");
+
+/**
+ * The base implementation of `_.filter` without support for iteratee shorthands.
+ *
+ * @private
+ * @param {Array|Object} collection The collection to iterate over.
+ * @param {Function} predicate The function invoked per iteration.
+ * @returns {Array} Returns the new filtered array.
+ */
+function baseFilter(collection, predicate) {
+  var result = [];
+  baseEach(collection, function(value, index, collection) {
+    if (predicate(value, index, collection)) {
+      result.push(value);
+    }
+  });
+  return result;
+}
+
+module.exports = baseFilter;
 
 
 /***/ }),
@@ -67916,6 +76160,38 @@ exports.BROKEN_CARET = fails(function () {
   re.lastIndex = 2;
   return re.exec('str') != null;
 });
+
+
+/***/ }),
+
+/***/ "a029":
+/***/ (function(module, exports, __webpack_require__) {
+
+var arrayPush = __webpack_require__("087d"),
+    getPrototype = __webpack_require__("2dcb"),
+    getSymbols = __webpack_require__("32f4"),
+    stubArray = __webpack_require__("d327");
+
+/* Built-in method references for those with the same name as other `lodash` methods. */
+var nativeGetSymbols = Object.getOwnPropertySymbols;
+
+/**
+ * Creates an array of the own and inherited enumerable symbols of `object`.
+ *
+ * @private
+ * @param {Object} object The object to query.
+ * @returns {Array} Returns the array of symbols.
+ */
+var getSymbolsIn = !nativeGetSymbols ? stubArray : function(object) {
+  var result = [];
+  while (object) {
+    arrayPush(result, getSymbols(object));
+    object = getPrototype(object);
+  }
+  return result;
+};
+
+module.exports = getSymbolsIn;
 
 
 /***/ }),
@@ -67962,6 +76238,97 @@ $({ target: 'Array', proto: true, forced: ES3_STRINGS || !STRICT_METHOD }, {
 
 /***/ }),
 
+/***/ "a2be":
+/***/ (function(module, exports, __webpack_require__) {
+
+var SetCache = __webpack_require__("d612"),
+    arraySome = __webpack_require__("4284"),
+    cacheHas = __webpack_require__("c584");
+
+/** Used to compose bitmasks for value comparisons. */
+var COMPARE_PARTIAL_FLAG = 1,
+    COMPARE_UNORDERED_FLAG = 2;
+
+/**
+ * A specialized version of `baseIsEqualDeep` for arrays with support for
+ * partial deep comparisons.
+ *
+ * @private
+ * @param {Array} array The array to compare.
+ * @param {Array} other The other array to compare.
+ * @param {number} bitmask The bitmask flags. See `baseIsEqual` for more details.
+ * @param {Function} customizer The function to customize comparisons.
+ * @param {Function} equalFunc The function to determine equivalents of values.
+ * @param {Object} stack Tracks traversed `array` and `other` objects.
+ * @returns {boolean} Returns `true` if the arrays are equivalent, else `false`.
+ */
+function equalArrays(array, other, bitmask, customizer, equalFunc, stack) {
+  var isPartial = bitmask & COMPARE_PARTIAL_FLAG,
+      arrLength = array.length,
+      othLength = other.length;
+
+  if (arrLength != othLength && !(isPartial && othLength > arrLength)) {
+    return false;
+  }
+  // Check that cyclic values are equal.
+  var arrStacked = stack.get(array);
+  var othStacked = stack.get(other);
+  if (arrStacked && othStacked) {
+    return arrStacked == other && othStacked == array;
+  }
+  var index = -1,
+      result = true,
+      seen = (bitmask & COMPARE_UNORDERED_FLAG) ? new SetCache : undefined;
+
+  stack.set(array, other);
+  stack.set(other, array);
+
+  // Ignore non-index properties.
+  while (++index < arrLength) {
+    var arrValue = array[index],
+        othValue = other[index];
+
+    if (customizer) {
+      var compared = isPartial
+        ? customizer(othValue, arrValue, index, other, array, stack)
+        : customizer(arrValue, othValue, index, array, other, stack);
+    }
+    if (compared !== undefined) {
+      if (compared) {
+        continue;
+      }
+      result = false;
+      break;
+    }
+    // Recursively compare arrays (susceptible to call stack limits).
+    if (seen) {
+      if (!arraySome(other, function(othValue, othIndex) {
+            if (!cacheHas(seen, othIndex) &&
+                (arrValue === othValue || equalFunc(arrValue, othValue, bitmask, customizer, stack))) {
+              return seen.push(othIndex);
+            }
+          })) {
+        result = false;
+        break;
+      }
+    } else if (!(
+          arrValue === othValue ||
+            equalFunc(arrValue, othValue, bitmask, customizer, stack)
+        )) {
+      result = false;
+      break;
+    }
+  }
+  stack['delete'](array);
+  stack['delete'](other);
+  return result;
+}
+
+module.exports = equalArrays;
+
+
+/***/ }),
+
 /***/ "a2bf":
 /***/ (function(module, exports, __webpack_require__) {
 
@@ -67998,6 +76365,31 @@ var flattenIntoArray = function (target, original, source, sourceLen, start, dep
 };
 
 module.exports = flattenIntoArray;
+
+
+/***/ }),
+
+/***/ "a2db":
+/***/ (function(module, exports, __webpack_require__) {
+
+var Symbol = __webpack_require__("9e69");
+
+/** Used to convert symbols to primitives and strings. */
+var symbolProto = Symbol ? Symbol.prototype : undefined,
+    symbolValueOf = symbolProto ? symbolProto.valueOf : undefined;
+
+/**
+ * Creates a clone of the `symbol` object.
+ *
+ * @private
+ * @param {Object} symbol The symbol object to clone.
+ * @returns {Object} Returns the cloned symbol object.
+ */
+function cloneSymbol(symbol) {
+  return symbolValueOf ? Object(symbolValueOf.call(symbol)) : {};
+}
+
+module.exports = cloneSymbol;
 
 
 /***/ }),
@@ -68074,6 +76466,96 @@ $({ target: 'Array', proto: true, forced: !HAS_SPECIES_SUPPORT }, {
     return A;
   }
 });
+
+
+/***/ }),
+
+/***/ "a454":
+/***/ (function(module, exports, __webpack_require__) {
+
+var constant = __webpack_require__("72f0"),
+    defineProperty = __webpack_require__("3b4a"),
+    identity = __webpack_require__("cd9d");
+
+/**
+ * The base implementation of `setToString` without support for hot loop shorting.
+ *
+ * @private
+ * @param {Function} func The function to modify.
+ * @param {Function} string The `toString` result.
+ * @returns {Function} Returns `func`.
+ */
+var baseSetToString = !defineProperty ? identity : function(func, string) {
+  return defineProperty(func, 'toString', {
+    'configurable': true,
+    'enumerable': false,
+    'value': constant(string),
+    'writable': true
+  });
+};
+
+module.exports = baseSetToString;
+
+
+/***/ }),
+
+/***/ "a473":
+/***/ (function(module, exports, __webpack_require__) {
+
+var _ = __webpack_require__("33de");
+var PriorityQueue = __webpack_require__("01eb");
+
+module.exports = dijkstra;
+
+var DEFAULT_WEIGHT_FUNC = _.constant(1);
+
+function dijkstra(g, source, weightFn, edgeFn) {
+  return runDijkstra(g, String(source),
+    weightFn || DEFAULT_WEIGHT_FUNC,
+    edgeFn || function(v) { return g.outEdges(v); });
+}
+
+function runDijkstra(g, source, weightFn, edgeFn) {
+  var results = {};
+  var pq = new PriorityQueue();
+  var v, vEntry;
+
+  var updateNeighbors = function(edge) {
+    var w = edge.v !== v ? edge.v : edge.w;
+    var wEntry = results[w];
+    var weight = weightFn(edge);
+    var distance = vEntry.distance + weight;
+
+    if (weight < 0) {
+      throw new Error("dijkstra does not allow negative edge weights. " +
+                      "Bad edge: " + edge + " Weight: " + weight);
+    }
+
+    if (distance < wEntry.distance) {
+      wEntry.distance = distance;
+      wEntry.predecessor = v;
+      pq.decrease(w, distance);
+    }
+  };
+
+  g.nodes().forEach(function(v) {
+    var distance = v === source ? 0 : Number.POSITIVE_INFINITY;
+    results[v] = { distance: distance };
+    pq.add(v, distance);
+  });
+
+  while (pq.size() > 0) {
+    v = pq.removeMin();
+    vEntry = results[v];
+    if (vEntry.distance === Number.POSITIVE_INFINITY) {
+      break;
+    }
+
+    edgeFn(v).forEach(updateNeighbors);
+  }
+
+  return results;
+}
 
 
 /***/ }),
@@ -68402,6 +76884,29 @@ hiddenKeys[HIDDEN] = true;
 
 /***/ }),
 
+/***/ "a524":
+/***/ (function(module, exports, __webpack_require__) {
+
+var getMapData = __webpack_require__("4245");
+
+/**
+ * Checks if a map value for `key` exists.
+ *
+ * @private
+ * @name has
+ * @memberOf MapCache
+ * @param {string} key The key of the entry to check.
+ * @returns {boolean} Returns `true` if an entry for `key` exists, else `false`.
+ */
+function mapCacheHas(key) {
+  return getMapData(this, key).has(key);
+}
+
+module.exports = mapCacheHas;
+
+
+/***/ }),
+
 /***/ "a630":
 /***/ (function(module, exports, __webpack_require__) {
 
@@ -68452,6 +76957,184 @@ var floor = Math.floor;
 module.exports = function (argument) {
   return isNaN(argument = +argument) ? 0 : (argument > 0 ? floor : ceil)(argument);
 };
+
+
+/***/ }),
+
+/***/ "a6d1":
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+var _ = __webpack_require__("6f9c");
+var greedyFAS = __webpack_require__("299f");
+
+module.exports = {
+  run: run,
+  undo: undo
+};
+
+function run(g) {
+  var fas = (g.graph().acyclicer === "greedy"
+    ? greedyFAS(g, weightFn(g))
+    : dfsFAS(g));
+  _.forEach(fas, function(e) {
+    var label = g.edge(e);
+    g.removeEdge(e);
+    label.forwardName = e.name;
+    label.reversed = true;
+    g.setEdge(e.w, e.v, label, _.uniqueId("rev"));
+  });
+
+  function weightFn(g) {
+    return function(e) {
+      return g.edge(e).weight;
+    };
+  }
+}
+
+function dfsFAS(g) {
+  var fas = [];
+  var stack = {};
+  var visited = {};
+
+  function dfs(v) {
+    if (_.has(visited, v)) {
+      return;
+    }
+    visited[v] = true;
+    stack[v] = true;
+    _.forEach(g.outEdges(v), function(e) {
+      if (_.has(stack, e.w)) {
+        fas.push(e);
+      } else {
+        dfs(e.w);
+      }
+    });
+    delete stack[v];
+  }
+
+  _.forEach(g.nodes(), dfs);
+  return fas;
+}
+
+function undo(g) {
+  _.forEach(g.edges(), function(e) {
+    var label = g.edge(e);
+    if (label.reversed) {
+      g.removeEdge(e);
+
+      var forwardName = label.forwardName;
+      delete label.reversed;
+      delete label.forwardName;
+      g.setEdge(e.w, e.v, label, forwardName);
+    }
+  });
+}
+
+
+/***/ }),
+
+/***/ "a864":
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+var _ = __webpack_require__("6f9c");
+
+module.exports = {
+  adjust: adjust,
+  undo: undo
+};
+
+function adjust(g) {
+  var rankDir = g.graph().rankdir.toLowerCase();
+  if (rankDir === "lr" || rankDir === "rl") {
+    swapWidthHeight(g);
+  }
+}
+
+function undo(g) {
+  var rankDir = g.graph().rankdir.toLowerCase();
+  if (rankDir === "bt" || rankDir === "rl") {
+    reverseY(g);
+  }
+
+  if (rankDir === "lr" || rankDir === "rl") {
+    swapXY(g);
+    swapWidthHeight(g);
+  }
+}
+
+function swapWidthHeight(g) {
+  _.forEach(g.nodes(), function(v) { swapWidthHeightOne(g.node(v)); });
+  _.forEach(g.edges(), function(e) { swapWidthHeightOne(g.edge(e)); });
+}
+
+function swapWidthHeightOne(attrs) {
+  var w = attrs.width;
+  attrs.width = attrs.height;
+  attrs.height = w;
+}
+
+function reverseY(g) {
+  _.forEach(g.nodes(), function(v) { reverseYOne(g.node(v)); });
+
+  _.forEach(g.edges(), function(e) {
+    var edge = g.edge(e);
+    _.forEach(edge.points, reverseYOne);
+    if (_.has(edge, "y")) {
+      reverseYOne(edge);
+    }
+  });
+}
+
+function reverseYOne(attrs) {
+  attrs.y = -attrs.y;
+}
+
+function swapXY(g) {
+  _.forEach(g.nodes(), function(v) { swapXYOne(g.node(v)); });
+
+  _.forEach(g.edges(), function(e) {
+    var edge = g.edge(e);
+    _.forEach(edge.points, swapXYOne);
+    if (_.has(edge, "x")) {
+      swapXYOne(edge);
+    }
+  });
+}
+
+function swapXYOne(attrs) {
+  var x = attrs.x;
+  attrs.x = attrs.y;
+  attrs.y = x;
+}
+
+
+/***/ }),
+
+/***/ "a994":
+/***/ (function(module, exports, __webpack_require__) {
+
+var baseGetAllKeys = __webpack_require__("7d1f"),
+    getSymbols = __webpack_require__("32f4"),
+    keys = __webpack_require__("ec69");
+
+/**
+ * Creates an array of own enumerable property names and symbols of `object`.
+ *
+ * @private
+ * @param {Object} object The object to query.
+ * @returns {Array} Returns the array of property names and symbols.
+ */
+function getAllKeys(object) {
+  return baseGetAllKeys(object, keys, getSymbols);
+}
+
+module.exports = getAllKeys;
 
 
 /***/ }),
@@ -68546,6 +77229,53 @@ if (isForced(NUMBER, !NativeNumber(' 0o1') || !NativeNumber('0b1') || NativeNumb
 
 /***/ }),
 
+/***/ "aaec":
+/***/ (function(module, exports) {
+
+/** Used to compose unicode character classes. */
+var rsAstralRange = '\\ud800-\\udfff',
+    rsComboMarksRange = '\\u0300-\\u036f',
+    reComboHalfMarksRange = '\\ufe20-\\ufe2f',
+    rsComboSymbolsRange = '\\u20d0-\\u20ff',
+    rsComboRange = rsComboMarksRange + reComboHalfMarksRange + rsComboSymbolsRange,
+    rsVarRange = '\\ufe0e\\ufe0f';
+
+/** Used to compose unicode capture groups. */
+var rsZWJ = '\\u200d';
+
+/** Used to detect strings with [zero-width joiners or code points from the astral planes](http://eev.ee/blog/2015/09/12/dark-corners-of-unicode/). */
+var reHasUnicode = RegExp('[' + rsZWJ + rsAstralRange  + rsComboRange + rsVarRange + ']');
+
+/**
+ * Checks if `string` contains Unicode symbols.
+ *
+ * @private
+ * @param {string} string The string to inspect.
+ * @returns {boolean} Returns `true` if a symbol is found, else `false`.
+ */
+function hasUnicode(string) {
+  return reHasUnicode.test(string);
+}
+
+module.exports = hasUnicode;
+
+
+/***/ }),
+
+/***/ "aaf9":
+/***/ (function(module, exports, __webpack_require__) {
+
+var dfs = __webpack_require__("df2e");
+
+module.exports = preorder;
+
+function preorder(g, vs) {
+  return dfs(g, vs, "pre");
+}
+
+
+/***/ }),
+
 /***/ "ab13":
 /***/ (function(module, exports, __webpack_require__) {
 
@@ -68568,6 +77298,93 @@ module.exports = function (METHOD_NAME) {
 
 /***/ }),
 
+/***/ "ab81":
+/***/ (function(module, exports) {
+
+/** Used to compose unicode character classes. */
+var rsAstralRange = '\\ud800-\\udfff',
+    rsComboMarksRange = '\\u0300-\\u036f',
+    reComboHalfMarksRange = '\\ufe20-\\ufe2f',
+    rsComboSymbolsRange = '\\u20d0-\\u20ff',
+    rsComboRange = rsComboMarksRange + reComboHalfMarksRange + rsComboSymbolsRange,
+    rsVarRange = '\\ufe0e\\ufe0f';
+
+/** Used to compose unicode capture groups. */
+var rsAstral = '[' + rsAstralRange + ']',
+    rsCombo = '[' + rsComboRange + ']',
+    rsFitz = '\\ud83c[\\udffb-\\udfff]',
+    rsModifier = '(?:' + rsCombo + '|' + rsFitz + ')',
+    rsNonAstral = '[^' + rsAstralRange + ']',
+    rsRegional = '(?:\\ud83c[\\udde6-\\uddff]){2}',
+    rsSurrPair = '[\\ud800-\\udbff][\\udc00-\\udfff]',
+    rsZWJ = '\\u200d';
+
+/** Used to compose unicode regexes. */
+var reOptMod = rsModifier + '?',
+    rsOptVar = '[' + rsVarRange + ']?',
+    rsOptJoin = '(?:' + rsZWJ + '(?:' + [rsNonAstral, rsRegional, rsSurrPair].join('|') + ')' + rsOptVar + reOptMod + ')*',
+    rsSeq = rsOptVar + reOptMod + rsOptJoin,
+    rsSymbol = '(?:' + [rsNonAstral + rsCombo + '?', rsCombo, rsRegional, rsSurrPair, rsAstral].join('|') + ')';
+
+/** Used to match [string symbols](https://mathiasbynens.be/notes/javascript-unicode). */
+var reUnicode = RegExp(rsFitz + '(?=' + rsFitz + ')|' + rsSymbol + rsSeq, 'g');
+
+/**
+ * Gets the size of a Unicode `string`.
+ *
+ * @private
+ * @param {string} string The string inspect.
+ * @returns {number} Returns the string size.
+ */
+function unicodeSize(string) {
+  var result = reUnicode.lastIndex = 0;
+  while (reUnicode.test(string)) {
+    ++result;
+  }
+  return result;
+}
+
+module.exports = unicodeSize;
+
+
+/***/ }),
+
+/***/ "abdd":
+/***/ (function(module, exports, __webpack_require__) {
+
+var baseExtremum = __webpack_require__("76e9"),
+    baseGt = __webpack_require__("57dc"),
+    identity = __webpack_require__("cd9d");
+
+/**
+ * Computes the maximum value of `array`. If `array` is empty or falsey,
+ * `undefined` is returned.
+ *
+ * @static
+ * @since 0.1.0
+ * @memberOf _
+ * @category Math
+ * @param {Array} array The array to iterate over.
+ * @returns {*} Returns the maximum value.
+ * @example
+ *
+ * _.max([4, 2, 8, 6]);
+ * // => 8
+ *
+ * _.max([]);
+ * // => undefined
+ */
+function max(array) {
+  return (array && array.length)
+    ? baseExtremum(array, identity, baseGt)
+    : undefined;
+}
+
+module.exports = max;
+
+
+/***/ }),
+
 /***/ "ac1f":
 /***/ (function(module, exports, __webpack_require__) {
 
@@ -68581,6 +77398,31 @@ var exec = __webpack_require__("9263");
 $({ target: 'RegExp', proto: true, forced: /./.exec !== exec }, {
   exec: exec
 });
+
+
+/***/ }),
+
+/***/ "ac41":
+/***/ (function(module, exports) {
+
+/**
+ * Converts `set` to an array of its values.
+ *
+ * @private
+ * @param {Object} set The set to convert.
+ * @returns {Array} Returns the values.
+ */
+function setToArray(set) {
+  var index = -1,
+      result = Array(set.size);
+
+  set.forEach(function(value) {
+    result[++index] = value;
+  });
+  return result;
+}
+
+module.exports = setToArray;
 
 
 /***/ }),
@@ -68705,6 +77547,27 @@ module.exports = TO_STRING_TAG_SUPPORT ? {}.toString : function toString() {
 
 /***/ }),
 
+/***/ "b047":
+/***/ (function(module, exports) {
+
+/**
+ * The base implementation of `_.unary` without support for storing metadata.
+ *
+ * @private
+ * @param {Function} func The function to cap arguments for.
+ * @returns {Function} Returns the new capped function.
+ */
+function baseUnary(func) {
+  return function(value) {
+    return func(value);
+  };
+}
+
+module.exports = baseUnary;
+
+
+/***/ }),
+
 /***/ "b0c0":
 /***/ (function(module, exports, __webpack_require__) {
 
@@ -68734,6 +77597,388 @@ if (DESCRIPTORS && !(NAME in FunctionPrototype)) {
 
 /***/ }),
 
+/***/ "b17d":
+/***/ (function(module, exports, __webpack_require__) {
+
+(function webpackUniversalModuleDefinition(root, factory) {
+	if(true)
+		module.exports = factory(__webpack_require__("e34f"));
+	else {}
+})(this, function(__WEBPACK_EXTERNAL_MODULE__4__) {
+return /******/ (function(modules) { // webpackBootstrap
+/******/ 	// The module cache
+/******/ 	var installedModules = {};
+/******/
+/******/ 	// The require function
+/******/ 	function __webpack_require__(moduleId) {
+/******/
+/******/ 		// Check if module is in cache
+/******/ 		if(installedModules[moduleId]) {
+/******/ 			return installedModules[moduleId].exports;
+/******/ 		}
+/******/ 		// Create a new module (and put it into the cache)
+/******/ 		var module = installedModules[moduleId] = {
+/******/ 			i: moduleId,
+/******/ 			l: false,
+/******/ 			exports: {}
+/******/ 		};
+/******/
+/******/ 		// Execute the module function
+/******/ 		modules[moduleId].call(module.exports, module, module.exports, __webpack_require__);
+/******/
+/******/ 		// Flag the module as loaded
+/******/ 		module.l = true;
+/******/
+/******/ 		// Return the exports of the module
+/******/ 		return module.exports;
+/******/ 	}
+/******/
+/******/
+/******/ 	// expose the modules object (__webpack_modules__)
+/******/ 	__webpack_require__.m = modules;
+/******/
+/******/ 	// expose the module cache
+/******/ 	__webpack_require__.c = installedModules;
+/******/
+/******/ 	// define getter function for harmony exports
+/******/ 	__webpack_require__.d = function(exports, name, getter) {
+/******/ 		if(!__webpack_require__.o(exports, name)) {
+/******/ 			Object.defineProperty(exports, name, { enumerable: true, get: getter });
+/******/ 		}
+/******/ 	};
+/******/
+/******/ 	// define __esModule on exports
+/******/ 	__webpack_require__.r = function(exports) {
+/******/ 		if(typeof Symbol !== 'undefined' && Symbol.toStringTag) {
+/******/ 			Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' });
+/******/ 		}
+/******/ 		Object.defineProperty(exports, '__esModule', { value: true });
+/******/ 	};
+/******/
+/******/ 	// create a fake namespace object
+/******/ 	// mode & 1: value is a module id, require it
+/******/ 	// mode & 2: merge all properties of value into the ns
+/******/ 	// mode & 4: return value when already ns object
+/******/ 	// mode & 8|1: behave like require
+/******/ 	__webpack_require__.t = function(value, mode) {
+/******/ 		if(mode & 1) value = __webpack_require__(value);
+/******/ 		if(mode & 8) return value;
+/******/ 		if((mode & 4) && typeof value === 'object' && value && value.__esModule) return value;
+/******/ 		var ns = Object.create(null);
+/******/ 		__webpack_require__.r(ns);
+/******/ 		Object.defineProperty(ns, 'default', { enumerable: true, value: value });
+/******/ 		if(mode & 2 && typeof value != 'string') for(var key in value) __webpack_require__.d(ns, key, function(key) { return value[key]; }.bind(null, key));
+/******/ 		return ns;
+/******/ 	};
+/******/
+/******/ 	// getDefaultExport function for compatibility with non-harmony modules
+/******/ 	__webpack_require__.n = function(module) {
+/******/ 		var getter = module && module.__esModule ?
+/******/ 			function getDefault() { return module['default']; } :
+/******/ 			function getModuleExports() { return module; };
+/******/ 		__webpack_require__.d(getter, 'a', getter);
+/******/ 		return getter;
+/******/ 	};
+/******/
+/******/ 	// Object.prototype.hasOwnProperty.call
+/******/ 	__webpack_require__.o = function(object, property) { return Object.prototype.hasOwnProperty.call(object, property); };
+/******/
+/******/ 	// __webpack_public_path__
+/******/ 	__webpack_require__.p = "";
+/******/
+/******/
+/******/ 	// Load entry module and return exports
+/******/ 	return __webpack_require__(__webpack_require__.s = 0);
+/******/ })
+/************************************************************************/
+/******/ ([
+/* 0 */
+/***/ (function(module, exports, __webpack_require__) {
+
+var impl = __webpack_require__(1); // registers the extension on a cytoscape lib ref
+
+
+var register = function register(cytoscape) {
+  if (!cytoscape) {
+    return;
+  } // can't register if cytoscape unspecified
+
+
+  cytoscape('layout', 'dagre', impl); // register with cytoscape.js
+};
+
+if (typeof cytoscape !== 'undefined') {
+  // expose to global cytoscape (i.e. window.cytoscape)
+  register(cytoscape);
+}
+
+module.exports = register;
+
+/***/ }),
+/* 1 */
+/***/ (function(module, exports, __webpack_require__) {
+
+function _typeof(obj) { "@babel/helpers - typeof"; if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
+
+var isFunction = function isFunction(o) {
+  return typeof o === 'function';
+};
+
+var defaults = __webpack_require__(2);
+
+var assign = __webpack_require__(3);
+
+var dagre = __webpack_require__(4); // constructor
+// options : object containing layout options
+
+
+function DagreLayout(options) {
+  this.options = assign({}, defaults, options);
+} // runs the layout
+
+
+DagreLayout.prototype.run = function () {
+  var options = this.options;
+  var layout = this;
+  var cy = options.cy; // cy is automatically populated for us in the constructor
+
+  var eles = options.eles;
+
+  var getVal = function getVal(ele, val) {
+    return isFunction(val) ? val.apply(ele, [ele]) : val;
+  };
+
+  var bb = options.boundingBox || {
+    x1: 0,
+    y1: 0,
+    w: cy.width(),
+    h: cy.height()
+  };
+
+  if (bb.x2 === undefined) {
+    bb.x2 = bb.x1 + bb.w;
+  }
+
+  if (bb.w === undefined) {
+    bb.w = bb.x2 - bb.x1;
+  }
+
+  if (bb.y2 === undefined) {
+    bb.y2 = bb.y1 + bb.h;
+  }
+
+  if (bb.h === undefined) {
+    bb.h = bb.y2 - bb.y1;
+  }
+
+  var g = new dagre.graphlib.Graph({
+    multigraph: true,
+    compound: true
+  });
+  var gObj = {};
+
+  var setGObj = function setGObj(name, val) {
+    if (val != null) {
+      gObj[name] = val;
+    }
+  };
+
+  setGObj('nodesep', options.nodeSep);
+  setGObj('edgesep', options.edgeSep);
+  setGObj('ranksep', options.rankSep);
+  setGObj('rankdir', options.rankDir);
+  setGObj('align', options.align);
+  setGObj('ranker', options.ranker);
+  setGObj('acyclicer', options.acyclicer);
+  g.setGraph(gObj);
+  g.setDefaultEdgeLabel(function () {
+    return {};
+  });
+  g.setDefaultNodeLabel(function () {
+    return {};
+  }); // add nodes to dagre
+
+  var nodes = eles.nodes();
+
+  for (var i = 0; i < nodes.length; i++) {
+    var node = nodes[i];
+    var nbb = node.layoutDimensions(options);
+    g.setNode(node.id(), {
+      width: nbb.w,
+      height: nbb.h,
+      name: node.id()
+    }); // console.log( g.node(node.id()) );
+  } // set compound parents
+
+
+  for (var _i = 0; _i < nodes.length; _i++) {
+    var _node = nodes[_i];
+
+    if (_node.isChild()) {
+      g.setParent(_node.id(), _node.parent().id());
+    }
+  } // add edges to dagre
+
+
+  var edges = eles.edges().stdFilter(function (edge) {
+    return !edge.source().isParent() && !edge.target().isParent(); // dagre can't handle edges on compound nodes
+  });
+
+  for (var _i2 = 0; _i2 < edges.length; _i2++) {
+    var edge = edges[_i2];
+    g.setEdge(edge.source().id(), edge.target().id(), {
+      minlen: getVal(edge, options.minLen),
+      weight: getVal(edge, options.edgeWeight),
+      name: edge.id()
+    }, edge.id()); // console.log( g.edge(edge.source().id(), edge.target().id(), edge.id()) );
+  }
+
+  dagre.layout(g);
+  var gNodeIds = g.nodes();
+
+  for (var _i3 = 0; _i3 < gNodeIds.length; _i3++) {
+    var id = gNodeIds[_i3];
+    var n = g.node(id);
+    cy.getElementById(id).scratch().dagre = n;
+  }
+
+  var dagreBB;
+
+  if (options.boundingBox) {
+    dagreBB = {
+      x1: Infinity,
+      x2: -Infinity,
+      y1: Infinity,
+      y2: -Infinity
+    };
+    nodes.forEach(function (node) {
+      var dModel = node.scratch().dagre;
+      dagreBB.x1 = Math.min(dagreBB.x1, dModel.x);
+      dagreBB.x2 = Math.max(dagreBB.x2, dModel.x);
+      dagreBB.y1 = Math.min(dagreBB.y1, dModel.y);
+      dagreBB.y2 = Math.max(dagreBB.y2, dModel.y);
+    });
+    dagreBB.w = dagreBB.x2 - dagreBB.x1;
+    dagreBB.h = dagreBB.y2 - dagreBB.y1;
+  } else {
+    dagreBB = bb;
+  }
+
+  var constrainPos = function constrainPos(p) {
+    if (options.boundingBox) {
+      var xPct = dagreBB.w === 0 ? 0 : (p.x - dagreBB.x1) / dagreBB.w;
+      var yPct = dagreBB.h === 0 ? 0 : (p.y - dagreBB.y1) / dagreBB.h;
+      return {
+        x: bb.x1 + xPct * bb.w,
+        y: bb.y1 + yPct * bb.h
+      };
+    } else {
+      return p;
+    }
+  };
+
+  nodes.layoutPositions(layout, options, function (ele) {
+    ele = _typeof(ele) === "object" ? ele : this;
+    var dModel = ele.scratch().dagre;
+    return constrainPos({
+      x: dModel.x,
+      y: dModel.y
+    });
+  });
+  return this; // chaining
+};
+
+module.exports = DagreLayout;
+
+/***/ }),
+/* 2 */
+/***/ (function(module, exports) {
+
+var defaults = {
+  // dagre algo options, uses default value on undefined
+  nodeSep: undefined,
+  // the separation between adjacent nodes in the same rank
+  edgeSep: undefined,
+  // the separation between adjacent edges in the same rank
+  rankSep: undefined,
+  // the separation between adjacent nodes in the same rank
+  rankDir: undefined,
+  // alignment for rank nodes. Can be 'UL', 'UR', 'DL', or 'DR', where U = up, D = down, L = left, and R = right
+  align: undefined,
+  // 'TB' for top to bottom flow, 'LR' for left to right,
+  ranker: undefined,
+  // Type of algorithm to assigns a rank to each node in the input graph.
+  // Possible values: network-simplex, tight-tree or longest-path
+  minLen: function minLen(edge) {
+    return 1;
+  },
+  // number of ranks to keep between the source and target of the edge
+  edgeWeight: function edgeWeight(edge) {
+    return 1;
+  },
+  // higher weight edges are generally made shorter and straighter than lower weight edges
+  // general layout options
+  fit: true,
+  // whether to fit to viewport
+  padding: 30,
+  // fit padding
+  spacingFactor: undefined,
+  // Applies a multiplicative factor (>0) to expand or compress the overall area that the nodes take up
+  nodeDimensionsIncludeLabels: false,
+  // whether labels should be included in determining the space used by a node
+  animate: false,
+  // whether to transition the node positions
+  animateFilter: function animateFilter(node, i) {
+    return true;
+  },
+  // whether to animate specific nodes when animation is on; non-animated nodes immediately go to their final positions
+  animationDuration: 500,
+  // duration of animation in ms if enabled
+  animationEasing: undefined,
+  // easing of animation if enabled
+  boundingBox: undefined,
+  // constrain layout bounds; { x1, y1, x2, y2 } or { x1, y1, w, h }
+  transform: function transform(node, pos) {
+    return pos;
+  },
+  // a function that applies a transform to the final node position
+  ready: function ready() {},
+  // on layoutready
+  stop: function stop() {} // on layoutstop
+
+};
+module.exports = defaults;
+
+/***/ }),
+/* 3 */
+/***/ (function(module, exports) {
+
+// Simple, internal Object.assign() polyfill for options objects etc.
+module.exports = Object.assign != null ? Object.assign.bind(Object) : function (tgt) {
+  for (var _len = arguments.length, srcs = new Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
+    srcs[_key - 1] = arguments[_key];
+  }
+
+  srcs.forEach(function (src) {
+    Object.keys(src).forEach(function (k) {
+      return tgt[k] = src[k];
+    });
+  });
+  return tgt;
+};
+
+/***/ }),
+/* 4 */
+/***/ (function(module, exports) {
+
+module.exports = __WEBPACK_EXTERNAL_MODULE__4__;
+
+/***/ })
+/******/ ]);
+});
+
+/***/ }),
+
 /***/ "b1cd":
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
@@ -68745,10 +77990,239 @@ if (DESCRIPTORS && !(NAME in FunctionPrototype)) {
 
 /***/ }),
 
-/***/ "b269":
+/***/ "b1e5":
 /***/ (function(module, exports, __webpack_require__) {
 
-// extracted by mini-css-extract-plugin
+var getAllKeys = __webpack_require__("a994");
+
+/** Used to compose bitmasks for value comparisons. */
+var COMPARE_PARTIAL_FLAG = 1;
+
+/** Used for built-in method references. */
+var objectProto = Object.prototype;
+
+/** Used to check objects for own properties. */
+var hasOwnProperty = objectProto.hasOwnProperty;
+
+/**
+ * A specialized version of `baseIsEqualDeep` for objects with support for
+ * partial deep comparisons.
+ *
+ * @private
+ * @param {Object} object The object to compare.
+ * @param {Object} other The other object to compare.
+ * @param {number} bitmask The bitmask flags. See `baseIsEqual` for more details.
+ * @param {Function} customizer The function to customize comparisons.
+ * @param {Function} equalFunc The function to determine equivalents of values.
+ * @param {Object} stack Tracks traversed `object` and `other` objects.
+ * @returns {boolean} Returns `true` if the objects are equivalent, else `false`.
+ */
+function equalObjects(object, other, bitmask, customizer, equalFunc, stack) {
+  var isPartial = bitmask & COMPARE_PARTIAL_FLAG,
+      objProps = getAllKeys(object),
+      objLength = objProps.length,
+      othProps = getAllKeys(other),
+      othLength = othProps.length;
+
+  if (objLength != othLength && !isPartial) {
+    return false;
+  }
+  var index = objLength;
+  while (index--) {
+    var key = objProps[index];
+    if (!(isPartial ? key in other : hasOwnProperty.call(other, key))) {
+      return false;
+    }
+  }
+  // Check that cyclic values are equal.
+  var objStacked = stack.get(object);
+  var othStacked = stack.get(other);
+  if (objStacked && othStacked) {
+    return objStacked == other && othStacked == object;
+  }
+  var result = true;
+  stack.set(object, other);
+  stack.set(other, object);
+
+  var skipCtor = isPartial;
+  while (++index < objLength) {
+    key = objProps[index];
+    var objValue = object[key],
+        othValue = other[key];
+
+    if (customizer) {
+      var compared = isPartial
+        ? customizer(othValue, objValue, key, other, object, stack)
+        : customizer(objValue, othValue, key, object, other, stack);
+    }
+    // Recursively compare objects (susceptible to call stack limits).
+    if (!(compared === undefined
+          ? (objValue === othValue || equalFunc(objValue, othValue, bitmask, customizer, stack))
+          : compared
+        )) {
+      result = false;
+      break;
+    }
+    skipCtor || (skipCtor = key == 'constructor');
+  }
+  if (result && !skipCtor) {
+    var objCtor = object.constructor,
+        othCtor = other.constructor;
+
+    // Non `Object` object instances with different constructors are not equal.
+    if (objCtor != othCtor &&
+        ('constructor' in object && 'constructor' in other) &&
+        !(typeof objCtor == 'function' && objCtor instanceof objCtor &&
+          typeof othCtor == 'function' && othCtor instanceof othCtor)) {
+      result = false;
+    }
+  }
+  stack['delete'](object);
+  stack['delete'](other);
+  return result;
+}
+
+module.exports = equalObjects;
+
+
+/***/ }),
+
+/***/ "b218":
+/***/ (function(module, exports) {
+
+/** Used as references for various `Number` constants. */
+var MAX_SAFE_INTEGER = 9007199254740991;
+
+/**
+ * Checks if `value` is a valid array-like length.
+ *
+ * **Note:** This method is loosely based on
+ * [`ToLength`](http://ecma-international.org/ecma-262/7.0/#sec-tolength).
+ *
+ * @static
+ * @memberOf _
+ * @since 4.0.0
+ * @category Lang
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if `value` is a valid length, else `false`.
+ * @example
+ *
+ * _.isLength(3);
+ * // => true
+ *
+ * _.isLength(Number.MIN_VALUE);
+ * // => false
+ *
+ * _.isLength(Infinity);
+ * // => false
+ *
+ * _.isLength('3');
+ * // => false
+ */
+function isLength(value) {
+  return typeof value == 'number' &&
+    value > -1 && value % 1 == 0 && value <= MAX_SAFE_INTEGER;
+}
+
+module.exports = isLength;
+
+
+/***/ }),
+
+/***/ "b4b0":
+/***/ (function(module, exports, __webpack_require__) {
+
+var baseTrim = __webpack_require__("8d74"),
+    isObject = __webpack_require__("1a8c"),
+    isSymbol = __webpack_require__("ffd6");
+
+/** Used as references for various `Number` constants. */
+var NAN = 0 / 0;
+
+/** Used to detect bad signed hexadecimal string values. */
+var reIsBadHex = /^[-+]0x[0-9a-f]+$/i;
+
+/** Used to detect binary string values. */
+var reIsBinary = /^0b[01]+$/i;
+
+/** Used to detect octal string values. */
+var reIsOctal = /^0o[0-7]+$/i;
+
+/** Built-in method references without a dependency on `root`. */
+var freeParseInt = parseInt;
+
+/**
+ * Converts `value` to a number.
+ *
+ * @static
+ * @memberOf _
+ * @since 4.0.0
+ * @category Lang
+ * @param {*} value The value to process.
+ * @returns {number} Returns the number.
+ * @example
+ *
+ * _.toNumber(3.2);
+ * // => 3.2
+ *
+ * _.toNumber(Number.MIN_VALUE);
+ * // => 5e-324
+ *
+ * _.toNumber(Infinity);
+ * // => Infinity
+ *
+ * _.toNumber('3.2');
+ * // => 3.2
+ */
+function toNumber(value) {
+  if (typeof value == 'number') {
+    return value;
+  }
+  if (isSymbol(value)) {
+    return NAN;
+  }
+  if (isObject(value)) {
+    var other = typeof value.valueOf == 'function' ? value.valueOf() : value;
+    value = isObject(other) ? (other + '') : other;
+  }
+  if (typeof value != 'string') {
+    return value === 0 ? value : +value;
+  }
+  value = baseTrim(value);
+  var isBinary = reIsBinary.test(value);
+  return (isBinary || reIsOctal.test(value))
+    ? freeParseInt(value.slice(2), isBinary ? 2 : 8)
+    : (reIsBadHex.test(value) ? NAN : +value);
+}
+
+module.exports = toNumber;
+
+
+/***/ }),
+
+/***/ "b4c0":
+/***/ (function(module, exports, __webpack_require__) {
+
+var assocIndexOf = __webpack_require__("cb5a");
+
+/**
+ * Gets the list cache value for `key`.
+ *
+ * @private
+ * @name get
+ * @memberOf ListCache
+ * @param {string} key The key of the value to get.
+ * @returns {*} Returns the entry value.
+ */
+function listCacheGet(key) {
+  var data = this.__data__,
+      index = assocIndexOf(data, key);
+
+  return index < 0 ? undefined : data[index][1];
+}
+
+module.exports = listCacheGet;
+
 
 /***/ }),
 
@@ -68756,6 +78230,252 @@ if (DESCRIPTORS && !(NAME in FunctionPrototype)) {
 /***/ (function(module, exports, __webpack_require__) {
 
 // extracted by mini-css-extract-plugin
+
+/***/ }),
+
+/***/ "b50e":
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+/* eslint "no-console": off */
+
+
+
+var _ = __webpack_require__("6f9c");
+var Graph = __webpack_require__("17d5").Graph;
+
+module.exports = {
+  addDummyNode: addDummyNode,
+  simplify: simplify,
+  asNonCompoundGraph: asNonCompoundGraph,
+  successorWeights: successorWeights,
+  predecessorWeights: predecessorWeights,
+  intersectRect: intersectRect,
+  buildLayerMatrix: buildLayerMatrix,
+  normalizeRanks: normalizeRanks,
+  removeEmptyRanks: removeEmptyRanks,
+  addBorderNode: addBorderNode,
+  maxRank: maxRank,
+  partition: partition,
+  time: time,
+  notime: notime
+};
+
+/*
+ * Adds a dummy node to the graph and return v.
+ */
+function addDummyNode(g, type, attrs, name) {
+  var v;
+  do {
+    v = _.uniqueId(name);
+  } while (g.hasNode(v));
+
+  attrs.dummy = type;
+  g.setNode(v, attrs);
+  return v;
+}
+
+/*
+ * Returns a new graph with only simple edges. Handles aggregation of data
+ * associated with multi-edges.
+ */
+function simplify(g) {
+  var simplified = new Graph().setGraph(g.graph());
+  _.forEach(g.nodes(), function(v) { simplified.setNode(v, g.node(v)); });
+  _.forEach(g.edges(), function(e) {
+    var simpleLabel = simplified.edge(e.v, e.w) || { weight: 0, minlen: 1 };
+    var label = g.edge(e);
+    simplified.setEdge(e.v, e.w, {
+      weight: simpleLabel.weight + label.weight,
+      minlen: Math.max(simpleLabel.minlen, label.minlen)
+    });
+  });
+  return simplified;
+}
+
+function asNonCompoundGraph(g) {
+  var simplified = new Graph({ multigraph: g.isMultigraph() }).setGraph(g.graph());
+  _.forEach(g.nodes(), function(v) {
+    if (!g.children(v).length) {
+      simplified.setNode(v, g.node(v));
+    }
+  });
+  _.forEach(g.edges(), function(e) {
+    simplified.setEdge(e, g.edge(e));
+  });
+  return simplified;
+}
+
+function successorWeights(g) {
+  var weightMap = _.map(g.nodes(), function(v) {
+    var sucs = {};
+    _.forEach(g.outEdges(v), function(e) {
+      sucs[e.w] = (sucs[e.w] || 0) + g.edge(e).weight;
+    });
+    return sucs;
+  });
+  return _.zipObject(g.nodes(), weightMap);
+}
+
+function predecessorWeights(g) {
+  var weightMap = _.map(g.nodes(), function(v) {
+    var preds = {};
+    _.forEach(g.inEdges(v), function(e) {
+      preds[e.v] = (preds[e.v] || 0) + g.edge(e).weight;
+    });
+    return preds;
+  });
+  return _.zipObject(g.nodes(), weightMap);
+}
+
+/*
+ * Finds where a line starting at point ({x, y}) would intersect a rectangle
+ * ({x, y, width, height}) if it were pointing at the rectangle's center.
+ */
+function intersectRect(rect, point) {
+  var x = rect.x;
+  var y = rect.y;
+
+  // Rectangle intersection algorithm from:
+  // http://math.stackexchange.com/questions/108113/find-edge-between-two-boxes
+  var dx = point.x - x;
+  var dy = point.y - y;
+  var w = rect.width / 2;
+  var h = rect.height / 2;
+
+  if (!dx && !dy) {
+    throw new Error("Not possible to find intersection inside of the rectangle");
+  }
+
+  var sx, sy;
+  if (Math.abs(dy) * w > Math.abs(dx) * h) {
+    // Intersection is top or bottom of rect.
+    if (dy < 0) {
+      h = -h;
+    }
+    sx = h * dx / dy;
+    sy = h;
+  } else {
+    // Intersection is left or right of rect.
+    if (dx < 0) {
+      w = -w;
+    }
+    sx = w;
+    sy = w * dy / dx;
+  }
+
+  return { x: x + sx, y: y + sy };
+}
+
+/*
+ * Given a DAG with each node assigned "rank" and "order" properties, this
+ * function will produce a matrix with the ids of each node.
+ */
+function buildLayerMatrix(g) {
+  var layering = _.map(_.range(maxRank(g) + 1), function() { return []; });
+  _.forEach(g.nodes(), function(v) {
+    var node = g.node(v);
+    var rank = node.rank;
+    if (!_.isUndefined(rank)) {
+      layering[rank][node.order] = v;
+    }
+  });
+  return layering;
+}
+
+/*
+ * Adjusts the ranks for all nodes in the graph such that all nodes v have
+ * rank(v) >= 0 and at least one node w has rank(w) = 0.
+ */
+function normalizeRanks(g) {
+  var min = _.min(_.map(g.nodes(), function(v) { return g.node(v).rank; }));
+  _.forEach(g.nodes(), function(v) {
+    var node = g.node(v);
+    if (_.has(node, "rank")) {
+      node.rank -= min;
+    }
+  });
+}
+
+function removeEmptyRanks(g) {
+  // Ranks may not start at 0, so we need to offset them
+  var offset = _.min(_.map(g.nodes(), function(v) { return g.node(v).rank; }));
+
+  var layers = [];
+  _.forEach(g.nodes(), function(v) {
+    var rank = g.node(v).rank - offset;
+    if (!layers[rank]) {
+      layers[rank] = [];
+    }
+    layers[rank].push(v);
+  });
+
+  var delta = 0;
+  var nodeRankFactor = g.graph().nodeRankFactor;
+  _.forEach(layers, function(vs, i) {
+    if (_.isUndefined(vs) && i % nodeRankFactor !== 0) {
+      --delta;
+    } else if (delta) {
+      _.forEach(vs, function(v) { g.node(v).rank += delta; });
+    }
+  });
+}
+
+function addBorderNode(g, prefix, rank, order) {
+  var node = {
+    width: 0,
+    height: 0
+  };
+  if (arguments.length >= 4) {
+    node.rank = rank;
+    node.order = order;
+  }
+  return addDummyNode(g, "border", node, prefix);
+}
+
+function maxRank(g) {
+  return _.max(_.map(g.nodes(), function(v) {
+    var rank = g.node(v).rank;
+    if (!_.isUndefined(rank)) {
+      return rank;
+    }
+  }));
+}
+
+/*
+ * Partition a collection into two groups: `lhs` and `rhs`. If the supplied
+ * function returns true for an entry it goes into `lhs`. Otherwise it goes
+ * into `rhs.
+ */
+function partition(collection, fn) {
+  var result = { lhs: [], rhs: [] };
+  _.forEach(collection, function(value) {
+    if (fn(value)) {
+      result.lhs.push(value);
+    } else {
+      result.rhs.push(value);
+    }
+  });
+  return result;
+}
+
+/*
+ * Returns a new function that wraps `fn` with a timer. The wrapper logs the
+ * time it takes to execute the function.
+ */
+function time(name, fn) {
+  var start = _.now();
+  try {
+    return fn();
+  } finally {
+    console.log(name + " time: " + (_.now() - start) + "ms");
+  }
+}
+
+function notime(name, fn) {
+  return fn();
+}
+
 
 /***/ }),
 
@@ -68845,6 +78565,20 @@ module.exports = queueMicrotask || function (fn) {
     notify();
   } last = task;
 };
+
+
+/***/ }),
+
+/***/ "b5a7":
+/***/ (function(module, exports, __webpack_require__) {
+
+var getNative = __webpack_require__("0b07"),
+    root = __webpack_require__("2b3e");
+
+/* Built-in method references that are verified to be native. */
+var DataView = getNative(root, 'DataView');
+
+module.exports = DataView;
 
 
 /***/ }),
@@ -68976,6 +78710,33 @@ module.exports = {
 
 /***/ }),
 
+/***/ "b760":
+/***/ (function(module, exports, __webpack_require__) {
+
+var baseAssignValue = __webpack_require__("872a"),
+    eq = __webpack_require__("9638");
+
+/**
+ * This function is like `assignValue` except that it doesn't assign
+ * `undefined` values.
+ *
+ * @private
+ * @param {Object} object The object to modify.
+ * @param {string} key The key of the property to assign.
+ * @param {*} value The value to assign.
+ */
+function assignMergeValue(object, key, value) {
+  if ((value !== undefined && !eq(object[key], value)) ||
+      (value === undefined && !(key in object))) {
+    baseAssignValue(object, key, value);
+  }
+}
+
+module.exports = assignMergeValue;
+
+
+/***/ }),
+
 /***/ "b761":
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
@@ -68983,6 +78744,87 @@ module.exports = {
 /* harmony import */ var _node_modules_mini_css_extract_plugin_dist_loader_js_ref_8_oneOf_1_0_node_modules_css_loader_dist_cjs_js_ref_8_oneOf_1_1_node_modules_vue_loader_lib_loaders_stylePostLoader_js_node_modules_postcss_loader_src_index_js_ref_8_oneOf_1_2_node_modules_sass_loader_dist_cjs_js_ref_8_oneOf_1_3_node_modules_cache_loader_dist_cjs_js_ref_0_0_node_modules_vue_loader_lib_index_js_vue_loader_options_ButtonGroup_vue_vue_type_style_index_0_lang_scss___WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__("7346");
 /* harmony import */ var _node_modules_mini_css_extract_plugin_dist_loader_js_ref_8_oneOf_1_0_node_modules_css_loader_dist_cjs_js_ref_8_oneOf_1_1_node_modules_vue_loader_lib_loaders_stylePostLoader_js_node_modules_postcss_loader_src_index_js_ref_8_oneOf_1_2_node_modules_sass_loader_dist_cjs_js_ref_8_oneOf_1_3_node_modules_cache_loader_dist_cjs_js_ref_0_0_node_modules_vue_loader_lib_index_js_vue_loader_options_ButtonGroup_vue_vue_type_style_index_0_lang_scss___WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(_node_modules_mini_css_extract_plugin_dist_loader_js_ref_8_oneOf_1_0_node_modules_css_loader_dist_cjs_js_ref_8_oneOf_1_1_node_modules_vue_loader_lib_loaders_stylePostLoader_js_node_modules_postcss_loader_src_index_js_ref_8_oneOf_1_2_node_modules_sass_loader_dist_cjs_js_ref_8_oneOf_1_3_node_modules_cache_loader_dist_cjs_js_ref_0_0_node_modules_vue_loader_lib_index_js_vue_loader_options_ButtonGroup_vue_vue_type_style_index_0_lang_scss___WEBPACK_IMPORTED_MODULE_0__);
 /* unused harmony reexport * */
+
+
+/***/ }),
+
+/***/ "b8ce":
+/***/ (function(module, exports, __webpack_require__) {
+
+var baseClone = __webpack_require__("3818");
+
+/** Used to compose bitmasks for cloning. */
+var CLONE_SYMBOLS_FLAG = 4;
+
+/**
+ * Creates a shallow clone of `value`.
+ *
+ * **Note:** This method is loosely based on the
+ * [structured clone algorithm](https://mdn.io/Structured_clone_algorithm)
+ * and supports cloning arrays, array buffers, booleans, date objects, maps,
+ * numbers, `Object` objects, regexes, sets, strings, symbols, and typed
+ * arrays. The own enumerable properties of `arguments` objects are cloned
+ * as plain objects. An empty object is returned for uncloneable values such
+ * as error objects, functions, DOM nodes, and WeakMaps.
+ *
+ * @static
+ * @memberOf _
+ * @since 0.1.0
+ * @category Lang
+ * @param {*} value The value to clone.
+ * @returns {*} Returns the cloned value.
+ * @see _.cloneDeep
+ * @example
+ *
+ * var objects = [{ 'a': 1 }, { 'b': 2 }];
+ *
+ * var shallow = _.clone(objects);
+ * console.log(shallow[0] === objects[0]);
+ * // => true
+ */
+function clone(value) {
+  return baseClone(value, CLONE_SYMBOLS_FLAG);
+}
+
+module.exports = clone;
+
+
+/***/ }),
+
+/***/ "badf":
+/***/ (function(module, exports, __webpack_require__) {
+
+var baseMatches = __webpack_require__("642a"),
+    baseMatchesProperty = __webpack_require__("1838"),
+    identity = __webpack_require__("cd9d"),
+    isArray = __webpack_require__("6747"),
+    property = __webpack_require__("f9ce");
+
+/**
+ * The base implementation of `_.iteratee`.
+ *
+ * @private
+ * @param {*} [value=_.identity] The value to convert to an iteratee.
+ * @returns {Function} Returns the iteratee.
+ */
+function baseIteratee(value) {
+  // Don't store the `typeof` result in a variable to avoid a JIT bug in Safari 9.
+  // See https://bugs.webkit.org/show_bug.cgi?id=156034 for more details.
+  if (typeof value == 'function') {
+    return value;
+  }
+  if (value == null) {
+    return identity;
+  }
+  if (typeof value == 'object') {
+    return isArray(value)
+      ? baseMatchesProperty(value[0], value[1])
+      : baseMatches(value);
+  }
+  return property(value);
+}
+
+module.exports = baseIteratee;
 
 
 /***/ }),
@@ -69000,6 +78842,67 @@ module.exports = !fails(function () {
 
 /***/ }),
 
+/***/ "bbc0":
+/***/ (function(module, exports, __webpack_require__) {
+
+var nativeCreate = __webpack_require__("6044");
+
+/** Used to stand-in for `undefined` hash values. */
+var HASH_UNDEFINED = '__lodash_hash_undefined__';
+
+/** Used for built-in method references. */
+var objectProto = Object.prototype;
+
+/** Used to check objects for own properties. */
+var hasOwnProperty = objectProto.hasOwnProperty;
+
+/**
+ * Gets the hash value for `key`.
+ *
+ * @private
+ * @name get
+ * @memberOf Hash
+ * @param {string} key The key of the value to get.
+ * @returns {*} Returns the entry value.
+ */
+function hashGet(key) {
+  var data = this.__data__;
+  if (nativeCreate) {
+    var result = data[key];
+    return result === HASH_UNDEFINED ? undefined : result;
+  }
+  return hasOwnProperty.call(data, key) ? data[key] : undefined;
+}
+
+module.exports = hashGet;
+
+
+/***/ }),
+
+/***/ "bcdf":
+/***/ (function(module, exports) {
+
+/**
+ * This method returns `undefined`.
+ *
+ * @static
+ * @memberOf _
+ * @since 2.3.0
+ * @category Util
+ * @example
+ *
+ * _.times(2, _.noop);
+ * // => [undefined, undefined]
+ */
+function noop() {
+  // No operation performed.
+}
+
+module.exports = noop;
+
+
+/***/ }),
+
 /***/ "bf1c":
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
@@ -69007,6 +78910,39 @@ module.exports = !fails(function () {
 /* harmony import */ var _node_modules_mini_css_extract_plugin_dist_loader_js_ref_8_oneOf_1_0_node_modules_css_loader_dist_cjs_js_ref_8_oneOf_1_1_node_modules_vue_loader_lib_loaders_stylePostLoader_js_node_modules_postcss_loader_src_index_js_ref_8_oneOf_1_2_node_modules_sass_loader_dist_cjs_js_ref_8_oneOf_1_3_node_modules_cache_loader_dist_cjs_js_ref_0_0_node_modules_vue_loader_lib_index_js_vue_loader_options_DropdownMenu_vue_vue_type_style_index_0_lang_scss___WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__("7f35");
 /* harmony import */ var _node_modules_mini_css_extract_plugin_dist_loader_js_ref_8_oneOf_1_0_node_modules_css_loader_dist_cjs_js_ref_8_oneOf_1_1_node_modules_vue_loader_lib_loaders_stylePostLoader_js_node_modules_postcss_loader_src_index_js_ref_8_oneOf_1_2_node_modules_sass_loader_dist_cjs_js_ref_8_oneOf_1_3_node_modules_cache_loader_dist_cjs_js_ref_0_0_node_modules_vue_loader_lib_index_js_vue_loader_options_DropdownMenu_vue_vue_type_style_index_0_lang_scss___WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(_node_modules_mini_css_extract_plugin_dist_loader_js_ref_8_oneOf_1_0_node_modules_css_loader_dist_cjs_js_ref_8_oneOf_1_1_node_modules_vue_loader_lib_loaders_stylePostLoader_js_node_modules_postcss_loader_src_index_js_ref_8_oneOf_1_2_node_modules_sass_loader_dist_cjs_js_ref_8_oneOf_1_3_node_modules_cache_loader_dist_cjs_js_ref_0_0_node_modules_vue_loader_lib_index_js_vue_loader_options_DropdownMenu_vue_vue_type_style_index_0_lang_scss___WEBPACK_IMPORTED_MODULE_0__);
 /* unused harmony reexport * */
+
+
+/***/ }),
+
+/***/ "bfc7":
+/***/ (function(module, exports, __webpack_require__) {
+
+var baseFlatten = __webpack_require__("5c69"),
+    baseRest = __webpack_require__("100e"),
+    baseUniq = __webpack_require__("2c66"),
+    isArrayLikeObject = __webpack_require__("dcbe");
+
+/**
+ * Creates an array of unique values, in order, from all given arrays using
+ * [`SameValueZero`](http://ecma-international.org/ecma-262/7.0/#sec-samevaluezero)
+ * for equality comparisons.
+ *
+ * @static
+ * @memberOf _
+ * @since 0.1.0
+ * @category Array
+ * @param {...Array} [arrays] The arrays to inspect.
+ * @returns {Array} Returns the new array of combined values.
+ * @example
+ *
+ * _.union([2], [1, 2]);
+ * // => [2, 1]
+ */
+var union = baseRest(function(arrays) {
+  return baseUniq(baseFlatten(arrays, 1, isArrayLikeObject, true));
+});
+
+module.exports = union;
 
 
 /***/ }),
@@ -69036,6 +78972,73 @@ module.exports = function (input, pref) {
   if (pref === undefined) pref = 'number';
   return ordinaryToPrimitive(input, pref);
 };
+
+
+/***/ }),
+
+/***/ "c05f":
+/***/ (function(module, exports, __webpack_require__) {
+
+var baseIsEqualDeep = __webpack_require__("7b97"),
+    isObjectLike = __webpack_require__("1310");
+
+/**
+ * The base implementation of `_.isEqual` which supports partial comparisons
+ * and tracks traversed objects.
+ *
+ * @private
+ * @param {*} value The value to compare.
+ * @param {*} other The other value to compare.
+ * @param {boolean} bitmask The bitmask flags.
+ *  1 - Unordered comparison
+ *  2 - Partial comparison
+ * @param {Function} [customizer] The function to customize comparisons.
+ * @param {Object} [stack] Tracks traversed `value` and `other` objects.
+ * @returns {boolean} Returns `true` if the values are equivalent, else `false`.
+ */
+function baseIsEqual(value, other, bitmask, customizer, stack) {
+  if (value === other) {
+    return true;
+  }
+  if (value == null || other == null || (!isObjectLike(value) && !isObjectLike(other))) {
+    return value !== value && other !== other;
+  }
+  return baseIsEqualDeep(value, other, bitmask, customizer, baseIsEqual, stack);
+}
+
+module.exports = baseIsEqual;
+
+
+/***/ }),
+
+/***/ "c098":
+/***/ (function(module, exports) {
+
+/** Used as references for various `Number` constants. */
+var MAX_SAFE_INTEGER = 9007199254740991;
+
+/** Used to detect unsigned integer values. */
+var reIsUint = /^(?:0|[1-9]\d*)$/;
+
+/**
+ * Checks if `value` is a valid array-like index.
+ *
+ * @private
+ * @param {*} value The value to check.
+ * @param {number} [length=MAX_SAFE_INTEGER] The upper bounds of a valid index.
+ * @returns {boolean} Returns `true` if `value` is a valid index, else `false`.
+ */
+function isIndex(value, length) {
+  var type = typeof value;
+  length = length == null ? MAX_SAFE_INTEGER : length;
+
+  return !!length &&
+    (type == 'number' ||
+      (type != 'symbol' && reIsUint.test(value))) &&
+        (value > -1 && value % 1 == 0 && value < length);
+}
+
+module.exports = isIndex;
 
 
 /***/ }),
@@ -76829,6 +86832,151 @@ module.exports = function (input, pref) {
 
 /***/ }),
 
+/***/ "c1c9":
+/***/ (function(module, exports, __webpack_require__) {
+
+var baseSetToString = __webpack_require__("a454"),
+    shortOut = __webpack_require__("f3c1");
+
+/**
+ * Sets the `toString` method of `func` to return `string`.
+ *
+ * @private
+ * @param {Function} func The function to modify.
+ * @param {Function} string The `toString` result.
+ * @returns {Function} Returns `func`.
+ */
+var setToString = shortOut(baseSetToString);
+
+module.exports = setToString;
+
+
+/***/ }),
+
+/***/ "c2b6":
+/***/ (function(module, exports, __webpack_require__) {
+
+var cloneArrayBuffer = __webpack_require__("f8af"),
+    cloneDataView = __webpack_require__("5d89"),
+    cloneRegExp = __webpack_require__("6f6c"),
+    cloneSymbol = __webpack_require__("a2db"),
+    cloneTypedArray = __webpack_require__("c8fe");
+
+/** `Object#toString` result references. */
+var boolTag = '[object Boolean]',
+    dateTag = '[object Date]',
+    mapTag = '[object Map]',
+    numberTag = '[object Number]',
+    regexpTag = '[object RegExp]',
+    setTag = '[object Set]',
+    stringTag = '[object String]',
+    symbolTag = '[object Symbol]';
+
+var arrayBufferTag = '[object ArrayBuffer]',
+    dataViewTag = '[object DataView]',
+    float32Tag = '[object Float32Array]',
+    float64Tag = '[object Float64Array]',
+    int8Tag = '[object Int8Array]',
+    int16Tag = '[object Int16Array]',
+    int32Tag = '[object Int32Array]',
+    uint8Tag = '[object Uint8Array]',
+    uint8ClampedTag = '[object Uint8ClampedArray]',
+    uint16Tag = '[object Uint16Array]',
+    uint32Tag = '[object Uint32Array]';
+
+/**
+ * Initializes an object clone based on its `toStringTag`.
+ *
+ * **Note:** This function only supports cloning values with tags of
+ * `Boolean`, `Date`, `Error`, `Map`, `Number`, `RegExp`, `Set`, or `String`.
+ *
+ * @private
+ * @param {Object} object The object to clone.
+ * @param {string} tag The `toStringTag` of the object to clone.
+ * @param {boolean} [isDeep] Specify a deep clone.
+ * @returns {Object} Returns the initialized clone.
+ */
+function initCloneByTag(object, tag, isDeep) {
+  var Ctor = object.constructor;
+  switch (tag) {
+    case arrayBufferTag:
+      return cloneArrayBuffer(object);
+
+    case boolTag:
+    case dateTag:
+      return new Ctor(+object);
+
+    case dataViewTag:
+      return cloneDataView(object, isDeep);
+
+    case float32Tag: case float64Tag:
+    case int8Tag: case int16Tag: case int32Tag:
+    case uint8Tag: case uint8ClampedTag: case uint16Tag: case uint32Tag:
+      return cloneTypedArray(object, isDeep);
+
+    case mapTag:
+      return new Ctor;
+
+    case numberTag:
+    case stringTag:
+      return new Ctor(object);
+
+    case regexpTag:
+      return cloneRegExp(object);
+
+    case setTag:
+      return new Ctor;
+
+    case symbolTag:
+      return cloneSymbol(object);
+  }
+}
+
+module.exports = initCloneByTag;
+
+
+/***/ }),
+
+/***/ "c377":
+/***/ (function(module, exports, __webpack_require__) {
+
+// extracted by mini-css-extract-plugin
+
+/***/ }),
+
+/***/ "c3cd":
+/***/ (function(module, exports) {
+
+module.exports = '2.1.8';
+
+
+/***/ }),
+
+/***/ "c3fc":
+/***/ (function(module, exports, __webpack_require__) {
+
+var getTag = __webpack_require__("42a2"),
+    isObjectLike = __webpack_require__("1310");
+
+/** `Object#toString` result references. */
+var setTag = '[object Set]';
+
+/**
+ * The base implementation of `_.isSet` without Node.js optimizations.
+ *
+ * @private
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if `value` is a set, else `false`.
+ */
+function baseIsSet(value) {
+  return isObjectLike(value) && getTag(value) == setTag;
+}
+
+module.exports = baseIsSet;
+
+
+/***/ }),
+
 /***/ "c430":
 /***/ (function(module, exports) {
 
@@ -76844,6 +86992,92 @@ module.exports = false;
 /* harmony import */ var _node_modules_mini_css_extract_plugin_dist_loader_js_ref_8_oneOf_1_0_node_modules_css_loader_dist_cjs_js_ref_8_oneOf_1_1_node_modules_vue_loader_lib_loaders_stylePostLoader_js_node_modules_postcss_loader_src_index_js_ref_8_oneOf_1_2_node_modules_sass_loader_dist_cjs_js_ref_8_oneOf_1_3_node_modules_cache_loader_dist_cjs_js_ref_0_0_node_modules_vue_loader_lib_index_js_vue_loader_options_EditorFieldGroups_vue_vue_type_style_index_0_lang_scss___WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__("b4de");
 /* harmony import */ var _node_modules_mini_css_extract_plugin_dist_loader_js_ref_8_oneOf_1_0_node_modules_css_loader_dist_cjs_js_ref_8_oneOf_1_1_node_modules_vue_loader_lib_loaders_stylePostLoader_js_node_modules_postcss_loader_src_index_js_ref_8_oneOf_1_2_node_modules_sass_loader_dist_cjs_js_ref_8_oneOf_1_3_node_modules_cache_loader_dist_cjs_js_ref_0_0_node_modules_vue_loader_lib_index_js_vue_loader_options_EditorFieldGroups_vue_vue_type_style_index_0_lang_scss___WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(_node_modules_mini_css_extract_plugin_dist_loader_js_ref_8_oneOf_1_0_node_modules_css_loader_dist_cjs_js_ref_8_oneOf_1_1_node_modules_vue_loader_lib_loaders_stylePostLoader_js_node_modules_postcss_loader_src_index_js_ref_8_oneOf_1_2_node_modules_sass_loader_dist_cjs_js_ref_8_oneOf_1_3_node_modules_cache_loader_dist_cjs_js_ref_0_0_node_modules_vue_loader_lib_index_js_vue_loader_options_EditorFieldGroups_vue_vue_type_style_index_0_lang_scss___WEBPACK_IMPORTED_MODULE_0__);
 /* unused harmony reexport * */
+
+
+/***/ }),
+
+/***/ "c584":
+/***/ (function(module, exports) {
+
+/**
+ * Checks if a `cache` value for `key` exists.
+ *
+ * @private
+ * @param {Object} cache The cache to query.
+ * @param {string} key The key of the entry to check.
+ * @returns {boolean} Returns `true` if an entry for `key` exists, else `false`.
+ */
+function cacheHas(cache, key) {
+  return cache.has(key);
+}
+
+module.exports = cacheHas;
+
+
+/***/ }),
+
+/***/ "c5a2":
+/***/ (function(module, exports, __webpack_require__) {
+
+var arrayReduce = __webpack_require__("6ac0"),
+    baseEach = __webpack_require__("48a0"),
+    baseIteratee = __webpack_require__("badf"),
+    baseReduce = __webpack_require__("58f7"),
+    isArray = __webpack_require__("6747");
+
+/**
+ * Reduces `collection` to a value which is the accumulated result of running
+ * each element in `collection` thru `iteratee`, where each successive
+ * invocation is supplied the return value of the previous. If `accumulator`
+ * is not given, the first element of `collection` is used as the initial
+ * value. The iteratee is invoked with four arguments:
+ * (accumulator, value, index|key, collection).
+ *
+ * Many lodash methods are guarded to work as iteratees for methods like
+ * `_.reduce`, `_.reduceRight`, and `_.transform`.
+ *
+ * The guarded methods are:
+ * `assign`, `defaults`, `defaultsDeep`, `includes`, `merge`, `orderBy`,
+ * and `sortBy`
+ *
+ * @static
+ * @memberOf _
+ * @since 0.1.0
+ * @category Collection
+ * @param {Array|Object} collection The collection to iterate over.
+ * @param {Function} [iteratee=_.identity] The function invoked per iteration.
+ * @param {*} [accumulator] The initial value.
+ * @returns {*} Returns the accumulated value.
+ * @see _.reduceRight
+ * @example
+ *
+ * _.reduce([1, 2], function(sum, n) {
+ *   return sum + n;
+ * }, 0);
+ * // => 3
+ *
+ * _.reduce({ 'a': 1, 'b': 2, 'c': 1 }, function(result, value, key) {
+ *   (result[value] || (result[value] = [])).push(key);
+ *   return result;
+ * }, {});
+ * // => { '1': ['a', 'c'], '2': ['b'] } (iteration order is not guaranteed)
+ */
+function reduce(collection, iteratee, accumulator) {
+  var func = isArray(collection) ? arrayReduce : baseReduce,
+      initAccum = arguments.length < 3;
+
+  return func(collection, baseIteratee(iteratee, 4), accumulator, initAccum, baseEach);
+}
+
+module.exports = reduce;
+
+
+/***/ }),
+
+/***/ "c641":
+/***/ (function(module, exports, __webpack_require__) {
+
+module.exports = __webpack_require__("6cd4");
 
 
 /***/ }),
@@ -76877,6 +87111,131 @@ var SHARED = '__core-js_shared__';
 var store = global[SHARED] || setGlobal(SHARED, {});
 
 module.exports = store;
+
+
+/***/ }),
+
+/***/ "c6cf":
+/***/ (function(module, exports, __webpack_require__) {
+
+var flatten = __webpack_require__("4d8c"),
+    overRest = __webpack_require__("2286"),
+    setToString = __webpack_require__("c1c9");
+
+/**
+ * A specialized version of `baseRest` which flattens the rest array.
+ *
+ * @private
+ * @param {Function} func The function to apply a rest parameter to.
+ * @returns {Function} Returns the new function.
+ */
+function flatRest(func) {
+  return setToString(overRest(func, undefined, flatten), func + '');
+}
+
+module.exports = flatRest;
+
+
+/***/ }),
+
+/***/ "c707":
+/***/ (function(module, exports, __webpack_require__) {
+
+var baseFlatten = __webpack_require__("5c69"),
+    baseOrderBy = __webpack_require__("6a5c"),
+    baseRest = __webpack_require__("100e"),
+    isIterateeCall = __webpack_require__("9aff");
+
+/**
+ * Creates an array of elements, sorted in ascending order by the results of
+ * running each element in a collection thru each iteratee. This method
+ * performs a stable sort, that is, it preserves the original sort order of
+ * equal elements. The iteratees are invoked with one argument: (value).
+ *
+ * @static
+ * @memberOf _
+ * @since 0.1.0
+ * @category Collection
+ * @param {Array|Object} collection The collection to iterate over.
+ * @param {...(Function|Function[])} [iteratees=[_.identity]]
+ *  The iteratees to sort by.
+ * @returns {Array} Returns the new sorted array.
+ * @example
+ *
+ * var users = [
+ *   { 'user': 'fred',   'age': 48 },
+ *   { 'user': 'barney', 'age': 36 },
+ *   { 'user': 'fred',   'age': 30 },
+ *   { 'user': 'barney', 'age': 34 }
+ * ];
+ *
+ * _.sortBy(users, [function(o) { return o.user; }]);
+ * // => objects for [['barney', 36], ['barney', 34], ['fred', 48], ['fred', 30]]
+ *
+ * _.sortBy(users, ['user', 'age']);
+ * // => objects for [['barney', 34], ['barney', 36], ['fred', 30], ['fred', 48]]
+ */
+var sortBy = baseRest(function(collection, iteratees) {
+  if (collection == null) {
+    return [];
+  }
+  var length = iteratees.length;
+  if (length > 1 && isIterateeCall(collection, iteratees[0], iteratees[1])) {
+    iteratees = [];
+  } else if (length > 2 && isIterateeCall(iteratees[0], iteratees[1], iteratees[2])) {
+    iteratees = [iteratees[0]];
+  }
+  return baseOrderBy(collection, baseFlatten(iteratees, 1), []);
+});
+
+module.exports = sortBy;
+
+
+/***/ }),
+
+/***/ "c869":
+/***/ (function(module, exports, __webpack_require__) {
+
+var getNative = __webpack_require__("0b07"),
+    root = __webpack_require__("2b3e");
+
+/* Built-in method references that are verified to be native. */
+var Set = getNative(root, 'Set');
+
+module.exports = Set;
+
+
+/***/ }),
+
+/***/ "c87c":
+/***/ (function(module, exports) {
+
+/** Used for built-in method references. */
+var objectProto = Object.prototype;
+
+/** Used to check objects for own properties. */
+var hasOwnProperty = objectProto.hasOwnProperty;
+
+/**
+ * Initializes an array clone.
+ *
+ * @private
+ * @param {Array} array The array to clone.
+ * @returns {Array} Returns the initialized clone.
+ */
+function initCloneArray(array) {
+  var length = array.length,
+      result = new array.constructor(length);
+
+  // Add properties assigned by `RegExp#exec`.
+  if (length && typeof array[0] == 'string' && hasOwnProperty.call(array, 'index')) {
+    result.index = array.index;
+    result.input = array.input;
+  }
+  return result;
+}
+
+module.exports = initCloneArray;
 
 
 /***/ }),
@@ -76938,6 +87297,48 @@ module.exports = function (METHOD_NAME) {
 
 /***/ }),
 
+/***/ "c8fe":
+/***/ (function(module, exports, __webpack_require__) {
+
+var cloneArrayBuffer = __webpack_require__("f8af");
+
+/**
+ * Creates a clone of `typedArray`.
+ *
+ * @private
+ * @param {Object} typedArray The typed array to clone.
+ * @param {boolean} [isDeep] Specify a deep clone.
+ * @returns {Object} Returns the cloned typed array.
+ */
+function cloneTypedArray(typedArray, isDeep) {
+  var buffer = isDeep ? cloneArrayBuffer(typedArray.buffer) : typedArray.buffer;
+  return new typedArray.constructor(buffer, typedArray.byteOffset, typedArray.length);
+}
+
+module.exports = cloneTypedArray;
+
+
+/***/ }),
+
+/***/ "c9ca":
+/***/ (function(module, exports, __webpack_require__) {
+
+var baseProperty = __webpack_require__("ef5d");
+
+/**
+ * Gets the size of an ASCII `string`.
+ *
+ * @private
+ * @param {string} string The string inspect.
+ * @returns {number} Returns the string size.
+ */
+var asciiSize = baseProperty('length');
+
+module.exports = asciiSize;
+
+
+/***/ }),
+
 /***/ "ca84":
 /***/ (function(module, exports, __webpack_require__) {
 
@@ -76985,6 +87386,82 @@ addToUnscopables('includes');
 
 /***/ }),
 
+/***/ "cae7":
+/***/ (function(module, exports, __webpack_require__) {
+
+var isSymbol = __webpack_require__("ffd6");
+
+/**
+ * Compares values to sort them in ascending order.
+ *
+ * @private
+ * @param {*} value The value to compare.
+ * @param {*} other The other value to compare.
+ * @returns {number} Returns the sort order indicator for `value`.
+ */
+function compareAscending(value, other) {
+  if (value !== other) {
+    var valIsDefined = value !== undefined,
+        valIsNull = value === null,
+        valIsReflexive = value === value,
+        valIsSymbol = isSymbol(value);
+
+    var othIsDefined = other !== undefined,
+        othIsNull = other === null,
+        othIsReflexive = other === other,
+        othIsSymbol = isSymbol(other);
+
+    if ((!othIsNull && !othIsSymbol && !valIsSymbol && value > other) ||
+        (valIsSymbol && othIsDefined && othIsReflexive && !othIsNull && !othIsSymbol) ||
+        (valIsNull && othIsDefined && othIsReflexive) ||
+        (!valIsDefined && othIsReflexive) ||
+        !valIsReflexive) {
+      return 1;
+    }
+    if ((!valIsNull && !valIsSymbol && !othIsSymbol && value < other) ||
+        (othIsSymbol && valIsDefined && valIsReflexive && !valIsNull && !valIsSymbol) ||
+        (othIsNull && valIsDefined && valIsReflexive) ||
+        (!othIsDefined && valIsReflexive) ||
+        !othIsReflexive) {
+      return -1;
+    }
+  }
+  return 0;
+}
+
+module.exports = compareAscending;
+
+
+/***/ }),
+
+/***/ "cb5a":
+/***/ (function(module, exports, __webpack_require__) {
+
+var eq = __webpack_require__("9638");
+
+/**
+ * Gets the index at which the `key` is found in `array` of key-value pairs.
+ *
+ * @private
+ * @param {Array} array The array to inspect.
+ * @param {*} key The key to search for.
+ * @returns {number} Returns the index of the matched value, else `-1`.
+ */
+function assocIndexOf(array, key) {
+  var length = array.length;
+  while (length--) {
+    if (eq(array[length][0], key)) {
+      return length;
+    }
+  }
+  return -1;
+}
+
+module.exports = assocIndexOf;
+
+
+/***/ }),
+
 /***/ "cc12":
 /***/ (function(module, exports, __webpack_require__) {
 
@@ -77002,281 +87479,37 @@ module.exports = function (it) {
 
 /***/ }),
 
-/***/ "cc5f":
+/***/ "cc45":
 /***/ (function(module, exports, __webpack_require__) {
 
-var __WEBPACK_AMD_DEFINE_RESULT__;(function () {
-    "use strict";
-    var $$find = function (arr, predicate) {
-        if (typeof predicate !== "function") {
-            throw new TypeError("predicate must be a function");
-        }
-        var length = arr.length >>> 0;
-        var thisArg = arguments[1];
-        var value;
-        for (var i = 0; i < length; i++) {
-            value = arr[i];
-            if (predicate.call(thisArg, value, i, arr)) {
-                return value;
-            }
-        }
-        return undefined;
-    };
-    var LabelElement = (function () {
-        function LabelElement(_a, params) {
-            var node = _a.node, _b = _a.position, position = _b === void 0 ? null : _b, _c = _a.data, data = _c === void 0 ? null : _c;
-            this.updateParams(params);
-            this._node = node;
-            this.initStyles(params.cssClass);
-            if (data) {
-                this.updateData(data);
-            }
-            if (position) {
-                this.updatePosition(position);
-            }
-        }
-        LabelElement.prototype.updateParams = function (_a) {
-            var _b = _a.tpl, tpl = _b === void 0 ? function () { return ""; } : _b, _c = _a.cssClass, cssClass = _c === void 0 ? null : _c, _d = _a.halign, halign = _d === void 0 ? "center" : _d, _e = _a.valign, valign = _e === void 0 ? "center" : _e, _f = _a.halignBox, halignBox = _f === void 0 ? "center" : _f, _g = _a.valignBox, valignBox = _g === void 0 ? "center" : _g;
-            var _align = {
-                "top": -.5,
-                "left": -.5,
-                "center": 0,
-                "right": .5,
-                "bottom": .5
-            };
-            this._align = [
-                _align[halign],
-                _align[valign],
-                100 * (_align[halignBox] - 0.5),
-                100 * (_align[valignBox] - 0.5)
-            ];
-            this.tpl = tpl;
-        };
-        LabelElement.prototype.updateData = function (data) {
-            while (this._node.firstChild) {
-                this._node.removeChild(this._node.firstChild);
-            }
-            var children = new DOMParser()
-                .parseFromString(this.tpl(data), "text/html")
-                .body.children;
-            for (var i = 0; i < children.length; ++i) {
-                var el = children[i];
-                this._node.appendChild(el);
-            }
-        };
-        LabelElement.prototype.getNode = function () {
-            return this._node;
-        };
-        LabelElement.prototype.updatePosition = function (pos) {
-            this._renderPosition(pos);
-        };
-        LabelElement.prototype.initStyles = function (cssClass) {
-            var stl = this._node.style;
-            stl.position = "absolute";
-            if (cssClass && cssClass.length) {
-                this._node.classList.add(cssClass);
-            }
-        };
-        LabelElement.prototype._renderPosition = function (position) {
-            var prev = this._position;
-            var x = position.x + this._align[0] * position.w;
-            var y = position.y + this._align[1] * position.h;
-            if (!prev || prev[0] !== x || prev[1] !== y) {
-                this._position = [x, y];
-                var valRel = "translate(" + this._align[2] + "%," + this._align[3] + "%) ";
-                var valAbs = "translate(" + x.toFixed(2) + "px," + y.toFixed(2) + "px) ";
-                var val = valRel + valAbs;
-                var stl = this._node.style;
-                stl.webkitTransform = val;
-                stl.msTransform = val;
-                stl.transform = val;
-            }
-        };
-        return LabelElement;
-    }());
-    var LabelContainer = (function () {
-        function LabelContainer(node) {
-            this._node = node;
-            this._elements = {};
-        }
-        LabelContainer.prototype.addOrUpdateElem = function (id, param, payload) {
-            if (payload === void 0) { payload = {}; }
-            var cur = this._elements[id];
-            if (cur) {
-                cur.updateParams(param);
-                cur.updateData(payload.data);
-                cur.updatePosition(payload.position);
-            }
-            else {
-                var nodeElem = document.createElement("div");
-                this._node.appendChild(nodeElem);
-                this._elements[id] = new LabelElement({
-                    node: nodeElem,
-                    data: payload.data,
-                    position: payload.position
-                }, param);
-            }
-        };
-        LabelContainer.prototype.removeElemById = function (id) {
-            if (this._elements[id]) {
-                this._node.removeChild(this._elements[id].getNode());
-                delete this._elements[id];
-            }
-        };
-        LabelContainer.prototype.updateElemPosition = function (id, position) {
-            var ele = this._elements[id];
-            if (ele) {
-                ele.updatePosition(position);
-            }
-        };
-        LabelContainer.prototype.updatePanZoom = function (_a) {
-            var pan = _a.pan, zoom = _a.zoom;
-            var val = "translate(" + pan.x + "px," + pan.y + "px) scale(" + zoom + ")";
-            var stl = this._node.style;
-            var origin = "top left";
-            stl.webkitTransform = val;
-            stl.msTransform = val;
-            stl.transform = val;
-            stl.webkitTransformOrigin = origin;
-            stl.msTransformOrigin = origin;
-            stl.transformOrigin = origin;
-        };
-        return LabelContainer;
-    }());
-    function cyNodeHtmlLabel(_cy, params, options) {
-        var _params = (!params || typeof params !== "object") ? [] : params;
-        var _lc = createLabelContainer();
-        _cy.one("render", function (e) {
-            createNodesCyHandler(e);
-            wrapCyHandler(e);
-        });
-        _cy.on("add", addCyHandler);
-        _cy.on("layoutstop", layoutstopHandler);
-        _cy.on("remove", removeCyHandler);
-        _cy.on("data", updateDataOrStyleCyHandler);
-        _cy.on("style", updateDataOrStyleCyHandler);
-        _cy.on("pan zoom", wrapCyHandler);
-        _cy.on("position bounds", moveCyHandler);
-        return _cy;
-        function createLabelContainer() {
-            var _cyContainer = _cy.container();
-            var _titlesContainer = document.createElement("div");
-            var _cyCanvas = _cyContainer.querySelector("canvas");
-            var cur = _cyContainer.querySelector("[class^='cy-node-html']");
-            if (cur) {
-                _cyCanvas.parentNode.removeChild(cur);
-            }
-            var stl = _titlesContainer.style;
-            stl.position = 'absolute';
-            stl['z-index'] = 10;
-            stl.width = '500px';
-            stl.margin = '0px';
-            stl.padding = '0px';
-            stl.border = '0px';
-            stl.outline = '0px';
-            stl.outline = '0px';
-            if (options && options.enablePointerEvents !== true) {
-                stl['pointer-events'] = 'none';
-            }
-            _cyCanvas.parentNode.appendChild(_titlesContainer);
-            return new LabelContainer(_titlesContainer);
-        }
-        function createNodesCyHandler(_a) {
-            var cy = _a.cy;
-            _params.forEach(function (x) {
-                cy.elements(x.query).forEach(function (d) {
-                    if (d.isNode()) {
-                        _lc.addOrUpdateElem(d.id(), x, {
-                            position: getNodePosition(d),
-                            data: d.data()
-                        });
-                    }
-                });
-            });
-        }
-        function addCyHandler(ev) {
-            var target = ev.target;
-            var param = $$find(_params.slice().reverse(), function (x) { return target.is(x.query); });
-            if (param) {
-                _lc.addOrUpdateElem(target.id(), param, {
-                    position: getNodePosition(target),
-                    data: target.data()
-                });
-            }
-        }
-        function layoutstopHandler(_a) {
-            var cy = _a.cy;
-            _params.forEach(function (x) {
-                cy.elements(x.query).forEach(function (d) {
-                    if (d.isNode()) {
-                        _lc.updateElemPosition(d.id(), getNodePosition(d));
-                    }
-                });
-            });
-        }
-        function removeCyHandler(ev) {
-            _lc.removeElemById(ev.target.id());
-        }
-        function moveCyHandler(ev) {
-            _lc.updateElemPosition(ev.target.id(), getNodePosition(ev.target));
-        }
-        function updateDataOrStyleCyHandler(ev) {
-            setTimeout(function () {
-                var target = ev.target;
-                var param = $$find(_params.slice().reverse(), function (x) { return target.is(x.query); });
-                if (param && !target.removed()) {
-                    _lc.addOrUpdateElem(target.id(), param, {
-                        position: getNodePosition(target),
-                        data: target.data()
-                    });
-                }
-                else {
-                    _lc.removeElemById(target.id());
-                }
-            }, 0);
-        }
-        function wrapCyHandler(_a) {
-            var cy = _a.cy;
-            _lc.updatePanZoom({
-                pan: cy.pan(),
-                zoom: cy.zoom()
-            });
-        }
-        function getNodePosition(node) {
-            return {
-                w: node.width(),
-                h: node.height(),
-                x: node.position("x"),
-                y: node.position("y")
-            };
-        }
-    }
-    var register = function (cy) {
-        if (!cy) {
-            return;
-        }
-        cy("core", "nodeHtmlLabel", function (optArr, options) {
-            return cyNodeHtmlLabel(this, optArr, options);
-        });
-    };
-    if ( true && module.exports) {
-        module.exports = function (cy) {
-            register(cy);
-        };
-    }
-    else {
-        if (true) {
-            !(__WEBPACK_AMD_DEFINE_RESULT__ = (function () {
-                return register;
-            }).call(exports, __webpack_require__, exports, module),
-				__WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
-        }
-    }
-    if (typeof cytoscape !== "undefined") {
-        register(cytoscape);
-    }
-}());
-//# sourceMappingURL=cytoscape-node-html-label.js.map
+var baseIsMap = __webpack_require__("1a2d"),
+    baseUnary = __webpack_require__("b047"),
+    nodeUtil = __webpack_require__("99d3");
+
+/* Node.js helper references. */
+var nodeIsMap = nodeUtil && nodeUtil.isMap;
+
+/**
+ * Checks if `value` is classified as a `Map` object.
+ *
+ * @static
+ * @memberOf _
+ * @since 4.3.0
+ * @category Lang
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if `value` is a map, else `false`.
+ * @example
+ *
+ * _.isMap(new Map);
+ * // => true
+ *
+ * _.isMap(new WeakMap);
+ * // => false
+ */
+var isMap = nodeIsMap ? baseUnary(nodeIsMap) : baseIsMap;
+
+module.exports = isMap;
+
 
 /***/ }),
 
@@ -79052,6 +89285,34 @@ module.exports = cloneDeep;
 
 /***/ }),
 
+/***/ "cd9d":
+/***/ (function(module, exports) {
+
+/**
+ * This method returns the first argument it receives.
+ *
+ * @static
+ * @since 0.1.0
+ * @memberOf _
+ * @category Util
+ * @param {*} value Any value.
+ * @returns {*} Returns `value`.
+ * @example
+ *
+ * var object = { 'a': 1 };
+ *
+ * console.log(_.identity(object) === object);
+ * // => true
+ */
+function identity(value) {
+  return value;
+}
+
+module.exports = identity;
+
+
+/***/ }),
+
 /***/ "cdf9":
 /***/ (function(module, exports, __webpack_require__) {
 
@@ -79088,6 +89349,50 @@ module.exports = function (key, value) {
 
 /***/ }),
 
+/***/ "ce86":
+/***/ (function(module, exports, __webpack_require__) {
+
+var Symbol = __webpack_require__("9e69"),
+    arrayMap = __webpack_require__("7948"),
+    isArray = __webpack_require__("6747"),
+    isSymbol = __webpack_require__("ffd6");
+
+/** Used as references for various `Number` constants. */
+var INFINITY = 1 / 0;
+
+/** Used to convert symbols to primitives and strings. */
+var symbolProto = Symbol ? Symbol.prototype : undefined,
+    symbolToString = symbolProto ? symbolProto.toString : undefined;
+
+/**
+ * The base implementation of `_.toString` which doesn't convert nullish
+ * values to empty strings.
+ *
+ * @private
+ * @param {*} value The value to process.
+ * @returns {string} Returns the string.
+ */
+function baseToString(value) {
+  // Exit early for strings to avoid a performance hit in some environments.
+  if (typeof value == 'string') {
+    return value;
+  }
+  if (isArray(value)) {
+    // Recursively convert values (susceptible to call stack limits).
+    return arrayMap(value, baseToString) + '';
+  }
+  if (isSymbol(value)) {
+    return symbolToString ? symbolToString.call(value) : '';
+  }
+  var result = (value + '');
+  return (result == '0' && (1 / value) == -INFINITY) ? '-0' : result;
+}
+
+module.exports = baseToString;
+
+
+/***/ }),
+
 /***/ "cf05":
 /***/ (function(module, exports) {
 
@@ -79095,10 +89400,105 @@ module.exports = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAagAAABACAYAAABP
 
 /***/ }),
 
+/***/ "cfa7":
+/***/ (function(module, exports, __webpack_require__) {
+
+var _ = __webpack_require__("33de");
+
+module.exports = tarjan;
+
+function tarjan(g) {
+  var index = 0;
+  var stack = [];
+  var visited = {}; // node id -> { onStack, lowlink, index }
+  var results = [];
+
+  function dfs(v) {
+    var entry = visited[v] = {
+      onStack: true,
+      lowlink: index,
+      index: index++
+    };
+    stack.push(v);
+
+    g.successors(v).forEach(function(w) {
+      if (!_.has(visited, w)) {
+        dfs(w);
+        entry.lowlink = Math.min(entry.lowlink, visited[w].lowlink);
+      } else if (visited[w].onStack) {
+        entry.lowlink = Math.min(entry.lowlink, visited[w].index);
+      }
+    });
+
+    if (entry.lowlink === entry.index) {
+      var cmpt = [];
+      var w;
+      do {
+        w = stack.pop();
+        visited[w].onStack = false;
+        cmpt.push(w);
+      } while (v !== w);
+      results.push(cmpt);
+    }
+  }
+
+  g.nodes().forEach(function(v) {
+    if (!_.has(visited, v)) {
+      dfs(v);
+    }
+  });
+
+  return results;
+}
+
+
+/***/ }),
+
 /***/ "d012":
 /***/ (function(module, exports) {
 
 module.exports = {};
+
+
+/***/ }),
+
+/***/ "d02c":
+/***/ (function(module, exports, __webpack_require__) {
+
+var ListCache = __webpack_require__("5e2e"),
+    Map = __webpack_require__("79bc"),
+    MapCache = __webpack_require__("7b83");
+
+/** Used as the size to enable large array optimizations. */
+var LARGE_ARRAY_SIZE = 200;
+
+/**
+ * Sets the stack `key` to `value`.
+ *
+ * @private
+ * @name set
+ * @memberOf Stack
+ * @param {string} key The key of the value to set.
+ * @param {*} value The value to set.
+ * @returns {Object} Returns the stack cache instance.
+ */
+function stackSet(key, value) {
+  var data = this.__data__;
+  if (data instanceof ListCache) {
+    var pairs = data.__data__;
+    if (!Map || (pairs.length < LARGE_ARRAY_SIZE - 1)) {
+      pairs.push([key, value]);
+      this.size = ++data.size;
+      return this;
+    }
+    data = this.__data__ = new MapCache(pairs);
+  }
+  data.set(key, value);
+  this.size = data.size;
+  return this;
+}
+
+module.exports = stackSet;
 
 
 /***/ }),
@@ -79200,10 +89600,100 @@ module.exports = Object.setPrototypeOf || ('__proto__' in {} ? function () {
 
 /***/ }),
 
+/***/ "d312":
+/***/ (function(module, exports, __webpack_require__) {
+
+var dijkstra = __webpack_require__("a473");
+var _ = __webpack_require__("33de");
+
+module.exports = dijkstraAll;
+
+function dijkstraAll(g, weightFunc, edgeFunc) {
+  return _.transform(g.nodes(), function(acc, v) {
+    acc[v] = dijkstra(g, v, weightFunc, edgeFunc);
+  }, {});
+}
+
+
+/***/ }),
+
+/***/ "d327":
+/***/ (function(module, exports) {
+
+/**
+ * This method returns a new empty array.
+ *
+ * @static
+ * @memberOf _
+ * @since 4.13.0
+ * @category Util
+ * @returns {Array} Returns the new empty array.
+ * @example
+ *
+ * var arrays = _.times(2, _.stubArray);
+ *
+ * console.log(arrays);
+ * // => [[], []]
+ *
+ * console.log(arrays[0] === arrays[1]);
+ * // => false
+ */
+function stubArray() {
+  return [];
+}
+
+module.exports = stubArray;
+
+
+/***/ }),
+
 /***/ "d36c":
 /***/ (function(module, exports, __webpack_require__) {
 
 // extracted by mini-css-extract-plugin
+
+/***/ }),
+
+/***/ "d370":
+/***/ (function(module, exports, __webpack_require__) {
+
+var baseIsArguments = __webpack_require__("253c"),
+    isObjectLike = __webpack_require__("1310");
+
+/** Used for built-in method references. */
+var objectProto = Object.prototype;
+
+/** Used to check objects for own properties. */
+var hasOwnProperty = objectProto.hasOwnProperty;
+
+/** Built-in value references. */
+var propertyIsEnumerable = objectProto.propertyIsEnumerable;
+
+/**
+ * Checks if `value` is likely an `arguments` object.
+ *
+ * @static
+ * @memberOf _
+ * @since 0.1.0
+ * @category Lang
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if `value` is an `arguments` object,
+ *  else `false`.
+ * @example
+ *
+ * _.isArguments(function() { return arguments; }());
+ * // => true
+ *
+ * _.isArguments([1, 2, 3]);
+ * // => false
+ */
+var isArguments = baseIsArguments(function() { return arguments; }()) ? baseIsArguments : function(value) {
+  return isObjectLike(value) && hasOwnProperty.call(value, 'callee') &&
+    !propertyIsEnumerable.call(value, 'callee');
+};
+
+module.exports = isArguments;
+
 
 /***/ }),
 
@@ -79241,6 +89731,34 @@ module.exports = function (it, TAG, STATIC) {
 
 /***/ }),
 
+/***/ "d4b2":
+/***/ (function(module, exports) {
+
+/**
+ * The base implementation of `_.sortBy` which uses `comparer` to define the
+ * sort order of `array` and replaces criteria objects with their corresponding
+ * values.
+ *
+ * @private
+ * @param {Array} array The array to sort.
+ * @param {Function} comparer The function to define sort order.
+ * @returns {Array} Returns `array`.
+ */
+function baseSortBy(array, comparer) {
+  var length = array.length;
+
+  array.sort(comparer);
+  while (length--) {
+    array[length] = array[length].value;
+  }
+  return array;
+}
+
+module.exports = baseSortBy;
+
+
+/***/ }),
+
 /***/ "d4bd":
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
@@ -79259,6 +89777,258 @@ var userAgent = __webpack_require__("342f");
 var global = __webpack_require__("da84");
 
 module.exports = /ipad|iphone|ipod/i.test(userAgent) && global.Pebble !== undefined;
+
+
+/***/ }),
+
+/***/ "d4f3":
+/***/ (function(module, exports, __webpack_require__) {
+
+var _ = __webpack_require__("6f9c");
+
+module.exports = addSubgraphConstraints;
+
+function addSubgraphConstraints(g, cg, vs) {
+  var prev = {},
+    rootPrev;
+
+  _.forEach(vs, function(v) {
+    var child = g.parent(v),
+      parent,
+      prevChild;
+    while (child) {
+      parent = g.parent(child);
+      if (parent) {
+        prevChild = prev[parent];
+        prev[parent] = child;
+      } else {
+        prevChild = rootPrev;
+        rootPrev = child;
+      }
+      if (prevChild && prevChild !== child) {
+        cg.setEdge(prevChild, child);
+        return;
+      }
+      child = parent;
+    }
+  });
+
+  /*
+  function dfs(v) {
+    var children = v ? g.children(v) : g.children();
+    if (children.length) {
+      var min = Number.POSITIVE_INFINITY,
+          subgraphs = [];
+      _.each(children, function(child) {
+        var childMin = dfs(child);
+        if (g.children(child).length) {
+          subgraphs.push({ v: child, order: childMin });
+        }
+        min = Math.min(min, childMin);
+      });
+      _.reduce(_.sortBy(subgraphs, "order"), function(prev, curr) {
+        cg.setEdge(prev.v, curr.v);
+        return curr;
+      });
+      return min;
+    }
+    return g.node(v).order;
+  }
+  dfs(undefined);
+  */
+}
+
+
+/***/ }),
+
+/***/ "d612":
+/***/ (function(module, exports, __webpack_require__) {
+
+var MapCache = __webpack_require__("7b83"),
+    setCacheAdd = __webpack_require__("7ed2"),
+    setCacheHas = __webpack_require__("dc0f");
+
+/**
+ *
+ * Creates an array cache object to store unique values.
+ *
+ * @private
+ * @constructor
+ * @param {Array} [values] The values to cache.
+ */
+function SetCache(values) {
+  var index = -1,
+      length = values == null ? 0 : values.length;
+
+  this.__data__ = new MapCache;
+  while (++index < length) {
+    this.add(values[index]);
+  }
+}
+
+// Add methods to `SetCache`.
+SetCache.prototype.add = SetCache.prototype.push = setCacheAdd;
+SetCache.prototype.has = setCacheHas;
+
+module.exports = SetCache;
+
+
+/***/ }),
+
+/***/ "d623":
+/***/ (function(module, exports, __webpack_require__) {
+
+var baseKeys = __webpack_require__("03dd"),
+    getTag = __webpack_require__("42a2"),
+    isArrayLike = __webpack_require__("30c9"),
+    isString = __webpack_require__("e2a0"),
+    stringSize = __webpack_require__("6751");
+
+/** `Object#toString` result references. */
+var mapTag = '[object Map]',
+    setTag = '[object Set]';
+
+/**
+ * Gets the size of `collection` by returning its length for array-like
+ * values or the number of own enumerable string keyed properties for objects.
+ *
+ * @static
+ * @memberOf _
+ * @since 0.1.0
+ * @category Collection
+ * @param {Array|Object|string} collection The collection to inspect.
+ * @returns {number} Returns the collection size.
+ * @example
+ *
+ * _.size([1, 2, 3]);
+ * // => 3
+ *
+ * _.size({ 'a': 1, 'b': 2 });
+ * // => 2
+ *
+ * _.size('pebbles');
+ * // => 7
+ */
+function size(collection) {
+  if (collection == null) {
+    return 0;
+  }
+  if (isArrayLike(collection)) {
+    return isString(collection) ? stringSize(collection) : collection.length;
+  }
+  var tag = getTag(collection);
+  if (tag == mapTag || tag == setTag) {
+    return collection.size;
+  }
+  return baseKeys(collection).length;
+}
+
+module.exports = size;
+
+
+/***/ }),
+
+/***/ "d70d":
+/***/ (function(module, exports) {
+
+/**
+ * This base implementation of `_.zipObject` which assigns values using `assignFunc`.
+ *
+ * @private
+ * @param {Array} props The property identifiers.
+ * @param {Array} values The property values.
+ * @param {Function} assignFunc The function to assign values.
+ * @returns {Object} Returns the new object.
+ */
+function baseZipObject(props, values, assignFunc) {
+  var index = -1,
+      length = props.length,
+      valsLength = values.length,
+      result = {};
+
+  while (++index < length) {
+    var value = index < valsLength ? values[index] : undefined;
+    assignFunc(result, props[index], value);
+  }
+  return result;
+}
+
+module.exports = baseZipObject;
+
+
+/***/ }),
+
+/***/ "d780":
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+var _ = __webpack_require__("6f9c");
+
+module.exports = crossCount;
+
+/*
+ * A function that takes a layering (an array of layers, each with an array of
+ * ordererd nodes) and a graph and returns a weighted crossing count.
+ *
+ * Pre-conditions:
+ *
+ *    1. Input graph must be simple (not a multigraph), directed, and include
+ *       only simple edges.
+ *    2. Edges in the input graph must have assigned weights.
+ *
+ * Post-conditions:
+ *
+ *    1. The graph and layering matrix are left unchanged.
+ *
+ * This algorithm is derived from Barth, et al., "Bilayer Cross Counting."
+ */
+function crossCount(g, layering) {
+  var cc = 0;
+  for (var i = 1; i < layering.length; ++i) {
+    cc += twoLayerCrossCount(g, layering[i-1], layering[i]);
+  }
+  return cc;
+}
+
+function twoLayerCrossCount(g, northLayer, southLayer) {
+  // Sort all of the edges between the north and south layers by their position
+  // in the north layer and then the south. Map these edges to the position of
+  // their head in the south layer.
+  var southPos = _.zipObject(southLayer,
+    _.map(southLayer, function (v, i) { return i; }));
+  var southEntries = _.flatten(_.map(northLayer, function(v) {
+    return _.sortBy(_.map(g.outEdges(v), function(e) {
+      return { pos: southPos[e.w], weight: g.edge(e).weight };
+    }), "pos");
+  }), true);
+
+  // Build the accumulator tree
+  var firstIndex = 1;
+  while (firstIndex < southLayer.length) firstIndex <<= 1;
+  var treeSize = 2 * firstIndex - 1;
+  firstIndex -= 1;
+  var tree = _.map(new Array(treeSize), function() { return 0; });
+
+  // Calculate the weighted crossings
+  var cc = 0;
+  _.forEach(southEntries.forEach(function(entry) {
+    var index = entry.pos + firstIndex;
+    tree[index] += entry.weight;
+    var weightSum = 0;
+    while (index > 0) {
+      if (index % 2) {
+        weightSum += tree[index + 1];
+      }
+      index = (index - 1) >> 1;
+      tree[index] += entry.weight;
+    }
+    cc += entry.weight * weightSum;
+  }));
+
+  return cc;
+}
 
 
 /***/ }),
@@ -79350,6 +90120,40 @@ module.exports = function (KEY, exec, FORCED, SHAM) {
 
 /***/ }),
 
+/***/ "d7ee":
+/***/ (function(module, exports, __webpack_require__) {
+
+var baseIsSet = __webpack_require__("c3fc"),
+    baseUnary = __webpack_require__("b047"),
+    nodeUtil = __webpack_require__("99d3");
+
+/* Node.js helper references. */
+var nodeIsSet = nodeUtil && nodeUtil.isSet;
+
+/**
+ * Checks if `value` is classified as a `Set` object.
+ *
+ * @static
+ * @memberOf _
+ * @since 4.3.0
+ * @category Lang
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if `value` is a set, else `false`.
+ * @example
+ *
+ * _.isSet(new Set);
+ * // => true
+ *
+ * _.isSet(new WeakSet);
+ * // => false
+ */
+var isSet = nodeIsSet ? baseUnary(nodeIsSet) : baseIsSet;
+
+module.exports = isSet;
+
+
+/***/ }),
+
 /***/ "d81d":
 /***/ (function(module, exports, __webpack_require__) {
 
@@ -79380,6 +90184,45 @@ $({ target: 'Array', proto: true, forced: !HAS_SPECIES_SUPPORT }, {
 
 /***/ }),
 
+/***/ "d89f":
+/***/ (function(module, exports, __webpack_require__) {
+
+module.exports = {
+  components: __webpack_require__("e44a"),
+  dijkstra: __webpack_require__("a473"),
+  dijkstraAll: __webpack_require__("d312"),
+  findCycles: __webpack_require__("ddac"),
+  floydWarshall: __webpack_require__("6736"),
+  isAcyclic: __webpack_require__("43e8"),
+  postorder: __webpack_require__("4f17"),
+  preorder: __webpack_require__("aaf9"),
+  prim: __webpack_require__("61e9"),
+  tarjan: __webpack_require__("cfa7"),
+  topsort: __webpack_require__("8185")
+};
+
+
+/***/ }),
+
+/***/ "d9a8":
+/***/ (function(module, exports) {
+
+/**
+ * The base implementation of `_.isNaN` without support for number objects.
+ *
+ * @private
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if `value` is `NaN`, else `false`.
+ */
+function baseIsNaN(value) {
+  return value !== value;
+}
+
+module.exports = baseIsNaN;
+
+
+/***/ }),
+
 /***/ "d9b5":
 /***/ (function(module, exports, __webpack_require__) {
 
@@ -79392,6 +90235,149 @@ module.exports = USE_SYMBOL_AS_UID ? function (it) {
   var $Symbol = getBuiltIn('Symbol');
   return typeof $Symbol == 'function' && Object(it) instanceof $Symbol;
 };
+
+
+/***/ }),
+
+/***/ "d9f3":
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+var _ = __webpack_require__("6f9c");
+
+module.exports = resolveConflicts;
+
+/*
+ * Given a list of entries of the form {v, barycenter, weight} and a
+ * constraint graph this function will resolve any conflicts between the
+ * constraint graph and the barycenters for the entries. If the barycenters for
+ * an entry would violate a constraint in the constraint graph then we coalesce
+ * the nodes in the conflict into a new node that respects the contraint and
+ * aggregates barycenter and weight information.
+ *
+ * This implementation is based on the description in Forster, "A Fast and
+ * Simple Hueristic for Constrained Two-Level Crossing Reduction," thought it
+ * differs in some specific details.
+ *
+ * Pre-conditions:
+ *
+ *    1. Each entry has the form {v, barycenter, weight}, or if the node has
+ *       no barycenter, then {v}.
+ *
+ * Returns:
+ *
+ *    A new list of entries of the form {vs, i, barycenter, weight}. The list
+ *    `vs` may either be a singleton or it may be an aggregation of nodes
+ *    ordered such that they do not violate constraints from the constraint
+ *    graph. The property `i` is the lowest original index of any of the
+ *    elements in `vs`.
+ */
+function resolveConflicts(entries, cg) {
+  var mappedEntries = {};
+  _.forEach(entries, function(entry, i) {
+    var tmp = mappedEntries[entry.v] = {
+      indegree: 0,
+      "in": [],
+      out: [],
+      vs: [entry.v],
+      i: i
+    };
+    if (!_.isUndefined(entry.barycenter)) {
+      tmp.barycenter = entry.barycenter;
+      tmp.weight = entry.weight;
+    }
+  });
+
+  _.forEach(cg.edges(), function(e) {
+    var entryV = mappedEntries[e.v];
+    var entryW = mappedEntries[e.w];
+    if (!_.isUndefined(entryV) && !_.isUndefined(entryW)) {
+      entryW.indegree++;
+      entryV.out.push(mappedEntries[e.w]);
+    }
+  });
+
+  var sourceSet = _.filter(mappedEntries, function(entry) {
+    return !entry.indegree;
+  });
+
+  return doResolveConflicts(sourceSet);
+}
+
+function doResolveConflicts(sourceSet) {
+  var entries = [];
+
+  function handleIn(vEntry) {
+    return function(uEntry) {
+      if (uEntry.merged) {
+        return;
+      }
+      if (_.isUndefined(uEntry.barycenter) ||
+          _.isUndefined(vEntry.barycenter) ||
+          uEntry.barycenter >= vEntry.barycenter) {
+        mergeEntries(vEntry, uEntry);
+      }
+    };
+  }
+
+  function handleOut(vEntry) {
+    return function(wEntry) {
+      wEntry["in"].push(vEntry);
+      if (--wEntry.indegree === 0) {
+        sourceSet.push(wEntry);
+      }
+    };
+  }
+
+  while (sourceSet.length) {
+    var entry = sourceSet.pop();
+    entries.push(entry);
+    _.forEach(entry["in"].reverse(), handleIn(entry));
+    _.forEach(entry.out, handleOut(entry));
+  }
+
+  return _.map(_.filter(entries, function(entry) { return !entry.merged; }),
+    function(entry) {
+      return _.pick(entry, ["vs", "i", "barycenter", "weight"]);
+    });
+
+}
+
+function mergeEntries(target, source) {
+  var sum = 0;
+  var weight = 0;
+
+  if (target.weight) {
+    sum += target.barycenter * target.weight;
+    weight += target.weight;
+  }
+
+  if (source.weight) {
+    sum += source.barycenter * source.weight;
+    weight += source.weight;
+  }
+
+  target.vs = source.vs.concat(target.vs);
+  target.barycenter = sum / weight;
+  target.weight = weight;
+  target.i = Math.min(source.i, target.i);
+  source.merged = true;
+}
+
+
+/***/ }),
+
+/***/ "da03":
+/***/ (function(module, exports, __webpack_require__) {
+
+var root = __webpack_require__("2b3e");
+
+/** Used to detect overreaching core-js shims. */
+var coreJsData = root['__core-js_shared__'];
+
+module.exports = coreJsData;
 
 
 /***/ }),
@@ -81441,6 +92427,167 @@ $({ target: 'Object', stat: true, sham: !DESCRIPTORS }, {
 
 /***/ }),
 
+/***/ "dc0f":
+/***/ (function(module, exports) {
+
+/**
+ * Checks if `value` is in the array cache.
+ *
+ * @private
+ * @name has
+ * @memberOf SetCache
+ * @param {*} value The value to search for.
+ * @returns {number} Returns `true` if `value` is found, else `false`.
+ */
+function setCacheHas(value) {
+  return this.__data__.has(value);
+}
+
+module.exports = setCacheHas;
+
+
+/***/ }),
+
+/***/ "dc57":
+/***/ (function(module, exports) {
+
+/** Used for built-in method references. */
+var funcProto = Function.prototype;
+
+/** Used to resolve the decompiled source of functions. */
+var funcToString = funcProto.toString;
+
+/**
+ * Converts `func` to its source code.
+ *
+ * @private
+ * @param {Function} func The function to convert.
+ * @returns {string} Returns the source code.
+ */
+function toSource(func) {
+  if (func != null) {
+    try {
+      return funcToString.call(func);
+    } catch (e) {}
+    try {
+      return (func + '');
+    } catch (e) {}
+  }
+  return '';
+}
+
+module.exports = toSource;
+
+
+/***/ }),
+
+/***/ "dcbe":
+/***/ (function(module, exports, __webpack_require__) {
+
+var isArrayLike = __webpack_require__("30c9"),
+    isObjectLike = __webpack_require__("1310");
+
+/**
+ * This method is like `_.isArrayLike` except that it also checks if `value`
+ * is an object.
+ *
+ * @static
+ * @memberOf _
+ * @since 4.0.0
+ * @category Lang
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if `value` is an array-like object,
+ *  else `false`.
+ * @example
+ *
+ * _.isArrayLikeObject([1, 2, 3]);
+ * // => true
+ *
+ * _.isArrayLikeObject(document.body.children);
+ * // => true
+ *
+ * _.isArrayLikeObject('abc');
+ * // => false
+ *
+ * _.isArrayLikeObject(_.noop);
+ * // => false
+ */
+function isArrayLikeObject(value) {
+  return isObjectLike(value) && isArrayLike(value);
+}
+
+module.exports = isArrayLikeObject;
+
+
+/***/ }),
+
+/***/ "dd61":
+/***/ (function(module, exports, __webpack_require__) {
+
+var arrayMap = __webpack_require__("7948"),
+    baseIteratee = __webpack_require__("badf"),
+    baseMap = __webpack_require__("97d3"),
+    isArray = __webpack_require__("6747");
+
+/**
+ * Creates an array of values by running each element in `collection` thru
+ * `iteratee`. The iteratee is invoked with three arguments:
+ * (value, index|key, collection).
+ *
+ * Many lodash methods are guarded to work as iteratees for methods like
+ * `_.every`, `_.filter`, `_.map`, `_.mapValues`, `_.reject`, and `_.some`.
+ *
+ * The guarded methods are:
+ * `ary`, `chunk`, `curry`, `curryRight`, `drop`, `dropRight`, `every`,
+ * `fill`, `invert`, `parseInt`, `random`, `range`, `rangeRight`, `repeat`,
+ * `sampleSize`, `slice`, `some`, `sortBy`, `split`, `take`, `takeRight`,
+ * `template`, `trim`, `trimEnd`, `trimStart`, and `words`
+ *
+ * @static
+ * @memberOf _
+ * @since 0.1.0
+ * @category Collection
+ * @param {Array|Object} collection The collection to iterate over.
+ * @param {Function} [iteratee=_.identity] The function invoked per iteration.
+ * @returns {Array} Returns the new mapped array.
+ * @example
+ *
+ * function square(n) {
+ *   return n * n;
+ * }
+ *
+ * _.map([4, 8], square);
+ * // => [16, 64]
+ *
+ * _.map({ 'a': 4, 'b': 8 }, square);
+ * // => [16, 64] (iteration order is not guaranteed)
+ *
+ * var users = [
+ *   { 'user': 'barney' },
+ *   { 'user': 'fred' }
+ * ];
+ *
+ * // The `_.property` iteratee shorthand.
+ * _.map(users, 'user');
+ * // => ['barney', 'fred']
+ */
+function map(collection, iteratee) {
+  var func = isArray(collection) ? arrayMap : baseMap;
+  return func(collection, baseIteratee(iteratee, 3));
+}
+
+module.exports = map;
+
+
+/***/ }),
+
+/***/ "dd72":
+/***/ (function(module, exports, __webpack_require__) {
+
+// extracted by mini-css-extract-plugin
+
+/***/ }),
+
 /***/ "dda3":
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
@@ -81448,6 +92595,23 @@ $({ target: 'Object', stat: true, sham: !DESCRIPTORS }, {
 /* harmony import */ var _node_modules_mini_css_extract_plugin_dist_loader_js_ref_8_oneOf_1_0_node_modules_css_loader_dist_cjs_js_ref_8_oneOf_1_1_node_modules_vue_loader_lib_loaders_stylePostLoader_js_node_modules_postcss_loader_src_index_js_ref_8_oneOf_1_2_node_modules_sass_loader_dist_cjs_js_ref_8_oneOf_1_3_node_modules_cache_loader_dist_cjs_js_ref_0_0_node_modules_vue_loader_lib_index_js_vue_loader_options_DropdownButton_vue_vue_type_style_index_0_lang_scss___WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__("86af");
 /* harmony import */ var _node_modules_mini_css_extract_plugin_dist_loader_js_ref_8_oneOf_1_0_node_modules_css_loader_dist_cjs_js_ref_8_oneOf_1_1_node_modules_vue_loader_lib_loaders_stylePostLoader_js_node_modules_postcss_loader_src_index_js_ref_8_oneOf_1_2_node_modules_sass_loader_dist_cjs_js_ref_8_oneOf_1_3_node_modules_cache_loader_dist_cjs_js_ref_0_0_node_modules_vue_loader_lib_index_js_vue_loader_options_DropdownButton_vue_vue_type_style_index_0_lang_scss___WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(_node_modules_mini_css_extract_plugin_dist_loader_js_ref_8_oneOf_1_0_node_modules_css_loader_dist_cjs_js_ref_8_oneOf_1_1_node_modules_vue_loader_lib_loaders_stylePostLoader_js_node_modules_postcss_loader_src_index_js_ref_8_oneOf_1_2_node_modules_sass_loader_dist_cjs_js_ref_8_oneOf_1_3_node_modules_cache_loader_dist_cjs_js_ref_0_0_node_modules_vue_loader_lib_index_js_vue_loader_options_DropdownButton_vue_vue_type_style_index_0_lang_scss___WEBPACK_IMPORTED_MODULE_0__);
 /* unused harmony reexport * */
+
+
+/***/ }),
+
+/***/ "ddac":
+/***/ (function(module, exports, __webpack_require__) {
+
+var _ = __webpack_require__("33de");
+var tarjan = __webpack_require__("cfa7");
+
+module.exports = findCycles;
+
+function findCycles(g) {
+  return _.filter(tarjan(g), function(cmpt) {
+    return cmpt.length > 1 || (cmpt.length === 1 && g.hasEdge(cmpt[0], cmpt[0]));
+  });
+}
 
 
 /***/ }),
@@ -81499,10 +92663,70 @@ for (var COLLECTION_NAME in DOMIterables) {
 
 /***/ }),
 
+/***/ "dec5":
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+/* harmony import */ var _node_modules_mini_css_extract_plugin_dist_loader_js_ref_8_oneOf_1_0_node_modules_css_loader_dist_cjs_js_ref_8_oneOf_1_1_node_modules_vue_loader_lib_loaders_stylePostLoader_js_node_modules_postcss_loader_src_index_js_ref_8_oneOf_1_2_node_modules_sass_loader_dist_cjs_js_ref_8_oneOf_1_3_node_modules_cache_loader_dist_cjs_js_ref_0_0_node_modules_vue_loader_lib_index_js_vue_loader_options_EditDiagramDialog_vue_vue_type_style_index_0_lang_scss___WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__("0d85");
+/* harmony import */ var _node_modules_mini_css_extract_plugin_dist_loader_js_ref_8_oneOf_1_0_node_modules_css_loader_dist_cjs_js_ref_8_oneOf_1_1_node_modules_vue_loader_lib_loaders_stylePostLoader_js_node_modules_postcss_loader_src_index_js_ref_8_oneOf_1_2_node_modules_sass_loader_dist_cjs_js_ref_8_oneOf_1_3_node_modules_cache_loader_dist_cjs_js_ref_0_0_node_modules_vue_loader_lib_index_js_vue_loader_options_EditDiagramDialog_vue_vue_type_style_index_0_lang_scss___WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(_node_modules_mini_css_extract_plugin_dist_loader_js_ref_8_oneOf_1_0_node_modules_css_loader_dist_cjs_js_ref_8_oneOf_1_1_node_modules_vue_loader_lib_loaders_stylePostLoader_js_node_modules_postcss_loader_src_index_js_ref_8_oneOf_1_2_node_modules_sass_loader_dist_cjs_js_ref_8_oneOf_1_3_node_modules_cache_loader_dist_cjs_js_ref_0_0_node_modules_vue_loader_lib_index_js_vue_loader_options_EditDiagramDialog_vue_vue_type_style_index_0_lang_scss___WEBPACK_IMPORTED_MODULE_0__);
+/* unused harmony reexport * */
+
+
+/***/ }),
+
 /***/ "df13":
 /***/ (function(module, exports, __webpack_require__) {
 
 // extracted by mini-css-extract-plugin
+
+/***/ }),
+
+/***/ "df2e":
+/***/ (function(module, exports, __webpack_require__) {
+
+var _ = __webpack_require__("33de");
+
+module.exports = dfs;
+
+/*
+ * A helper that preforms a pre- or post-order traversal on the input graph
+ * and returns the nodes in the order they were visited. If the graph is
+ * undirected then this algorithm will navigate using neighbors. If the graph
+ * is directed then this algorithm will navigate using successors.
+ *
+ * Order must be one of "pre" or "post".
+ */
+function dfs(g, vs, order) {
+  if (!_.isArray(vs)) {
+    vs = [vs];
+  }
+
+  var navigation = (g.isDirected() ? g.successors : g.neighbors).bind(g);
+
+  var acc = [];
+  var visited = {};
+  _.each(vs, function(v) {
+    if (!g.hasNode(v)) {
+      throw new Error("Graph does not have node: " + v);
+    }
+
+    doDfs(g, v, order === "post", visited, navigation, acc);
+  });
+  return acc;
+}
+
+function doDfs(g, v, postorder, visited, navigation, acc) {
+  if (!_.has(visited, v)) {
+    visited[v] = true;
+
+    if (!postorder) { acc.push(v); }
+    _.each(navigation(v), function(w) {
+      doDfs(g, w, postorder, visited, navigation, acc);
+    });
+    if (postorder) { acc.push(v); }
+  }
+}
+
 
 /***/ }),
 
@@ -81526,6 +92750,51 @@ module.exports = Object.keys || function keys(O) {
 /***/ (function(module, exports, __webpack_require__) {
 
 // extracted by mini-css-extract-plugin
+
+/***/ }),
+
+/***/ "e008":
+/***/ (function(module, exports, __webpack_require__) {
+
+/**
+ * Copyright (c) 2014, Chris Pettitt
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright notice, this
+ * list of conditions and the following disclaimer.
+ *
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ * this list of conditions and the following disclaimer in the documentation
+ * and/or other materials provided with the distribution.
+ *
+ * 3. Neither the name of the copyright holder nor the names of its contributors
+ * may be used to endorse or promote products derived from this software without
+ * specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+ * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+ * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+
+var lib = __webpack_require__("01ce");
+
+module.exports = {
+  Graph: lib.Graph,
+  json: __webpack_require__("19b2"),
+  alg: __webpack_require__("d89f"),
+  version: lib.version
+};
+
 
 /***/ }),
 
@@ -81587,6 +92856,58 @@ if (DESCRIPTORS && typeof NativeSymbol == 'function' && (!('description' in Nati
 
 /***/ }),
 
+/***/ "e090":
+/***/ (function(module, exports, __webpack_require__) {
+
+var _ = __webpack_require__("6f9c");
+var util = __webpack_require__("b50e");
+var Graph = __webpack_require__("17d5").Graph;
+
+module.exports = {
+  debugOrdering: debugOrdering
+};
+
+/* istanbul ignore next */
+function debugOrdering(g) {
+  var layerMatrix = util.buildLayerMatrix(g);
+
+  var h = new Graph({ compound: true, multigraph: true }).setGraph({});
+
+  _.forEach(g.nodes(), function(v) {
+    h.setNode(v, { label: v });
+    h.setParent(v, "layer" + g.node(v).rank);
+  });
+
+  _.forEach(g.edges(), function(e) {
+    h.setEdge(e.v, e.w, {}, e.name);
+  });
+
+  _.forEach(layerMatrix, function(layer, i) {
+    var layerV = "layer" + i;
+    h.setNode(layerV, { rank: "same" });
+    _.reduce(layer, function(u, v) {
+      h.setEdge(u, v, { style: "invis" });
+      return v;
+    });
+  });
+
+  return h;
+}
+
+
+/***/ }),
+
+/***/ "e0c0":
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+/* harmony import */ var _node_modules_mini_css_extract_plugin_dist_loader_js_ref_8_oneOf_1_0_node_modules_css_loader_dist_cjs_js_ref_8_oneOf_1_1_node_modules_vue_loader_lib_loaders_stylePostLoader_js_node_modules_postcss_loader_src_index_js_ref_8_oneOf_1_2_node_modules_sass_loader_dist_cjs_js_ref_8_oneOf_1_3_node_modules_cache_loader_dist_cjs_js_ref_0_0_node_modules_vue_loader_lib_index_js_vue_loader_options_CheckBoxField_vue_vue_type_style_index_0_lang_scss___WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__("3558");
+/* harmony import */ var _node_modules_mini_css_extract_plugin_dist_loader_js_ref_8_oneOf_1_0_node_modules_css_loader_dist_cjs_js_ref_8_oneOf_1_1_node_modules_vue_loader_lib_loaders_stylePostLoader_js_node_modules_postcss_loader_src_index_js_ref_8_oneOf_1_2_node_modules_sass_loader_dist_cjs_js_ref_8_oneOf_1_3_node_modules_cache_loader_dist_cjs_js_ref_0_0_node_modules_vue_loader_lib_index_js_vue_loader_options_CheckBoxField_vue_vue_type_style_index_0_lang_scss___WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(_node_modules_mini_css_extract_plugin_dist_loader_js_ref_8_oneOf_1_0_node_modules_css_loader_dist_cjs_js_ref_8_oneOf_1_1_node_modules_vue_loader_lib_loaders_stylePostLoader_js_node_modules_postcss_loader_src_index_js_ref_8_oneOf_1_2_node_modules_sass_loader_dist_cjs_js_ref_8_oneOf_1_3_node_modules_cache_loader_dist_cjs_js_ref_0_0_node_modules_vue_loader_lib_index_js_vue_loader_options_CheckBoxField_vue_vue_type_style_index_0_lang_scss___WEBPACK_IMPORTED_MODULE_0__);
+/* unused harmony reexport * */
+
+
+/***/ }),
+
 /***/ "e155":
 /***/ (function(module, exports, __webpack_require__) {
 
@@ -81630,6 +92951,45 @@ module.exports = !fails(function () {
   // eslint-disable-next-line es/no-object-getprototypeof -- required for testing
   return Object.getPrototypeOf(new F()) !== F.prototype;
 });
+
+
+/***/ }),
+
+/***/ "e24b":
+/***/ (function(module, exports, __webpack_require__) {
+
+var hashClear = __webpack_require__("49f4"),
+    hashDelete = __webpack_require__("1efc"),
+    hashGet = __webpack_require__("bbc0"),
+    hashHas = __webpack_require__("7a48"),
+    hashSet = __webpack_require__("2524");
+
+/**
+ * Creates a hash object.
+ *
+ * @private
+ * @constructor
+ * @param {Array} [entries] The key-value pairs to cache.
+ */
+function Hash(entries) {
+  var index = -1,
+      length = entries == null ? 0 : entries.length;
+
+  this.clear();
+  while (++index < length) {
+    var entry = entries[index];
+    this.set(entry[0], entry[1]);
+  }
+}
+
+// Add methods to `Hash`.
+Hash.prototype.clear = hashClear;
+Hash.prototype['delete'] = hashDelete;
+Hash.prototype.get = hashGet;
+Hash.prototype.has = hashHas;
+Hash.prototype.set = hashSet;
+
+module.exports = Hash;
 
 
 /***/ }),
@@ -81695,6 +93055,89 @@ addToUnscopables('entries');
 
 /***/ }),
 
+/***/ "e2a0":
+/***/ (function(module, exports, __webpack_require__) {
+
+var baseGetTag = __webpack_require__("3729"),
+    isArray = __webpack_require__("6747"),
+    isObjectLike = __webpack_require__("1310");
+
+/** `Object#toString` result references. */
+var stringTag = '[object String]';
+
+/**
+ * Checks if `value` is classified as a `String` primitive or object.
+ *
+ * @static
+ * @since 0.1.0
+ * @memberOf _
+ * @category Lang
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if `value` is a string, else `false`.
+ * @example
+ *
+ * _.isString('abc');
+ * // => true
+ *
+ * _.isString(1);
+ * // => false
+ */
+function isString(value) {
+  return typeof value == 'string' ||
+    (!isArray(value) && isObjectLike(value) && baseGetTag(value) == stringTag);
+}
+
+module.exports = isString;
+
+
+/***/ }),
+
+/***/ "e2c0":
+/***/ (function(module, exports, __webpack_require__) {
+
+var castPath = __webpack_require__("e2e4"),
+    isArguments = __webpack_require__("d370"),
+    isArray = __webpack_require__("6747"),
+    isIndex = __webpack_require__("c098"),
+    isLength = __webpack_require__("b218"),
+    toKey = __webpack_require__("f4d6");
+
+/**
+ * Checks if `path` exists on `object`.
+ *
+ * @private
+ * @param {Object} object The object to query.
+ * @param {Array|string} path The path to check.
+ * @param {Function} hasFunc The function to check properties.
+ * @returns {boolean} Returns `true` if `path` exists, else `false`.
+ */
+function hasPath(object, path, hasFunc) {
+  path = castPath(path, object);
+
+  var index = -1,
+      length = path.length,
+      result = false;
+
+  while (++index < length) {
+    var key = toKey(path[index]);
+    if (!(result = object != null && hasFunc(object, key))) {
+      break;
+    }
+    object = object[key];
+  }
+  if (result || ++index != length) {
+    return result;
+  }
+  length = object == null ? 0 : object.length;
+  return !!length && isLength(length) && isIndex(key, length) &&
+    (isArray(object) || isArguments(object));
+}
+
+module.exports = hasPath;
+
+
+/***/ }),
+
 /***/ "e2cc":
 /***/ (function(module, exports, __webpack_require__) {
 
@@ -81704,6 +93147,177 @@ module.exports = function (target, src, options) {
   for (var key in src) redefine(target, key, src[key], options);
   return target;
 };
+
+
+/***/ }),
+
+/***/ "e2e4":
+/***/ (function(module, exports, __webpack_require__) {
+
+var isArray = __webpack_require__("6747"),
+    isKey = __webpack_require__("f608"),
+    stringToPath = __webpack_require__("18d8"),
+    toString = __webpack_require__("76dd");
+
+/**
+ * Casts `value` to a path array if it's not one.
+ *
+ * @private
+ * @param {*} value The value to inspect.
+ * @param {Object} [object] The object to query keys on.
+ * @returns {Array} Returns the cast property path array.
+ */
+function castPath(value, object) {
+  if (isArray(value)) {
+    return value;
+  }
+  return isKey(value, object) ? [value] : stringToPath(toString(value));
+}
+
+module.exports = castPath;
+
+
+/***/ }),
+
+/***/ "e34f":
+/***/ (function(module, exports, __webpack_require__) {
+
+/*
+Copyright (c) 2012-2014 Chris Pettitt
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.
+*/
+
+module.exports = {
+  graphlib: __webpack_require__("17d5"),
+
+  layout: __webpack_require__("7a9c"),
+  debug: __webpack_require__("e090"),
+  util: {
+    time: __webpack_require__("b50e").time,
+    notime: __webpack_require__("b50e").notime
+  },
+  version: __webpack_require__("9214")
+};
+
+
+/***/ }),
+
+/***/ "e380":
+/***/ (function(module, exports, __webpack_require__) {
+
+var MapCache = __webpack_require__("7b83");
+
+/** Error message constants. */
+var FUNC_ERROR_TEXT = 'Expected a function';
+
+/**
+ * Creates a function that memoizes the result of `func`. If `resolver` is
+ * provided, it determines the cache key for storing the result based on the
+ * arguments provided to the memoized function. By default, the first argument
+ * provided to the memoized function is used as the map cache key. The `func`
+ * is invoked with the `this` binding of the memoized function.
+ *
+ * **Note:** The cache is exposed as the `cache` property on the memoized
+ * function. Its creation may be customized by replacing the `_.memoize.Cache`
+ * constructor with one whose instances implement the
+ * [`Map`](http://ecma-international.org/ecma-262/7.0/#sec-properties-of-the-map-prototype-object)
+ * method interface of `clear`, `delete`, `get`, `has`, and `set`.
+ *
+ * @static
+ * @memberOf _
+ * @since 0.1.0
+ * @category Function
+ * @param {Function} func The function to have its output memoized.
+ * @param {Function} [resolver] The function to resolve the cache key.
+ * @returns {Function} Returns the new memoized function.
+ * @example
+ *
+ * var object = { 'a': 1, 'b': 2 };
+ * var other = { 'c': 3, 'd': 4 };
+ *
+ * var values = _.memoize(_.values);
+ * values(object);
+ * // => [1, 2]
+ *
+ * values(other);
+ * // => [3, 4]
+ *
+ * object.a = 2;
+ * values(object);
+ * // => [1, 2]
+ *
+ * // Modify the result cache.
+ * values.cache.set(object, ['a', 'b']);
+ * values(object);
+ * // => ['a', 'b']
+ *
+ * // Replace `_.memoize.Cache`.
+ * _.memoize.Cache = WeakMap;
+ */
+function memoize(func, resolver) {
+  if (typeof func != 'function' || (resolver != null && typeof resolver != 'function')) {
+    throw new TypeError(FUNC_ERROR_TEXT);
+  }
+  var memoized = function() {
+    var args = arguments,
+        key = resolver ? resolver.apply(this, args) : args[0],
+        cache = memoized.cache;
+
+    if (cache.has(key)) {
+      return cache.get(key);
+    }
+    var result = func.apply(this, args);
+    memoized.cache = cache.set(key, result) || cache;
+    return result;
+  };
+  memoized.cache = new (memoize.Cache || MapCache);
+  return memoized;
+}
+
+// Expose `MapCache`.
+memoize.Cache = MapCache;
+
+module.exports = memoize;
+
+
+/***/ }),
+
+/***/ "e3f8":
+/***/ (function(module, exports, __webpack_require__) {
+
+var baseGet = __webpack_require__("656b");
+
+/**
+ * A specialized version of `baseProperty` which supports deep paths.
+ *
+ * @private
+ * @param {Array|string} path The path of the property to get.
+ * @returns {Function} Returns the new accessor function.
+ */
+function basePropertyDeep(path) {
+  return function(object) {
+    return baseGet(object, path);
+  };
+}
+
+module.exports = basePropertyDeep;
 
 
 /***/ }),
@@ -81731,6 +93345,40 @@ $({ target: 'Object', stat: true, forced: FORCED, sham: !DESCRIPTORS }, {
 
 /***/ }),
 
+/***/ "e44a":
+/***/ (function(module, exports, __webpack_require__) {
+
+var _ = __webpack_require__("33de");
+
+module.exports = components;
+
+function components(g) {
+  var visited = {};
+  var cmpts = [];
+  var cmpt;
+
+  function dfs(v) {
+    if (_.has(visited, v)) return;
+    visited[v] = true;
+    cmpt.push(v);
+    _.each(g.successors(v), dfs);
+    _.each(g.predecessors(v), dfs);
+  }
+
+  _.each(g.nodes(), function(v) {
+    cmpt = [];
+    dfs(v);
+    if (cmpt.length) {
+      cmpts.push(cmpt);
+    }
+  });
+
+  return cmpts;
+}
+
+
+/***/ }),
+
 /***/ "e4aa":
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
@@ -81748,6 +93396,95 @@ $({ target: 'Object', stat: true, forced: FORCED, sham: !DESCRIPTORS }, {
 var wellKnownSymbol = __webpack_require__("b622");
 
 exports.f = wellKnownSymbol;
+
+
+/***/ }),
+
+/***/ "e5383":
+/***/ (function(module, exports, __webpack_require__) {
+
+/* WEBPACK VAR INJECTION */(function(module) {var root = __webpack_require__("2b3e");
+
+/** Detect free variable `exports`. */
+var freeExports =  true && exports && !exports.nodeType && exports;
+
+/** Detect free variable `module`. */
+var freeModule = freeExports && typeof module == 'object' && module && !module.nodeType && module;
+
+/** Detect the popular CommonJS extension `module.exports`. */
+var moduleExports = freeModule && freeModule.exports === freeExports;
+
+/** Built-in value references. */
+var Buffer = moduleExports ? root.Buffer : undefined,
+    allocUnsafe = Buffer ? Buffer.allocUnsafe : undefined;
+
+/**
+ * Creates a clone of  `buffer`.
+ *
+ * @private
+ * @param {Buffer} buffer The buffer to clone.
+ * @param {boolean} [isDeep] Specify a deep clone.
+ * @returns {Buffer} Returns the cloned buffer.
+ */
+function cloneBuffer(buffer, isDeep) {
+  if (isDeep) {
+    return buffer.slice();
+  }
+  var length = buffer.length,
+      result = allocUnsafe ? allocUnsafe(length) : new buffer.constructor(length);
+
+  buffer.copy(result);
+  return result;
+}
+
+module.exports = cloneBuffer;
+
+/* WEBPACK VAR INJECTION */}.call(this, __webpack_require__("62e4")(module)))
+
+/***/ }),
+
+/***/ "e632":
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+var _ = __webpack_require__("6f9c");
+
+module.exports = initOrder;
+
+/*
+ * Assigns an initial order value for each node by performing a DFS search
+ * starting from nodes in the first rank. Nodes are assigned an order in their
+ * rank as they are first visited.
+ *
+ * This approach comes from Gansner, et al., "A Technique for Drawing Directed
+ * Graphs."
+ *
+ * Returns a layering matrix with an array per layer and each layer sorted by
+ * the order of its nodes.
+ */
+function initOrder(g) {
+  var visited = {};
+  var simpleNodes = _.filter(g.nodes(), function(v) {
+    return !g.children(v).length;
+  });
+  var maxRank = _.max(_.map(simpleNodes, function(v) { return g.node(v).rank; }));
+  var layers = _.map(_.range(maxRank + 1), function() { return []; });
+
+  function dfs(v) {
+    if (_.has(visited, v)) return;
+    visited[v] = true;
+    var node = g.node(v);
+    layers[node.rank].push(v);
+    _.forEach(g.successors(v), dfs);
+  }
+
+  var orderedVs = _.sortBy(simpleNodes, function(v) { return g.node(v).rank; });
+  _.forEach(orderedVs, dfs);
+
+  return layers;
+}
 
 
 /***/ }),
@@ -82167,6 +93904,77 @@ $({ target: PROMISE, stat: true, forced: INCORRECT_ITERATION }, {
 
 /***/ }),
 
+/***/ "e849":
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+var _ = __webpack_require__("6f9c");
+
+module.exports = {
+  longestPath: longestPath,
+  slack: slack
+};
+
+/*
+ * Initializes ranks for the input graph using the longest path algorithm. This
+ * algorithm scales well and is fast in practice, it yields rather poor
+ * solutions. Nodes are pushed to the lowest layer possible, leaving the bottom
+ * ranks wide and leaving edges longer than necessary. However, due to its
+ * speed, this algorithm is good for getting an initial ranking that can be fed
+ * into other algorithms.
+ *
+ * This algorithm does not normalize layers because it will be used by other
+ * algorithms in most cases. If using this algorithm directly, be sure to
+ * run normalize at the end.
+ *
+ * Pre-conditions:
+ *
+ *    1. Input graph is a DAG.
+ *    2. Input graph node labels can be assigned properties.
+ *
+ * Post-conditions:
+ *
+ *    1. Each node will be assign an (unnormalized) "rank" property.
+ */
+function longestPath(g) {
+  var visited = {};
+
+  function dfs(v) {
+    var label = g.node(v);
+    if (_.has(visited, v)) {
+      return label.rank;
+    }
+    visited[v] = true;
+
+    var rank = _.min(_.map(g.outEdges(v), function(e) {
+      return dfs(e.w) - g.edge(e).minlen;
+    }));
+
+    if (rank === Number.POSITIVE_INFINITY || // return value of _.map([]) for Lodash 3
+        rank === undefined || // return value of _.map([]) for Lodash 4
+        rank === null) { // return value of _.map([null])
+      rank = 0;
+    }
+
+    return (label.rank = rank);
+  }
+
+  _.forEach(g.sources(), dfs);
+}
+
+/*
+ * Returns the amount of slack for the given edge. The slack is defined as the
+ * difference between the length of the edge and its minimum length.
+ */
+function slack(g, e) {
+  return g.node(e.w).rank - g.node(e.v).rank - g.edge(e).minlen;
+}
+
+
+/***/ }),
+
 /***/ "e893":
 /***/ (function(module, exports, __webpack_require__) {
 
@@ -82220,6 +94028,31 @@ module.exports = function (it) {
 
 /***/ }),
 
+/***/ "eac5":
+/***/ (function(module, exports) {
+
+/** Used for built-in method references. */
+var objectProto = Object.prototype;
+
+/**
+ * Checks if `value` is likely a prototype object.
+ *
+ * @private
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if `value` is a prototype, else `false`.
+ */
+function isPrototype(value) {
+  var Ctor = value && value.constructor,
+      proto = (typeof Ctor == 'function' && Ctor.prototype) || objectProto;
+
+  return value === proto;
+}
+
+module.exports = isPrototype;
+
+
+/***/ }),
+
 /***/ "ebec":
 /***/ (function(module, exports, __webpack_require__) {
 
@@ -82238,6 +94071,102 @@ module.exports = function (it) {
 
 /***/ }),
 
+/***/ "ec69":
+/***/ (function(module, exports, __webpack_require__) {
+
+var arrayLikeKeys = __webpack_require__("6fcd"),
+    baseKeys = __webpack_require__("03dd"),
+    isArrayLike = __webpack_require__("30c9");
+
+/**
+ * Creates an array of the own enumerable property names of `object`.
+ *
+ * **Note:** Non-object values are coerced to objects. See the
+ * [ES spec](http://ecma-international.org/ecma-262/7.0/#sec-object.keys)
+ * for more details.
+ *
+ * @static
+ * @since 0.1.0
+ * @memberOf _
+ * @category Object
+ * @param {Object} object The object to query.
+ * @returns {Array} Returns the array of property names.
+ * @example
+ *
+ * function Foo() {
+ *   this.a = 1;
+ *   this.b = 2;
+ * }
+ *
+ * Foo.prototype.c = 3;
+ *
+ * _.keys(new Foo);
+ * // => ['a', 'b'] (iteration order is not guaranteed)
+ *
+ * _.keys('hi');
+ * // => ['0', '1']
+ */
+function keys(object) {
+  return isArrayLike(object) ? arrayLikeKeys(object) : baseKeys(object);
+}
+
+module.exports = keys;
+
+
+/***/ }),
+
+/***/ "ec8c":
+/***/ (function(module, exports) {
+
+/**
+ * This function is like
+ * [`Object.keys`](http://ecma-international.org/ecma-262/7.0/#sec-object.keys)
+ * except that it includes inherited enumerable properties.
+ *
+ * @private
+ * @param {Object} object The object to query.
+ * @returns {Array} Returns the array of property names.
+ */
+function nativeKeysIn(object) {
+  var result = [];
+  if (object != null) {
+    for (var key in Object(object)) {
+      result.push(key);
+    }
+  }
+  return result;
+}
+
+module.exports = nativeKeysIn;
+
+
+/***/ }),
+
+/***/ "edfa":
+/***/ (function(module, exports) {
+
+/**
+ * Converts `map` to its key-value pairs.
+ *
+ * @private
+ * @param {Object} map The map to convert.
+ * @returns {Array} Returns the key-value pairs.
+ */
+function mapToArray(map) {
+  var index = -1,
+      result = Array(map.size);
+
+  map.forEach(function(value, key) {
+    result[++index] = [key, value];
+  });
+  return result;
+}
+
+module.exports = mapToArray;
+
+
+/***/ }),
+
 /***/ "ef55":
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
@@ -82245,6 +94174,27 @@ module.exports = function (it) {
 /* harmony import */ var _node_modules_mini_css_extract_plugin_dist_loader_js_ref_8_oneOf_1_0_node_modules_css_loader_dist_cjs_js_ref_8_oneOf_1_1_node_modules_vue_loader_lib_loaders_stylePostLoader_js_node_modules_postcss_loader_src_index_js_ref_8_oneOf_1_2_node_modules_sass_loader_dist_cjs_js_ref_8_oneOf_1_3_node_modules_cache_loader_dist_cjs_js_ref_0_0_node_modules_vue_loader_lib_index_js_vue_loader_options_Button_vue_vue_type_style_index_0_lang_scss___WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__("da8d");
 /* harmony import */ var _node_modules_mini_css_extract_plugin_dist_loader_js_ref_8_oneOf_1_0_node_modules_css_loader_dist_cjs_js_ref_8_oneOf_1_1_node_modules_vue_loader_lib_loaders_stylePostLoader_js_node_modules_postcss_loader_src_index_js_ref_8_oneOf_1_2_node_modules_sass_loader_dist_cjs_js_ref_8_oneOf_1_3_node_modules_cache_loader_dist_cjs_js_ref_0_0_node_modules_vue_loader_lib_index_js_vue_loader_options_Button_vue_vue_type_style_index_0_lang_scss___WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(_node_modules_mini_css_extract_plugin_dist_loader_js_ref_8_oneOf_1_0_node_modules_css_loader_dist_cjs_js_ref_8_oneOf_1_1_node_modules_vue_loader_lib_loaders_stylePostLoader_js_node_modules_postcss_loader_src_index_js_ref_8_oneOf_1_2_node_modules_sass_loader_dist_cjs_js_ref_8_oneOf_1_3_node_modules_cache_loader_dist_cjs_js_ref_0_0_node_modules_vue_loader_lib_index_js_vue_loader_options_Button_vue_vue_type_style_index_0_lang_scss___WEBPACK_IMPORTED_MODULE_0__);
 /* unused harmony reexport * */
+
+
+/***/ }),
+
+/***/ "ef5d":
+/***/ (function(module, exports) {
+
+/**
+ * The base implementation of `_.property` without support for deep paths.
+ *
+ * @private
+ * @param {string} key The key of the property to get.
+ * @returns {Function} Returns the new accessor function.
+ */
+function baseProperty(key) {
+  return function(object) {
+    return object == null ? undefined : object[key];
+  };
+}
+
+module.exports = baseProperty;
 
 
 /***/ }),
@@ -82260,13 +94210,24 @@ module.exports = function (it) {
 
 /***/ }),
 
-/***/ "f000":
-/***/ (function(module, __webpack_exports__, __webpack_require__) {
+/***/ "efb6":
+/***/ (function(module, exports, __webpack_require__) {
 
-"use strict";
-/* harmony import */ var _node_modules_mini_css_extract_plugin_dist_loader_js_ref_8_oneOf_1_0_node_modules_css_loader_dist_cjs_js_ref_8_oneOf_1_1_node_modules_vue_loader_lib_loaders_stylePostLoader_js_node_modules_postcss_loader_src_index_js_ref_8_oneOf_1_2_node_modules_sass_loader_dist_cjs_js_ref_8_oneOf_1_3_node_modules_cache_loader_dist_cjs_js_ref_0_0_node_modules_vue_loader_lib_index_js_vue_loader_options_SaveLoadDialog_vue_vue_type_style_index_0_lang_scss___WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__("b269");
-/* harmony import */ var _node_modules_mini_css_extract_plugin_dist_loader_js_ref_8_oneOf_1_0_node_modules_css_loader_dist_cjs_js_ref_8_oneOf_1_1_node_modules_vue_loader_lib_loaders_stylePostLoader_js_node_modules_postcss_loader_src_index_js_ref_8_oneOf_1_2_node_modules_sass_loader_dist_cjs_js_ref_8_oneOf_1_3_node_modules_cache_loader_dist_cjs_js_ref_0_0_node_modules_vue_loader_lib_index_js_vue_loader_options_SaveLoadDialog_vue_vue_type_style_index_0_lang_scss___WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(_node_modules_mini_css_extract_plugin_dist_loader_js_ref_8_oneOf_1_0_node_modules_css_loader_dist_cjs_js_ref_8_oneOf_1_1_node_modules_vue_loader_lib_loaders_stylePostLoader_js_node_modules_postcss_loader_src_index_js_ref_8_oneOf_1_2_node_modules_sass_loader_dist_cjs_js_ref_8_oneOf_1_3_node_modules_cache_loader_dist_cjs_js_ref_0_0_node_modules_vue_loader_lib_index_js_vue_loader_options_SaveLoadDialog_vue_vue_type_style_index_0_lang_scss___WEBPACK_IMPORTED_MODULE_0__);
-/* unused harmony reexport * */
+var ListCache = __webpack_require__("5e2e");
+
+/**
+ * Removes all key-value entries from the stack.
+ *
+ * @private
+ * @name clear
+ * @memberOf Stack
+ */
+function stackClear() {
+  this.__data__ = new ListCache;
+  this.size = 0;
+}
+
+module.exports = stackClear;
 
 
 /***/ }),
@@ -82298,7 +94259,25 @@ module.exports.f = function (C) {
 
 /***/ }),
 
+/***/ "f088":
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+/* harmony import */ var _node_modules_mini_css_extract_plugin_dist_loader_js_ref_8_oneOf_1_0_node_modules_css_loader_dist_cjs_js_ref_8_oneOf_1_1_node_modules_vue_loader_lib_loaders_stylePostLoader_js_node_modules_postcss_loader_src_index_js_ref_8_oneOf_1_2_node_modules_sass_loader_dist_cjs_js_ref_8_oneOf_1_3_node_modules_cache_loader_dist_cjs_js_ref_0_0_node_modules_vue_loader_lib_index_js_vue_loader_options_LoadingSpinner_vue_vue_type_style_index_0_lang_scss___WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__("4d74");
+/* harmony import */ var _node_modules_mini_css_extract_plugin_dist_loader_js_ref_8_oneOf_1_0_node_modules_css_loader_dist_cjs_js_ref_8_oneOf_1_1_node_modules_vue_loader_lib_loaders_stylePostLoader_js_node_modules_postcss_loader_src_index_js_ref_8_oneOf_1_2_node_modules_sass_loader_dist_cjs_js_ref_8_oneOf_1_3_node_modules_cache_loader_dist_cjs_js_ref_0_0_node_modules_vue_loader_lib_index_js_vue_loader_options_LoadingSpinner_vue_vue_type_style_index_0_lang_scss___WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(_node_modules_mini_css_extract_plugin_dist_loader_js_ref_8_oneOf_1_0_node_modules_css_loader_dist_cjs_js_ref_8_oneOf_1_1_node_modules_vue_loader_lib_loaders_stylePostLoader_js_node_modules_postcss_loader_src_index_js_ref_8_oneOf_1_2_node_modules_sass_loader_dist_cjs_js_ref_8_oneOf_1_3_node_modules_cache_loader_dist_cjs_js_ref_0_0_node_modules_vue_loader_lib_index_js_vue_loader_options_LoadingSpinner_vue_vue_type_style_index_0_lang_scss___WEBPACK_IMPORTED_MODULE_0__);
+/* unused harmony reexport * */
+
+
+/***/ }),
+
 /***/ "f08e":
+/***/ (function(module, exports, __webpack_require__) {
+
+// extracted by mini-css-extract-plugin
+
+/***/ }),
+
+/***/ "f096":
 /***/ (function(module, exports, __webpack_require__) {
 
 // extracted by mini-css-extract-plugin
@@ -82400,6 +94379,207 @@ var meta = module.exports = {
 };
 
 hiddenKeys[METADATA] = true;
+
+
+/***/ }),
+
+/***/ "f1cd":
+/***/ (function(module, exports, __webpack_require__) {
+
+var _ = __webpack_require__("6f9c");
+
+module.exports = parentDummyChains;
+
+function parentDummyChains(g) {
+  var postorderNums = postorder(g);
+
+  _.forEach(g.graph().dummyChains, function(v) {
+    var node = g.node(v);
+    var edgeObj = node.edgeObj;
+    var pathData = findPath(g, postorderNums, edgeObj.v, edgeObj.w);
+    var path = pathData.path;
+    var lca = pathData.lca;
+    var pathIdx = 0;
+    var pathV = path[pathIdx];
+    var ascending = true;
+
+    while (v !== edgeObj.w) {
+      node = g.node(v);
+
+      if (ascending) {
+        while ((pathV = path[pathIdx]) !== lca &&
+               g.node(pathV).maxRank < node.rank) {
+          pathIdx++;
+        }
+
+        if (pathV === lca) {
+          ascending = false;
+        }
+      }
+
+      if (!ascending) {
+        while (pathIdx < path.length - 1 &&
+               g.node(pathV = path[pathIdx + 1]).minRank <= node.rank) {
+          pathIdx++;
+        }
+        pathV = path[pathIdx];
+      }
+
+      g.setParent(v, pathV);
+      v = g.successors(v)[0];
+    }
+  });
+}
+
+// Find a path from v to w through the lowest common ancestor (LCA). Return the
+// full path and the LCA.
+function findPath(g, postorderNums, v, w) {
+  var vPath = [];
+  var wPath = [];
+  var low = Math.min(postorderNums[v].low, postorderNums[w].low);
+  var lim = Math.max(postorderNums[v].lim, postorderNums[w].lim);
+  var parent;
+  var lca;
+
+  // Traverse up from v to find the LCA
+  parent = v;
+  do {
+    parent = g.parent(parent);
+    vPath.push(parent);
+  } while (parent &&
+           (postorderNums[parent].low > low || lim > postorderNums[parent].lim));
+  lca = parent;
+
+  // Traverse from w to LCA
+  parent = w;
+  while ((parent = g.parent(parent)) !== lca) {
+    wPath.push(parent);
+  }
+
+  return { path: vPath.concat(wPath.reverse()), lca: lca };
+}
+
+function postorder(g) {
+  var result = {};
+  var lim = 0;
+
+  function dfs(v) {
+    var low = lim;
+    _.forEach(g.children(v), dfs);
+    result[v] = { low: low, lim: lim++ };
+  }
+  _.forEach(g.children(), dfs);
+
+  return result;
+}
+
+
+/***/ }),
+
+/***/ "f352":
+/***/ (function(module, exports, __webpack_require__) {
+
+var _ = __webpack_require__("6f9c");
+var util = __webpack_require__("b50e");
+
+module.exports = sort;
+
+function sort(entries, biasRight) {
+  var parts = util.partition(entries, function(entry) {
+    return _.has(entry, "barycenter");
+  });
+  var sortable = parts.lhs,
+    unsortable = _.sortBy(parts.rhs, function(entry) { return -entry.i; }),
+    vs = [],
+    sum = 0,
+    weight = 0,
+    vsIndex = 0;
+
+  sortable.sort(compareWithBias(!!biasRight));
+
+  vsIndex = consumeUnsortable(vs, unsortable, vsIndex);
+
+  _.forEach(sortable, function (entry) {
+    vsIndex += entry.vs.length;
+    vs.push(entry.vs);
+    sum += entry.barycenter * entry.weight;
+    weight += entry.weight;
+    vsIndex = consumeUnsortable(vs, unsortable, vsIndex);
+  });
+
+  var result = { vs: _.flatten(vs, true) };
+  if (weight) {
+    result.barycenter = sum / weight;
+    result.weight = weight;
+  }
+  return result;
+}
+
+function consumeUnsortable(vs, unsortable, index) {
+  var last;
+  while (unsortable.length && (last = _.last(unsortable)).i <= index) {
+    unsortable.pop();
+    vs.push(last.vs);
+    index++;
+  }
+  return index;
+}
+
+function compareWithBias(bias) {
+  return function(entryV, entryW) {
+    if (entryV.barycenter < entryW.barycenter) {
+      return -1;
+    } else if (entryV.barycenter > entryW.barycenter) {
+      return 1;
+    }
+
+    return !bias ? entryV.i - entryW.i : entryW.i - entryV.i;
+  };
+}
+
+
+/***/ }),
+
+/***/ "f3c1":
+/***/ (function(module, exports) {
+
+/** Used to detect hot functions by number of calls within a span of milliseconds. */
+var HOT_COUNT = 800,
+    HOT_SPAN = 16;
+
+/* Built-in method references for those with the same name as other `lodash` methods. */
+var nativeNow = Date.now;
+
+/**
+ * Creates a function that'll short out and invoke `identity` instead
+ * of `func` when it's called `HOT_COUNT` or more times in `HOT_SPAN`
+ * milliseconds.
+ *
+ * @private
+ * @param {Function} func The function to restrict.
+ * @returns {Function} Returns the new shortable function.
+ */
+function shortOut(func) {
+  var count = 0,
+      lastCalled = 0;
+
+  return function() {
+    var stamp = nativeNow(),
+        remaining = HOT_SPAN - (stamp - lastCalled);
+
+    lastCalled = stamp;
+    if (remaining > 0) {
+      if (++count >= HOT_COUNT) {
+        return arguments[0];
+      }
+    } else {
+      count = 0;
+    }
+    return func.apply(undefined, arguments);
+  };
+}
+
+module.exports = shortOut;
 
 
 /***/ }),
@@ -83402,6 +95582,34 @@ module.exports = set;
 
 /***/ }),
 
+/***/ "f4d6":
+/***/ (function(module, exports, __webpack_require__) {
+
+var isSymbol = __webpack_require__("ffd6");
+
+/** Used as references for various `Number` constants. */
+var INFINITY = 1 / 0;
+
+/**
+ * Converts `value` to a string key if it's not a string or symbol.
+ *
+ * @private
+ * @param {*} value The value to inspect.
+ * @returns {string|symbol} Returns the key.
+ */
+function toKey(value) {
+  if (typeof value == 'string' || isSymbol(value)) {
+    return value;
+  }
+  var result = (value + '');
+  return (result == '0' && (1 / value) == -INFINITY) ? '-0' : result;
+}
+
+module.exports = toKey;
+
+
+/***/ }),
+
 /***/ "f5df":
 /***/ (function(module, exports, __webpack_require__) {
 
@@ -83431,6 +95639,42 @@ module.exports = TO_STRING_TAG_SUPPORT ? classofRaw : function (it) {
     // ES3 arguments fallback
     : (result = classofRaw(O)) == 'Object' && typeof O.callee == 'function' ? 'Arguments' : result;
 };
+
+
+/***/ }),
+
+/***/ "f608":
+/***/ (function(module, exports, __webpack_require__) {
+
+var isArray = __webpack_require__("6747"),
+    isSymbol = __webpack_require__("ffd6");
+
+/** Used to match property names within property paths. */
+var reIsDeepProp = /\.|\[(?:[^[\]]*|(["'])(?:(?!\1)[^\\]|\\.)*?\1)\]/,
+    reIsPlainProp = /^\w*$/;
+
+/**
+ * Checks if `value` is a property name and not a property path.
+ *
+ * @private
+ * @param {*} value The value to check.
+ * @param {Object} [object] The object to query keys on.
+ * @returns {boolean} Returns `true` if `value` is a property name, else `false`.
+ */
+function isKey(value, object) {
+  if (isArray(value)) {
+    return false;
+  }
+  var type = typeof value;
+  if (type == 'number' || type == 'symbol' || type == 'boolean' ||
+      value == null || isSymbol(value)) {
+    return true;
+  }
+  return reIsPlainProp.test(value) || !reIsDeepProp.test(value) ||
+    (object != null && value in Object(object));
+}
+
+module.exports = isKey;
 
 
 /***/ }),
@@ -83846,6 +96090,142 @@ module.exports = debounce;
 
 /***/ }),
 
+/***/ "f8af":
+/***/ (function(module, exports, __webpack_require__) {
+
+var Uint8Array = __webpack_require__("2474");
+
+/**
+ * Creates a clone of `arrayBuffer`.
+ *
+ * @private
+ * @param {ArrayBuffer} arrayBuffer The array buffer to clone.
+ * @returns {ArrayBuffer} Returns the cloned array buffer.
+ */
+function cloneArrayBuffer(arrayBuffer) {
+  var result = new arrayBuffer.constructor(arrayBuffer.byteLength);
+  new Uint8Array(result).set(new Uint8Array(arrayBuffer));
+  return result;
+}
+
+module.exports = cloneArrayBuffer;
+
+
+/***/ }),
+
+/***/ "f909":
+/***/ (function(module, exports, __webpack_require__) {
+
+var Stack = __webpack_require__("7e64"),
+    assignMergeValue = __webpack_require__("b760"),
+    baseFor = __webpack_require__("72af"),
+    baseMergeDeep = __webpack_require__("4f50"),
+    isObject = __webpack_require__("1a8c"),
+    keysIn = __webpack_require__("9934"),
+    safeGet = __webpack_require__("8adb");
+
+/**
+ * The base implementation of `_.merge` without support for multiple sources.
+ *
+ * @private
+ * @param {Object} object The destination object.
+ * @param {Object} source The source object.
+ * @param {number} srcIndex The index of `source`.
+ * @param {Function} [customizer] The function to customize merged values.
+ * @param {Object} [stack] Tracks traversed source values and their merged
+ *  counterparts.
+ */
+function baseMerge(object, source, srcIndex, customizer, stack) {
+  if (object === source) {
+    return;
+  }
+  baseFor(source, function(srcValue, key) {
+    stack || (stack = new Stack);
+    if (isObject(srcValue)) {
+      baseMergeDeep(object, source, key, srcIndex, baseMerge, customizer, stack);
+    }
+    else {
+      var newValue = customizer
+        ? customizer(safeGet(object, key), srcValue, (key + ''), object, source, stack)
+        : undefined;
+
+      if (newValue === undefined) {
+        newValue = srcValue;
+      }
+      assignMergeValue(object, key, newValue);
+    }
+  }, keysIn);
+}
+
+module.exports = baseMerge;
+
+
+/***/ }),
+
+/***/ "f9ce":
+/***/ (function(module, exports, __webpack_require__) {
+
+var baseProperty = __webpack_require__("ef5d"),
+    basePropertyDeep = __webpack_require__("e3f8"),
+    isKey = __webpack_require__("f608"),
+    toKey = __webpack_require__("f4d6");
+
+/**
+ * Creates a function that returns the value at `path` of a given object.
+ *
+ * @static
+ * @memberOf _
+ * @since 2.4.0
+ * @category Util
+ * @param {Array|string} path The path of the property to get.
+ * @returns {Function} Returns the new accessor function.
+ * @example
+ *
+ * var objects = [
+ *   { 'a': { 'b': 2 } },
+ *   { 'a': { 'b': 1 } }
+ * ];
+ *
+ * _.map(objects, _.property('a.b'));
+ * // => [2, 1]
+ *
+ * _.map(_.sortBy(objects, _.property(['a', 'b'])), 'a.b');
+ * // => [1, 2]
+ */
+function property(path) {
+  return isKey(path) ? baseProperty(toKey(path)) : basePropertyDeep(path);
+}
+
+module.exports = property;
+
+
+/***/ }),
+
+/***/ "fa21":
+/***/ (function(module, exports, __webpack_require__) {
+
+var baseCreate = __webpack_require__("7530"),
+    getPrototype = __webpack_require__("2dcb"),
+    isPrototype = __webpack_require__("eac5");
+
+/**
+ * Initializes an object clone.
+ *
+ * @private
+ * @param {Object} object The object to clone.
+ * @returns {Object} Returns the initialized clone.
+ */
+function initCloneObject(object) {
+  return (typeof object.constructor == 'function' && !isPrototype(object))
+    ? baseCreate(getPrototype(object))
+    : {};
+}
+
+module.exports = initCloneObject;
+
+
+/***/ }),
+
 /***/ "fb15":
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
@@ -84198,6 +96578,9 @@ function _createClass(Constructor, protoProps, staticProps) {
 // EXTERNAL MODULE: ./node_modules/regenerator-runtime/runtime.js
 var runtime = __webpack_require__("96cf");
 
+// EXTERNAL MODULE: ./node_modules/core-js/modules/es.map.js
+var es_map = __webpack_require__("4ec9");
+
 // EXTERNAL MODULE: ./node_modules/core-js/modules/es.array.map.js
 var es_array_map = __webpack_require__("d81d");
 
@@ -84219,9 +96602,6 @@ var es_array_includes = __webpack_require__("caad");
 // EXTERNAL MODULE: ./node_modules/core-js/modules/es.string.includes.js
 var es_string_includes = __webpack_require__("2532");
 
-// EXTERNAL MODULE: ./node_modules/core-js/modules/es.map.js
-var es_map = __webpack_require__("4ec9");
-
 // EXTERNAL MODULE: ./node_modules/core-js/modules/es.array.concat.js
 var es_array_concat = __webpack_require__("99af");
 
@@ -84229,14 +96609,17 @@ var es_array_concat = __webpack_require__("99af");
 var external_commonjs_vue_commonjs2_vue_root_Vue_ = __webpack_require__("8bbf");
 var external_commonjs_vue_commonjs2_vue_root_Vue_default = /*#__PURE__*/__webpack_require__.n(external_commonjs_vue_commonjs2_vue_root_Vue_);
 
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"e8630cbc-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/Diagram.vue?vue&type=template&id=6f2abd3e&
-var Diagramvue_type_template_id_6f2abd3e_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{class:[
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"00b53798-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/Diagram.vue?vue&type=template&id=f02dcada&
+var Diagramvue_type_template_id_f02dcada_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{class:[
     'lassox-diagram__Diagram',
-    _vm.compact && 'lassox-diagram__Diagram--compact' ],attrs:{"tabindex":"-1"},on:{"keydown":_vm.onKeyDown}},[_c('TopBar'),_c('div',{staticClass:"lassox-diagram__Diagram_graph-columns"},[_c('Graph'),_c('Customizer',{style:({ visibility: _vm.showCustomizer ? '' : 'hidden' })}),(_vm.diagram.enableEditing && _vm.editorTarget)?_c('Editor',{attrs:{"object":_vm.editorTarget,"close":function () { return _vm.editorTarget = null; }}}):_vm._e()],1),_c('div',{staticClass:"lassox-diagram__Diagram_dialogs"},_vm._l((_vm.dialogs),function(dialog,i){return _c(dialog.component,_vm._b({key:i,tag:"component",on:{"close":function($event){return _vm.dialogs.splice(i, 1)}}},'component',dialog.props,false))}),1),_c('GraphPrint')],1)}
+    _vm.compact && 'lassox-diagram__Diagram--compact' ],attrs:{"tabindex":"-1"},on:{"keydown":_vm.onKeyDown}},[_c('div',{staticClass:"lassox-diagram__Diagram-loading-screen",style:({
+      opacity: _vm.diagram.isLoading ? '1' : '0',
+      pointerEvents: _vm.diagram.isLoading ? '' : 'none',
+    })},[_c('LoadingSpinner')],1),_c('TopBar',{style:({ visibility: (!_vm.diagram.hasActiveDiagram || _vm.diagram.isLoading) ? 'hidden' : '' })}),_c('div',{staticClass:"lassox-diagram__Diagram_graph-columns",style:({ visibility: (!_vm.diagram.hasActiveDiagram || _vm.diagram.isLoading) ? 'hidden' : '' })},[_c('Graph'),_c('Customizer',{style:({ visibility: _vm.showCustomizer ? '' : 'hidden' })}),(_vm.diagram.enableEditing)?_c('Editor'):_vm._e()],1),_c('div',{staticClass:"lassox-diagram__Diagram_dialogs"},_vm._l((_vm.dialogs),function(dialog,i){return _c(dialog.component,_vm._b({key:dialog.id,tag:"component",on:{"close":function () { return _vm.dialogs.splice(i, 1); }}},'component',dialog.props,false))}),1),_c('div',{staticClass:"lassox-diagram__Diagram_toasts"},_vm._l((_vm.toasts),function(toast,i){return _c(toast.component,_vm._b({key:toast.id,tag:"component",on:{"close":function () { return _vm.toasts.splice(i, 1); }}},'component',toast.props,false))}),1),_c('TooltipRoot'),_c('GraphPrint')],1)}
 var staticRenderFns = []
 
 
-// CONCATENATED MODULE: ./src/components/Diagram.vue?vue&type=template&id=6f2abd3e&
+// CONCATENATED MODULE: ./src/components/Diagram.vue?vue&type=template&id=f02dcada&
 
 // CONCATENATED MODULE: ./node_modules/@babel/runtime/helpers/esm/setPrototypeOf.js
 function _setPrototypeOf(o, p) {
@@ -84336,6 +96719,9 @@ function _createSuper(Derived) {
     return _possibleConstructorReturn(this, result);
   };
 }
+// EXTERNAL MODULE: ./node_modules/core-js/modules/es.array.splice.js
+var es_array_splice = __webpack_require__("a434");
+
 // CONCATENATED MODULE: ./node_modules/tslib/tslib.es6.js
 /*! *****************************************************************************
 Copyright (c) Microsoft Corporation.
@@ -85262,54 +97648,176 @@ function Watch(path, options) {
 
 
 
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"e8630cbc-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/TopBar.vue?vue&type=template&id=61ac7808&
-var TopBarvue_type_template_id_61ac7808_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"lassox-diagram__TopBar"},[_c('ButtonGroup',[(!_vm.compact)?[_c('Button',{attrs:{"type":"primary","label":"Udskriv"},on:{"click":function () { return _vm.showPrintDialog('print'); }}}),_c('Button',{ref:"saveAsDropdownButton",attrs:{"label":"Gem som","trailingIcon":_vm.showSaveAsDropdownMenu ? 'expand_less' : 'expand_more'},on:{"click":function () { return _vm.showSaveAsDropdownMenu = !_vm.showSaveAsDropdownMenu; }}})]:[_c('Button',{attrs:{"label":!_vm.diagramVm.showCustomizer ? 'Tilpas' : 'Luk'},on:{"click":function () { return _vm.diagramVm.showCustomizer = !_vm.diagramVm.showCustomizer; }}})]],2),_c('div',{staticStyle:{"width":"16px","flex-shrink":"0"}}),(!_vm.compact && _vm.diagram.enableSaving && _vm.diagram.activeDiagram.id)?[_c('div',{staticClass:"lassox-diagram__TopBar_active-diagram"},[(_vm.diagram.activeDiagram.title)?_c('div',{staticClass:"lassox-diagram__TopBar_active-diagram-name",domProps:{"textContent":_vm._s(_vm.diagram.activeDiagram.title)}}):_vm._e(),(_vm.diagram.activeDiagram.title && _vm.diagram.enableSharing)?_c('div',{staticStyle:{"width":"12px","flex-shrink":"0"}}):_vm._e(),(_vm.diagram.enableSharing)?_c('IconButton',{staticClass:"lassox-diagram__TopBar_active-diagram-shared-icon",attrs:{"icon":_vm.diagram.activeDiagram.shared ? 'lock_open' : 'lock'}}):_vm._e(),((_vm.diagram.activeDiagram.title || _vm.diagram.enableSharing) && _vm.diagram.hasUnsavedChanges)?_c('div',{staticStyle:{"width":"12px","flex-shrink":"0"}}):_vm._e(),(_vm.diagram.hasUnsavedChanges)?_c('div',{staticClass:"lassox-diagram__TopBar_active-diagram-unsaved-changes"},[(_vm.diagram.activeDiagram.title || _vm.diagram.enableSharing)?_c('div',{staticStyle:{"margin-right":"12px"}},[_vm._v("—")]):_vm._e(),(_vm.diagram.isSaving)?_c('div',{domProps:{"textContent":_vm._s('Gemmer...')}}):_c('a',{attrs:{"href":"#"},domProps:{"textContent":_vm._s('Gem ændringer')},on:{"click":function($event){$event.preventDefault();return _vm.save.apply(null, arguments)}}})]):_vm._e()],1),_c('div',{staticStyle:{"width":"16px","flex-shrink":"0"}})]:_vm._e(),_c('ButtonGroup',{staticStyle:{"margin-left":"auto"}},[(_vm.diagram.layouts.length)?_c('Button',{ref:"layoutDropdownButton",attrs:{"label":"Layout","trailingIcon":_vm.showLayoutDropdownMenu ? 'expand_less' : 'expand_more'},on:{"click":function () { return _vm.showLayoutDropdownMenu = !_vm.showLayoutDropdownMenu; }}}):_vm._e(),(!_vm.compact && _vm.diagram.enableExpand)?_c('Button',{attrs:{"label":"Udvid"},on:{"click":_vm.expand}}):_vm._e(),(!_vm.compact)?_c('Button',{ref:"editDropdownButton",attrs:{"label":"Rediger","trailingIcon":_vm.showEditDropdownMenu ? 'expand_less' : 'expand_more'},on:{"click":function () { return _vm.showEditDropdownMenu = !_vm.showEditDropdownMenu; }}}):_c('Button',{attrs:{"icon":"replay"},on:{"click":_vm.reset}})],1),_c('DropdownMenu',{attrs:{"opener":_vm.showSaveAsDropdownMenu ? _vm.$refs.saveAsDropdownButton.$el : null,"close":function () { return _vm.showSaveAsDropdownMenu = false; }}},[(_vm.diagram.methods.convertPngToPdf)?_c('DropdownMenuItem',{attrs:{"label":"PDF"},on:{"click":function () { return _vm.showPrintDialog('pdf'); }}}):_vm._e(),_c('DropdownMenuItem',{attrs:{"label":"Billede"},on:{"click":function () { return _vm.showPrintDialog('png'); }}})],1),_c('DropdownMenu',{attrs:{"opener":_vm.showLoadDropdownMenu ? _vm.$refs.loadDropdownButton.$el : null,"close":function () { return _vm.showLoadDropdownMenu = false; }}},[_c('DropdownMenuItem',{attrs:{"label":"Sean's Test Diagram"},on:{"click":function () {}}}),_c('DropdownMenuItem',{attrs:{"label":"Lottes Diagram"},on:{"click":function () {}}})],1),(_vm.diagram.layouts.length)?_c('DropdownMenu',{attrs:{"opener":_vm.showLayoutDropdownMenu ? _vm.$refs.layoutDropdownButton.$el : null,"close":function () { return _vm.showLayoutDropdownMenu = false; }}},_vm._l((_vm.diagram.layouts),function(layout){return _c('DropdownMenuItem',{key:layout.id,attrs:{"label":layout.name,"icon":layout == _vm.diagram.activeDiagram.settings.activeLayout ? 'check' : ' '},on:{"click":function () { return _vm.diagram.eventBus.emit({ name: 'graph.layout', layout: layout }); }}})}),1):_vm._e(),_c('DropdownMenu',{attrs:{"opener":_vm.showEditDropdownMenu ? _vm.$refs.editDropdownButton.$el : null,"close":function () { return _vm.showEditDropdownMenu = false; }}},[(_vm.diagram.enableEditing)?[_c('DropdownMenuItem',{attrs:{"label":"Tilføj","icon":"add"},on:{"click":_vm.showAddDialog}}),_c('DropdownMenuDivider')]:_vm._e(),_c('DropdownMenuItem',{attrs:{"label":"Fortryd","icon":"undo","disabled":!_vm.canUndo},on:{"click":_vm.undo}}),_c('DropdownMenuItem',{attrs:{"label":"Annuller fortryd","icon":"redo","disabled":!_vm.canRedo},on:{"click":_vm.redo}}),_c('DropdownMenuItem',{attrs:{"label":"Nulstil","icon":"replay"},on:{"click":_vm.reset}})],2)],2)}
-var TopBarvue_type_template_id_61ac7808_staticRenderFns = []
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"00b53798-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/LoadingSpinner.vue?vue&type=template&id=e3203f24&
+var LoadingSpinnervue_type_template_id_e3203f24_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"lassox-diagram__LoadingSpinner",style:({
+    width: (_vm.finalSize + "px"),
+    height: (_vm.finalSize + "px"),
+  })},[_c('svg',{attrs:{"width":_vm.finalSize,"height":_vm.finalSize}},[_c('g',{attrs:{"transform":("rotate(" + _vm.rotation + ", " + (_vm.finalSize / 2) + ", " + (_vm.finalSize / 2) + ")")}},[_c('path',{ref:"path",staticClass:"lassox-diagram__LoadingSpinner-path",attrs:{"d":("\n          m " + (_vm.finalSize / 2) + "," + _vm.finalThickness + "\n          a " + _vm.radius + "," + _vm.radius + " 0,1,1 0," + (_vm.radius * 2) + "\n          a " + _vm.radius + "," + _vm.radius + " 0,1,1 0," + (_vm.radius * -2) + "\n          z\n        "),"fill":"none","stroke-width":_vm.finalThickness,"stroke-dasharray":(_vm.progressPathLength + "," + _vm.pathLength),"stroke-dashoffset":_vm.dashOffset}})])])])}
+var LoadingSpinnervue_type_template_id_e3203f24_staticRenderFns = []
 
 
-// CONCATENATED MODULE: ./src/components/TopBar.vue?vue&type=template&id=61ac7808&
+// CONCATENATED MODULE: ./src/components/LoadingSpinner.vue?vue&type=template&id=e3203f24&
 
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"e8630cbc-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/ButtonGroup.vue?vue&type=template&id=10ce107b&
-var ButtonGroupvue_type_template_id_10ce107b_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{class:[
-    'lassox-diagram__ButtonGroup',
-    ("lassox-diagram__ButtonGroup--align-" + _vm.align) ]},[_vm._t("default")],2)}
-var ButtonGroupvue_type_template_id_10ce107b_staticRenderFns = []
+// EXTERNAL MODULE: ./node_modules/core-js/modules/es.number.constructor.js
+var es_number_constructor = __webpack_require__("a9e3");
 
-
-// CONCATENATED MODULE: ./src/components/ButtonGroup.vue?vue&type=template&id=10ce107b&
-
-// CONCATENATED MODULE: ./node_modules/babel-loader/lib!./node_modules/ts-loader??ref--14-1!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/ButtonGroup.vue?vue&type=script&lang=ts&
+// CONCATENATED MODULE: ./node_modules/babel-loader/lib!./node_modules/ts-loader??ref--14-1!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/LoadingSpinner.vue?vue&type=script&lang=ts&
 
 
 
 
 
 
-var ButtonGroupvue_type_script_lang_ts_ButtonGroup = /*#__PURE__*/function (_Vue) {
-  _inherits(ButtonGroup, _Vue);
 
-  var _super = _createSuper(ButtonGroup);
 
-  function ButtonGroup() {
-    _classCallCheck(this, ButtonGroup);
+var LoadingSpinnervue_type_script_lang_ts_LoadingSpinner = /*#__PURE__*/function (_Vue) {
+  _inherits(LoadingSpinner, _Vue);
 
-    return _super.apply(this, arguments);
+  var _super = _createSuper(LoadingSpinner);
+
+  function LoadingSpinner() {
+    var _this;
+
+    _classCallCheck(this, LoadingSpinner);
+
+    _this = _super.apply(this, arguments);
+    _this.presets = {
+      'normal': {
+        size: 48,
+        thickness: 4
+      },
+      'medium': {
+        size: 40,
+        thickness: 4
+      },
+      'small': {
+        size: 24,
+        thickness: 2
+      },
+      'extra-small': {
+        size: 18,
+        thickness: 2
+      }
+    };
+    _this.pathLength = 0;
+    _this.rotation = 0;
+    _this.dashOffset = 0;
+    _this.animationStartTime = -1;
+    return _this;
   }
 
-  return ButtonGroup;
+  _createClass(LoadingSpinner, [{
+    key: "finalPreset",
+    get: function get() {
+      if (this.preset in this.presets) return this.presets[this.preset];
+      return this.presets.normal;
+    }
+  }, {
+    key: "finalSize",
+    get: function get() {
+      var _this$size;
+
+      return (_this$size = this.size) !== null && _this$size !== void 0 ? _this$size : this.finalPreset.size;
+    }
+  }, {
+    key: "finalThickness",
+    get: function get() {
+      var _this$thickness;
+
+      return (_this$thickness = this.thickness) !== null && _this$thickness !== void 0 ? _this$thickness : this.finalPreset.thickness;
+    }
+  }, {
+    key: "radius",
+    get: function get() {
+      return this.finalSize / 2 - this.finalThickness;
+    }
+  }, {
+    key: "updatePathLength",
+    value: function updatePathLength() {
+      var _this$path;
+
+      this.pathLength = ((_this$path = this.path) === null || _this$path === void 0 ? void 0 : _this$path.getTotalLength()) || 0;
+    }
+  }, {
+    key: "progressPathLength",
+    get: function get() {
+      return this.pathLength * 0.75 + this.finalThickness;
+    }
+  }, {
+    key: "stopAnimation",
+    value: function stopAnimation() {
+      this.animationStartTime = -1;
+    }
+  }, {
+    key: "startAnimation",
+    value: function startAnimation() {
+      var _this2 = this;
+
+      this.stopAnimation();
+      var startTime = performance.now();
+      this.animationStartTime = startTime;
+
+      var ease = function ease(t) {
+        return t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+      };
+
+      var onFrame = function onFrame(time) {
+        if (_this2.animationStartTime !== startTime) return;
+        var timePassed = time - startTime;
+        var factor = timePassed / 750;
+        var easingFactor = ease(factor % 1);
+        var grow = factor % 2 <= 1;
+        var shrink = !grow;
+        var maxDashOffset = _this2.progressPathLength - _this2.finalThickness;
+        _this2.dashOffset = maxDashOffset * (grow ? 1 - easingFactor : easingFactor);
+        var rotation = (360 * (timePassed / 1500 % 1) + 270 * Math.floor(factor / 2) // Previous shrink offset
+        + (shrink ? 270 * easingFactor : 0) // Shrink offset
+        ) % 360;
+        _this2.rotation = rotation;
+        requestAnimationFrame(onFrame);
+      };
+
+      onFrame(startTime);
+    }
+  }, {
+    key: "mounted",
+    value: function mounted() {
+      this.updatePathLength();
+      this.startAnimation();
+    }
+  }, {
+    key: "beforeDestroy",
+    value: function beforeDestroy() {
+      this.stopAnimation();
+    }
+  }]);
+
+  return LoadingSpinner;
 }(external_commonjs_vue_commonjs2_vue_root_Vue_default.a);
+
+__decorate([Ref()], LoadingSpinnervue_type_script_lang_ts_LoadingSpinner.prototype, "path", void 0);
 
 __decorate([Prop({
   type: String,
-  default: 'left'
-})], ButtonGroupvue_type_script_lang_ts_ButtonGroup.prototype, "align", void 0);
+  default: 'normal'
+})], LoadingSpinnervue_type_script_lang_ts_LoadingSpinner.prototype, "preset", void 0);
 
-ButtonGroupvue_type_script_lang_ts_ButtonGroup = __decorate([vue_class_component_esm({})], ButtonGroupvue_type_script_lang_ts_ButtonGroup);
-/* harmony default export */ var ButtonGroupvue_type_script_lang_ts_ = (ButtonGroupvue_type_script_lang_ts_ButtonGroup);
-// CONCATENATED MODULE: ./src/components/ButtonGroup.vue?vue&type=script&lang=ts&
- /* harmony default export */ var components_ButtonGroupvue_type_script_lang_ts_ = (ButtonGroupvue_type_script_lang_ts_); 
-// EXTERNAL MODULE: ./src/components/ButtonGroup.vue?vue&type=style&index=0&lang=scss&
-var ButtonGroupvue_type_style_index_0_lang_scss_ = __webpack_require__("b761");
+__decorate([Prop({
+  type: Number,
+  required: false
+})], LoadingSpinnervue_type_script_lang_ts_LoadingSpinner.prototype, "size", void 0);
+
+__decorate([Prop({
+  type: Number,
+  required: false
+})], LoadingSpinnervue_type_script_lang_ts_LoadingSpinner.prototype, "thickness", void 0);
+
+LoadingSpinnervue_type_script_lang_ts_LoadingSpinner = __decorate([vue_class_component_esm({})], LoadingSpinnervue_type_script_lang_ts_LoadingSpinner);
+/* harmony default export */ var LoadingSpinnervue_type_script_lang_ts_ = (LoadingSpinnervue_type_script_lang_ts_LoadingSpinner);
+// CONCATENATED MODULE: ./src/components/LoadingSpinner.vue?vue&type=script&lang=ts&
+ /* harmony default export */ var components_LoadingSpinnervue_type_script_lang_ts_ = (LoadingSpinnervue_type_script_lang_ts_); 
+// EXTERNAL MODULE: ./src/components/LoadingSpinner.vue?vue&type=style&index=0&lang=scss&
+var LoadingSpinnervue_type_style_index_0_lang_scss_ = __webpack_require__("f088");
 
 // CONCATENATED MODULE: ./node_modules/vue-loader/lib/runtime/componentNormalizer.js
 /* globals __VUE_SSR_CONTEXT__ */
@@ -85411,7 +97919,7 @@ function normalizeComponent (
   }
 }
 
-// CONCATENATED MODULE: ./src/components/ButtonGroup.vue
+// CONCATENATED MODULE: ./src/components/LoadingSpinner.vue
 
 
 
@@ -85421,6 +97929,283 @@ function normalizeComponent (
 /* normalize component */
 
 var component = normalizeComponent(
+  components_LoadingSpinnervue_type_script_lang_ts_,
+  LoadingSpinnervue_type_template_id_e3203f24_render,
+  LoadingSpinnervue_type_template_id_e3203f24_staticRenderFns,
+  false,
+  null,
+  null,
+  null
+  
+)
+
+/* harmony default export */ var components_LoadingSpinner = (component.exports);
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"00b53798-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/TopBar.vue?vue&type=template&id=afc73020&
+var TopBarvue_type_template_id_afc73020_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"lassox-diagram__TopBar"},[_c('ButtonGroup',[(!_vm.compact)?[_c('Button',{attrs:{"type":"primary","label":"Udskriv"},on:{"click":function () { return _vm.diagramVm.showPrintDialog('print'); }}}),_c('Button',{ref:"saveAsDropdownButton",attrs:{"label":"Gem som","trailingIcon":_vm.showSaveAsDropdownMenu ? 'expand_less' : 'expand_more'},on:{"click":function () { return _vm.showSaveAsDropdownMenu = !_vm.showSaveAsDropdownMenu; }}}),(_vm.diagram.methods.getSavedDiagrams)?_c('Button',{attrs:{"label":"Indlæs"},on:{"click":function () { return _vm.diagramVm.showLoadDialog(); }}}):_vm._e()]:[_c('Button',{attrs:{"label":!_vm.diagramVm.showCustomizer ? 'Tilpas' : 'Luk'},on:{"click":function () { return _vm.diagramVm.showCustomizer = !_vm.diagramVm.showCustomizer; }}})]],2),_c('div',{staticStyle:{"width":"16px","flex-shrink":"0"}}),(!_vm.compact && _vm.diagram.enableSaving)?[_c('div',{staticClass:"lassox-diagram__TopBar_active-diagram"},[(_vm.diagram.activeDiagram.id)?[(_vm.diagram.activeDiagram.title)?_c('div',{staticClass:"lassox-diagram__TopBar_active-diagram-name",domProps:{"textContent":_vm._s(_vm.diagram.activeDiagram.title)}}):_vm._e(),(_vm.diagram.activeDiagram.title && _vm.diagram.enableSharing)?_c('div',{staticStyle:{"width":"12px","flex-shrink":"0"}}):_vm._e(),(_vm.diagram.enableSharing)?_c('IconButton',{directives:[{name:"tooltip",rawName:"v-tooltip",value:(_vm.diagram.activeDiagram.shared ? 'Diagrammet er privat og deles ikke' : 'Diagrammet er delt med din organisation'),expression:"diagram.activeDiagram.shared ? 'Diagrammet er privat og deles ikke' : 'Diagrammet er delt med din organisation'"}],staticClass:"lassox-diagram__TopBar_active-diagram-shared-icon",attrs:{"icon":_vm.diagram.activeDiagram.shared ? 'lock_open' : 'lock'}}):_vm._e(),((_vm.diagram.activeDiagram.title || _vm.diagram.enableSharing) && _vm.diagram.hasUnsavedChanges)?_c('div',{staticStyle:{"width":"12px","flex-shrink":"0"}}):_vm._e()]:_vm._e(),(_vm.diagram.hasUnsavedChanges)?_c('div',{staticClass:"lassox-diagram__TopBar_active-diagram-unsaved-changes"},[(_vm.diagram.activeDiagram.id && (_vm.diagram.activeDiagram.title || _vm.diagram.enableSharing))?_c('div',{staticStyle:{"margin-right":"12px"}},[_vm._v("—")]):_vm._e(),(_vm.diagram.isSaving)?_c('div',{domProps:{"textContent":_vm._s('Gemmer...')}}):_c('a',{attrs:{"href":"#"},domProps:{"textContent":_vm._s('Gem ændringer')},on:{"click":function($event){$event.preventDefault();return (function () {
+            _vm.save()
+            // if (diagram.activeDiagram.id) save()
+            // else showSaveDialog()
+          }).apply(null, arguments)}}})]):_vm._e()],2),_c('div',{staticStyle:{"width":"16px","flex-shrink":"0"}})]:_vm._e(),_c('ButtonGroup',{staticStyle:{"margin-left":"auto"}},[(_vm.diagram.layouts.length)?_c('Button',{ref:"layoutDropdownButton",attrs:{"label":"Layout","trailingIcon":_vm.showLayoutDropdownMenu ? 'expand_less' : 'expand_more'},on:{"click":function () { return _vm.showLayoutDropdownMenu = !_vm.showLayoutDropdownMenu; }}}):_vm._e(),(!_vm.compact && _vm.diagram.enableExpand)?_c('Button',{attrs:{"label":"Udvid"},on:{"click":_vm.expand}}):_vm._e(),(!_vm.compact)?_c('Button',{ref:"editDropdownButton",attrs:{"label":"Rediger","trailingIcon":_vm.showEditDropdownMenu ? 'expand_less' : 'expand_more'},on:{"click":function () { return _vm.showEditDropdownMenu = !_vm.showEditDropdownMenu; }}}):_c('Button',{attrs:{"icon":"replay"},on:{"click":_vm.reset}})],1),_c('DropdownMenu',{attrs:{"opener":_vm.showSaveAsDropdownMenu ? _vm.$refs.saveAsDropdownButton.$el : null,"close":function () { return _vm.showSaveAsDropdownMenu = false; }}},[(_vm.diagram.activeDiagram.id && _vm.diagram.enableSaving)?[_c('DropdownMenuItem',{attrs:{"label":"Nyt diagram"},on:{"click":function () {
+          _vm.save(false)
+          // showSaveDialog()
+        }}}),_c('DropdownMenuDivider')]:_vm._e(),(_vm.diagram.methods.convertPngToPdf)?_c('DropdownMenuItem',{attrs:{"label":"PDF"},on:{"click":function () { return _vm.diagramVm.showPrintDialog('pdf'); }}}):_vm._e(),_c('DropdownMenuItem',{attrs:{"label":"Billede"},on:{"click":function () { return _vm.diagramVm.showPrintDialog('png'); }}})],2),(_vm.diagram.layouts.length)?_c('DropdownMenu',{attrs:{"opener":_vm.showLayoutDropdownMenu ? _vm.$refs.layoutDropdownButton.$el : null,"close":function () { return _vm.showLayoutDropdownMenu = false; }}},_vm._l((_vm.diagram.layouts),function(layout){return _c('DropdownMenuItem',{key:layout.id,attrs:{"label":layout.name,"icon":layout == _vm.diagram.activeDiagram.settings.activeLayout ? 'check' : ' '},on:{"click":function () { return _vm.diagram.eventBus.emit({ name: 'graph.layout', layout: layout }); }}})}),1):_vm._e(),_c('DropdownMenu',{attrs:{"opener":_vm.showEditDropdownMenu ? _vm.$refs.editDropdownButton.$el : null,"close":function () { return _vm.showEditDropdownMenu = false; }}},[(_vm.diagram.enableEditing)?[_c('DropdownMenuItem',{attrs:{"label":"Tilføj","icon":"add"},on:{"click":_vm.showAddDialog}}),_c('DropdownMenuDivider')]:_vm._e(),_c('DropdownMenuItem',{attrs:{"label":"Fortryd","icon":"undo","disabled":!_vm.canUndo},on:{"click":_vm.undo}}),_c('DropdownMenuItem',{attrs:{"label":"Annuller fortryd","icon":"redo","disabled":!_vm.canRedo},on:{"click":_vm.redo}}),_c('DropdownMenuItem',{attrs:{"label":"Nulstil","icon":"replay"},on:{"click":_vm.reset}})],2)],2)}
+var TopBarvue_type_template_id_afc73020_staticRenderFns = []
+
+
+// CONCATENATED MODULE: ./src/components/TopBar.vue?vue&type=template&id=afc73020&
+
+// CONCATENATED MODULE: ./node_modules/@babel/runtime/helpers/esm/typeof.js
+
+
+
+
+
+
+
+function typeof_typeof(obj) {
+  "@babel/helpers - typeof";
+
+  if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") {
+    typeof_typeof = function _typeof(obj) {
+      return typeof obj;
+    };
+  } else {
+    typeof_typeof = function _typeof(obj) {
+      return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj;
+    };
+  }
+
+  return typeof_typeof(obj);
+}
+// CONCATENATED MODULE: ./src/util/type-guards.ts
+
+
+var type_guards_isRecord = function isRecord(v) {
+  return typeof_typeof(v) == 'object' && v !== null;
+};
+var type_guards_isOneOf = function isOneOf(v, t) {
+  var _iterator = _createForOfIteratorHelper(t),
+      _step;
+
+  try {
+    for (_iterator.s(); !(_step = _iterator.n()).done;) {
+      var type = _step.value;
+      if (v === type) return true;
+    }
+  } catch (err) {
+    _iterator.e(err);
+  } finally {
+    _iterator.f();
+  }
+
+  return false;
+};
+// CONCATENATED MODULE: ./node_modules/@babel/runtime/helpers/esm/arrayWithoutHoles.js
+
+function arrayWithoutHoles_arrayWithoutHoles(arr) {
+  if (Array.isArray(arr)) return _arrayLikeToArray(arr);
+}
+// CONCATENATED MODULE: ./node_modules/@babel/runtime/helpers/esm/iterableToArray.js
+
+
+
+
+
+
+
+
+function iterableToArray_iterableToArray(iter) {
+  if (typeof Symbol !== "undefined" && iter[Symbol.iterator] != null || iter["@@iterator"] != null) return Array.from(iter);
+}
+// CONCATENATED MODULE: ./node_modules/@babel/runtime/helpers/esm/nonIterableSpread.js
+function nonIterableSpread_nonIterableSpread() {
+  throw new TypeError("Invalid attempt to spread non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method.");
+}
+// CONCATENATED MODULE: ./node_modules/@babel/runtime/helpers/esm/toConsumableArray.js
+
+
+
+
+function toConsumableArray_toConsumableArray(arr) {
+  return arrayWithoutHoles_arrayWithoutHoles(arr) || iterableToArray_iterableToArray(arr) || _unsupportedIterableToArray(arr) || nonIterableSpread_nonIterableSpread();
+}
+// EXTERNAL MODULE: ./node_modules/core-js/modules/es.set.js
+var es_set = __webpack_require__("6062");
+
+// CONCATENATED MODULE: ./src/tooltips.ts
+
+
+
+
+
+
+
+
+
+var stores = new Map();
+var tooltips_getStore = function getStore(vueRoot) {
+  var cached = stores.get(vueRoot);
+  if (cached) return cached;
+  var store = external_commonjs_vue_commonjs2_vue_root_Vue_default.a.observable({
+    tooltipsSet: new Set(),
+    tooltips: [],
+    add: function add(tooltip) {
+      store.tooltipsSet.add(tooltip);
+      store.tooltips = toConsumableArray_toConsumableArray(store.tooltipsSet);
+    },
+    remove: function remove(tooltip) {
+      store.tooltipsSet.delete(tooltip);
+      store.tooltips = toConsumableArray_toConsumableArray(store.tooltipsSet);
+    }
+  });
+  stores.set(vueRoot, store);
+  return store;
+};
+var tooltips_isPlacement = function isPlacement(v) {
+  return type_guards_isOneOf(v, ['auto', 'top', 'left', 'right', 'bottom']);
+};
+var tooltips_isOffset = function isOffset(v) {
+  if (typeof v === 'number') return true;
+
+  if (type_guards_isRecord(v)) {
+    for (var _i = 0, _arr = ['all', 'x', 'y', 'top', 'left', 'right', 'bottom']; _i < _arr.length; _i++) {
+      var key = _arr[_i];
+      var value = v[key];
+      if (value !== undefined && typeof value !== 'number') return false;
+    }
+
+    return true;
+  }
+
+  return false;
+};
+// CONCATENATED MODULE: ./src/directives/tooltip.ts
+
+
+
+
+
+
+
+
+
+var tooltip_parseBindingValue = function parseBindingValue(value) {
+  var tooltip;
+
+  if (typeof value === 'string') {
+    tooltip = {
+      text: value
+    };
+  } else if (type_guards_isRecord(value)) {
+    tooltip = {
+      text: String(value.text)
+    };
+    if (tooltips_isPlacement(value.placement)) tooltip.placement = value.placement;
+    if (tooltips_isOffset(value.offset)) tooltip.offset = value.offset;
+  } else {
+    return {
+      text: ''
+    };
+  }
+
+  return tooltip;
+};
+
+var tooltips = new Map();
+var directive = {
+  bind: function bind(el, binding, vnode) {
+    var _vnode$context;
+
+    var root = (_vnode$context = vnode.context) === null || _vnode$context === void 0 ? void 0 : _vnode$context.$root;
+    if (!root) return;
+
+    var tooltip = _objectSpread2(_objectSpread2({}, tooltip_parseBindingValue(binding.value)), {}, {
+      el: el
+    });
+
+    tooltips.set(el, tooltip);
+    tooltips_getStore(root).add(tooltip);
+  },
+  update: function update(el, binding) {
+    var tooltip = tooltips.get(el);
+    if (!tooltip) return;
+    var newTooltip = tooltip_parseBindingValue(binding.value);
+    if (!newTooltip) return;
+    tooltip.text = newTooltip.text;
+    tooltip.placement = newTooltip.placement;
+  },
+  unbind: function unbind(el, binding, vnode) {
+    var _vnode$context2;
+
+    var root = (_vnode$context2 = vnode.context) === null || _vnode$context2 === void 0 ? void 0 : _vnode$context2.$root;
+    var tooltip = tooltips.get(el);
+    if (!tooltip) return;
+    tooltips.delete(el);
+    if (root) tooltips_getStore(root).remove(tooltip);
+  }
+};
+/* harmony default export */ var directives_tooltip = (directive);
+// CONCATENATED MODULE: ./src/DiagramVue.ts
+
+
+var DiagramVue = external_commonjs_vue_commonjs2_vue_root_Vue_default.a.extend({
+  directives: {
+    tooltip: directives_tooltip
+  }
+});
+/* harmony default export */ var src_DiagramVue = (DiagramVue);
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"00b53798-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/ButtonGroup.vue?vue&type=template&id=10ce107b&
+var ButtonGroupvue_type_template_id_10ce107b_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{class:[
+    'lassox-diagram__ButtonGroup',
+    ("lassox-diagram__ButtonGroup--align-" + _vm.align) ]},[_vm._t("default")],2)}
+var ButtonGroupvue_type_template_id_10ce107b_staticRenderFns = []
+
+
+// CONCATENATED MODULE: ./src/components/ButtonGroup.vue?vue&type=template&id=10ce107b&
+
+// CONCATENATED MODULE: ./node_modules/babel-loader/lib!./node_modules/ts-loader??ref--14-1!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/ButtonGroup.vue?vue&type=script&lang=ts&
+
+
+
+
+
+
+var ButtonGroupvue_type_script_lang_ts_ButtonGroup = /*#__PURE__*/function (_Vue) {
+  _inherits(ButtonGroup, _Vue);
+
+  var _super = _createSuper(ButtonGroup);
+
+  function ButtonGroup() {
+    _classCallCheck(this, ButtonGroup);
+
+    return _super.apply(this, arguments);
+  }
+
+  return ButtonGroup;
+}(external_commonjs_vue_commonjs2_vue_root_Vue_default.a);
+
+__decorate([Prop({
+  type: String,
+  default: 'left'
+})], ButtonGroupvue_type_script_lang_ts_ButtonGroup.prototype, "align", void 0);
+
+ButtonGroupvue_type_script_lang_ts_ButtonGroup = __decorate([vue_class_component_esm({})], ButtonGroupvue_type_script_lang_ts_ButtonGroup);
+/* harmony default export */ var ButtonGroupvue_type_script_lang_ts_ = (ButtonGroupvue_type_script_lang_ts_ButtonGroup);
+// CONCATENATED MODULE: ./src/components/ButtonGroup.vue?vue&type=script&lang=ts&
+ /* harmony default export */ var components_ButtonGroupvue_type_script_lang_ts_ = (ButtonGroupvue_type_script_lang_ts_); 
+// EXTERNAL MODULE: ./src/components/ButtonGroup.vue?vue&type=style&index=0&lang=scss&
+var ButtonGroupvue_type_style_index_0_lang_scss_ = __webpack_require__("b761");
+
+// CONCATENATED MODULE: ./src/components/ButtonGroup.vue
+
+
+
+
+
+
+/* normalize component */
+
+var ButtonGroup_component = normalizeComponent(
   components_ButtonGroupvue_type_script_lang_ts_,
   ButtonGroupvue_type_template_id_10ce107b_render,
   ButtonGroupvue_type_template_id_10ce107b_staticRenderFns,
@@ -85431,8 +98216,8 @@ var component = normalizeComponent(
   
 )
 
-/* harmony default export */ var components_ButtonGroup = (component.exports);
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"e8630cbc-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/Button.vue?vue&type=template&id=4b2ecc88&
+/* harmony default export */ var components_ButtonGroup = (ButtonGroup_component.exports);
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"00b53798-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/Button.vue?vue&type=template&id=4b2ecc88&
 var Buttonvue_type_template_id_4b2ecc88_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('BaseButton',_vm._g(_vm._b({class:[
     'lassox-diagram__Button',
     ("lassox-diagram__Button--type-" + _vm.type),
@@ -85445,28 +98230,24 @@ var Buttonvue_type_template_id_4b2ecc88_staticRenderFns = []
 
 // CONCATENATED MODULE: ./src/components/Button.vue?vue&type=template&id=4b2ecc88&
 
-// EXTERNAL MODULE: ./node_modules/core-js/modules/es.set.js
-var es_set = __webpack_require__("6062");
-
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"e8630cbc-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/BaseButton.vue?vue&type=template&id=994c43f0&
-var BaseButtonvue_type_template_id_994c43f0_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('button',_vm._g({class:[
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"00b53798-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/BaseButton.vue?vue&type=template&id=21a3d09d&
+var BaseButtonvue_type_template_id_21a3d09d_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('button',_vm._g({class:[
     'lassox-diagram__BaseButton',
     _vm.disabled && 'lassox-diagram__BaseButton--disabled' ],attrs:{"disabled":_vm.disabled}},Object.assign({}, _vm.$listeners,
     {click: function (e) { return !_vm.disabled && _vm.$emit('click', e); }})),[_vm._t("default"),(_vm.finalLeadingIcon)?_c('Icon',{staticClass:"lassox-diagram__BaseButton_leading-icon",attrs:{"icon":_vm.finalLeadingIcon}}):_vm._e(),(_vm.label)?_c('div',{staticClass:"lassox-diagram__BaseButton_label",domProps:{"textContent":_vm._s(_vm.label)}}):_vm._e(),(_vm.finalTrailingIcon)?_c('Icon',{staticClass:"lassox-diagram__BaseButton_trailing-icon",attrs:{"icon":_vm.finalTrailingIcon}}):_vm._e(),_c('div',{staticClass:"lassox-diagram__BaseButton_outline"}),_c('div',{staticClass:"lassox-diagram__BaseButton_overlay"})],2)}
-var BaseButtonvue_type_template_id_994c43f0_staticRenderFns = []
+var BaseButtonvue_type_template_id_21a3d09d_staticRenderFns = []
 
 
-// CONCATENATED MODULE: ./src/components/BaseButton.vue?vue&type=template&id=994c43f0&
+// CONCATENATED MODULE: ./src/components/BaseButton.vue?vue&type=template&id=21a3d09d&
 
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"e8630cbc-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/Icon.vue?vue&type=template&id=38dc3431&
-var Iconvue_type_template_id_38dc3431_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"lassox-diagram__Icon",style:({ fontSize: (_vm.size + "px") })},[(_vm.icon && _vm.icon != ' ')?_c('span',{staticClass:"material-icons-outlined",domProps:{"textContent":_vm._s(_vm.icon)}}):_vm._e()])}
-var Iconvue_type_template_id_38dc3431_staticRenderFns = []
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"00b53798-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/Icon.vue?vue&type=template&id=6045477e&
+var Iconvue_type_template_id_6045477e_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{class:[
+    'lassox-diagram__Icon',
+    _vm.light && 'lassox-diagram__Icon--light' ],style:({ fontSize: (_vm.size + "px") })},[(_vm.icon && _vm.icon != ' ')?_c('span',{staticClass:"material-icons-outlined",domProps:{"textContent":_vm._s(_vm.icon)}}):_vm._e()])}
+var Iconvue_type_template_id_6045477e_staticRenderFns = []
 
 
-// CONCATENATED MODULE: ./src/components/Icon.vue?vue&type=template&id=38dc3431&
-
-// EXTERNAL MODULE: ./node_modules/core-js/modules/es.number.constructor.js
-var es_number_constructor = __webpack_require__("a9e3");
+// CONCATENATED MODULE: ./src/components/Icon.vue?vue&type=template&id=6045477e&
 
 // CONCATENATED MODULE: ./node_modules/babel-loader/lib!./node_modules/ts-loader??ref--14-1!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/Icon.vue?vue&type=script&lang=ts&
 
@@ -85500,6 +98281,11 @@ __decorate([Prop({
   default: 18
 })], Iconvue_type_script_lang_ts_Icon.prototype, "size", void 0);
 
+__decorate([Prop({
+  type: Boolean,
+  default: false
+})], Iconvue_type_script_lang_ts_Icon.prototype, "light", void 0);
+
 Iconvue_type_script_lang_ts_Icon = __decorate([vue_class_component_esm({})], Iconvue_type_script_lang_ts_Icon);
 /* harmony default export */ var Iconvue_type_script_lang_ts_ = (Iconvue_type_script_lang_ts_Icon);
 // CONCATENATED MODULE: ./src/components/Icon.vue?vue&type=script&lang=ts&
@@ -85518,8 +98304,8 @@ var Iconvue_type_style_index_0_lang_scss_ = __webpack_require__("83b4");
 
 var Icon_component = normalizeComponent(
   components_Iconvue_type_script_lang_ts_,
-  Iconvue_type_template_id_38dc3431_render,
-  Iconvue_type_template_id_38dc3431_staticRenderFns,
+  Iconvue_type_template_id_6045477e_render,
+  Iconvue_type_template_id_6045477e_staticRenderFns,
   false,
   null,
   null,
@@ -85610,8 +98396,8 @@ var BaseButtonvue_type_style_index_0_lang_scss_ = __webpack_require__("55ae");
 
 var BaseButton_component = normalizeComponent(
   components_BaseButtonvue_type_script_lang_ts_,
-  BaseButtonvue_type_template_id_994c43f0_render,
-  BaseButtonvue_type_template_id_994c43f0_staticRenderFns,
+  BaseButtonvue_type_template_id_21a3d09d_render,
+  BaseButtonvue_type_template_id_21a3d09d_staticRenderFns,
   false,
   null,
   null,
@@ -85709,18 +98495,20 @@ var Button_component = normalizeComponent(
 )
 
 /* harmony default export */ var components_Button = (Button_component.exports);
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"e8630cbc-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/IconButton.vue?vue&type=template&id=3ac45bf4&
-var IconButtonvue_type_template_id_3ac45bf4_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"lassox-diagram__IconButton",style:({
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"00b53798-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/IconButton.vue?vue&type=template&id=c011a904&
+var IconButtonvue_type_template_id_c011a904_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{class:[
+    'lassox-diagram__IconButton',
+    _vm.light && 'lassox-diagram__IconButton--light' ],style:({
     width: (_vm.finalIconSize + "px"),
     height: (_vm.finalIconSize + "px"),
   })},[_c('BaseButton',_vm._g({staticClass:"lassox-diagram__IconButton_button",style:({
       width: (_vm.finalButtonSize + "px"),
       height: (_vm.finalButtonSize + "px"),
-    })},_vm.$listeners),[_c('Icon',{staticClass:"lassox-diagram__IconButton_button-icon",attrs:{"icon":_vm.icon,"size":_vm.finalIconSize}})],1)],1)}
-var IconButtonvue_type_template_id_3ac45bf4_staticRenderFns = []
+    })},_vm.$listeners),[_c('Icon',{staticClass:"lassox-diagram__IconButton_button-icon",attrs:{"icon":_vm.icon,"size":_vm.finalIconSize,"light":_vm.light}})],1)],1)}
+var IconButtonvue_type_template_id_c011a904_staticRenderFns = []
 
 
-// CONCATENATED MODULE: ./src/components/IconButton.vue?vue&type=template&id=3ac45bf4&
+// CONCATENATED MODULE: ./src/components/IconButton.vue?vue&type=template&id=c011a904&
 
 // CONCATENATED MODULE: ./node_modules/babel-loader/lib!./node_modules/ts-loader??ref--14-1!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/IconButton.vue?vue&type=script&lang=ts&
 
@@ -85799,6 +98587,11 @@ __decorate([Prop({
   type: Number
 })], IconButtonvue_type_script_lang_ts_IconButton.prototype, "buttonSize", void 0);
 
+__decorate([Prop({
+  type: Boolean,
+  default: false
+})], IconButtonvue_type_script_lang_ts_IconButton.prototype, "light", void 0);
+
 IconButtonvue_type_script_lang_ts_IconButton = __decorate([vue_class_component_esm({
   components: {
     BaseButton: components_BaseButton,
@@ -85822,8 +98615,8 @@ var IconButtonvue_type_style_index_0_lang_scss_ = __webpack_require__("e4aa");
 
 var IconButton_component = normalizeComponent(
   components_IconButtonvue_type_script_lang_ts_,
-  IconButtonvue_type_template_id_3ac45bf4_render,
-  IconButtonvue_type_template_id_3ac45bf4_staticRenderFns,
+  IconButtonvue_type_template_id_c011a904_render,
+  IconButtonvue_type_template_id_c011a904_staticRenderFns,
   false,
   null,
   null,
@@ -85832,42 +98625,13 @@ var IconButton_component = normalizeComponent(
 )
 
 /* harmony default export */ var components_IconButton = (IconButton_component.exports);
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"e8630cbc-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/DropdownMenu.vue?vue&type=template&id=a53a988e&
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"00b53798-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/DropdownMenu.vue?vue&type=template&id=a53a988e&
 var DropdownMenuvue_type_template_id_a53a988e_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"lassox-diagram__DropdownMenu"},[_c('div',{ref:"boundsEl",staticClass:"lassox-diagram__DropdownMenu_bounds"}),_c('div',{ref:"dropdownMenuEl",staticClass:"lassox-diagram__DropdownMenu_dropdown-menu",style:(_vm.dropdownMenuStyle),attrs:{"tabindex":"-1"}},[_vm._t("default")],2)])}
 var DropdownMenuvue_type_template_id_a53a988e_staticRenderFns = []
 
 
 // CONCATENATED MODULE: ./src/components/DropdownMenu.vue?vue&type=template&id=a53a988e&
 
-// CONCATENATED MODULE: ./node_modules/@babel/runtime/helpers/esm/arrayWithoutHoles.js
-
-function arrayWithoutHoles_arrayWithoutHoles(arr) {
-  if (Array.isArray(arr)) return _arrayLikeToArray(arr);
-}
-// CONCATENATED MODULE: ./node_modules/@babel/runtime/helpers/esm/iterableToArray.js
-
-
-
-
-
-
-
-
-function iterableToArray_iterableToArray(iter) {
-  if (typeof Symbol !== "undefined" && iter[Symbol.iterator] != null || iter["@@iterator"] != null) return Array.from(iter);
-}
-// CONCATENATED MODULE: ./node_modules/@babel/runtime/helpers/esm/nonIterableSpread.js
-function nonIterableSpread_nonIterableSpread() {
-  throw new TypeError("Invalid attempt to spread non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method.");
-}
-// CONCATENATED MODULE: ./node_modules/@babel/runtime/helpers/esm/toConsumableArray.js
-
-
-
-
-function toConsumableArray_toConsumableArray(arr) {
-  return arrayWithoutHoles_arrayWithoutHoles(arr) || iterableToArray_iterableToArray(arr) || _unsupportedIterableToArray(arr) || nonIterableSpread_nonIterableSpread();
-}
 // EXTERNAL MODULE: ./node_modules/core-js/modules/es.array.join.js
 var es_array_join = __webpack_require__("a15b");
 
@@ -85998,7 +98762,7 @@ function watch_rect_unwatchRect(element, callback) {
     stop();
   }
 }
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"e8630cbc-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/DropdownMenuItem.vue?vue&type=template&id=41923d30&
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"00b53798-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/DropdownMenuItem.vue?vue&type=template&id=41923d30&
 var DropdownMenuItemvue_type_template_id_41923d30_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('BaseButton',_vm._g({staticClass:"lassox-diagram__DropdownMenuItem",attrs:{"icon":_vm.icon,"label":_vm.label,"trailingIcon":_vm.trailingIcon,"disabled":_vm.disabled,"tabindex":"0"}},Object.assign({}, _vm.$listeners,
     {click: _vm.onClick,
     mouseover: _vm.onMouseOver,
@@ -86545,7 +99309,7 @@ var DropdownMenu_component = normalizeComponent(
 )
 
 /* harmony default export */ var components_DropdownMenu = (DropdownMenu_component.exports);
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"e8630cbc-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/DropdownMenuDivider.vue?vue&type=template&id=17d44d15&
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"00b53798-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/DropdownMenuDivider.vue?vue&type=template&id=17d44d15&
 var DropdownMenuDividervue_type_template_id_17d44d15_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"lassox-diagram__DropdownMenuDivider"})}
 var DropdownMenuDividervue_type_template_id_17d44d15_staticRenderFns = []
 
@@ -86601,21 +99365,21 @@ var DropdownMenuDivider_component = normalizeComponent(
 )
 
 /* harmony default export */ var components_DropdownMenuDivider = (DropdownMenuDivider_component.exports);
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"e8630cbc-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/ConfirmResetDialog.vue?vue&type=template&id=4a86d982&
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"00b53798-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/ConfirmResetDialog.vue?vue&type=template&id=4a86d982&
 var ConfirmResetDialogvue_type_template_id_4a86d982_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('Dialog',{staticClass:"lassox-diagram__ConfirmAdditionDialog",attrs:{"dismissable":true,"title":"Nulstil diagrammet?","content":"Dette vil fjerne eventuelle ændringer og nulstille dine indstillinger. Vil du fortsætte?","onClose":_vm.dismiss},scopedSlots:_vm._u([{key:"actions",fn:function(){return [_c('ButtonGroup',{attrs:{"align":"right"}},[_c('Button',{attrs:{"label":"Fortryd"},on:{"click":_vm.dismiss}}),_c('Button',{attrs:{"label":"Fortsæt","type":"primary"},on:{"click":_vm.confirm}})],1)]},proxy:true}])})}
 var ConfirmResetDialogvue_type_template_id_4a86d982_staticRenderFns = []
 
 
 // CONCATENATED MODULE: ./src/components/ConfirmResetDialog.vue?vue&type=template&id=4a86d982&
 
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"e8630cbc-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/Dialog.vue?vue&type=template&id=4cd4a9d2&
-var Dialogvue_type_template_id_4cd4a9d2_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{class:[
-    'lassox-diagram__Dialog',
-    _vm.scrollable && 'lassox-diagram__Dialog--scrollable' ]},[_c('div',{staticClass:"lassox-diagram__Dialog-backdrop",on:{"click":function () { return _vm.dismissable && _vm.close(); }}}),_c('div',{staticClass:"lassox-diagram__Dialog-box",style:({ maxWidth: (_vm.maxWidth + "px") })},[(_vm.title || _vm.dismissable || _vm.$slots['header'] || _vm.$slots['title'])?_c('div',{staticClass:"lassox-diagram__Dialog-header"},[_vm._t("header",function(){return [(_vm.title)?_c('div',{staticClass:"lassox-diagram__Dialog-title"},[_vm._t("title",function(){return [(_vm.title)?_c('div',{domProps:{"textContent":_vm._s(_vm.title)}}):_vm._e()]},null,_vm.slotProps)],2):_vm._e(),(_vm.dismissable)?_c('IconButton',{staticClass:"lassox-diagram__Dialog-close-button",attrs:{"icon":"close","size":"normal"},on:{"click":_vm.close}}):_vm._e()]},null,_vm.slotProps)],2):_vm._e(),(_vm.content || _vm.$slots['content'])?_c('div',{ref:"contentEl",staticClass:"lassox-diagram__Dialog-content"},[_c('div',{ref:"contentInnerEl",staticClass:"lassox-diagram__Dialog-content-inner"},[_vm._t("content",function(){return [(_vm.content)?_c('div',{domProps:{"textContent":_vm._s(_vm.content)}}):_vm._e()]},null,_vm.slotProps)],2)]):_vm._e(),(_vm.$slots['actions'])?_c('div',{staticClass:"lassox-diagram__Dialog-actions"},[_vm._t("actions",null,null,_vm.slotProps)],2):_vm._e()])])}
-var Dialogvue_type_template_id_4cd4a9d2_staticRenderFns = []
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"00b53798-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/Dialog.vue?vue&type=template&id=bcc6ba4c&
+var Dialogvue_type_template_id_bcc6ba4c_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('transition',{attrs:{"appear":"","duration":{ enter: 150, leave: 75 }}},[_c('div',{class:[
+      'lassox-diagram__Dialog',
+      _vm.scrollable && 'lassox-diagram__Dialog--scrollable' ]},[_c('div',{staticClass:"lassox-diagram__Dialog-backdrop",on:{"click":function () { return _vm.dismissable && _vm.close(); }}}),_c('div',{staticClass:"lassox-diagram__Dialog-box",style:({ maxWidth: (_vm.maxWidth + "px") }),attrs:{"tabindex":"-1"}},[(_vm.title || _vm.dismissable || _vm.$slots['header'] || _vm.$slots['title'])?_c('div',{staticClass:"lassox-diagram__Dialog-header"},[_vm._t("header",function(){return [(_vm.title)?_c('div',{staticClass:"lassox-diagram__Dialog-title"},[_vm._t("title",function(){return [(_vm.title)?_c('div',{domProps:{"textContent":_vm._s(_vm.title)}}):_vm._e()]},null,_vm.slotProps)],2):_vm._e(),(_vm.dismissable)?_c('IconButton',{staticClass:"lassox-diagram__Dialog-close-button",attrs:{"icon":"close","size":"normal"},on:{"click":_vm.close}}):_vm._e()]},null,_vm.slotProps)],2):_vm._e(),(_vm.content || _vm.$slots['content'])?_c('div',{ref:"contentEl",staticClass:"lassox-diagram__Dialog-content"},[_c('div',{ref:"contentInnerEl",staticClass:"lassox-diagram__Dialog-content-inner"},[_vm._t("content",function(){return [(_vm.content)?_c('div',{domProps:{"textContent":_vm._s(_vm.content)}}):_vm._e()]},null,_vm.slotProps)],2)]):_vm._e(),(_vm.$slots['actions'])?_c('div',{staticClass:"lassox-diagram__Dialog-actions"},[_vm._t("actions",null,null,_vm.slotProps)],2):_vm._e()])])])}
+var Dialogvue_type_template_id_bcc6ba4c_staticRenderFns = []
 
 
-// CONCATENATED MODULE: ./src/components/Dialog.vue?vue&type=template&id=4cd4a9d2&
+// CONCATENATED MODULE: ./src/components/Dialog.vue?vue&type=template&id=bcc6ba4c&
 
 // CONCATENATED MODULE: ./node_modules/babel-loader/lib!./node_modules/ts-loader??ref--14-1!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/Dialog.vue?vue&type=script&lang=ts&
 
@@ -86755,8 +99519,8 @@ var Dialogvue_type_style_index_0_lang_scss_ = __webpack_require__("33fd");
 
 var Dialog_component = normalizeComponent(
   components_Dialogvue_type_script_lang_ts_,
-  Dialogvue_type_template_id_4cd4a9d2_render,
-  Dialogvue_type_template_id_4cd4a9d2_staticRenderFns,
+  Dialogvue_type_template_id_bcc6ba4c_render,
+  Dialogvue_type_template_id_bcc6ba4c_staticRenderFns,
   false,
   null,
   null,
@@ -86847,19 +99611,26 @@ var ConfirmResetDialog_component = normalizeComponent(
 )
 
 /* harmony default export */ var components_ConfirmResetDialog = (ConfirmResetDialog_component.exports);
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"e8630cbc-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/PrintDialog.vue?vue&type=template&id=3c4a2a9c&
-var PrintDialogvue_type_template_id_3c4a2a9c_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('Dialog',{staticClass:"lassox-diagram__PrintDialog",attrs:{"dismissable":true,"title":_vm.title,"size":"3x","onClose":_vm.close},scopedSlots:_vm._u([{key:"content",fn:function(){return [(_vm.description)?_c('p',{staticStyle:{"margin-bottom":"16px"},domProps:{"textContent":_vm._s(_vm.description)}}):_vm._e(),_c('EditorFields',[_c('EditorField',{attrs:{"id":"print-orientation","type":"radio-buttons","title":"Orientering","options":[
-          { label: 'Stående', value: 'portrait' },
-          { label: 'Liggende', value: 'landscape' } ]},model:{value:(_vm.orientation),callback:function ($$v) {_vm.orientation=$$v},expression:"orientation"}}),_c('EditorField',{attrs:{"id":"print-size","type":"radio-buttons","title":"Størrelse","options":[
-          { label: 'A5', value: 'A5' },
-          { label: 'A4', value: 'A4' },
-          { label: 'A3', value: 'A3' } ]},model:{value:(_vm.size),callback:function ($$v) {_vm.size=$$v},expression:"size"}}),(_vm.mode !== 'png')?_c('EditorField',{attrs:{"id":"print-margin","type":"boolean","title":"Margen","helperText":"Inkluder en margen (1 cm) eller udskriv til papirets kant."},model:{value:(_vm.includeMargin),callback:function ($$v) {_vm.includeMargin=$$v},expression:"includeMargin"}}):_vm._e()],1)]},proxy:true},{key:"actions",fn:function(){return [_c('ButtonGroup',{attrs:{"align":"right"}},[_c('Button',{attrs:{"label":"Luk"},on:{"click":_vm.close}}),_c('Button',{attrs:{"type":"primary","label":!_vm.printing ? 'Udskriv' : 'Udskriver...',"disabled":_vm.printing},on:{"click":_vm.confirm}})],1)]},proxy:true}])})}
-var PrintDialogvue_type_template_id_3c4a2a9c_staticRenderFns = []
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"00b53798-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/AddEntityDialog.vue?vue&type=template&id=898dfbac&
+var AddEntityDialogvue_type_template_id_898dfbac_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('Dialog',{staticClass:"lassox-diagram__AddEntityDialog",attrs:{"dismissable":true,"title":"Tilføj","size":"2x","onClose":_vm.close},scopedSlots:_vm._u([{key:"content",fn:function(){return [_c('EntitySelector',{on:{"change":function (model) { return _vm.entitySelectorModel = model; }}})]},proxy:true},{key:"actions",fn:function(){return [_c('ButtonGroup',{attrs:{"align":"right"}},[_c('Button',{attrs:{"label":"Fortryd"},on:{"click":_vm.close}}),_c('Button',{attrs:{"label":"Tilføj","type":"primary","disabled":!_vm.canConfirm},on:{"click":_vm.confirm}})],1)]},proxy:true}])})}
+var AddEntityDialogvue_type_template_id_898dfbac_staticRenderFns = []
 
 
-// CONCATENATED MODULE: ./src/components/PrintDialog.vue?vue&type=template&id=3c4a2a9c&
+// CONCATENATED MODULE: ./src/components/AddEntityDialog.vue?vue&type=template&id=898dfbac&
 
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"e8630cbc-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/EditorFields.vue?vue&type=template&id=708d066c&
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"00b53798-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/EntitySelector.vue?vue&type=template&id=9f9c021e&
+var EntitySelectorvue_type_template_id_9f9c021e_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('EditorFields',[_c('FieldContainer',{attrs:{"label":"Type"}},[_c('DropdownField',{attrs:{"options":_vm.entityTypeDropdownOptions},model:{value:(_vm.entityType),callback:function ($$v) {_vm.entityType=$$v},expression:"entityType"}})],1),(_vm.searchEnabled)?_c('FieldContainer',[_c('TabBar',{attrs:{"outlined":"","tabs":[
+        { id: 'search', label: 'Søg' },
+        { id: 'custom', label: 'Manuelt' } ]},model:{value:(_vm.mode),callback:function ($$v) {_vm.mode=$$v},expression:"mode"}})],1):_vm._e(),(_vm.mode === 'search')?[_c('FieldContainer',{attrs:{"label":("Søg efter " + (_vm.entityType.labels.singular.toLowerCase()))}},[_c('EntitySearchBar',{attrs:{"entityType":_vm.entityType},model:{value:(_vm.selectedSuggestion),callback:function ($$v) {_vm.selectedSuggestion=$$v},expression:"selectedSuggestion"}})],1)]:[_c('FieldContainer',[_c('DataCreator',{attrs:{"fields":_vm.entityFields,"data":_vm.entityData},on:{"change":function (newData) {
+          _vm.entityData = newData
+          _vm.updateModel()
+        }}})],1)]],2)}
+var EntitySelectorvue_type_template_id_9f9c021e_staticRenderFns = []
+
+
+// CONCATENATED MODULE: ./src/components/EntitySelector.vue?vue&type=template&id=9f9c021e&
+
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"00b53798-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/EditorFields.vue?vue&type=template&id=708d066c&
 var EditorFieldsvue_type_template_id_708d066c_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"lassox-diagram__EditorFields"},[_vm._t("default")],2)}
 var EditorFieldsvue_type_template_id_708d066c_staticRenderFns = []
 
@@ -86915,8 +99686,8 @@ var EditorFields_component = normalizeComponent(
 )
 
 /* harmony default export */ var components_EditorFields = (EditorFields_component.exports);
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"e8630cbc-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/EditorField.vue?vue&type=template&id=58d579dc&
-var EditorFieldvue_type_template_id_58d579dc_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('FieldContainer',{staticClass:"lassox-diagram__EditorField",attrs:{"disabled":!_vm.editable,"label":_vm.title},scopedSlots:_vm._u([(_vm.helperText || _vm.showChangedFrom || _vm.showReset)?{key:"helper-text",fn:function(){return [(_vm.helperText)?_c('div',{domProps:{"textContent":_vm._s(_vm.helperText)}}):_vm._e(),_c('div',[(_vm.showChangedFrom)?[[_vm._v("Ændret")],(_vm.initialValueLabel)?[_vm._v(" fra '"+_vm._s(_vm.initialValueLabel)+"'")]:_vm._e()]:_vm._e(),(_vm.showReset)?[(_vm.showChangedFrom)?[_vm._v(". ")]:_vm._e(),_c('a',{staticClass:"lassox-diagram__EditorField_reset-button",attrs:{"href":"#"},domProps:{"textContent":_vm._s('Nulstil')},on:{"click":function($event){$event.preventDefault();return (function () { return _vm.$emit('change', _vm.resetValue); }).apply(null, arguments)}}})]:_vm._e()],2)]},proxy:true}:null],null,true)},[[(_vm.finalType === 'text')?_c('TextField',{attrs:{"autocomplete":"off","name":_vm.id,"disabled":!_vm.editable,"value":_vm.value !== undefined ? _vm.value : ''},on:{"input":function (e) { return _vm.$emit('change', e.target.value); }}}):(_vm.finalType === 'number')?_c('TextField',{attrs:{"autocomplete":"off","name":_vm.id,"type":"number","disabled":!_vm.editable,"value":_vm.value !== undefined ? _vm.value : ''},on:{"keydown":function (e) {
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"00b53798-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/EditorField.vue?vue&type=template&id=fa9b8810&
+var EditorFieldvue_type_template_id_fa9b8810_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('FieldContainer',{staticClass:"lassox-diagram__EditorField",attrs:{"disabled":!_vm.editable,"label":_vm.title},scopedSlots:_vm._u([(_vm.helperText || _vm.showChangedFrom || _vm.showReset)?{key:"helper-text",fn:function(){return [(_vm.helperText)?_c('div',{domProps:{"textContent":_vm._s(_vm.helperText)}}):_vm._e(),_c('div',[(_vm.showChangedFrom)?[[_vm._v("Ændret")],(_vm.initialValueLabel)?[_vm._v(" fra '"+_vm._s(_vm.initialValueLabel)+"'")]:_vm._e()]:_vm._e(),(_vm.showReset)?[(_vm.showChangedFrom)?[_vm._v(". ")]:_vm._e(),_c('a',{staticClass:"lassox-diagram__EditorField_reset-button",attrs:{"href":"#"},domProps:{"textContent":_vm._s('Nulstil')},on:{"click":function($event){$event.preventDefault();return (function () { return _vm.$emit('change', _vm.resetValue); }).apply(null, arguments)}}})]:_vm._e()],2)]},proxy:true}:null],null,true)},[[(_vm.finalType === 'text')?_c('TextField',{attrs:{"autocomplete":"off","name":_vm.id,"disabled":!_vm.editable,"value":_vm.value !== undefined ? _vm.value : ''},on:{"input":function (e) { return _vm.$emit('change', e.target.value); }}}):(_vm.finalType === 'number')?_c('TextField',{attrs:{"autocomplete":"off","name":_vm.id,"type":"number","disabled":!_vm.editable,"value":_vm.value !== undefined ? _vm.value : ''},on:{"keydown":function (e) {
         if (e.key == '.' || e.key == ',') { e.preventDefault() }
       },"input":function (e) {
         var value = e.target.value
@@ -86934,19 +99705,19 @@ var EditorFieldvue_type_template_id_58d579dc_render = function () {var _vm=this;
           _vm.$emit('change', undefined)
         }
       }}}):(_vm.finalType === 'radio-buttons')?_c('RadioField',{attrs:{"name":_vm.id,"disabled":!_vm.editable,"options":_vm.finalOptions,"value":_vm.value},on:{"change":function (value) { return _vm.$emit('change', value); }}}):(_vm.finalType === 'color')?_c('ColorField',{attrs:{"name":_vm.id,"disabled":!_vm.editable,"value":_vm.value},on:{"change":function (value) { return _vm.$emit('change', value); }}}):_vm._e()]],2)}
-var EditorFieldvue_type_template_id_58d579dc_staticRenderFns = []
+var EditorFieldvue_type_template_id_fa9b8810_staticRenderFns = []
 
 
-// CONCATENATED MODULE: ./src/components/EditorField.vue?vue&type=template&id=58d579dc&
+// CONCATENATED MODULE: ./src/components/EditorField.vue?vue&type=template&id=fa9b8810&
 
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"e8630cbc-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/FieldContainer.vue?vue&type=template&id=5a2ca700&
-var FieldContainervue_type_template_id_5a2ca700_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{class:[
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"00b53798-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/FieldContainer.vue?vue&type=template&id=fa276db6&
+var FieldContainervue_type_template_id_fa276db6_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{class:[
     'lassox-diagram__FieldContainer',
     _vm.disabled && 'lassox-diagram__FieldContainer--disabled' ]},[(_vm.label)?_c('div',{staticClass:"lassox-diagram__FieldContainer_label",domProps:{"textContent":_vm._s(_vm.label)}}):_vm._e(),_vm._t("default"),(_vm.helperText || _vm.$slots['helper-text'])?_c('div',{staticClass:"lassox-diagram__FieldContainer_helper-text"},[_vm._t("helper-text",function(){return [_vm._v(_vm._s(_vm.helperText))]})],2):_vm._e()],2)}
-var FieldContainervue_type_template_id_5a2ca700_staticRenderFns = []
+var FieldContainervue_type_template_id_fa276db6_staticRenderFns = []
 
 
-// CONCATENATED MODULE: ./src/components/FieldContainer.vue?vue&type=template&id=5a2ca700&
+// CONCATENATED MODULE: ./src/components/FieldContainer.vue?vue&type=template&id=fa276db6&
 
 // CONCATENATED MODULE: ./node_modules/babel-loader/lib!./node_modules/ts-loader??ref--14-1!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/FieldContainer.vue?vue&type=script&lang=ts&
 
@@ -86996,8 +99767,8 @@ var FieldContainervue_type_style_index_0_lang_scss_ = __webpack_require__("1319"
 
 var FieldContainer_component = normalizeComponent(
   components_FieldContainervue_type_script_lang_ts_,
-  FieldContainervue_type_template_id_5a2ca700_render,
-  FieldContainervue_type_template_id_5a2ca700_staticRenderFns,
+  FieldContainervue_type_template_id_fa276db6_render,
+  FieldContainervue_type_template_id_fa276db6_staticRenderFns,
   false,
   null,
   null,
@@ -87006,8 +99777,8 @@ var FieldContainer_component = normalizeComponent(
 )
 
 /* harmony default export */ var components_FieldContainer = (FieldContainer_component.exports);
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"e8630cbc-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/TextField.vue?vue&type=template&id=87f0d4f6&
-var TextFieldvue_type_template_id_87f0d4f6_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{class:[
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"00b53798-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/TextField.vue?vue&type=template&id=9ae227f8&
+var TextFieldvue_type_template_id_9ae227f8_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{class:[
     'lassox-diagram__TextField',
     _vm.disabled ? 'lassox-diagram__TextField--is-disabled' : '',
     _vm.leadingIcon ? 'lassox-diagram__TextField--has-leading-icon' : '',
@@ -87025,10 +99796,10 @@ var TextFieldvue_type_template_id_87f0d4f6_render = function () {var _vm=this;va
           if (_vm.$listeners.blur) { _vm.$listeners.blur(e) }
         }
       ]}))),(_vm.leadingIcon)?_c('Icon',{staticClass:"lassox-diagram__TextField-leading-icon",attrs:{"icon":_vm.leadingIcon}}):_vm._e(),(_vm.trailingIcon)?[(!_vm.onClickTrailingIcon)?_c('Icon',{staticClass:"lassox-diagram__TextField-trailing-icon",attrs:{"icon":_vm.trailingIcon}}):_c('IconButton',{staticClass:"lassox-diagram__TextField-trailing-icon",attrs:{"icon":_vm.trailingIcon},on:{"click":function () { return _vm.onClickTrailingIcon(); }}})]:_vm._e()],2)}
-var TextFieldvue_type_template_id_87f0d4f6_staticRenderFns = []
+var TextFieldvue_type_template_id_9ae227f8_staticRenderFns = []
 
 
-// CONCATENATED MODULE: ./src/components/TextField.vue?vue&type=template&id=87f0d4f6&
+// CONCATENATED MODULE: ./src/components/TextField.vue?vue&type=template&id=9ae227f8&
 
 // CONCATENATED MODULE: ./node_modules/babel-loader/lib!./node_modules/ts-loader??ref--14-1!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/TextField.vue?vue&type=script&lang=ts&
 
@@ -87114,8 +99885,8 @@ var TextFieldvue_type_style_index_0_lang_scss_ = __webpack_require__("2b23");
 
 var TextField_component = normalizeComponent(
   components_TextFieldvue_type_script_lang_ts_,
-  TextFieldvue_type_template_id_87f0d4f6_render,
-  TextFieldvue_type_template_id_87f0d4f6_staticRenderFns,
+  TextFieldvue_type_template_id_9ae227f8_render,
+  TextFieldvue_type_template_id_9ae227f8_staticRenderFns,
   false,
   null,
   null,
@@ -87124,17 +99895,17 @@ var TextField_component = normalizeComponent(
 )
 
 /* harmony default export */ var components_TextField = (TextField_component.exports);
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"e8630cbc-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/RadioField.vue?vue&type=template&id=39199f2a&
-var RadioFieldvue_type_template_id_39199f2a_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{class:[
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"00b53798-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/RadioField.vue?vue&type=template&id=94bd4d38&
+var RadioFieldvue_type_template_id_94bd4d38_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{class:[
     'lassox-diagram__RadioField',
     _vm.disabled ? 'lassox-diagram__RadioField--disabled' : '' ]},_vm._l((_vm.finalOptions),function(option,i){return _c('label',{key:i,class:[
       'lassox-diagram__RadioField-option',
       option.focused && 'lassox-diagram__RadioField-option--focused',
       option.value === _vm.value && 'lassox-diagram__RadioField-option--checked' ]},[_c('input',{staticClass:"lassox-diagram__RadioField-option-input",attrs:{"type":"radio","name":_vm.name,"disabled":_vm.disabled},domProps:{"value":option.value,"checked":option.value === _vm.value},on:{"focus":function($event){option.focused = true},"blur":function($event){option.focused = false},"change":function () { return _vm.$emit('change', option.value); }}}),_c('div',{staticClass:"lassox-diagram__RadioField-option-icon-wrapper"},[_c('Icon',{staticClass:"lassox-diagram__RadioField-option-icon",attrs:{"icon":"radio_button_unchecked"}}),_c('Icon',{staticClass:"lassox-diagram__RadioField-option-icon lassox-diagram__RadioField-option-icon--checked",attrs:{"icon":"radio_button_checked"}})],1),_c('div',{staticClass:"lassox-diagram__RadioField-option-label"},[_vm._v(_vm._s(option.label))])])}),0)}
-var RadioFieldvue_type_template_id_39199f2a_staticRenderFns = []
+var RadioFieldvue_type_template_id_94bd4d38_staticRenderFns = []
 
 
-// CONCATENATED MODULE: ./src/components/RadioField.vue?vue&type=template&id=39199f2a&
+// CONCATENATED MODULE: ./src/components/RadioField.vue?vue&type=template&id=94bd4d38&
 
 // CONCATENATED MODULE: ./node_modules/babel-loader/lib!./node_modules/ts-loader??ref--14-1!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/RadioField.vue?vue&type=script&lang=ts&
 
@@ -87225,8 +99996,8 @@ var RadioFieldvue_type_style_index_0_lang_scss_ = __webpack_require__("6bbf");
 
 var RadioField_component = normalizeComponent(
   components_RadioFieldvue_type_script_lang_ts_,
-  RadioFieldvue_type_template_id_39199f2a_render,
-  RadioFieldvue_type_template_id_39199f2a_staticRenderFns,
+  RadioFieldvue_type_template_id_94bd4d38_render,
+  RadioFieldvue_type_template_id_94bd4d38_staticRenderFns,
   false,
   null,
   null,
@@ -87235,7 +100006,7 @@ var RadioField_component = normalizeComponent(
 )
 
 /* harmony default export */ var components_RadioField = (RadioField_component.exports);
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"e8630cbc-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/ColorField.vue?vue&type=template&id=63e8cb32&
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"00b53798-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/ColorField.vue?vue&type=template&id=63e8cb32&
 var ColorFieldvue_type_template_id_63e8cb32_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"lassox-diagram__ColorField"},[_c('DropdownButton',{staticClass:"lassox-diagram__ColorField-dropdown-button",scopedSlots:_vm._u([{key:"default",fn:function(ref){
 var onClick = ref.onClick;
 return [_c('BaseButton',{staticClass:"lassox-diagram__ColorField-button",attrs:{"disabled":_vm.disabled},on:{"click":onClick}},[_c('div',{staticClass:"lassox-diagram__ColorField-button-color",style:({ backgroundColor: _vm.color.rgbaString })}),_c('div',{staticClass:"lassox-diagram__ColorField-button-hex"},[_vm._v(_vm._s(_vm.color.hexString))])])]}},{key:"dropdown-menu",fn:function(ref){
@@ -87246,7 +100017,7 @@ var ColorFieldvue_type_template_id_63e8cb32_staticRenderFns = []
 
 // CONCATENATED MODULE: ./src/components/ColorField.vue?vue&type=template&id=63e8cb32&
 
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"e8630cbc-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/DropdownButton.vue?vue&type=template&id=0fec1618&
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"00b53798-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/DropdownButton.vue?vue&type=template&id=0fec1618&
 var DropdownButtonvue_type_template_id_0fec1618_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"lassox-diagram__DropdownButton"},[_vm._t("default",null,null,{ isOpen: _vm.isOpen, onClick: _vm.onClick, close: _vm.close }),_c('DropdownMenu',{attrs:{"opener":_vm.buttonEl,"close":_vm.close}},[_vm._t("dropdown-menu",null,null,{ isOpen: _vm.isOpen, onClick: _vm.onClick, close: _vm.close })],2)],2)}
 var DropdownButtonvue_type_template_id_0fec1618_staticRenderFns = []
 
@@ -87338,7 +100109,7 @@ var DropdownButton_component = normalizeComponent(
 )
 
 /* harmony default export */ var components_DropdownButton = (DropdownButton_component.exports);
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"e8630cbc-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/ColorPicker.vue?vue&type=template&id=b77e58b8&
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"00b53798-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/ColorPicker.vue?vue&type=template&id=b77e58b8&
 var ColorPickervue_type_template_id_b77e58b8_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"lassox-diagram__ColorPicker"},[_c('div',{ref:"iroEl",staticClass:"lassox-diagram__ColorPicker-iro"}),_c('div',{staticClass:"lassox-diagram__ColorPicker-input"},[_c('BaseButton',{staticClass:"lassox-diagram__ColorPicker-input-type-button",attrs:{"label":_vm.inputType},on:{"click":_vm.switchInputType}}),_c('div',{staticClass:"lassox-diagram__ColorPicker-input-fields"},_vm._l((_vm.inputFields),function(field){return _c('div',{key:field.name,staticClass:"lassox-diagram__ColorPicker-input-field"},[_c('TextField',{staticClass:"lassox-diagram__ColorPicker-input-field-input",attrs:{"name":field.name,"type":"text","autocomplete":"off","value":field.value},on:{"focus":function($event){_vm.inputFocused = true},"blur":function($event){_vm.inputFocused = false},"input":function (event) {
             var ref = event.target;
             var value = ref.value;
@@ -87361,7 +100132,7 @@ var es_object_assign = __webpack_require__("cca6");
  * github.com/jaames/iro.js
  */
 
-var iro_es_n,u,t,iro_es_i,iro_es_r,iro_es_o,f={},iro_es_e=[],c=/acit|ex(?:s|g|n|p|$)|rph|grid|ows|mnc|ntw|ine[ch]|zoo|^ord|^--/i;function s(n,l){for(var u in l){ n[u]=l[u]; }return n}function a(n){var l=n.parentNode;l&&l.removeChild(n);}function iro_es_h(n,l,u){var t,i,r,o,f=arguments;if(l=s({},l),arguments.length>3){ for(u=[u],t=3;t<arguments.length;t++){ u.push(f[t]); } }if(null!=u&&(l.children=u),null!=n&&null!=n.defaultProps){ for(i in n.defaultProps){ void 0===l[i]&&(l[i]=n.defaultProps[i]); } }return o=l.key,null!=(r=l.ref)&&delete l.ref,null!=o&&delete l.key,iro_es_v(n,l,o,r)}function iro_es_v(l,u,t,i){var r={type:l,props:u,key:t,ref:i,__k:null,__p:null,__b:0,__e:null,l:null,__c:null,constructor:void 0};return iro_es_n.vnode&&iro_es_n.vnode(r),r}function d(n){return n.children}function iro_es_y(n){if(null==n||"boolean"==typeof n){ return null; }if("string"==typeof n||"number"==typeof n){ return iro_es_v(null,n,null,null); }if(null!=n.__e||null!=n.__c){var l=iro_es_v(n.type,n.props,n.key,null);return l.__e=n.__e,l}return n}function m(n,l){this.props=n,this.context=l;}function iro_es_w(n,l){if(null==l){ return n.__p?iro_es_w(n.__p,n.__p.__k.indexOf(n)+1):null; }for(var u;l<n.__k.length;l++){ if(null!=(u=n.__k[l])&&null!=u.__e){ return u.__e; } }return "function"==typeof n.type?iro_es_w(n):null}function g(n){var l,u;if(null!=(n=n.__p)&&null!=n.__c){for(n.__e=n.__c.base=null,l=0;l<n.__k.length;l++){ if(null!=(u=n.__k[l])&&null!=u.__e){n.__e=n.__c.base=u.__e;break} }return g(n)}}function iro_es_k(l){(!l.__d&&(l.__d=!0)&&1===u.push(l)||iro_es_i!==iro_es_n.debounceRendering)&&(iro_es_i=iro_es_n.debounceRendering,(iro_es_n.debounceRendering||t)(_));}function _(){var n,l,t,i,r,o,f,e;for(u.sort(function(n,l){return l.__v.__b-n.__v.__b});n=u.pop();){ n.__d&&(t=void 0,i=void 0,o=(r=(l=n).__v).__e,f=l.__P,e=l.u,l.u=!1,f&&(t=[],i=$(f,r,s({},r),l.__n,void 0!==f.ownerSVGElement,null,t,e,null==o?iro_es_w(r):o),j(t,r),i!=o&&g(r))); }}function b(n,l,u,t,i,r,o,c,s){var h,v,p,d,y,m,g,k=u&&u.__k||iro_es_e,_=k.length;if(c==f&&(c=null!=r?r[0]:_?iro_es_w(u,0):null),h=0,l.__k=iro_es_x(l.__k,function(u){if(null!=u){if(u.__p=l,u.__b=l.__b+1,null===(p=k[h])||p&&u.key==p.key&&u.type===p.type){ k[h]=void 0; }else { for(v=0;v<_;v++){if((p=k[v])&&u.key==p.key&&u.type===p.type){k[v]=void 0;break}p=null;} }if(d=$(n,u,p=p||f,t,i,r,o,null,c,s),(v=u.ref)&&p.ref!=v&&(g||(g=[])).push(v,u.__c||d,u),null!=d){if(null==m&&(m=d),null!=u.l){ d=u.l,u.l=null; }else if(r==p||d!=c||null==d.parentNode){n:if(null==c||c.parentNode!==n){ n.appendChild(d); }else{for(y=c,v=0;(y=y.nextSibling)&&v<_;v+=2){ if(y==d){ break n; } }n.insertBefore(d,c);}"option"==l.type&&(n.value="");}c=d.nextSibling,"function"==typeof l.type&&(l.l=d);}}return h++,u}),l.__e=m,null!=r&&"function"!=typeof l.type){ for(h=r.length;h--;){ null!=r[h]&&a(r[h]); } }for(h=_;h--;){ null!=k[h]&&D(k[h],k[h]); }if(g){ for(h=0;h<g.length;h++){ A(g[h],g[++h],g[++h]); } }}function iro_es_x(n,l,u){if(null==u&&(u=[]),null==n||"boolean"==typeof n){ l&&u.push(l(null)); }else if(Array.isArray(n)){ for(var t=0;t<n.length;t++){ iro_es_x(n[t],l,u); } }else { u.push(l?l(iro_es_y(n)):n); }return u}function C(n,l,u,t,i){var r;for(r in u){ r in l||N(n,r,null,u[r],t); }for(r in l){ i&&"function"!=typeof l[r]||"value"===r||"checked"===r||u[r]===l[r]||N(n,r,l[r],u[r],t); }}function P(n,l,u){"-"===l[0]?n.setProperty(l,u):n[l]="number"==typeof u&&!1===c.test(l)?u+"px":null==u?"":u;}function N(n,l,u,t,i){var r,o,f,e,c;if("key"===(l=i?"className"===l?"class":l:"class"===l?"className":l)||"children"===l);else if("style"===l){ if(r=n.style,"string"==typeof u){ r.cssText=u; }else{if("string"==typeof t&&(r.cssText="",t=null),t){ for(o in t){ u&&o in u||P(r,o,""); } }if(u){ for(f in u){ t&&u[f]===t[f]||P(r,f,u[f]); } }} }else{ "o"===l[0]&&"n"===l[1]?(e=l!==(l=l.replace(/Capture$/,"")),c=l.toLowerCase(),l=(c in n?c:l).slice(2),u?(t||n.addEventListener(l,T,e),(n.t||(n.t={}))[l]=u):n.removeEventListener(l,T,e)):"list"!==l&&"tagName"!==l&&"form"!==l&&!i&&l in n?n[l]=null==u?"":u:"function"!=typeof u&&"dangerouslySetInnerHTML"!==l&&(l!==(l=l.replace(/^xlink:?/,""))?null==u||!1===u?n.removeAttributeNS("http://www.w3.org/1999/xlink",l.toLowerCase()):n.setAttributeNS("http://www.w3.org/1999/xlink",l.toLowerCase(),u):null==u||!1===u?n.removeAttribute(l):n.setAttribute(l,u)); }}function T(l){return this.t[l.type](iro_es_n.event?iro_es_n.event(l):l)}function $(l,u,t,i,r,o,f,e,c,a){var h,v,p,y,w,g,k,_,C,P,N=u.type;if(void 0!==u.constructor){ return null; }(h=iro_es_n.__b)&&h(u);try{n:if("function"==typeof N){if(_=u.props,C=(h=N.contextType)&&i[h.__c],P=h?C?C.props.value:h.__p:i,t.__c?k=(v=u.__c=t.__c).__p=v.__E:("prototype"in N&&N.prototype.render?u.__c=v=new N(_,P):(u.__c=v=new m(_,P),v.constructor=N,v.render=H),C&&C.sub(v),v.props=_,v.state||(v.state={}),v.context=P,v.__n=i,p=v.__d=!0,v.__h=[]),null==v.__s&&(v.__s=v.state),null!=N.getDerivedStateFromProps&&s(v.__s==v.state?v.__s=s({},v.__s):v.__s,N.getDerivedStateFromProps(_,v.__s)),p){ null==N.getDerivedStateFromProps&&null!=v.componentWillMount&&v.componentWillMount(),null!=v.componentDidMount&&f.push(v); }else{if(null==N.getDerivedStateFromProps&&null==e&&null!=v.componentWillReceiveProps&&v.componentWillReceiveProps(_,P),!e&&null!=v.shouldComponentUpdate&&!1===v.shouldComponentUpdate(_,v.__s,P)){for(v.props=_,v.state=v.__s,v.__d=!1,v.__v=u,u.__e=null!=c?c!==t.__e?c:t.__e:null,u.__k=t.__k,h=0;h<u.__k.length;h++){ u.__k[h]&&(u.__k[h].__p=u); }break n}null!=v.componentWillUpdate&&v.componentWillUpdate(_,v.__s,P);}for(y=v.props,w=v.state,v.context=P,v.props=_,v.state=v.__s,(h=iro_es_n.__r)&&h(u),v.__d=!1,v.__v=u,v.__P=l,h=v.render(v.props,v.state,v.context),u.__k=iro_es_x(null!=h&&h.type==d&&null==h.key?h.props.children:h),null!=v.getChildContext&&(i=s(s({},i),v.getChildContext())),p||null==v.getSnapshotBeforeUpdate||(g=v.getSnapshotBeforeUpdate(y,w)),b(l,u,t,i,r,o,f,c,a),v.base=u.__e;h=v.__h.pop();){ v.__s&&(v.state=v.__s),h.call(v); }p||null==y||null==v.componentDidUpdate||v.componentDidUpdate(y,w,g),k&&(v.__E=v.__p=null);}else { u.__e=z(t.__e,u,t,i,r,o,f,a); }(h=iro_es_n.diffed)&&h(u);}catch(l){iro_es_n.__e(l,u,t);}return u.__e}function j(l,u){for(var t;t=l.pop();){ try{t.componentDidMount();}catch(l){iro_es_n.__e(l,t.__v);} }iro_es_n.__c&&iro_es_n.__c(u);}function z(n,l,u,t,i,r,o,c){var s,a,h,v,p=u.props,d=l.props;if(i="svg"===l.type||i,null==n&&null!=r){ for(s=0;s<r.length;s++){ if(null!=(a=r[s])&&(null===l.type?3===a.nodeType:a.localName===l.type)){n=a,r[s]=null;break} } }if(null==n){if(null===l.type){ return document.createTextNode(d); }n=i?document.createElementNS("http://www.w3.org/2000/svg",l.type):document.createElement(l.type),r=null;}return null===l.type?p!==d&&(null!=r&&(r[r.indexOf(n)]=null),n.data=d):l!==u&&(null!=r&&(r=iro_es_e.slice.call(n.childNodes)),h=(p=u.props||f).dangerouslySetInnerHTML,v=d.dangerouslySetInnerHTML,c||(v||h)&&(v&&h&&v.__html==h.__html||(n.innerHTML=v&&v.__html||"")),C(n,d,p,i,c),l.__k=l.props.children,v||b(n,l,u,t,"foreignObject"!==l.type&&i,r,o,f,c),c||("value"in d&&void 0!==d.value&&d.value!==n.value&&(n.value=null==d.value?"":d.value),"checked"in d&&void 0!==d.checked&&d.checked!==n.checked&&(n.checked=d.checked))),n}function A(l,u,t){try{"function"==typeof l?l(u):l.current=u;}catch(l){iro_es_n.__e(l,t);}}function D(l,u,t){var i,r,o;if(iro_es_n.unmount&&iro_es_n.unmount(l),(i=l.ref)&&A(i,null,u),t||"function"==typeof l.type||(t=null!=(r=l.__e)),l.__e=l.l=null,null!=(i=l.__c)){if(i.componentWillUnmount){ try{i.componentWillUnmount();}catch(l){iro_es_n.__e(l,u);} }i.base=i.__P=null;}if(i=l.__k){ for(o=0;o<i.length;o++){ i[o]&&D(i[o],u,t); } }null!=r&&a(r);}function H(n,l,u){return this.constructor(n,u)}function I(l,u,t){var i,o,c;iro_es_n.__p&&iro_es_n.__p(l,u),o=(i=t===iro_es_r)?null:t&&t.__k||u.__k,l=iro_es_h(d,null,[l]),c=[],$(u,i?u.__k=l:(t||u).__k=l,o||f,f,void 0!==u.ownerSVGElement,t&&!i?[t]:o?null:iro_es_e.slice.call(u.childNodes),c,!1,t||f,i),j(c,l);}iro_es_n={},m.prototype.setState=function(n,l){var u=this.__s!==this.state&&this.__s||(this.__s=s({},this.state));("function"!=typeof n||(n=n(u,this.props)))&&s(u,n),null!=n&&this.__v&&(this.u=!1,l&&this.__h.push(l),iro_es_k(this));},m.prototype.forceUpdate=function(n){this.__v&&(n&&this.__h.push(n),this.u=!0,iro_es_k(this));},m.prototype.render=d,u=[],t="function"==typeof Promise?Promise.prototype.then.bind(Promise.resolve()):setTimeout,iro_es_i=iro_es_n.debounceRendering,iro_es_n.__e=function(n,l,u){for(var t;l=l.__p;){ if((t=l.__c)&&!t.__p){ try{if(t.constructor&&null!=t.constructor.getDerivedStateFromError){ t.setState(t.constructor.getDerivedStateFromError(n)); }else{if(null==t.componentDidCatch){ continue; }t.componentDidCatch(n);}return iro_es_k(t.__E=t)}catch(l){n=l;} } }throw n},iro_es_r=f,iro_es_o=0;
+var iro_es_n,u,iro_es_t,iro_es_i,iro_es_r,iro_es_o,f={},iro_es_e=[],c=/acit|ex(?:s|g|n|p|$)|rph|grid|ows|mnc|ntw|ine[ch]|zoo|^ord|^--/i;function s(n,l){for(var u in l){ n[u]=l[u]; }return n}function a(n){var l=n.parentNode;l&&l.removeChild(n);}function iro_es_h(n,l,u){var t,i,r,o,f=arguments;if(l=s({},l),arguments.length>3){ for(u=[u],t=3;t<arguments.length;t++){ u.push(f[t]); } }if(null!=u&&(l.children=u),null!=n&&null!=n.defaultProps){ for(i in n.defaultProps){ void 0===l[i]&&(l[i]=n.defaultProps[i]); } }return o=l.key,null!=(r=l.ref)&&delete l.ref,null!=o&&delete l.key,iro_es_v(n,l,o,r)}function iro_es_v(l,u,t,i){var r={type:l,props:u,key:t,ref:i,__k:null,__p:null,__b:0,__e:null,l:null,__c:null,constructor:void 0};return iro_es_n.vnode&&iro_es_n.vnode(r),r}function d(n){return n.children}function iro_es_y(n){if(null==n||"boolean"==typeof n){ return null; }if("string"==typeof n||"number"==typeof n){ return iro_es_v(null,n,null,null); }if(null!=n.__e||null!=n.__c){var l=iro_es_v(n.type,n.props,n.key,null);return l.__e=n.__e,l}return n}function m(n,l){this.props=n,this.context=l;}function iro_es_w(n,l){if(null==l){ return n.__p?iro_es_w(n.__p,n.__p.__k.indexOf(n)+1):null; }for(var u;l<n.__k.length;l++){ if(null!=(u=n.__k[l])&&null!=u.__e){ return u.__e; } }return "function"==typeof n.type?iro_es_w(n):null}function g(n){var l,u;if(null!=(n=n.__p)&&null!=n.__c){for(n.__e=n.__c.base=null,l=0;l<n.__k.length;l++){ if(null!=(u=n.__k[l])&&null!=u.__e){n.__e=n.__c.base=u.__e;break} }return g(n)}}function iro_es_k(l){(!l.__d&&(l.__d=!0)&&1===u.push(l)||iro_es_i!==iro_es_n.debounceRendering)&&(iro_es_i=iro_es_n.debounceRendering,(iro_es_n.debounceRendering||iro_es_t)(_));}function _(){var n,l,t,i,r,o,f,e;for(u.sort(function(n,l){return l.__v.__b-n.__v.__b});n=u.pop();){ n.__d&&(t=void 0,i=void 0,o=(r=(l=n).__v).__e,f=l.__P,e=l.u,l.u=!1,f&&(t=[],i=$(f,r,s({},r),l.__n,void 0!==f.ownerSVGElement,null,t,e,null==o?iro_es_w(r):o),j(t,r),i!=o&&g(r))); }}function b(n,l,u,t,i,r,o,c,s){var h,v,p,d,y,m,g,k=u&&u.__k||iro_es_e,_=k.length;if(c==f&&(c=null!=r?r[0]:_?iro_es_w(u,0):null),h=0,l.__k=iro_es_x(l.__k,function(u){if(null!=u){if(u.__p=l,u.__b=l.__b+1,null===(p=k[h])||p&&u.key==p.key&&u.type===p.type){ k[h]=void 0; }else { for(v=0;v<_;v++){if((p=k[v])&&u.key==p.key&&u.type===p.type){k[v]=void 0;break}p=null;} }if(d=$(n,u,p=p||f,t,i,r,o,null,c,s),(v=u.ref)&&p.ref!=v&&(g||(g=[])).push(v,u.__c||d,u),null!=d){if(null==m&&(m=d),null!=u.l){ d=u.l,u.l=null; }else if(r==p||d!=c||null==d.parentNode){n:if(null==c||c.parentNode!==n){ n.appendChild(d); }else{for(y=c,v=0;(y=y.nextSibling)&&v<_;v+=2){ if(y==d){ break n; } }n.insertBefore(d,c);}"option"==l.type&&(n.value="");}c=d.nextSibling,"function"==typeof l.type&&(l.l=d);}}return h++,u}),l.__e=m,null!=r&&"function"!=typeof l.type){ for(h=r.length;h--;){ null!=r[h]&&a(r[h]); } }for(h=_;h--;){ null!=k[h]&&D(k[h],k[h]); }if(g){ for(h=0;h<g.length;h++){ A(g[h],g[++h],g[++h]); } }}function iro_es_x(n,l,u){if(null==u&&(u=[]),null==n||"boolean"==typeof n){ l&&u.push(l(null)); }else if(Array.isArray(n)){ for(var t=0;t<n.length;t++){ iro_es_x(n[t],l,u); } }else { u.push(l?l(iro_es_y(n)):n); }return u}function C(n,l,u,t,i){var r;for(r in u){ r in l||N(n,r,null,u[r],t); }for(r in l){ i&&"function"!=typeof l[r]||"value"===r||"checked"===r||u[r]===l[r]||N(n,r,l[r],u[r],t); }}function P(n,l,u){"-"===l[0]?n.setProperty(l,u):n[l]="number"==typeof u&&!1===c.test(l)?u+"px":null==u?"":u;}function N(n,l,u,t,i){var r,o,f,e,c;if("key"===(l=i?"className"===l?"class":l:"class"===l?"className":l)||"children"===l);else if("style"===l){ if(r=n.style,"string"==typeof u){ r.cssText=u; }else{if("string"==typeof t&&(r.cssText="",t=null),t){ for(o in t){ u&&o in u||P(r,o,""); } }if(u){ for(f in u){ t&&u[f]===t[f]||P(r,f,u[f]); } }} }else{ "o"===l[0]&&"n"===l[1]?(e=l!==(l=l.replace(/Capture$/,"")),c=l.toLowerCase(),l=(c in n?c:l).slice(2),u?(t||n.addEventListener(l,T,e),(n.t||(n.t={}))[l]=u):n.removeEventListener(l,T,e)):"list"!==l&&"tagName"!==l&&"form"!==l&&!i&&l in n?n[l]=null==u?"":u:"function"!=typeof u&&"dangerouslySetInnerHTML"!==l&&(l!==(l=l.replace(/^xlink:?/,""))?null==u||!1===u?n.removeAttributeNS("http://www.w3.org/1999/xlink",l.toLowerCase()):n.setAttributeNS("http://www.w3.org/1999/xlink",l.toLowerCase(),u):null==u||!1===u?n.removeAttribute(l):n.setAttribute(l,u)); }}function T(l){return this.t[l.type](iro_es_n.event?iro_es_n.event(l):l)}function $(l,u,t,i,r,o,f,e,c,a){var h,v,p,y,w,g,k,_,C,P,N=u.type;if(void 0!==u.constructor){ return null; }(h=iro_es_n.__b)&&h(u);try{n:if("function"==typeof N){if(_=u.props,C=(h=N.contextType)&&i[h.__c],P=h?C?C.props.value:h.__p:i,t.__c?k=(v=u.__c=t.__c).__p=v.__E:("prototype"in N&&N.prototype.render?u.__c=v=new N(_,P):(u.__c=v=new m(_,P),v.constructor=N,v.render=H),C&&C.sub(v),v.props=_,v.state||(v.state={}),v.context=P,v.__n=i,p=v.__d=!0,v.__h=[]),null==v.__s&&(v.__s=v.state),null!=N.getDerivedStateFromProps&&s(v.__s==v.state?v.__s=s({},v.__s):v.__s,N.getDerivedStateFromProps(_,v.__s)),p){ null==N.getDerivedStateFromProps&&null!=v.componentWillMount&&v.componentWillMount(),null!=v.componentDidMount&&f.push(v); }else{if(null==N.getDerivedStateFromProps&&null==e&&null!=v.componentWillReceiveProps&&v.componentWillReceiveProps(_,P),!e&&null!=v.shouldComponentUpdate&&!1===v.shouldComponentUpdate(_,v.__s,P)){for(v.props=_,v.state=v.__s,v.__d=!1,v.__v=u,u.__e=null!=c?c!==t.__e?c:t.__e:null,u.__k=t.__k,h=0;h<u.__k.length;h++){ u.__k[h]&&(u.__k[h].__p=u); }break n}null!=v.componentWillUpdate&&v.componentWillUpdate(_,v.__s,P);}for(y=v.props,w=v.state,v.context=P,v.props=_,v.state=v.__s,(h=iro_es_n.__r)&&h(u),v.__d=!1,v.__v=u,v.__P=l,h=v.render(v.props,v.state,v.context),u.__k=iro_es_x(null!=h&&h.type==d&&null==h.key?h.props.children:h),null!=v.getChildContext&&(i=s(s({},i),v.getChildContext())),p||null==v.getSnapshotBeforeUpdate||(g=v.getSnapshotBeforeUpdate(y,w)),b(l,u,t,i,r,o,f,c,a),v.base=u.__e;h=v.__h.pop();){ v.__s&&(v.state=v.__s),h.call(v); }p||null==y||null==v.componentDidUpdate||v.componentDidUpdate(y,w,g),k&&(v.__E=v.__p=null);}else { u.__e=z(t.__e,u,t,i,r,o,f,a); }(h=iro_es_n.diffed)&&h(u);}catch(l){iro_es_n.__e(l,u,t);}return u.__e}function j(l,u){for(var t;t=l.pop();){ try{t.componentDidMount();}catch(l){iro_es_n.__e(l,t.__v);} }iro_es_n.__c&&iro_es_n.__c(u);}function z(n,l,u,t,i,r,o,c){var s,a,h,v,p=u.props,d=l.props;if(i="svg"===l.type||i,null==n&&null!=r){ for(s=0;s<r.length;s++){ if(null!=(a=r[s])&&(null===l.type?3===a.nodeType:a.localName===l.type)){n=a,r[s]=null;break} } }if(null==n){if(null===l.type){ return document.createTextNode(d); }n=i?document.createElementNS("http://www.w3.org/2000/svg",l.type):document.createElement(l.type),r=null;}return null===l.type?p!==d&&(null!=r&&(r[r.indexOf(n)]=null),n.data=d):l!==u&&(null!=r&&(r=iro_es_e.slice.call(n.childNodes)),h=(p=u.props||f).dangerouslySetInnerHTML,v=d.dangerouslySetInnerHTML,c||(v||h)&&(v&&h&&v.__html==h.__html||(n.innerHTML=v&&v.__html||"")),C(n,d,p,i,c),l.__k=l.props.children,v||b(n,l,u,t,"foreignObject"!==l.type&&i,r,o,f,c),c||("value"in d&&void 0!==d.value&&d.value!==n.value&&(n.value=null==d.value?"":d.value),"checked"in d&&void 0!==d.checked&&d.checked!==n.checked&&(n.checked=d.checked))),n}function A(l,u,t){try{"function"==typeof l?l(u):l.current=u;}catch(l){iro_es_n.__e(l,t);}}function D(l,u,t){var i,r,o;if(iro_es_n.unmount&&iro_es_n.unmount(l),(i=l.ref)&&A(i,null,u),t||"function"==typeof l.type||(t=null!=(r=l.__e)),l.__e=l.l=null,null!=(i=l.__c)){if(i.componentWillUnmount){ try{i.componentWillUnmount();}catch(l){iro_es_n.__e(l,u);} }i.base=i.__P=null;}if(i=l.__k){ for(o=0;o<i.length;o++){ i[o]&&D(i[o],u,t); } }null!=r&&a(r);}function H(n,l,u){return this.constructor(n,u)}function I(l,u,t){var i,o,c;iro_es_n.__p&&iro_es_n.__p(l,u),o=(i=t===iro_es_r)?null:t&&t.__k||u.__k,l=iro_es_h(d,null,[l]),c=[],$(u,i?u.__k=l:(t||u).__k=l,o||f,f,void 0!==u.ownerSVGElement,t&&!i?[t]:o?null:iro_es_e.slice.call(u.childNodes),c,!1,t||f,i),j(c,l);}iro_es_n={},m.prototype.setState=function(n,l){var u=this.__s!==this.state&&this.__s||(this.__s=s({},this.state));("function"!=typeof n||(n=n(u,this.props)))&&s(u,n),null!=n&&this.__v&&(this.u=!1,l&&this.__h.push(l),iro_es_k(this));},m.prototype.forceUpdate=function(n){this.__v&&(n&&this.__h.push(n),this.u=!0,iro_es_k(this));},m.prototype.render=d,u=[],iro_es_t="function"==typeof Promise?Promise.prototype.then.bind(Promise.resolve()):setTimeout,iro_es_i=iro_es_n.debounceRendering,iro_es_n.__e=function(n,l,u){for(var t;l=l.__p;){ if((t=l.__c)&&!t.__p){ try{if(t.constructor&&null!=t.constructor.getDerivedStateFromError){ t.setState(t.constructor.getDerivedStateFromError(n)); }else{if(null==t.componentDidCatch){ continue; }t.componentDidCatch(n);}return iro_es_k(t.__E=t)}catch(l){n=l;} } }throw n},iro_es_r=f,iro_es_o=0;
 
 function iro_es_defineProperties(target, props) {
   for (var i = 0; i < props.length; i++) {
@@ -89499,34 +102270,6 @@ var ColorField_component = normalizeComponent(
 )
 
 /* harmony default export */ var components_ColorField = (ColorField_component.exports);
-// CONCATENATED MODULE: ./node_modules/@babel/runtime/helpers/esm/typeof.js
-
-
-
-
-
-
-
-function typeof_typeof(obj) {
-  "@babel/helpers - typeof";
-
-  if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") {
-    typeof_typeof = function _typeof(obj) {
-      return typeof obj;
-    };
-  } else {
-    typeof_typeof = function _typeof(obj) {
-      return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj;
-    };
-  }
-
-  return typeof_typeof(obj);
-}
-// CONCATENATED MODULE: ./src/util/type-guards.ts
-
-var type_guards_isRecord = function isRecord(v) {
-  return typeof_typeof(v) == 'object' && v !== null;
-};
 // CONCATENATED MODULE: ./node_modules/babel-loader/lib!./node_modules/ts-loader??ref--14-1!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/EditorField.vue?vue&type=script&lang=ts&
 
 
@@ -89708,8 +102451,8 @@ EditorFieldvue_type_script_lang_ts_EditorField = __decorate([vue_class_component
 
 var EditorField_component = normalizeComponent(
   components_EditorFieldvue_type_script_lang_ts_,
-  EditorFieldvue_type_template_id_58d579dc_render,
-  EditorFieldvue_type_template_id_58d579dc_staticRenderFns,
+  EditorFieldvue_type_template_id_fa9b8810_render,
+  EditorFieldvue_type_template_id_fa9b8810_staticRenderFns,
   false,
   null,
   null,
@@ -89718,743 +102461,7 @@ var EditorField_component = normalizeComponent(
 )
 
 /* harmony default export */ var components_EditorField = (EditorField_component.exports);
-// CONCATENATED MODULE: ./node_modules/babel-loader/lib!./node_modules/ts-loader??ref--14-1!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/PrintDialog.vue?vue&type=script&lang=ts&
-
-
-
-
-
-
-
-
-
-
-
-
-
-var PrintDialogvue_type_script_lang_ts_PrintDialog = /*#__PURE__*/function (_Vue) {
-  _inherits(PrintDialog, _Vue);
-
-  var _super = _createSuper(PrintDialog);
-
-  function PrintDialog() {
-    var _this;
-
-    _classCallCheck(this, PrintDialog);
-
-    _this = _super.apply(this, arguments);
-    _this.orientation = 'landscape';
-    _this.size = 'A4';
-    _this.includeMargin = true;
-    _this.printing = false;
-    return _this;
-  }
-
-  _createClass(PrintDialog, [{
-    key: "diagram",
-    get: function get() {
-      return this.diagramVm.diagram;
-    }
-  }, {
-    key: "title",
-    get: function get() {
-      switch (this.mode) {
-        case 'print':
-          return 'Udskriv';
-
-        case 'pdf':
-          return 'Gem som PDF';
-
-        case 'png':
-          return 'Gem som billede';
-
-        default:
-          return 'Udskriv';
-      }
-    }
-  }, {
-    key: "description",
-    get: function get() {
-      switch (this.mode) {
-        case 'print':
-          return 'Din computers udskriftsindstillinger skal være de samme som de nedenfor valgte.';
-
-        case 'pdf':
-          return 'Gem diagrammet til din computer som PDF.';
-
-        case 'png':
-          return 'Gem diagrammet til din computer i .png format.';
-
-        default:
-          return '';
-      }
-    }
-  }, {
-    key: "created",
-    value: function created() {
-      var _this2 = this;
-
-      this.loadFromLocalStorage();
-      this.$watch(function () {
-        return [_this2.orientation, _this2.size, _this2.includeMargin];
-      }, this.saveToLocalStorage, {
-        immediate: true
-      });
-    }
-  }, {
-    key: "loadFromLocalStorage",
-    value: function loadFromLocalStorage() {
-      if (!this.diagram.saveSettingsToLocalStorage) return;
-
-      try {
-        var json = localStorage.getItem('lassox-diagram/print-settings');
-        if (!json) return;
-        var settings = JSON.parse(json);
-        if (!type_guards_isRecord(settings)) return;
-        var orientation = settings.orientation,
-            size = settings.size,
-            includeMargin = settings.includeMargin;
-
-        if (orientation === 'portrait' || orientation === 'landscape') {
-          this.orientation = orientation;
-        }
-
-        if (size === 'A5' || size === 'A4' || size === 'A3') {
-          this.size = size;
-        }
-
-        if (typeof includeMargin === 'boolean') {
-          this.includeMargin = includeMargin;
-        }
-      } catch (_unused) {
-        return;
-      }
-    }
-  }, {
-    key: "saveToLocalStorage",
-    value: function saveToLocalStorage() {
-      if (!this.diagram.saveSettingsToLocalStorage) return;
-
-      try {
-        localStorage.setItem('lassox-diagram/print-settings', JSON.stringify({
-          orientation: this.orientation,
-          size: this.size,
-          includeMargin: this.includeMargin
-        }));
-      } catch (_unused2) {
-        return;
-      }
-    }
-  }, {
-    key: "close",
-    value: function close() {
-      this.$emit('close');
-    }
-  }, {
-    key: "confirm",
-    value: function confirm() {
-      var _this3 = this;
-
-      this.printing = true;
-      this.$nextTick(function () {
-        _this3.diagram.eventBus.one('printDone', function () {
-          _this3.printing = false;
-
-          _this3.close();
-        });
-
-        _this3.diagram.eventBus.emit({
-          name: 'print',
-          mode: _this3.mode,
-          orientation: _this3.orientation,
-          size: _this3.size,
-          includeMargin: _this3.includeMargin
-        });
-      });
-    }
-  }]);
-
-  return PrintDialog;
-}(external_commonjs_vue_commonjs2_vue_root_Vue_default.a);
-
-__decorate([Inject()], PrintDialogvue_type_script_lang_ts_PrintDialog.prototype, "diagramVm", void 0);
-
-__decorate([Prop({
-  type: String,
-  required: true
-})], PrintDialogvue_type_script_lang_ts_PrintDialog.prototype, "mode", void 0);
-
-PrintDialogvue_type_script_lang_ts_PrintDialog = __decorate([vue_class_component_esm({
-  components: {
-    Dialog: components_Dialog,
-    EditorFields: components_EditorFields,
-    EditorField: components_EditorField,
-    ButtonGroup: components_ButtonGroup,
-    Button: components_Button
-  }
-})], PrintDialogvue_type_script_lang_ts_PrintDialog);
-/* harmony default export */ var PrintDialogvue_type_script_lang_ts_ = (PrintDialogvue_type_script_lang_ts_PrintDialog);
-// CONCATENATED MODULE: ./src/components/PrintDialog.vue?vue&type=script&lang=ts&
- /* harmony default export */ var components_PrintDialogvue_type_script_lang_ts_ = (PrintDialogvue_type_script_lang_ts_); 
-// CONCATENATED MODULE: ./src/components/PrintDialog.vue
-
-
-
-
-
-/* normalize component */
-
-var PrintDialog_component = normalizeComponent(
-  components_PrintDialogvue_type_script_lang_ts_,
-  PrintDialogvue_type_template_id_3c4a2a9c_render,
-  PrintDialogvue_type_template_id_3c4a2a9c_staticRenderFns,
-  false,
-  null,
-  null,
-  null
-  
-)
-
-/* harmony default export */ var components_PrintDialog = (PrintDialog_component.exports);
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"e8630cbc-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/SaveLoadDialog.vue?vue&type=template&id=d0dc676c&
-var SaveLoadDialogvue_type_template_id_d0dc676c_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('Dialog',{staticClass:"lassox-diagram__SaveLoadDialog",attrs:{"dismissable":true,"title":"Gem/Indlæs","size":"5x","onClose":_vm.close},scopedSlots:_vm._u([{key:"content",fn:function(){return [_c('textarea',{directives:[{name:"model",rawName:"v-model",value:(_vm.textareaText),expression:"textareaText"}],staticClass:"lassox-diagram__SaveLoadDialog_textarea",attrs:{"rows":"10"},domProps:{"value":(_vm.textareaText)},on:{"input":function($event){if($event.target.composing){ return; }_vm.textareaText=$event.target.value}}})]},proxy:true},{key:"actions",fn:function(){return [_c('ButtonGroup',{attrs:{"align":"center"}},[_c('Button',{attrs:{"label":"Gem"},on:{"click":_vm.save}}),_c('Button',{attrs:{"label":"Indlæs"},on:{"click":_vm.load}})],1)]},proxy:true}])})}
-var SaveLoadDialogvue_type_template_id_d0dc676c_staticRenderFns = []
-
-
-// CONCATENATED MODULE: ./src/components/SaveLoadDialog.vue?vue&type=template&id=d0dc676c&
-
-// CONCATENATED MODULE: ./src/types/SavedDiagram.ts
-
-
-
-
-
-
-
-
-
-
-
-
-var SavedDiagram_createSavedDiagram = function createSavedDiagram(diagram) {
-  var _diagram$activeDiagra;
-
-  return {
-    id: diagram.activeDiagram.id,
-    title: diagram.activeDiagram.title,
-    description: diagram.activeDiagram.description,
-    shared: diagram.activeDiagram.shared,
-    mainEntityId: diagram.mainEntityId,
-    data: {
-      entities: diagram.activeDiagram.data.initialData.entities.map(function (e) {
-        return _objectSpread2({
-          type: e.type.id,
-          id: e.id
-        }, e.initialState);
-      }),
-      relations: diagram.activeDiagram.data.initialData.relations.map(function (r) {
-        return _objectSpread2({
-          type: r.type.id,
-          id: r.id,
-          from: r.from,
-          to: r.to
-        }, r.initialState);
-      })
-    },
-    changes: [].concat(toConsumableArray_toConsumableArray(diagram.activeDiagram.data.initialData.changes), toConsumableArray_toConsumableArray(diagram.activeDiagram.data.changes.map(function (c) {
-      return c.change;
-    }))),
-    settings: {
-      activeFields: Object.keys(diagram.activeDiagram.settings.activeFields).filter(function (id) {
-        return diagram.activeDiagram.settings.activeFields[id];
-      }),
-      activeFilters: Object.keys(diagram.activeDiagram.settings.activeFilters).filter(function (id) {
-        return diagram.activeDiagram.settings.activeFilters[id];
-      }),
-      activeLayout: (_diagram$activeDiagra = diagram.activeDiagram.settings.activeLayout) === null || _diagram$activeDiagra === void 0 ? void 0 : _diagram$activeDiagra.id
-    }
-  };
-};
-var parseSavedDiagramJSON = function parseSavedDiagramJSON(json) {
-  var _obj$title, _obj$description, _obj$shared;
-
-  var obj = JSON.parse(json);
-  if (!SavedDiagram_isRecord(obj)) return null;
-  if (typeof obj.id !== 'string') return null;
-  var id = obj.id;
-  if (!isNullish(obj.title) && typeof obj.title !== 'string') return null;
-  var title = (_obj$title = obj.title) !== null && _obj$title !== void 0 ? _obj$title : undefined;
-  if (!isNullish(obj.description) && typeof obj.description !== 'string') return null;
-  var description = (_obj$description = obj.description) !== null && _obj$description !== void 0 ? _obj$description : undefined;
-  if (!isNullish(obj.shared) && typeof obj.shared !== 'boolean') return null;
-  var shared = (_obj$shared = obj.shared) !== null && _obj$shared !== void 0 ? _obj$shared : undefined;
-  if (typeof obj.mainEntityId !== 'string') return null;
-  var mainEntityId = obj.mainEntityId;
-  var data = parseData(obj.data);
-  var changes = SavedDiagram_parseChanges(obj.changes);
-  var settings = SavedDiagram_parseSettings(obj.settings);
-  return {
-    id: id,
-    title: title,
-    description: description,
-    shared: shared,
-    mainEntityId: mainEntityId,
-    data: data,
-    changes: changes,
-    settings: settings
-  };
-};
-
-var parseData = function parseData(v) {
-  if (!SavedDiagram_isRecord(v)) return;
-  return {
-    entities: SavedDiagram_parseEntities(v.entities),
-    relations: SavedDiagram_parseRelations(v.relations)
-  };
-};
-
-var SavedDiagram_parseChanges = function parseChanges(v) {
-  if (!isArray(v)) return;
-  var changes = [];
-
-  var _iterator = _createForOfIteratorHelper(v),
-      _step;
-
-  try {
-    var _loop = function _loop() {
-      var change = _step.value;
-      if (!SavedDiagram_isRecord(change)) return "continue";
-      var parsedChange = {};
-
-      if (SavedDiagram_isRecord(change.add)) {
-        parsedChange.add = {
-          entities: SavedDiagram_parseEntities(change.add.entities),
-          relations: SavedDiagram_parseRelations(change.add.relations)
-        };
-      }
-
-      if (SavedDiagram_isRecord(change.remove)) {
-        parsedChange.remove = {
-          entities: SavedDiagram_parseStringArray(change.remove.entities),
-          relations: SavedDiagram_parseStringArray(change.remove.relations)
-        };
-      }
-
-      if (SavedDiagram_isRecord(change.edit)) {
-        parsedChange.edit = {
-          entities: function () {
-            if (!isArray(change.edit.entities)) return;
-            var entities = [];
-
-            var _iterator2 = _createForOfIteratorHelper(change.edit.entities),
-                _step2;
-
-            try {
-              for (_iterator2.s(); !(_step2 = _iterator2.n()).done;) {
-                var entity = _step2.value;
-                if (!SavedDiagram_isRecord(entity) || !isString(entity.id)) continue;
-                entities.push({
-                  id: entity.id,
-                  data: parseRecord(entity.data),
-                  style: parseEntityStyle(entity.style)
-                });
-              }
-            } catch (err) {
-              _iterator2.e(err);
-            } finally {
-              _iterator2.f();
-            }
-
-            return entities;
-          }(),
-          relations: function () {
-            if (!isArray(change.edit.relations)) return;
-            var relations = [];
-
-            var _iterator3 = _createForOfIteratorHelper(change.edit.relations),
-                _step3;
-
-            try {
-              for (_iterator3.s(); !(_step3 = _iterator3.n()).done;) {
-                var relation = _step3.value;
-                if (!SavedDiagram_isRecord(relation) || !isString(relation.id)) continue;
-                relations.push({
-                  id: relation.id,
-                  data: parseRecord(relation.data),
-                  style: parseRelationStyle(relation.style)
-                });
-              }
-            } catch (err) {
-              _iterator3.e(err);
-            } finally {
-              _iterator3.f();
-            }
-
-            return relations;
-          }()
-        };
-      }
-
-      if (isString(change.layout)) {
-        parsedChange.layout = change.layout;
-      }
-
-      if (isArray(change.moveEntities)) {
-        parsedChange.moveEntities = [];
-
-        var _iterator4 = _createForOfIteratorHelper(change.moveEntities),
-            _step4;
-
-        try {
-          for (_iterator4.s(); !(_step4 = _iterator4.n()).done;) {
-            var moveEntity = _step4.value;
-            if (!SavedDiagram_isRecord(moveEntity) || !isString(moveEntity.id) || !isNumber(moveEntity.x) || !isNumber(moveEntity.y)) continue;
-            parsedChange.moveEntities.push({
-              id: moveEntity.id,
-              x: moveEntity.x,
-              y: moveEntity.y
-            });
-          }
-        } catch (err) {
-          _iterator4.e(err);
-        } finally {
-          _iterator4.f();
-        }
-      }
-
-      changes.push(parsedChange);
-    };
-
-    for (_iterator.s(); !(_step = _iterator.n()).done;) {
-      var _ret = _loop();
-
-      if (_ret === "continue") continue;
-    }
-  } catch (err) {
-    _iterator.e(err);
-  } finally {
-    _iterator.f();
-  }
-
-  return changes;
-};
-
-var SavedDiagram_parseEntities = function parseEntities(v) {
-  if (!isArray(v)) return;
-  var entities = [];
-
-  var _iterator5 = _createForOfIteratorHelper(v),
-      _step5;
-
-  try {
-    for (_iterator5.s(); !(_step5 = _iterator5.n()).done;) {
-      var e = _step5.value;
-      var entity = parseEntity(e);
-      if (entity) entities.push(entity);
-    }
-  } catch (err) {
-    _iterator5.e(err);
-  } finally {
-    _iterator5.f();
-  }
-
-  return entities;
-};
-
-var SavedDiagram_parseRelations = function parseRelations(v) {
-  if (!isArray(v)) return;
-  var relations = [];
-
-  var _iterator6 = _createForOfIteratorHelper(v),
-      _step6;
-
-  try {
-    for (_iterator6.s(); !(_step6 = _iterator6.n()).done;) {
-      var r = _step6.value;
-      var relation = parseRelation(r);
-      if (relation) relations.push(relation);
-    }
-  } catch (err) {
-    _iterator6.e(err);
-  } finally {
-    _iterator6.f();
-  }
-
-  return relations;
-};
-
-var parseEntity = function parseEntity(v) {
-  if (!SavedDiagram_isRecord(v) || !isString(v.type) || !isString(v.id)) return null;
-  return {
-    type: v.type,
-    id: v.id,
-    position: function () {
-      if (!SavedDiagram_isRecord(v.position) || !isNumber(v.position.x) || !isNumber(v.position.y)) return;
-      return {
-        x: v.position.x,
-        y: v.position.y
-      };
-    }(),
-    data: parseRecord(v.data),
-    style: parseEntityStyle(v.style)
-  };
-};
-
-var parseEntityStyle = function parseEntityStyle(v) {
-  if (!SavedDiagram_isRecord(v)) return;
-  var style = {};
-  if (isString(v.backgroundColor)) style.backgroundColor = v.backgroundColor;
-  if (isString(v.borderColor)) style.borderColor = v.borderColor;
-  if (isEnum(v.borderStyle, ['solid', 'dotted', 'dashed'])) style.borderStyle = v.borderStyle;
-  if (isNumber(v.borderWidth)) style.borderWidth = v.borderWidth;
-  if (isString(v.labelsBackgroundColor)) style.labelsBackgroundColor = v.labelsBackgroundColor;
-  return style;
-};
-
-var parseRelation = function parseRelation(v) {
-  if (!SavedDiagram_isRecord(v)) return null;
-  if (!isString(v.type)) return null;
-  var type = v.type;
-  if (!isString(v.id)) return null;
-  var id = v.id;
-  if (!isString(v.from)) return null;
-  var from = v.from;
-  if (!isString(v.to)) return null;
-  var to = v.to;
-  return {
-    type: type,
-    id: id,
-    from: from,
-    to: to,
-    data: parseRecord(v.data),
-    style: parseRelationStyle(v.style)
-  };
-};
-
-var parseRelationStyle = function parseRelationStyle(v) {
-  if (!SavedDiagram_isRecord(v)) return;
-  var style = {};
-  if (isBoolean(v.arrowFrom)) style.arrowFrom = v.arrowFrom;
-  if (isBoolean(v.arrowTo)) style.arrowTo = v.arrowTo;
-  if (isNumber(v.arrowSize)) style.arrowSize = v.arrowSize;
-  if (isNumber(v.lineWidth)) style.lineWidth = v.lineWidth;
-  if (isEnum(v.lineStyle, ['solid', 'dotted', 'dashed'])) style.lineStyle = v.lineStyle;
-  if (isString(v.lineColor)) style.lineColor = v.lineColor;
-  return style;
-};
-
-var parseRecord = function parseRecord(v) {
-  if (!SavedDiagram_isRecord(v)) return;
-  return v;
-};
-
-var SavedDiagram_parseSettings = function parseSettings(v) {
-  if (!SavedDiagram_isRecord(v)) return;
-  var settings = {};
-
-  if (isArray(v.activeFields)) {
-    settings.activeFields = [];
-
-    var _iterator7 = _createForOfIteratorHelper(v.activeFields),
-        _step7;
-
-    try {
-      for (_iterator7.s(); !(_step7 = _iterator7.n()).done;) {
-        var id = _step7.value;
-        if (isString(id)) settings.activeFields.push(id);
-      }
-    } catch (err) {
-      _iterator7.e(err);
-    } finally {
-      _iterator7.f();
-    }
-  }
-
-  if (isArray(v.activeFilters)) {
-    settings.activeFilters = [];
-
-    var _iterator8 = _createForOfIteratorHelper(v.activeFilters),
-        _step8;
-
-    try {
-      for (_iterator8.s(); !(_step8 = _iterator8.n()).done;) {
-        var _id = _step8.value;
-        if (isString(_id)) settings.activeFilters.push(_id);
-      }
-    } catch (err) {
-      _iterator8.e(err);
-    } finally {
-      _iterator8.f();
-    }
-  }
-
-  if (isString(v.activeLayout)) {
-    settings.activeLayout = v.activeLayout;
-  }
-
-  return settings;
-};
-
-var SavedDiagram_parseStringArray = function parseStringArray(v) {
-  if (!isArray(v)) return;
-  var array = [];
-
-  var _iterator9 = _createForOfIteratorHelper(v),
-      _step9;
-
-  try {
-    for (_iterator9.s(); !(_step9 = _iterator9.n()).done;) {
-      var item = _step9.value;
-      if (isString(item)) array.push(item);
-    }
-  } catch (err) {
-    _iterator9.e(err);
-  } finally {
-    _iterator9.f();
-  }
-
-  return array;
-};
-
-var isNullish = function isNullish(v) {
-  return v === null || v === undefined;
-};
-
-var isBoolean = function isBoolean(v) {
-  return typeof v === 'boolean';
-};
-
-var isString = function isString(v) {
-  return typeof v === 'string';
-};
-
-var isNumber = function isNumber(v) {
-  return typeof v === 'number';
-};
-
-var isEnum = function isEnum(v, values) {
-  return values.includes(v);
-};
-
-var SavedDiagram_isRecord = function isRecord(v) {
-  return typeof_typeof(v) == 'object' && !isArray(v) && v !== null;
-};
-
-var isArray = function isArray(v) {
-  return Array.isArray(v);
-};
-// CONCATENATED MODULE: ./node_modules/babel-loader/lib!./node_modules/ts-loader??ref--14-1!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/SaveLoadDialog.vue?vue&type=script&lang=ts&
-
-
-
-
-
-
-
-
-
-
-
-
-var SaveLoadDialogvue_type_script_lang_ts_SaveLoadDialog = /*#__PURE__*/function (_Vue) {
-  _inherits(SaveLoadDialog, _Vue);
-
-  var _super = _createSuper(SaveLoadDialog);
-
-  function SaveLoadDialog() {
-    var _this;
-
-    _classCallCheck(this, SaveLoadDialog);
-
-    _this = _super.apply(this, arguments);
-    _this.textareaText = '';
-    return _this;
-  }
-
-  _createClass(SaveLoadDialog, [{
-    key: "diagram",
-    get: function get() {
-      return this.diagramVm.diagram;
-    }
-  }, {
-    key: "close",
-    value: function close() {
-      this.$emit('close');
-    }
-  }, {
-    key: "save",
-    value: function save() {
-      var savedDiagram = SavedDiagram_createSavedDiagram(this.diagram);
-      this.textareaText = JSON.stringify(savedDiagram, null, 2);
-    }
-  }, {
-    key: "load",
-    value: function load() {
-      var savedDiagram = parseSavedDiagramJSON(this.textareaText);
-      if (savedDiagram) this.diagram.load(savedDiagram);
-    }
-  }]);
-
-  return SaveLoadDialog;
-}(external_commonjs_vue_commonjs2_vue_root_Vue_default.a);
-
-__decorate([Inject()], SaveLoadDialogvue_type_script_lang_ts_SaveLoadDialog.prototype, "diagramVm", void 0);
-
-SaveLoadDialogvue_type_script_lang_ts_SaveLoadDialog = __decorate([vue_class_component_esm({
-  components: {
-    Dialog: components_Dialog,
-    EditorField: components_EditorField,
-    ButtonGroup: components_ButtonGroup,
-    Button: components_Button
-  }
-})], SaveLoadDialogvue_type_script_lang_ts_SaveLoadDialog);
-/* harmony default export */ var SaveLoadDialogvue_type_script_lang_ts_ = (SaveLoadDialogvue_type_script_lang_ts_SaveLoadDialog);
-// CONCATENATED MODULE: ./src/components/SaveLoadDialog.vue?vue&type=script&lang=ts&
- /* harmony default export */ var components_SaveLoadDialogvue_type_script_lang_ts_ = (SaveLoadDialogvue_type_script_lang_ts_); 
-// EXTERNAL MODULE: ./src/components/SaveLoadDialog.vue?vue&type=style&index=0&lang=scss&
-var SaveLoadDialogvue_type_style_index_0_lang_scss_ = __webpack_require__("f000");
-
-// CONCATENATED MODULE: ./src/components/SaveLoadDialog.vue
-
-
-
-
-
-
-/* normalize component */
-
-var SaveLoadDialog_component = normalizeComponent(
-  components_SaveLoadDialogvue_type_script_lang_ts_,
-  SaveLoadDialogvue_type_template_id_d0dc676c_render,
-  SaveLoadDialogvue_type_template_id_d0dc676c_staticRenderFns,
-  false,
-  null,
-  null,
-  null
-  
-)
-
-/* harmony default export */ var components_SaveLoadDialog = (SaveLoadDialog_component.exports);
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"e8630cbc-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/AddEntityDialog.vue?vue&type=template&id=057bd060&
-var AddEntityDialogvue_type_template_id_057bd060_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('Dialog',{staticClass:"lassox-diagram__AddEntityDialog",attrs:{"dismissable":true,"title":"Tilføj","size":"2x","onClose":_vm.close},scopedSlots:_vm._u([{key:"content",fn:function(){return [_c('EntitySelector',{on:{"change":function (model) { return _vm.entitySelectorModel = model; }}})]},proxy:true},{key:"actions",fn:function(){return [_c('ButtonGroup',{attrs:{"align":"right"}},[_c('Button',{attrs:{"label":"Fortryd"},on:{"click":_vm.close}}),_c('Button',{attrs:{"label":"Tilføj","type":"primary","disabled":!_vm.canConfirm},on:{"click":_vm.confirm}})],1)]},proxy:true}])})}
-var AddEntityDialogvue_type_template_id_057bd060_staticRenderFns = []
-
-
-// CONCATENATED MODULE: ./src/components/AddEntityDialog.vue?vue&type=template&id=057bd060&
-
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"e8630cbc-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/EntitySelector.vue?vue&type=template&id=92531732&
-var EntitySelectorvue_type_template_id_92531732_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('EditorFields',[_c('FieldContainer',{attrs:{"label":"Type"}},[_c('DropdownField',{attrs:{"options":_vm.entityTypeDropdownOptions},model:{value:(_vm.entityType),callback:function ($$v) {_vm.entityType=$$v},expression:"entityType"}})],1),(_vm.searchEnabled)?_c('FieldContainer',[_c('TabBar',{attrs:{"outlined":"","tabs":[
-        { id: 'search', label: 'Søg' },
-        { id: 'custom', label: 'Manuelt' } ]},model:{value:(_vm.mode),callback:function ($$v) {_vm.mode=$$v},expression:"mode"}})],1):_vm._e(),(_vm.mode === 'search')?[_c('FieldContainer',{attrs:{"label":("Søg efter " + (_vm.entityType.labels.singular.toLowerCase()))}},[_c('EntitySearchBar',{attrs:{"entityType":_vm.entityType},model:{value:(_vm.selectedSuggestion),callback:function ($$v) {_vm.selectedSuggestion=$$v},expression:"selectedSuggestion"}})],1)]:[_c('FieldContainer',[_c('DataCreator',{attrs:{"fields":_vm.entityFields,"data":_vm.entityData},on:{"change":function (newData) {
-          _vm.entityData = newData
-          _vm.updateModel()
-        }}})],1)]],2)}
-var EntitySelectorvue_type_template_id_92531732_staticRenderFns = []
-
-
-// CONCATENATED MODULE: ./src/components/EntitySelector.vue?vue&type=template&id=92531732&
-
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"e8630cbc-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/DataCreator.vue?vue&type=template&id=6e3b23fc&
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"00b53798-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/DataCreator.vue?vue&type=template&id=6e3b23fc&
 var DataCreatorvue_type_template_id_6e3b23fc_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return (_vm.fields.length)?_c('EditorFields',_vm._l((_vm.fieldStates),function(state){return _c('EditorField',{key:state.field.fullId,attrs:{"id":state.field.fullId,"type":state.field.type,"title":state.field.title,"value":state.value},on:{"change":state.onChange}})}),1):_vm._e()}
 var DataCreatorvue_type_template_id_6e3b23fc_staticRenderFns = []
 
@@ -90553,16 +102560,16 @@ var DataCreator_component = normalizeComponent(
 )
 
 /* harmony default export */ var components_DataCreator = (DataCreator_component.exports);
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"e8630cbc-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/TabBar.vue?vue&type=template&id=44c3d682&
-var TabBarvue_type_template_id_44c3d682_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{class:[
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"00b53798-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/TabBar.vue?vue&type=template&id=24300bb9&
+var TabBarvue_type_template_id_24300bb9_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{class:[
     'lassox-diagram__TabBar',
     _vm.outlined && 'lassox-diagram__TabBar--outlined' ]},[_c('div',{staticClass:"lassox-diagram__TabBar_outline"}),_c('div',{staticClass:"lassox-diagram__TabBar_tabs-wrapper"},_vm._l((_vm.tabs),function(tab){return _c('BaseButton',{key:tab.id,class:[
         'lassox-diagram__TabBar_tab',
         tab === _vm.activeTab && 'lassox-diagram__TabBar_tab--active' ],attrs:{"label":tab.label},on:{"click":function($event){_vm.activeTab = tab}}})}),1)])}
-var TabBarvue_type_template_id_44c3d682_staticRenderFns = []
+var TabBarvue_type_template_id_24300bb9_staticRenderFns = []
 
 
-// CONCATENATED MODULE: ./src/components/TabBar.vue?vue&type=template&id=44c3d682&
+// CONCATENATED MODULE: ./src/components/TabBar.vue?vue&type=template&id=24300bb9&
 
 // CONCATENATED MODULE: ./node_modules/babel-loader/lib!./node_modules/ts-loader??ref--14-1!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/TabBar.vue?vue&type=script&lang=ts&
 
@@ -90646,8 +102653,8 @@ var TabBarvue_type_style_index_0_lang_scss_ = __webpack_require__("ae1f");
 
 var TabBar_component = normalizeComponent(
   components_TabBarvue_type_script_lang_ts_,
-  TabBarvue_type_template_id_44c3d682_render,
-  TabBarvue_type_template_id_44c3d682_staticRenderFns,
+  TabBarvue_type_template_id_24300bb9_render,
+  TabBarvue_type_template_id_24300bb9_staticRenderFns,
   false,
   null,
   null,
@@ -90656,7 +102663,7 @@ var TabBar_component = normalizeComponent(
 )
 
 /* harmony default export */ var components_TabBar = (TabBar_component.exports);
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"e8630cbc-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/DropdownField.vue?vue&type=template&id=4a7753e3&
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"00b53798-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/DropdownField.vue?vue&type=template&id=4a7753e3&
 var DropdownFieldvue_type_template_id_4a7753e3_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"lassox-diagram__DropdownField"},[_c('Button',{ref:"dropdownButton",staticClass:"lassox-diagram__DropdownField-button",attrs:{"label":_vm.selectedOption && _vm.selectedOption.label || '',"trailingIcon":_vm.showDropdownMenu ? 'expand_less' : 'expand_more'},on:{"click":function () { return _vm.showDropdownMenu = !_vm.showDropdownMenu; }}}),_c('DropdownMenu',{attrs:{"opener":_vm.showDropdownMenu ? _vm.$refs.dropdownButton.$el : null,"close":function () { return _vm.showDropdownMenu = false; }}},_vm._l((_vm.options),function(option){return _c('DropdownMenuItem',{key:option.id,attrs:{"icon":option.value === _vm.value ? 'check' : ' ',"label":option.label},on:{"click":function () { return _vm.$emit('change', option.value); }}})}),1)],1)}
 var DropdownFieldvue_type_template_id_4a7753e3_staticRenderFns = []
 
@@ -90745,8 +102752,8 @@ var DropdownField_component = normalizeComponent(
 )
 
 /* harmony default export */ var components_DropdownField = (DropdownField_component.exports);
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"e8630cbc-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/EntitySearchBar.vue?vue&type=template&id=6c857504&
-var EntitySearchBarvue_type_template_id_6c857504_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"lassox-diagram__EntitySearchBar"},[_c('TextField',{ref:"textField",attrs:{"autocomplete":"off","leadingIcon":"search","trailingIcon":_vm.inputText ? 'cancel' : null,"onClickTrailingIcon":function () { return _vm.selectSuggestion(null); },"value":_vm.inputText,"tabindex":"-1"},on:{"mousedown":function () {
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"00b53798-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/EntitySearchBar.vue?vue&type=template&id=1f813814&
+var EntitySearchBarvue_type_template_id_1f813814_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"lassox-diagram__EntitySearchBar"},[_c('TextField',{ref:"textField",attrs:{"autocomplete":"off","leadingIcon":"search","trailingIcon":_vm.inputText ? 'cancel' : null,"onClickTrailingIcon":function () { return _vm.selectSuggestion(null); },"value":_vm.inputText,"tabindex":"-1"},on:{"mousedown":function () {
       if (_vm.inputText) { _vm.showSuggestions = true }
     },"keydown":_vm.onInputKeyDown,"input":function (event) { return _vm.inputText = event.target.value; }},nativeOn:{"focusin":function($event){return (function () { return _vm.inputFocused = true; }).apply(null, arguments)},"focusout":function($event){return (function () { return _vm.inputFocused = false; }).apply(null, arguments)}}}),_c('div',{ref:"suggestionsEl",staticClass:"lassox-diagram__EntitySearchBar_suggestions",style:([
       _vm.suggestionsStyle,
@@ -90756,10 +102763,10 @@ var EntitySearchBarvue_type_template_id_6c857504_render = function () {var _vm=t
           _vm.textField.inputEl.focus()
           _vm.selectSuggestion(suggestion)
         }}},[_c('div',{staticClass:"lassox-diagram__EntitySearchBar_suggestion-column-1"},[(suggestion.supertext)?_c('div',{staticClass:"lassox-diagram__EntitySearchBar_suggestion-supertext",domProps:{"textContent":_vm._s(suggestion.supertext)}}):_vm._e(),_c('div',{staticClass:"lassox-diagram__EntitySearchBar_suggestion-text",domProps:{"textContent":_vm._s(suggestion.text || (("Id: " + (suggestion.id))))}}),(suggestion.subtext)?_c('div',{staticClass:"lassox-diagram__EntitySearchBar_suggestion-subtext",domProps:{"textContent":_vm._s(suggestion.subtext)}}):_vm._e()]),(suggestion.entity)?_c('div',{staticClass:"lassox-diagram__EntitySearchBar_suggestion-column-2"},[_c('div',{staticClass:"lassox-diagram__EntitySearchBar_suggestion-side-text",domProps:{"textContent":_vm._s('I diagram')}})]):_vm._e()])})],2)],1)}
-var EntitySearchBarvue_type_template_id_6c857504_staticRenderFns = []
+var EntitySearchBarvue_type_template_id_1f813814_staticRenderFns = []
 
 
-// CONCATENATED MODULE: ./src/components/EntitySearchBar.vue?vue&type=template&id=6c857504&
+// CONCATENATED MODULE: ./src/components/EntitySearchBar.vue?vue&type=template&id=1f813814&
 
 // EXTERNAL MODULE: ./node_modules/core-js/modules/es.string.ends-with.js
 var es_string_ends_with = __webpack_require__("8a79");
@@ -91317,8 +103324,8 @@ var EntitySearchBarvue_type_style_index_0_lang_scss_ = __webpack_require__("636b
 
 var EntitySearchBar_component = normalizeComponent(
   components_EntitySearchBarvue_type_script_lang_ts_,
-  EntitySearchBarvue_type_template_id_6c857504_render,
-  EntitySearchBarvue_type_template_id_6c857504_staticRenderFns,
+  EntitySearchBarvue_type_template_id_1f813814_render,
+  EntitySearchBarvue_type_template_id_1f813814_staticRenderFns,
   false,
   null,
   null,
@@ -91509,8 +103516,8 @@ EntitySelectorvue_type_script_lang_ts_EntitySelector = __decorate([vue_class_com
 
 var EntitySelector_component = normalizeComponent(
   components_EntitySelectorvue_type_script_lang_ts_,
-  EntitySelectorvue_type_template_id_92531732_render,
-  EntitySelectorvue_type_template_id_92531732_staticRenderFns,
+  EntitySelectorvue_type_template_id_9f9c021e_render,
+  EntitySelectorvue_type_template_id_9f9c021e_staticRenderFns,
   false,
   null,
   null,
@@ -91745,8 +103752,8 @@ AddEntityDialogvue_type_script_lang_ts_AddEntityDialog = __decorate([vue_class_c
 
 var AddEntityDialog_component = normalizeComponent(
   components_AddEntityDialogvue_type_script_lang_ts_,
-  AddEntityDialogvue_type_template_id_057bd060_render,
-  AddEntityDialogvue_type_template_id_057bd060_staticRenderFns,
+  AddEntityDialogvue_type_template_id_898dfbac_render,
+  AddEntityDialogvue_type_template_id_898dfbac_staticRenderFns,
   false,
   null,
   null,
@@ -91755,14 +103762,107 @@ var AddEntityDialog_component = normalizeComponent(
 )
 
 /* harmony default export */ var components_AddEntityDialog = (AddEntityDialog_component.exports);
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"e8630cbc-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/ConfirmAdditionDialog.vue?vue&type=template&id=a5326538&
-var ConfirmAdditionDialogvue_type_template_id_a5326538_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('Dialog',{staticClass:"lassox-diagram__ConfirmAdditionDialog",attrs:{"dismissable":true,"title":"Bekræft ændringer","content":_vm.content,"onClose":_vm.dismiss},scopedSlots:_vm._u([{key:"actions",fn:function(){return [_c('ButtonGroup',{attrs:{"align":"right"}},[_c('Button',{attrs:{"label":"Fortryd"},on:{"click":_vm.dismiss}}),_c('Button',{attrs:{"label":"Tilføj","type":"primary"},on:{"click":_vm.confirm}})],1)]},proxy:true}])})}
-var ConfirmAdditionDialogvue_type_template_id_a5326538_staticRenderFns = []
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"00b53798-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/ConfirmAdditionDialog.vue?vue&type=template&id=2541932e&
+var ConfirmAdditionDialogvue_type_template_id_2541932e_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('Dialog',{staticClass:"lassox-diagram__ConfirmAdditionDialog",attrs:{"size":"2x","dismissable":true,"title":"Bekræft ændringer","content":_vm.content,"onClose":_vm.dismiss},scopedSlots:_vm._u([{key:"actions",fn:function(){return [_c('CheckBoxField',{attrs:{"label":"Layout"},model:{value:(_vm.runLayout),callback:function ($$v) {_vm.runLayout=$$v},expression:"runLayout"}}),_c('div',{style:({
+        width: '16px',
+        flexGrow: '0',
+        flexShrink: '0',
+        margin: 'auto',
+      })}),_c('ButtonGroup',{attrs:{"align":"right"}},[_c('Button',{attrs:{"label":"Fortryd"},on:{"click":_vm.dismiss}}),_c('Button',{attrs:{"label":"Tilføj","type":"primary"},on:{"click":_vm.confirm}})],1)]},proxy:true}])})}
+var ConfirmAdditionDialogvue_type_template_id_2541932e_staticRenderFns = []
 
 
-// CONCATENATED MODULE: ./src/components/ConfirmAdditionDialog.vue?vue&type=template&id=a5326538&
+// CONCATENATED MODULE: ./src/components/ConfirmAdditionDialog.vue?vue&type=template&id=2541932e&
 
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"00b53798-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/CheckBoxField.vue?vue&type=template&id=0ad7bef3&
+var CheckBoxFieldvue_type_template_id_0ad7bef3_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{class:[
+    'lassox-diagram__CheckBoxField',
+    _vm.disabled ? 'lassox-diagram__CheckBoxField--disabled' : '' ]},[_c('label',{class:[
+      'lassox-diagram__CheckBoxField-option',
+      _vm.focused && 'lassox-diagram__CheckBoxField-option--focused',
+      _vm.checked && 'lassox-diagram__CheckBoxField-option--checked' ]},[_c('input',{staticClass:"lassox-diagram__CheckBoxField-option-input",attrs:{"type":"checkbox","name":_vm.name,"disabled":_vm.disabled},domProps:{"checked":_vm.checked},on:{"focus":function($event){_vm.focused = true},"blur":function($event){_vm.focused = false},"change":function () { return _vm.$emit('change', !_vm.checked); }}}),_c('div',{staticClass:"lassox-diagram__CheckBoxField-option-icon-wrapper"},[_c('Icon',{staticClass:"lassox-diagram__CheckBoxField-option-icon",attrs:{"icon":"check_box_outline_blank"}}),_c('Icon',{staticClass:"lassox-diagram__CheckBoxField-option-icon lassox-diagram__CheckBoxField-option-icon--checked",attrs:{"icon":"check_box"}})],1),_c('div',{staticClass:"lassox-diagram__CheckBoxField-option-label"},[_vm._v(_vm._s(_vm.label))])])])}
+var CheckBoxFieldvue_type_template_id_0ad7bef3_staticRenderFns = []
+
+
+// CONCATENATED MODULE: ./src/components/CheckBoxField.vue?vue&type=template&id=0ad7bef3&
+
+// CONCATENATED MODULE: ./node_modules/babel-loader/lib!./node_modules/ts-loader??ref--14-1!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/CheckBoxField.vue?vue&type=script&lang=ts&
+
+
+
+
+
+
+
+var CheckBoxFieldvue_type_script_lang_ts_CheckBoxField = /*#__PURE__*/function (_Vue) {
+  _inherits(CheckBoxField, _Vue);
+
+  var _super = _createSuper(CheckBoxField);
+
+  function CheckBoxField() {
+    var _this;
+
+    _classCallCheck(this, CheckBoxField);
+
+    _this = _super.apply(this, arguments);
+    _this.focused = false;
+    return _this;
+  }
+
+  return CheckBoxField;
+}(external_commonjs_vue_commonjs2_vue_root_Vue_default.a);
+
+__decorate([Prop(String)], CheckBoxFieldvue_type_script_lang_ts_CheckBoxField.prototype, "name", void 0);
+
+__decorate([Prop({
+  type: Boolean,
+  default: false
+})], CheckBoxFieldvue_type_script_lang_ts_CheckBoxField.prototype, "disabled", void 0);
+
+__decorate([Prop({
+  type: String,
+  required: false
+})], CheckBoxFieldvue_type_script_lang_ts_CheckBoxField.prototype, "label", void 0);
+
+__decorate([Model('change', {
+  type: Boolean,
+  default: false
+})], CheckBoxFieldvue_type_script_lang_ts_CheckBoxField.prototype, "checked", void 0);
+
+CheckBoxFieldvue_type_script_lang_ts_CheckBoxField = __decorate([vue_class_component_esm({
+  components: {
+    Icon: components_Icon
+  }
+})], CheckBoxFieldvue_type_script_lang_ts_CheckBoxField);
+/* harmony default export */ var CheckBoxFieldvue_type_script_lang_ts_ = (CheckBoxFieldvue_type_script_lang_ts_CheckBoxField);
+// CONCATENATED MODULE: ./src/components/CheckBoxField.vue?vue&type=script&lang=ts&
+ /* harmony default export */ var components_CheckBoxFieldvue_type_script_lang_ts_ = (CheckBoxFieldvue_type_script_lang_ts_); 
+// EXTERNAL MODULE: ./src/components/CheckBoxField.vue?vue&type=style&index=0&lang=scss&
+var CheckBoxFieldvue_type_style_index_0_lang_scss_ = __webpack_require__("e0c0");
+
+// CONCATENATED MODULE: ./src/components/CheckBoxField.vue
+
+
+
+
+
+
+/* normalize component */
+
+var CheckBoxField_component = normalizeComponent(
+  components_CheckBoxFieldvue_type_script_lang_ts_,
+  CheckBoxFieldvue_type_template_id_0ad7bef3_render,
+  CheckBoxFieldvue_type_template_id_0ad7bef3_staticRenderFns,
+  false,
+  null,
+  null,
+  null
+  
+)
+
+/* harmony default export */ var components_CheckBoxField = (CheckBoxField_component.exports);
 // CONCATENATED MODULE: ./node_modules/babel-loader/lib!./node_modules/ts-loader??ref--14-1!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/ConfirmAdditionDialog.vue?vue&type=script&lang=ts&
+
 
 
 
@@ -91787,9 +103887,13 @@ var ConfirmAdditionDialogvue_type_script_lang_ts_ConfirmAdditionDialog = /*#__PU
   var _super = _createSuper(ConfirmAdditionDialog);
 
   function ConfirmAdditionDialog() {
+    var _this;
+
     _classCallCheck(this, ConfirmAdditionDialog);
 
-    return _super.apply(this, arguments);
+    _this = _super.apply(this, arguments);
+    _this.runLayout = false;
+    return _this;
   }
 
   _createClass(ConfirmAdditionDialog, [{
@@ -91866,6 +103970,16 @@ var ConfirmAdditionDialogvue_type_script_lang_ts_ConfirmAdditionDialog = /*#__PU
 
       this.close();
       (_this$onConfirm = this.onConfirm) === null || _this$onConfirm === void 0 ? void 0 : _this$onConfirm.call(this);
+      this.diagram.activeDiagram.data.add(this.data);
+      var layout = this.runLayout && this.diagram.activeDiagram.settings.activeLayout;
+
+      if (layout) {
+        this.diagram.eventBus.emit({
+          name: 'graph.layout',
+          layout: layout,
+          applyToLastChange: true
+        });
+      }
     }
   }, {
     key: "dismiss",
@@ -91894,6 +104008,7 @@ __decorate([Prop(Function)], ConfirmAdditionDialogvue_type_script_lang_ts_Confir
 ConfirmAdditionDialogvue_type_script_lang_ts_ConfirmAdditionDialog = __decorate([vue_class_component_esm({
   components: {
     Dialog: components_Dialog,
+    CheckBoxField: components_CheckBoxField,
     ButtonGroup: components_ButtonGroup,
     Button: components_Button
   }
@@ -91901,7 +104016,11 @@ ConfirmAdditionDialogvue_type_script_lang_ts_ConfirmAdditionDialog = __decorate(
 /* harmony default export */ var ConfirmAdditionDialogvue_type_script_lang_ts_ = (ConfirmAdditionDialogvue_type_script_lang_ts_ConfirmAdditionDialog);
 // CONCATENATED MODULE: ./src/components/ConfirmAdditionDialog.vue?vue&type=script&lang=ts&
  /* harmony default export */ var components_ConfirmAdditionDialogvue_type_script_lang_ts_ = (ConfirmAdditionDialogvue_type_script_lang_ts_); 
+// EXTERNAL MODULE: ./src/components/ConfirmAdditionDialog.vue?vue&type=style&index=0&lang=scss&
+var ConfirmAdditionDialogvue_type_style_index_0_lang_scss_ = __webpack_require__("1df3");
+
 // CONCATENATED MODULE: ./src/components/ConfirmAdditionDialog.vue
+
 
 
 
@@ -91911,8 +104030,8 @@ ConfirmAdditionDialogvue_type_script_lang_ts_ConfirmAdditionDialog = __decorate(
 
 var ConfirmAdditionDialog_component = normalizeComponent(
   components_ConfirmAdditionDialogvue_type_script_lang_ts_,
-  ConfirmAdditionDialogvue_type_template_id_a5326538_render,
-  ConfirmAdditionDialogvue_type_template_id_a5326538_staticRenderFns,
+  ConfirmAdditionDialogvue_type_template_id_2541932e_render,
+  ConfirmAdditionDialogvue_type_template_id_2541932e_staticRenderFns,
   false,
   null,
   null,
@@ -91921,6 +104040,211 @@ var ConfirmAdditionDialog_component = normalizeComponent(
 )
 
 /* harmony default export */ var components_ConfirmAdditionDialog = (ConfirmAdditionDialog_component.exports);
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"00b53798-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/EditDiagramDialog.vue?vue&type=template&id=f600b44e&
+var EditDiagramDialogvue_type_template_id_f600b44e_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('Dialog',{staticClass:"lassox-diagram__EditDiagramDialog",attrs:{"dismissable":"","title":_vm.title || 'Rediger diagram',"size":"3x","onClose":_vm.close},scopedSlots:_vm._u([{key:"content",fn:function(){return [_c('div',{staticClass:"lassox-diagram__EditDiagramDialog-loading-overlay",style:({
+        opacity: _vm.loading ? '1' : '0',
+        pointerEvents: _vm.loading ? '' : 'none',
+      })},[_c('LoadingSpinner',{staticStyle:{"margin":"auto"}})],1),_c('EditorFields',[_c('EditorField',{attrs:{"id":"diagram-title","type":"text","title":"Navn"},model:{value:(_vm.fields.title),callback:function ($$v) {_vm.$set(_vm.fields, "title", $$v)},expression:"fields.title"}}),_c('EditorField',{attrs:{"id":"diagram-description","type":"text","title":"Note"},model:{value:(_vm.fields.description),callback:function ($$v) {_vm.$set(_vm.fields, "description", $$v)},expression:"fields.description"}}),_c('EditorField',{attrs:{"id":"diagram-shared","type":"boolean","title":"Delt med organisationen","helperText":"Når du deler med organisationen kan andre brugere se og redigere i diagrammet"},model:{value:(_vm.fields.shared),callback:function ($$v) {_vm.$set(_vm.fields, "shared", $$v)},expression:"fields.shared"}})],1)]},proxy:true},{key:"actions",fn:function(){return [_c('ButtonGroup',{attrs:{"align":"right"}},[_c('Button',{attrs:{"label":"Fortryd"},on:{"click":_vm.close}}),_c('Button',{attrs:{"label":"Gem","type":"primary"},on:{"click":function () { return _vm.save({
+          savedDiagram: _vm.savedDiagram,
+          title: _vm.fields.title,
+          description: _vm.fields.description,
+          shared: _vm.fields.shared,
+        }); }}})],1)]},proxy:true}])})}
+var EditDiagramDialogvue_type_template_id_f600b44e_staticRenderFns = []
+
+
+// CONCATENATED MODULE: ./src/components/EditDiagramDialog.vue?vue&type=template&id=f600b44e&
+
+// CONCATENATED MODULE: ./node_modules/babel-loader/lib!./node_modules/ts-loader??ref--14-1!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/EditDiagramDialog.vue?vue&type=script&lang=ts&
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var EditDiagramDialogvue_type_script_lang_ts_EditDiagramDialog = /*#__PURE__*/function (_Vue) {
+  _inherits(EditDiagramDialog, _Vue);
+
+  var _super = _createSuper(EditDiagramDialog);
+
+  function EditDiagramDialog() {
+    var _this;
+
+    _classCallCheck(this, EditDiagramDialog);
+
+    _this = _super.apply(this, arguments);
+    _this.loading = false;
+    _this.fields = {
+      title: '',
+      description: '',
+      shared: false
+    };
+    return _this;
+  }
+
+  _createClass(EditDiagramDialog, [{
+    key: "created",
+    value: function created() {
+      var _ref = this.savedDiagram || this.diagram.activeDiagram,
+          title = _ref.title,
+          description = _ref.description,
+          shared = _ref.shared;
+
+      this.fields.title = title !== null && title !== void 0 ? title : '';
+      this.fields.description = description !== null && description !== void 0 ? description : '';
+      this.fields.shared = shared !== null && shared !== void 0 ? shared : false;
+    }
+  }, {
+    key: "close",
+    value: function close() {
+      this.$emit('close');
+    }
+  }]);
+
+  return EditDiagramDialog;
+}(external_commonjs_vue_commonjs2_vue_root_Vue_default.a);
+
+__decorate([Inject()], EditDiagramDialogvue_type_script_lang_ts_EditDiagramDialog.prototype, "diagramVm", void 0);
+
+__decorate([Inject()], EditDiagramDialogvue_type_script_lang_ts_EditDiagramDialog.prototype, "diagram", void 0);
+
+__decorate([Prop(String)], EditDiagramDialogvue_type_script_lang_ts_EditDiagramDialog.prototype, "title", void 0);
+
+__decorate([Prop()], EditDiagramDialogvue_type_script_lang_ts_EditDiagramDialog.prototype, "savedDiagram", void 0);
+
+__decorate([Prop({
+  type: Function,
+  required: true
+})], EditDiagramDialogvue_type_script_lang_ts_EditDiagramDialog.prototype, "save", void 0);
+
+EditDiagramDialogvue_type_script_lang_ts_EditDiagramDialog = __decorate([vue_class_component_esm({
+  components: {
+    Dialog: components_Dialog,
+    LoadingSpinner: components_LoadingSpinner,
+    BaseButton: components_BaseButton,
+    Icon: components_Icon,
+    IconButton: components_IconButton,
+    EditorFields: components_EditorFields,
+    EditorField: components_EditorField,
+    CheckBoxField: components_CheckBoxField,
+    ButtonGroup: components_ButtonGroup,
+    Button: components_Button
+  }
+})], EditDiagramDialogvue_type_script_lang_ts_EditDiagramDialog);
+/* harmony default export */ var EditDiagramDialogvue_type_script_lang_ts_ = (EditDiagramDialogvue_type_script_lang_ts_EditDiagramDialog);
+// CONCATENATED MODULE: ./src/components/EditDiagramDialog.vue?vue&type=script&lang=ts&
+ /* harmony default export */ var components_EditDiagramDialogvue_type_script_lang_ts_ = (EditDiagramDialogvue_type_script_lang_ts_); 
+// EXTERNAL MODULE: ./src/components/EditDiagramDialog.vue?vue&type=style&index=0&lang=scss&
+var EditDiagramDialogvue_type_style_index_0_lang_scss_ = __webpack_require__("dec5");
+
+// CONCATENATED MODULE: ./src/components/EditDiagramDialog.vue
+
+
+
+
+
+
+/* normalize component */
+
+var EditDiagramDialog_component = normalizeComponent(
+  components_EditDiagramDialogvue_type_script_lang_ts_,
+  EditDiagramDialogvue_type_template_id_f600b44e_render,
+  EditDiagramDialogvue_type_template_id_f600b44e_staticRenderFns,
+  false,
+  null,
+  null,
+  null
+  
+)
+
+/* harmony default export */ var components_EditDiagramDialog = (EditDiagramDialog_component.exports);
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"00b53798-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/SaveDialog.vue?vue&type=template&id=62e29097&
+var SaveDialogvue_type_template_id_62e29097_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('EditDiagramDialog',{attrs:{"title":"Gem diagram","save":_vm.save},on:{"close":_vm.close}})}
+var SaveDialogvue_type_template_id_62e29097_staticRenderFns = []
+
+
+// CONCATENATED MODULE: ./src/components/SaveDialog.vue?vue&type=template&id=62e29097&
+
+// CONCATENATED MODULE: ./node_modules/babel-loader/lib!./node_modules/ts-loader??ref--14-1!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/SaveDialog.vue?vue&type=script&lang=ts&
+
+
+
+
+
+
+
+
+var SaveDialogvue_type_script_lang_ts_SaveDialog = /*#__PURE__*/function (_Vue) {
+  _inherits(SaveDialog, _Vue);
+
+  var _super = _createSuper(SaveDialog);
+
+  function SaveDialog() {
+    _classCallCheck(this, SaveDialog);
+
+    return _super.apply(this, arguments);
+  }
+
+  _createClass(SaveDialog, [{
+    key: "close",
+    value: function close() {
+      this.$emit('close');
+    }
+  }]);
+
+  return SaveDialog;
+}(external_commonjs_vue_commonjs2_vue_root_Vue_default.a);
+
+__decorate([Inject()], SaveDialogvue_type_script_lang_ts_SaveDialog.prototype, "diagramVm", void 0);
+
+__decorate([Inject()], SaveDialogvue_type_script_lang_ts_SaveDialog.prototype, "diagram", void 0);
+
+__decorate([Prop({
+  type: Function,
+  required: true
+})], SaveDialogvue_type_script_lang_ts_SaveDialog.prototype, "save", void 0);
+
+SaveDialogvue_type_script_lang_ts_SaveDialog = __decorate([vue_class_component_esm({
+  components: {
+    EditDiagramDialog: components_EditDiagramDialog
+  }
+})], SaveDialogvue_type_script_lang_ts_SaveDialog);
+/* harmony default export */ var SaveDialogvue_type_script_lang_ts_ = (SaveDialogvue_type_script_lang_ts_SaveDialog);
+// CONCATENATED MODULE: ./src/components/SaveDialog.vue?vue&type=script&lang=ts&
+ /* harmony default export */ var components_SaveDialogvue_type_script_lang_ts_ = (SaveDialogvue_type_script_lang_ts_); 
+// CONCATENATED MODULE: ./src/components/SaveDialog.vue
+
+
+
+
+
+/* normalize component */
+
+var SaveDialog_component = normalizeComponent(
+  components_SaveDialogvue_type_script_lang_ts_,
+  SaveDialogvue_type_template_id_62e29097_render,
+  SaveDialogvue_type_template_id_62e29097_staticRenderFns,
+  false,
+  null,
+  null,
+  null
+  
+)
+
+/* harmony default export */ var components_SaveDialog = (SaveDialog_component.exports);
 // CONCATENATED MODULE: ./node_modules/babel-loader/lib!./node_modules/ts-loader??ref--14-1!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/TopBar.vue?vue&type=script&lang=ts&
 
 
@@ -91944,8 +104268,10 @@ var ConfirmAdditionDialog_component = normalizeComponent(
 
 
 
-var TopBarvue_type_script_lang_ts_TopBar = /*#__PURE__*/function (_Vue) {
-  _inherits(TopBar, _Vue);
+
+
+var TopBarvue_type_script_lang_ts_TopBar = /*#__PURE__*/function (_DiagramVue) {
+  _inherits(TopBar, _DiagramVue);
 
   var _super = _createSuper(TopBar);
 
@@ -91978,40 +104304,97 @@ var TopBarvue_type_script_lang_ts_TopBar = /*#__PURE__*/function (_Vue) {
       return this.diagram.activeDiagram.data.canRedo;
     }
   }, {
-    key: "showPrintDialog",
-    value: function showPrintDialog(mode) {
-      this.diagramVm.showDialog(components_PrintDialog, {
-        mode: mode
-      });
-    }
-  }, {
     key: "save",
-    value: function save() {
-      this.diagram.save(true);
-    }
-  }, {
-    key: "saveAsNew",
-    value: function saveAsNew() {
-      this.diagram.save(false);
-    }
-  }, {
-    key: "expand",
     value: function () {
-      var _expand = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee() {
-        var _this$diagram$methods,
-            _this$diagram$methods2,
-            _this2 = this,
-            _data$entities,
-            _data$relations;
-
-        var data;
+      var _save = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee() {
+        var overwrite,
+            closeLoadingToast,
+            _args = arguments;
         return regeneratorRuntime.wrap(function _callee$(_context) {
           while (1) {
             switch (_context.prev = _context.next) {
               case 0:
-                _context.next = 2;
-                return (_this$diagram$methods = (_this$diagram$methods2 = this.diagram.methods).getEntityData) === null || _this$diagram$methods === void 0 ? void 0 : _this$diagram$methods.call(_this$diagram$methods2, {
-                  ids: this.diagram.activeDiagram.data.entities.map(function (e) {
+                overwrite = _args.length > 0 && _args[0] !== undefined ? _args[0] : true;
+                closeLoadingToast = this.diagramVm.showToast({
+                  content: 'Gemmer diagrammet...',
+                  dismissable: false,
+                  duration: 0,
+                  showLoadingSpinner: true
+                });
+                _context.next = 4;
+                return this.diagram.save(overwrite);
+
+              case 4:
+                closeLoadingToast();
+                this.diagramVm.showToast({
+                  content: 'Diagrammet blev gemt, og du kan nu redigere videre på det.'
+                });
+
+              case 6:
+              case "end":
+                return _context.stop();
+            }
+          }
+        }, _callee, this);
+      }));
+
+      function save() {
+        return _save.apply(this, arguments);
+      }
+
+      return save;
+    }()
+  }, {
+    key: "expand",
+    value: function () {
+      var _expand = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee2() {
+        var _this2 = this,
+            _data$entities,
+            _data$relations;
+
+        var showFullyExpandedToast, entitiesToExpand, closeLoadingToast, data, _iterator, _step, entity;
+
+        return regeneratorRuntime.wrap(function _callee2$(_context2) {
+          while (1) {
+            switch (_context2.prev = _context2.next) {
+              case 0:
+                if (this.diagram.methods.getEntityData) {
+                  _context2.next = 2;
+                  break;
+                }
+
+                return _context2.abrupt("return");
+
+              case 2:
+                showFullyExpandedToast = function showFullyExpandedToast() {
+                  return _this2.diagramVm.showToast({
+                    content: 'Diagrammet er nu helt udvidet.'
+                  });
+                }; // TODO : If 30+, show the toast and cancel
+
+
+                entitiesToExpand = this.diagram.activeDiagram.data.entities.filter(function (entity) {
+                  return !entity.expanded;
+                });
+
+                if (entitiesToExpand.length) {
+                  _context2.next = 7;
+                  break;
+                }
+
+                showFullyExpandedToast();
+                return _context2.abrupt("return");
+
+              case 7:
+                closeLoadingToast = this.diagramVm.showToast({
+                  content: 'Udvider diagrammet...',
+                  dismissable: false,
+                  duration: 0,
+                  showLoadingSpinner: true
+                });
+                _context2.next = 10;
+                return this.diagram.methods.getEntityData({
+                  ids: entitiesToExpand.map(function (e) {
                     return e.id;
                   }),
                   relationTypes: this.diagram.relationTypes.items.map(function (rt) {
@@ -92021,17 +104404,22 @@ var TopBarvue_type_script_lang_ts_TopBar = /*#__PURE__*/function (_Vue) {
                   children: 1
                 });
 
-              case 2:
-                data = _context.sent;
+              case 10:
+                data = _context2.sent;
+                _iterator = _createForOfIteratorHelper(entitiesToExpand);
 
-                if (data) {
-                  _context.next = 5;
-                  break;
+                try {
+                  for (_iterator.s(); !(_step = _iterator.n()).done;) {
+                    entity = _step.value;
+                    entity.expanded = true;
+                  }
+                } catch (err) {
+                  _iterator.e(err);
+                } finally {
+                  _iterator.f();
                 }
 
-                return _context.abrupt("return");
-
-              case 5:
+                closeLoadingToast();
                 if (data.entities) data.entities = data.entities.filter(function (entity) {
                   return !_this2.diagram.activeDiagram.data.entitiesMap.has(entity.id);
                 });
@@ -92040,26 +104428,24 @@ var TopBarvue_type_script_lang_ts_TopBar = /*#__PURE__*/function (_Vue) {
                 });
 
                 if (!(!((_data$entities = data.entities) !== null && _data$entities !== void 0 && _data$entities.length) && !((_data$relations = data.relations) !== null && _data$relations !== void 0 && _data$relations.length))) {
-                  _context.next = 9;
+                  _context2.next = 19;
                   break;
                 }
 
-                return _context.abrupt("return");
+                showFullyExpandedToast();
+                return _context2.abrupt("return");
 
-              case 9:
+              case 19:
                 this.diagramVm.showDialog(components_ConfirmAdditionDialog, {
-                  data: data,
-                  onConfirm: function onConfirm() {
-                    return _this2.diagram.activeDiagram.data.add(data);
-                  }
+                  data: data
                 });
 
-              case 10:
+              case 20:
               case "end":
-                return _context.stop();
+                return _context2.stop();
             }
           }
-        }, _callee, this);
+        }, _callee2, this);
       }));
 
       function expand() {
@@ -92090,19 +104476,24 @@ var TopBarvue_type_script_lang_ts_TopBar = /*#__PURE__*/function (_Vue) {
       });
     }
   }, {
-    key: "showSaveLoadDialog",
-    value: function showSaveLoadDialog() {
-      this.diagramVm.showDialog(components_SaveLoadDialog);
-    }
-  }, {
     key: "showAddDialog",
     value: function showAddDialog() {
       this.diagramVm.showDialog(components_AddEntityDialog);
     }
+  }, {
+    key: "showSaveDialog",
+    value: function showSaveDialog() {
+      this.diagramVm.showDialog(components_SaveDialog);
+    }
+  }, {
+    key: "showEditDiagramDialog",
+    value: function showEditDiagramDialog() {
+      this.diagramVm.showDialog(components_EditDiagramDialog);
+    }
   }]);
 
   return TopBar;
-}(external_commonjs_vue_commonjs2_vue_root_Vue_default.a);
+}(src_DiagramVue);
 
 __decorate([Inject()], TopBarvue_type_script_lang_ts_TopBar.prototype, "diagramVm", void 0);
 
@@ -92135,8 +104526,8 @@ var TopBarvue_type_style_index_0_lang_scss_ = __webpack_require__("d4bd");
 
 var TopBar_component = normalizeComponent(
   components_TopBarvue_type_script_lang_ts_,
-  TopBarvue_type_template_id_61ac7808_render,
-  TopBarvue_type_template_id_61ac7808_staticRenderFns,
+  TopBarvue_type_template_id_afc73020_render,
+  TopBarvue_type_template_id_afc73020_staticRenderFns,
   false,
   null,
   null,
@@ -92145,15 +104536,14 @@ var TopBar_component = normalizeComponent(
 )
 
 /* harmony default export */ var components_TopBar = (TopBar_component.exports);
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"e8630cbc-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/Graph.vue?vue&type=template&id=6138144a&
-var Graphvue_type_template_id_6138144a_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"lassox-diagram__Graph",attrs:{"tabindex":_vm.printMode ? '' : '-1'},on:{"keydown":_vm.onKeyDown,"contextmenu":function($event){$event.preventDefault();return (function () {}).apply(null, arguments)}}},[_c('div',{ref:"graphContainerEl",staticClass:"lassox-diagram__Graph-container",staticStyle:{"width":"100%","height":"100%"},on:{"mousedown":_vm.redirectCytoscapeBlur,"touchstart":_vm.redirectCytoscapeBlur}}),(!_vm.printMode)?_c('GraphContextMenu'):_vm._e()],1)}
-var Graphvue_type_template_id_6138144a_staticRenderFns = []
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"00b53798-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/Graph.vue?vue&type=template&id=050a5a05&
+var Graphvue_type_template_id_050a5a05_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{class:[
+    'lassox-diagram__Graph',
+    _vm.elementHovered && 'lassox-diagram__Graph--has-hovered-element' ],attrs:{"tabindex":_vm.printMode ? '' : '-1'},on:{"keydown":_vm.onKeyDown,"contextmenu":function($event){$event.preventDefault();return (function () {}).apply(null, arguments)}}},[_c('div',{ref:"graphContainerEl",staticClass:"lassox-diagram__Graph-container",staticStyle:{"width":"100%","height":"100%"},on:{"mousedown":_vm.redirectCytoscapeBlur,"touchstart":_vm.redirectCytoscapeBlur}},[_c('div',{ref:"graphNodesEl",staticClass:"lassox-diagram__Graph-nodes"},[_vm._l((_vm.relations),function(relation){return _c('GraphEdge',{key:relation.id,attrs:{"id":relation.id}})}),_vm._l((_vm.entities),function(entity){return _c('GraphNode',{key:entity.id,attrs:{"id":entity.id}})})],2)]),(!_vm.printMode)?_c('GraphContextMenu'):_vm._e()],1)}
+var Graphvue_type_template_id_050a5a05_staticRenderFns = []
 
 
-// CONCATENATED MODULE: ./src/components/Graph.vue?vue&type=template&id=6138144a&
-
-// EXTERNAL MODULE: ./node_modules/core-js/modules/es.string.replace.js
-var es_string_replace = __webpack_require__("5319");
+// CONCATENATED MODULE: ./src/components/Graph.vue?vue&type=template&id=050a5a05&
 
 // EXTERNAL MODULE: ./node_modules/cytoscape/dist/cytoscape.cjs.js
 var cytoscape_cjs = __webpack_require__("44e1");
@@ -92163,31 +104553,548 @@ var cytoscape_cjs_default = /*#__PURE__*/__webpack_require__.n(cytoscape_cjs);
 var cytoscape_panzoom = __webpack_require__("1e16");
 var cytoscape_panzoom_default = /*#__PURE__*/__webpack_require__.n(cytoscape_panzoom);
 
-// EXTERNAL MODULE: ./node_modules/cytoscape-node-html-label/dist/cytoscape-node-html-label.js
-var cytoscape_node_html_label = __webpack_require__("cc5f");
-var cytoscape_node_html_label_default = /*#__PURE__*/__webpack_require__.n(cytoscape_node_html_label);
-
-// EXTERNAL MODULE: ./node_modules/cytoscape-cxtmenu/cytoscape-cxtmenu.js
-var cytoscape_cxtmenu = __webpack_require__("2163");
-var cytoscape_cxtmenu_default = /*#__PURE__*/__webpack_require__.n(cytoscape_cxtmenu);
-
 // EXTERNAL MODULE: ./node_modules/cytoscape-panzoom/cytoscape.js-panzoom.css
 var cytoscape_js_panzoom = __webpack_require__("df13");
 
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"e8630cbc-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/GraphContextMenu.vue?vue&type=template&id=756cae74&
-var GraphContextMenuvue_type_template_id_756cae74_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"lassox-diagram__GraphContextMenu"},[_c('div',{ref:"positionEl",staticClass:"lassox-diagram__GraphContextMenu-position",style:({
+// EXTERNAL MODULE: ./node_modules/cytoscape-dagre/cytoscape-dagre.js
+var cytoscape_dagre = __webpack_require__("b17d");
+var cytoscape_dagre_default = /*#__PURE__*/__webpack_require__.n(cytoscape_dagre);
+
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"00b53798-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/GraphNode.vue?vue&type=template&id=5a6e8466&
+var GraphNodevue_type_template_id_5a6e8466_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"lassox-diagram__GraphNode",style:(_vm.style)},[(_vm.labels.length)?_c('div',{staticClass:"lassox-diagram__GraphNode-labels-wrapper",style:(_vm.labelsStyle)},[(_vm.entity.type.icon)?_c('Icon',{attrs:{"icon":_vm.entity.type.icon}}):_vm._e(),_c('div',{staticClass:"lassox-diagram__GraphNode-labels"},_vm._l((_vm.labels),function(field,i){return _c('div',{key:i,staticClass:"lassox-diagram__GraphNode-field"},[(field.legendColor)?_c('div',{staticClass:"lassox-diagram__GraphNode-field-legend-color",style:({ backgroundColor: field.legendColor })}):_vm._e(),_c('div',{staticClass:"lassox-diagram__GraphNode-field-value",domProps:{"textContent":_vm._s(field.text)}})])}),0)],1):_vm._e(),(_vm.fields.length)?_c('div',{staticClass:"lassox-diagram__GraphNode-fields",style:(_vm.fieldsStyle)},_vm._l((_vm.fields),function(field,i){return _c('div',{key:i,staticClass:"lassox-diagram__GraphNode-field"},[(field.legendColor)?_c('div',{staticClass:"lassox-diagram__GraphNode-field-legend-color",style:({ backgroundColor: field.legendColor })}):_vm._e(),_c('div',{staticClass:"lassox-diagram__GraphNode-field-value",domProps:{"textContent":_vm._s(field.text)}})])}),0):_vm._e()])}
+var GraphNodevue_type_template_id_5a6e8466_staticRenderFns = []
+
+
+// CONCATENATED MODULE: ./src/components/GraphNode.vue?vue&type=template&id=5a6e8466&
+
+// CONCATENATED MODULE: ./src/util/color.ts
+
+
+
+
+
+
+var getPercBrightness = function () {
+  var cache = new Map();
+  return function (color) {
+    var cacheKey = "".concat(color.red, ",").concat(color.green, ",").concat(color.blue);
+    var result = cache.get(cacheKey);
+
+    if (result === undefined) {
+      result = Math.sqrt(color.red * color.red * .241 + color.green * color.green * .691 + color.blue * color.blue * .068);
+      cache.set(cacheKey, result);
+    }
+
+    return result;
+  };
+}();
+// CONCATENATED MODULE: ./node_modules/babel-loader/lib!./node_modules/ts-loader??ref--14-1!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/GraphNode.vue?vue&type=script&lang=ts&
+
+
+
+
+
+
+
+
+
+
+
+
+
+var GraphNodevue_type_script_lang_ts_getContrastingTextColor = function getContrastingTextColor(bgColor) {
+  return getPercBrightness(new iro_es.Color(bgColor)) > 165 ? 'rgba(0, 0, 0, 0.68)' : 'rgba(255, 255, 255, 0.92)';
+};
+
+var GraphNodevue_type_script_lang_ts_GraphNode = /*#__PURE__*/function (_Vue) {
+  _inherits(GraphNode, _Vue);
+
+  var _super = _createSuper(GraphNode);
+
+  function GraphNode() {
+    var _this;
+
+    _classCallCheck(this, GraphNode);
+
+    _this = _super.apply(this, arguments);
+    _this.position = {
+      x: 0,
+      y: 0
+    };
+    _this.hidden = false;
+    _this.selected = false;
+    _this.labels = [];
+    _this.fields = [];
+    return _this;
+  }
+
+  _createClass(GraphNode, [{
+    key: "entity",
+    get: function get() {
+      return this.diagram.activeDiagram.data.entitiesMap.get(this.id);
+    }
+  }, {
+    key: "entityStyle",
+    get: function get() {
+      var _this$entity, _this$entity2;
+
+      return this.graphVm.printMode ? (_this$entity = this.entity) === null || _this$entity === void 0 ? void 0 : _this$entity.builtPrintStyle : (_this$entity2 = this.entity) === null || _this$entity2 === void 0 ? void 0 : _this$entity2.builtStyle;
+    }
+  }, {
+    key: "style",
+    get: function get() {
+      var style = this.entityStyle;
+      var position = this.position;
+      return {
+        transform: "translate(-50%, -50%) translate(100vw, 100vh) translate(".concat(position.x, "px, ").concat(position.y, "px)"),
+        visibility: this.hidden ? 'hidden' : '',
+        borderWidth: "".concat(style === null || style === void 0 ? void 0 : style.borderWidth, "px"),
+        borderStyle: style === null || style === void 0 ? void 0 : style.borderStyle,
+        borderColor: style === null || style === void 0 ? void 0 : style.borderColor,
+        boxShadow: this.selected ? '0 0 2px 2px #cd4b3d' : ''
+      };
+    }
+  }, {
+    key: "labelsStyle",
+    get: function get() {
+      var style = this.entityStyle;
+      var backgroundColor = style === null || style === void 0 ? void 0 : style.labelsBackgroundColor;
+      return {
+        color: GraphNodevue_type_script_lang_ts_getContrastingTextColor(backgroundColor),
+        backgroundColor: backgroundColor
+      };
+    }
+  }, {
+    key: "fieldsStyle",
+    get: function get() {
+      var style = this.entityStyle;
+      var backgroundColor = style === null || style === void 0 ? void 0 : style.backgroundColor;
+      return {
+        borderWidth: '0',
+        borderTopWidth: this.style.borderWidth,
+        borderStyle: this.style.borderStyle,
+        borderColor: this.style.borderColor,
+        color: GraphNodevue_type_script_lang_ts_getContrastingTextColor(backgroundColor),
+        backgroundColor: backgroundColor
+      };
+    }
+  }, {
+    key: "created",
+    value: function created() {
+      var _this2 = this;
+
+      this.$watch(function () {
+        return _this2.entity;
+      }, function () {
+        var _this2$node, _this2$node2, _this2$graphVm$_graph, _this2$node3, _this2$node4;
+
+        (_this2$node = _this2.node) === null || _this2$node === void 0 ? void 0 : _this2$node.off('position', _this2.onPosition);
+        (_this2$node2 = _this2.node) === null || _this2$node2 === void 0 ? void 0 : _this2$node2.off('data', _this2.onData);
+        _this2.node = (_this2$graphVm$_graph = _this2.graphVm._graph) === null || _this2$graphVm$_graph === void 0 ? void 0 : _this2$graphVm$_graph.nodes().$id(_this2.id);
+
+        _this2.onPosition();
+
+        (_this2$node3 = _this2.node) === null || _this2$node3 === void 0 ? void 0 : _this2$node3.on('position', _this2.onPosition);
+
+        _this2.onData();
+
+        (_this2$node4 = _this2.node) === null || _this2$node4 === void 0 ? void 0 : _this2$node4.on('data', _this2.onData);
+      }, {
+        immediate: true
+      });
+    }
+  }, {
+    key: "mounted",
+    value: function mounted() {
+      var _this3 = this;
+
+      var el = this.el = this.$el;
+      this.$watch(function () {
+        return _this3.entity;
+      }, function () {
+        watch_rect_unwatchRect(el, _this3.onRectChanged);
+        watchRect(el, _this3.onRectChanged);
+      }, {
+        immediate: true
+      });
+    }
+  }, {
+    key: "beforeDestroy",
+    value: function beforeDestroy() {
+      if (this.el) watch_rect_unwatchRect(this.el, this.onRectChanged);
+    }
+  }, {
+    key: "updateFields",
+    value: function updateFields() {
+      this.labels = [];
+      this.fields = [];
+      if (!this.entity) return;
+
+      var _iterator = _createForOfIteratorHelper(this.entity.fieldGroups),
+          _step;
+
+      try {
+        for (_iterator.s(); !(_step = _iterator.n()).done;) {
+          var fieldGroup = _step.value;
+
+          var _iterator2 = _createForOfIteratorHelper(fieldGroup.fields),
+              _step2;
+
+          try {
+            for (_iterator2.s(); !(_step2 = _iterator2.n()).done;) {
+              var field = _step2.value;
+              if (!field.active) continue;
+              var legendColor = field.addToLegend ? field.legendColor : null;
+              var value = field.getValue(this.entity.data);
+              var text = field.formatter ? field.formatter(value) : String(value !== null && value !== void 0 ? value : '');
+              if (!text) continue;
+              var array = field.isEntityLabel ? this.labels : this.fields;
+              array.push({
+                legendColor: legendColor,
+                text: text
+              });
+            }
+          } catch (err) {
+            _iterator2.e(err);
+          } finally {
+            _iterator2.f();
+          }
+        }
+      } catch (err) {
+        _iterator.e(err);
+      } finally {
+        _iterator.f();
+      }
+
+      if (!this.labels.length) {
+        this.labels.push({
+          text: this.entity.type.labels.singular
+        });
+      }
+    }
+  }, {
+    key: "onPosition",
+    value: function onPosition() {
+      var _this$node$position, _this$node;
+
+      this.position = (_this$node$position = (_this$node = this.node) === null || _this$node === void 0 ? void 0 : _this$node.position()) !== null && _this$node$position !== void 0 ? _this$node$position : {
+        x: 0,
+        y: 0
+      };
+    }
+  }, {
+    key: "onData",
+    value: function onData() {
+      var _this$node2;
+
+      this.updateFields();
+      var data = (_this$node2 = this.node) === null || _this$node2 === void 0 ? void 0 : _this$node2.data();
+      this.hidden = !!(data.hidden || data.hiddenByFilter);
+      this.selected = !this.graphVm.printMode && !!data.selected;
+    }
+  }, {
+    key: "onRectChanged",
+    value: function onRectChanged(rect, oldRect) {
+      var _this$graphVm$_graph$, _this$graphVm$_graph;
+
+      if (!this.node) return;
+      if (oldRect && rect.width === oldRect.width && rect.height === oldRect.height) return;
+      var zoom = (_this$graphVm$_graph$ = (_this$graphVm$_graph = this.graphVm._graph) === null || _this$graphVm$_graph === void 0 ? void 0 : _this$graphVm$_graph.zoom()) !== null && _this$graphVm$_graph$ !== void 0 ? _this$graphVm$_graph$ : 1;
+      var width = Math.round(rect.width / zoom);
+      var height = Math.round(rect.height / zoom);
+
+      var _this$node$data = this.node.data(),
+          oldWidth = _this$node$data.width,
+          oldHeight = _this$node$data.height;
+
+      if (width === oldWidth && height === oldHeight) return;
+      this.node.off('data', this.onData);
+      this.node.data({
+        width: width,
+        height: height
+      });
+      this.node.on('data', this.onData);
+    }
+  }]);
+
+  return GraphNode;
+}(external_commonjs_vue_commonjs2_vue_root_Vue_default.a);
+
+__decorate([Inject()], GraphNodevue_type_script_lang_ts_GraphNode.prototype, "diagramVm", void 0);
+
+__decorate([Inject()], GraphNodevue_type_script_lang_ts_GraphNode.prototype, "diagram", void 0);
+
+__decorate([Inject()], GraphNodevue_type_script_lang_ts_GraphNode.prototype, "graphVm", void 0);
+
+__decorate([Prop({
+  type: String,
+  required: true
+})], GraphNodevue_type_script_lang_ts_GraphNode.prototype, "id", void 0);
+
+GraphNodevue_type_script_lang_ts_GraphNode = __decorate([vue_class_component_esm({
+  components: {
+    Icon: components_Icon
+  }
+})], GraphNodevue_type_script_lang_ts_GraphNode);
+/* harmony default export */ var GraphNodevue_type_script_lang_ts_ = (GraphNodevue_type_script_lang_ts_GraphNode);
+// CONCATENATED MODULE: ./src/components/GraphNode.vue?vue&type=script&lang=ts&
+ /* harmony default export */ var components_GraphNodevue_type_script_lang_ts_ = (GraphNodevue_type_script_lang_ts_); 
+// EXTERNAL MODULE: ./src/components/GraphNode.vue?vue&type=style&index=0&lang=scss&
+var GraphNodevue_type_style_index_0_lang_scss_ = __webpack_require__("ff1d");
+
+// CONCATENATED MODULE: ./src/components/GraphNode.vue
+
+
+
+
+
+
+/* normalize component */
+
+var GraphNode_component = normalizeComponent(
+  components_GraphNodevue_type_script_lang_ts_,
+  GraphNodevue_type_template_id_5a6e8466_render,
+  GraphNodevue_type_template_id_5a6e8466_staticRenderFns,
+  false,
+  null,
+  null,
+  null
+  
+)
+
+/* harmony default export */ var components_GraphNode = (GraphNode_component.exports);
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"00b53798-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/GraphEdge.vue?vue&type=template&id=e5694368&
+var GraphEdgevue_type_template_id_e5694368_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"lassox-diagram__GraphEdge",style:(_vm.style)},_vm._l((_vm.labels),function(label,i){return _c('div',{key:i,staticClass:"lassox-diagram__GraphEdge-label",domProps:{"textContent":_vm._s(label)}})}),0)}
+var GraphEdgevue_type_template_id_e5694368_staticRenderFns = []
+
+
+// CONCATENATED MODULE: ./src/components/GraphEdge.vue?vue&type=template&id=e5694368&
+
+// CONCATENATED MODULE: ./node_modules/babel-loader/lib!./node_modules/ts-loader??ref--14-1!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/GraphEdge.vue?vue&type=script&lang=ts&
+
+
+
+
+
+
+
+
+
+var GraphEdgevue_type_script_lang_ts_GraphEdge = /*#__PURE__*/function (_Vue) {
+  _inherits(GraphEdge, _Vue);
+
+  var _super = _createSuper(GraphEdge);
+
+  function GraphEdge() {
+    var _this;
+
+    _classCallCheck(this, GraphEdge);
+
+    _this = _super.apply(this, arguments);
+    _this.edge = undefined;
+    _this.fromNode = undefined;
+    _this.toNode = undefined;
+    _this.position = {
+      x: 0,
+      y: 0
+    };
+    _this.hidden = false;
+    _this.selected = false;
+    _this.positioning = false;
+    return _this;
+  }
+
+  _createClass(GraphEdge, [{
+    key: "relation",
+    get: function get() {
+      return this.diagram.activeDiagram.data.relationsMap.get(this.id);
+    }
+  }, {
+    key: "style",
+    get: function get() {
+      var position = this.position;
+      return {
+        transform: "translate(-50%, -50%) translate(100vw, 100vh) translate(".concat(position.x, "px, ").concat(position.y, "px)"),
+        visibility: this.hidden || !this.labels.length ? 'hidden' : '',
+        color: this.selected ? '#cd4b3d' : 'rgba(0, 0, 0, 0.68)'
+      };
+    }
+  }, {
+    key: "labels",
+    get: function get() {
+      if (!this.relation) return [];
+      var labels = [];
+
+      var _iterator = _createForOfIteratorHelper(this.relation.fieldGroups),
+          _step;
+
+      try {
+        for (_iterator.s(); !(_step = _iterator.n()).done;) {
+          var fieldGroup = _step.value;
+
+          var _iterator2 = _createForOfIteratorHelper(fieldGroup.fields),
+              _step2;
+
+          try {
+            for (_iterator2.s(); !(_step2 = _iterator2.n()).done;) {
+              var field = _step2.value;
+              if (!field.active || !field.isRelationLabel) continue;
+              var value = field.getValue(this.relation.data);
+              var text = field.formatter ? field.formatter(value) : String(value !== null && value !== void 0 ? value : '');
+              if (!text) continue;
+              labels.push(text);
+            }
+          } catch (err) {
+            _iterator2.e(err);
+          } finally {
+            _iterator2.f();
+          }
+        }
+      } catch (err) {
+        _iterator.e(err);
+      } finally {
+        _iterator.f();
+      }
+
+      return labels;
+    }
+  }, {
+    key: "created",
+    value: function created() {
+      var _this$graphVm$_graph,
+          _this2 = this;
+
+      (_this$graphVm$_graph = this.graphVm._graph) === null || _this$graphVm$_graph === void 0 ? void 0 : _this$graphVm$_graph.on('resize', this.onPosition);
+      this.$watch(function () {
+        return _this2.relation;
+      }, function () {
+        var _this2$fromNode, _this2$toNode, _this2$edge, _this2$graphVm$_graph, _this2$graphVm$_graph2, _this2$graphVm$_graph3, _this2$fromNode2, _this2$toNode2, _this2$edge2;
+
+        (_this2$fromNode = _this2.fromNode) === null || _this2$fromNode === void 0 ? void 0 : _this2$fromNode.off('position bounds', _this2.onPosition);
+        (_this2$toNode = _this2.toNode) === null || _this2$toNode === void 0 ? void 0 : _this2$toNode.off('position bounds', _this2.onPosition);
+        (_this2$edge = _this2.edge) === null || _this2$edge === void 0 ? void 0 : _this2$edge.off('data', _this2.onData);
+        _this2.edge = (_this2$graphVm$_graph = _this2.graphVm._graph) === null || _this2$graphVm$_graph === void 0 ? void 0 : _this2$graphVm$_graph.edges().$id(_this2.id);
+        _this2.fromNode = _this2.relation && ((_this2$graphVm$_graph2 = _this2.graphVm._graph) === null || _this2$graphVm$_graph2 === void 0 ? void 0 : _this2$graphVm$_graph2.nodes().$id(_this2.relation.from));
+        _this2.toNode = _this2.relation && ((_this2$graphVm$_graph3 = _this2.graphVm._graph) === null || _this2$graphVm$_graph3 === void 0 ? void 0 : _this2$graphVm$_graph3.nodes().$id(_this2.relation.to));
+
+        _this2.onPosition();
+
+        (_this2$fromNode2 = _this2.fromNode) === null || _this2$fromNode2 === void 0 ? void 0 : _this2$fromNode2.on('position bounds', _this2.onPosition);
+        (_this2$toNode2 = _this2.toNode) === null || _this2$toNode2 === void 0 ? void 0 : _this2$toNode2.on('position bounds', _this2.onPosition);
+
+        _this2.onData();
+
+        (_this2$edge2 = _this2.edge) === null || _this2$edge2 === void 0 ? void 0 : _this2$edge2.on('data', _this2.onData);
+      }, {
+        immediate: true
+      });
+    }
+  }, {
+    key: "beforeDestroy",
+    value: function beforeDestroy() {
+      var _this$graphVm$_graph2;
+
+      (_this$graphVm$_graph2 = this.graphVm._graph) === null || _this$graphVm$_graph2 === void 0 ? void 0 : _this$graphVm$_graph2.off('resize', this.onPosition);
+    }
+  }, {
+    key: "updatePosition",
+    value: function updatePosition() {
+      try {
+        var _this$edge$midpoint, _this$edge;
+
+        var _ref = (_this$edge$midpoint = (_this$edge = this.edge) === null || _this$edge === void 0 ? void 0 : _this$edge.midpoint()) !== null && _this$edge$midpoint !== void 0 ? _this$edge$midpoint : {
+          x: 0,
+          y: 0
+        },
+            x = _ref.x,
+            y = _ref.y;
+
+        this.position.x = x;
+        this.position.y = y;
+      } catch (_unused) {// ...
+      }
+    }
+  }, {
+    key: "onPosition",
+    value: function onPosition() {
+      var _this3 = this;
+
+      if (this.positioning) return;
+      this.positioning = true;
+      this.updatePosition();
+      requestAnimationFrame(function () {
+        _this3.updatePosition();
+
+        _this3.positioning = false;
+      });
+    }
+  }, {
+    key: "onData",
+    value: function onData() {
+      var _this$edge2;
+
+      var data = (_this$edge2 = this.edge) === null || _this$edge2 === void 0 ? void 0 : _this$edge2.data();
+      this.hidden = !!(data.hidden || data.hiddenByFilter);
+      this.selected = !this.graphVm.printMode && !!data.selected;
+    }
+  }]);
+
+  return GraphEdge;
+}(external_commonjs_vue_commonjs2_vue_root_Vue_default.a);
+
+__decorate([Inject()], GraphEdgevue_type_script_lang_ts_GraphEdge.prototype, "diagramVm", void 0);
+
+__decorate([Inject()], GraphEdgevue_type_script_lang_ts_GraphEdge.prototype, "diagram", void 0);
+
+__decorate([Inject()], GraphEdgevue_type_script_lang_ts_GraphEdge.prototype, "graphVm", void 0);
+
+__decorate([Prop({
+  type: String,
+  required: true
+})], GraphEdgevue_type_script_lang_ts_GraphEdge.prototype, "id", void 0);
+
+GraphEdgevue_type_script_lang_ts_GraphEdge = __decorate([vue_class_component_esm({})], GraphEdgevue_type_script_lang_ts_GraphEdge);
+/* harmony default export */ var GraphEdgevue_type_script_lang_ts_ = (GraphEdgevue_type_script_lang_ts_GraphEdge);
+// CONCATENATED MODULE: ./src/components/GraphEdge.vue?vue&type=script&lang=ts&
+ /* harmony default export */ var components_GraphEdgevue_type_script_lang_ts_ = (GraphEdgevue_type_script_lang_ts_); 
+// EXTERNAL MODULE: ./src/components/GraphEdge.vue?vue&type=style&index=0&lang=scss&
+var GraphEdgevue_type_style_index_0_lang_scss_ = __webpack_require__("6a22");
+
+// CONCATENATED MODULE: ./src/components/GraphEdge.vue
+
+
+
+
+
+
+/* normalize component */
+
+var GraphEdge_component = normalizeComponent(
+  components_GraphEdgevue_type_script_lang_ts_,
+  GraphEdgevue_type_template_id_e5694368_render,
+  GraphEdgevue_type_template_id_e5694368_staticRenderFns,
+  false,
+  null,
+  null,
+  null
+  
+)
+
+/* harmony default export */ var components_GraphEdge = (GraphEdge_component.exports);
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"00b53798-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/GraphContextMenu.vue?vue&type=template&id=21db9217&
+var GraphContextMenuvue_type_template_id_21db9217_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"lassox-diagram__GraphContextMenu"},[_c('div',{ref:"positionEl",staticClass:"lassox-diagram__GraphContextMenu-position",style:({
       top: ((_vm.position.y) + "px"),
       left: ((_vm.position.x) + "px"),
     })}),(_vm.show)?_c('ContextMenu',{attrs:{"position":_vm.position,"actions":_vm.actions,"close":function () {
       _vm.show = false
       _vm.$parent.$el.focus()
     }}}):_vm._e()],1)}
-var GraphContextMenuvue_type_template_id_756cae74_staticRenderFns = []
+var GraphContextMenuvue_type_template_id_21db9217_staticRenderFns = []
 
 
-// CONCATENATED MODULE: ./src/components/GraphContextMenu.vue?vue&type=template&id=756cae74&
+// CONCATENATED MODULE: ./src/components/GraphContextMenu.vue?vue&type=template&id=21db9217&
 
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"e8630cbc-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/ContextMenu.vue?vue&type=template&id=065097ea&
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"00b53798-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/ContextMenu.vue?vue&type=template&id=065097ea&
 var ContextMenuvue_type_template_id_065097ea_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"lassox-diagram__ContextMenu"},[_c('div',{ref:"positionEl",staticClass:"lassox-diagram__GraphContextMenu-position",style:({
       top: ((_vm.position.y) + "px"),
       left: ((_vm.position.x) + "px"),
@@ -92428,21 +105335,21 @@ var ContextMenu_component = normalizeComponent(
 )
 
 /* harmony default export */ var components_ContextMenu = (ContextMenu_component.exports);
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"e8630cbc-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/AddRelationDropdownMenu.vue?vue&type=template&id=720bfb1a&
-var AddRelationDropdownMenuvue_type_template_id_720bfb1a_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('DropdownMenu',_vm._g(_vm._b({},'DropdownMenu',_vm.$attrs,false),_vm.$listeners),[_vm._l((_vm.actions),function(items,groupI){return [(groupI)?_c('DropdownMenuDivider',{key:("group-" + groupI + "-divider")}):_vm._e(),_vm._l((items),function(item,itemI){return _c('DropdownMenuItem',{key:("group-" + groupI + "-item-" + itemI),attrs:{"label":item.label},on:{"click":item.onClick}})})]})],2)}
-var AddRelationDropdownMenuvue_type_template_id_720bfb1a_staticRenderFns = []
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"00b53798-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/AddRelationDropdownMenu.vue?vue&type=template&id=6bf9218d&
+var AddRelationDropdownMenuvue_type_template_id_6bf9218d_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('DropdownMenu',_vm._g(_vm._b({},'DropdownMenu',_vm.$attrs,false),_vm.$listeners),[_vm._l((_vm.actions),function(items,groupI){return [(groupI)?_c('DropdownMenuDivider',{key:("group-" + groupI + "-divider")}):_vm._e(),_vm._l((items),function(item,itemI){return _c('DropdownMenuItem',{key:("group-" + groupI + "-item-" + itemI),attrs:{"label":item.label},on:{"click":item.onClick}})})]})],2)}
+var AddRelationDropdownMenuvue_type_template_id_6bf9218d_staticRenderFns = []
 
 
-// CONCATENATED MODULE: ./src/components/AddRelationDropdownMenu.vue?vue&type=template&id=720bfb1a&
+// CONCATENATED MODULE: ./src/components/AddRelationDropdownMenu.vue?vue&type=template&id=6bf9218d&
 
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"e8630cbc-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/AddRelationDialog.vue?vue&type=template&id=55de3ca6&
-var AddRelationDialogvue_type_template_id_55de3ca6_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('Dialog',{staticClass:"lassox-diagram__AddRelationDialog",attrs:{"dismissable":true,"title":("Tilføj " + (_vm.relationTypeLabel.toLowerCase())),"size":"2x","onClose":_vm.dismiss},scopedSlots:_vm._u([{key:"content",fn:function(){return [(_vm.relationFields.length)?[_c('DataCreator',{attrs:{"fields":_vm.relationFields},model:{value:(_vm.relationData),callback:function ($$v) {_vm.relationData=$$v},expression:"relationData"}}),_c('DropdownMenuDivider',{staticStyle:{"margin":"24px 0"}})]:_vm._e(),_c('EntitySelector',{attrs:{"entityTypes":_vm.supportedEntityTypes},on:{"change":function (model) { return _vm.entitySelectorModel = model; }}})]},proxy:true},{key:"actions",fn:function(){return [_c('ButtonGroup',{attrs:{"align":"right"}},[_c('Button',{attrs:{"label":"Fortryd"},on:{"click":_vm.dismiss}}),_c('Button',{attrs:{"label":"Tilføj","type":"primary","disabled":!_vm.canConfirm},on:{"click":_vm.confirm}})],1)]},proxy:true}])})}
-var AddRelationDialogvue_type_template_id_55de3ca6_staticRenderFns = []
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"00b53798-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/AddRelationDialog.vue?vue&type=template&id=6c7c2b44&
+var AddRelationDialogvue_type_template_id_6c7c2b44_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('Dialog',{staticClass:"lassox-diagram__AddRelationDialog",attrs:{"dismissable":true,"title":("Tilføj " + (_vm.relationTypeLabel.toLowerCase())),"size":"2x","onClose":_vm.dismiss},scopedSlots:_vm._u([{key:"content",fn:function(){return [(_vm.relationFields.length)?[_c('DataCreator',{attrs:{"fields":_vm.relationFields},model:{value:(_vm.relationData),callback:function ($$v) {_vm.relationData=$$v},expression:"relationData"}}),_c('DropdownMenuDivider',{staticStyle:{"margin":"24px 0"}})]:_vm._e(),_c('EntitySelector',{attrs:{"entityTypes":_vm.supportedEntityTypes},on:{"change":function (model) { return _vm.entitySelectorModel = model; }}})]},proxy:true},{key:"actions",fn:function(){return [_c('ButtonGroup',{attrs:{"align":"right"}},[_c('Button',{attrs:{"label":"Fortryd"},on:{"click":_vm.dismiss}}),_c('Button',{attrs:{"label":"Tilføj","type":"primary","disabled":!_vm.canConfirm},on:{"click":_vm.confirm}})],1)]},proxy:true}])})}
+var AddRelationDialogvue_type_template_id_6c7c2b44_staticRenderFns = []
 
 
-// CONCATENATED MODULE: ./src/components/AddRelationDialog.vue?vue&type=template&id=55de3ca6&
+// CONCATENATED MODULE: ./src/components/AddRelationDialog.vue?vue&type=template&id=6c7c2b44&
 
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"e8630cbc-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/EditorFieldGroups.vue?vue&type=template&id=545a4e7c&
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"00b53798-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/EditorFieldGroups.vue?vue&type=template&id=545a4e7c&
 var EditorFieldGroupsvue_type_template_id_545a4e7c_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"lassox-diagram__EditorFieldGroups"},[_vm._t("default")],2)}
 var EditorFieldGroupsvue_type_template_id_545a4e7c_staticRenderFns = []
 
@@ -92498,7 +105405,7 @@ var EditorFieldGroups_component = normalizeComponent(
 )
 
 /* harmony default export */ var components_EditorFieldGroups = (EditorFieldGroups_component.exports);
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"e8630cbc-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/EditorFieldGroup.vue?vue&type=template&id=3a3b3e51&
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"00b53798-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/EditorFieldGroup.vue?vue&type=template&id=3a3b3e51&
 var EditorFieldGroupvue_type_template_id_3a3b3e51_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"lassox-diagram__EditorFieldGroup"},[(_vm.title)?_c('div',{staticClass:"lassox-diagram__EditorFieldGroup-title"},[_vm._v(_vm._s(_vm.title))]):_vm._e(),_c('EditorFields',[_vm._t("default")],2)],1)}
 var EditorFieldGroupvue_type_template_id_3a3b3e51_staticRenderFns = []
 
@@ -92901,8 +105808,8 @@ AddRelationDialogvue_type_script_lang_ts_AddRelationDialog = __decorate([vue_cla
 
 var AddRelationDialog_component = normalizeComponent(
   components_AddRelationDialogvue_type_script_lang_ts_,
-  AddRelationDialogvue_type_template_id_55de3ca6_render,
-  AddRelationDialogvue_type_template_id_55de3ca6_staticRenderFns,
+  AddRelationDialogvue_type_template_id_6c7c2b44_render,
+  AddRelationDialogvue_type_template_id_6c7c2b44_staticRenderFns,
   false,
   null,
   null,
@@ -92912,6 +105819,7 @@ var AddRelationDialog_component = normalizeComponent(
 
 /* harmony default export */ var components_AddRelationDialog = (AddRelationDialog_component.exports);
 // CONCATENATED MODULE: ./node_modules/babel-loader/lib!./node_modules/ts-loader??ref--14-1!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/AddRelationDropdownMenu.vue?vue&type=script&lang=ts&
+
 
 
 
@@ -92964,7 +105872,8 @@ var AddRelationDropdownMenuvue_type_script_lang_ts_getActions = function getActi
     var _ref = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee(relationType, type) {
       var _diagram$methods$getE, _diagram$methods, _data$entities2, _data$relations2;
 
-      var data;
+      var label, closeLoadingToast, unfilteredData, data, _unfilteredData$relat, _unfilteredData$entit;
+
       return regeneratorRuntime.wrap(function _callee$(_context) {
         while (1) {
           switch (_context.prev = _context.next) {
@@ -92977,8 +105886,13 @@ var AddRelationDropdownMenuvue_type_script_lang_ts_getActions = function getActi
               return _context.abrupt("return");
 
             case 2:
-              _context.t0 = filterOutExistingData;
-              _context.t1 = diagram;
+              label = relationType.labels.pluralFrom || relationType.labels.plural;
+              closeLoadingToast = diagramVm.showToast({
+                content: "Henter eksisterende ".concat(label.toLowerCase(), "..."),
+                dismissable: false,
+                duration: 0,
+                showLoadingSpinner: true
+              });
               _context.next = 6;
               return (_diagram$methods$getE = (_diagram$methods = diagram.methods).getEntityData) === null || _diagram$methods$getE === void 0 ? void 0 : _diagram$methods$getE.call(_diagram$methods, {
                 ids: [entity.id],
@@ -92988,20 +105902,29 @@ var AddRelationDropdownMenuvue_type_script_lang_ts_getActions = function getActi
               });
 
             case 6:
-              _context.t2 = _context.sent;
-              data = (0, _context.t0)(_context.t1, _context.t2);
+              unfilteredData = _context.sent;
+              data = filterOutExistingData(diagram, unfilteredData);
+              closeLoadingToast();
 
               if ((_data$entities2 = data.entities) !== null && _data$entities2 !== void 0 && _data$entities2.length || (_data$relations2 = data.relations) !== null && _data$relations2 !== void 0 && _data$relations2.length) {
                 diagramVm.showDialog(components_ConfirmAdditionDialog, {
-                  data: data,
-                  onConfirm: function onConfirm() {
-                    return diagram.activeDiagram.data.add(data);
-                  }
+                  data: data
                 });
-              } else {// TODO: Toast?
+              } else {
+                if ((_unfilteredData$relat = unfilteredData.relations) !== null && _unfilteredData$relat !== void 0 && _unfilteredData$relat.length || (_unfilteredData$entit = unfilteredData.entities) !== null && _unfilteredData$entit !== void 0 && _unfilteredData$entit.find(function (e) {
+                  return e.id !== entity.id;
+                })) {
+                  diagramVm.showToast({
+                    content: "Alle eksisterende ".concat(label.toLowerCase(), " er allerede tilf\xF8jet.")
+                  });
+                } else {
+                  diagramVm.showToast({
+                    content: "Ingen eksisterende ".concat(label.toLowerCase(), " blev fundet.")
+                  });
+                }
               }
 
-            case 9:
+            case 10:
             case "end":
               return _context.stop();
           }
@@ -93141,8 +106064,8 @@ AddRelationDropdownMenuvue_type_script_lang_ts_AddRelationDropdownMenu = __decor
 
 var AddRelationDropdownMenu_component = normalizeComponent(
   components_AddRelationDropdownMenuvue_type_script_lang_ts_,
-  AddRelationDropdownMenuvue_type_template_id_720bfb1a_render,
-  AddRelationDropdownMenuvue_type_template_id_720bfb1a_staticRenderFns,
+  AddRelationDropdownMenuvue_type_template_id_6bf9218d_render,
+  AddRelationDropdownMenuvue_type_template_id_6bf9218d_staticRenderFns,
   false,
   null,
   null,
@@ -93267,33 +106190,37 @@ var GraphContextMenuvue_type_script_lang_ts_GraphContextMenu = /*#__PURE__*/func
   }, {
     key: "actions",
     get: function get() {
-      var _this$onlySelectedIte, _this$diagram$methods, _this$diagram$methods2;
+      var _this$diagram$methods, _this$diagram$methods2;
 
       var actions = [];
 
-      if (!this.hasSelectedItems) {
-        actions.push({
-          icon: 'add',
-          label: 'Tilføj',
-          onClick: this.showAddDialog
-        });
-      } else if ((_this$onlySelectedIte = this.onlySelectedItem) !== null && _this$onlySelectedIte !== void 0 && _this$onlySelectedIte.isEntity) {
-        actions.push({
-          icon: 'add',
-          label: 'Tilføj',
-          submenu: AddRelationDropdownMenuvue_type_script_lang_ts_getActions(this.diagramVm, this.onlySelectedItem)
-        });
-      }
+      if (this.diagram.enableEditing) {
+        var _this$onlySelectedIte;
 
-      if (this.hasSelectedItems) {
-        var _this$onlySelectedIte2;
+        if (!this.hasSelectedItems) {
+          actions.push({
+            icon: 'add',
+            label: 'Tilføj',
+            onClick: this.showAddDialog
+          });
+        } else if ((_this$onlySelectedIte = this.onlySelectedItem) !== null && _this$onlySelectedIte !== void 0 && _this$onlySelectedIte.isEntity) {
+          actions.push({
+            icon: 'add',
+            label: 'Tilføj',
+            submenu: AddRelationDropdownMenuvue_type_script_lang_ts_getActions(this.diagramVm, this.onlySelectedItem)
+          });
+        }
 
-        actions.push({
-          icon: 'remove',
-          label: 'Fjern',
-          disabled: !!((_this$onlySelectedIte2 = this.onlySelectedItem) !== null && _this$onlySelectedIte2 !== void 0 && _this$onlySelectedIte2.isEntity) && this.onlySelectedItem.isMainEntity,
-          onClick: this.removeSelectedItems
-        });
+        if (this.hasSelectedItems) {
+          var _this$onlySelectedIte2;
+
+          actions.push({
+            icon: 'remove',
+            label: 'Fjern',
+            disabled: !!((_this$onlySelectedIte2 = this.onlySelectedItem) !== null && _this$onlySelectedIte2 !== void 0 && _this$onlySelectedIte2.isEntity) && this.onlySelectedItem.isMainEntity,
+            onClick: this.removeSelectedItems
+          });
+        }
       }
 
       var customActions = (_this$diagram$methods = (_this$diagram$methods2 = this.diagram.methods).getContextMenuActions) === null || _this$diagram$methods === void 0 ? void 0 : _this$diagram$methods.call(_this$diagram$methods2, this.context);
@@ -93326,32 +106253,11 @@ var GraphContextMenuvue_type_script_lang_ts_GraphContextMenu = /*#__PURE__*/func
           } else {
             relationIds.add(item.id);
           }
-        } // Also remove connected relations
-
+        }
       } catch (err) {
         _iterator2.e(err);
       } finally {
         _iterator2.f();
-      }
-
-      if (entityIds.size) {
-        var _iterator3 = _createForOfIteratorHelper(this.diagram.activeDiagram.data.relations),
-            _step3;
-
-        try {
-          for (_iterator3.s(); !(_step3 = _iterator3.n()).done;) {
-            var relation = _step3.value;
-            if (relationIds.has(relation.id)) continue;
-
-            if (entityIds.has(relation.from) || entityIds.has(relation.to)) {
-              relationIds.add(relation.id);
-            }
-          }
-        } catch (err) {
-          _iterator3.e(err);
-        } finally {
-          _iterator3.f();
-        }
       }
 
       this.diagram.activeDiagram.data.remove({
@@ -93394,8 +106300,8 @@ var GraphContextMenuvue_type_style_index_0_lang_scss_ = __webpack_require__("66e
 
 var GraphContextMenu_component = normalizeComponent(
   components_GraphContextMenuvue_type_script_lang_ts_,
-  GraphContextMenuvue_type_template_id_756cae74_render,
-  GraphContextMenuvue_type_template_id_756cae74_staticRenderFns,
+  GraphContextMenuvue_type_template_id_21db9217_render,
+  GraphContextMenuvue_type_template_id_21db9217_staticRenderFns,
   false,
   null,
   null,
@@ -93404,27 +106310,6 @@ var GraphContextMenu_component = normalizeComponent(
 )
 
 /* harmony default export */ var components_GraphContextMenu = (GraphContextMenu_component.exports);
-// CONCATENATED MODULE: ./src/util/color.ts
-
-
-
-
-
-
-var getPercBrightness = function () {
-  var cache = new Map();
-  return function (color) {
-    var cacheKey = "".concat(color.red, ",").concat(color.green, ",").concat(color.blue);
-    var result = cache.get(cacheKey);
-
-    if (result === undefined) {
-      result = Math.sqrt(color.red * color.red * .241 + color.green * color.green * .691 + color.blue * color.blue * .068);
-      cache.set(cacheKey, result);
-    }
-
-    return result;
-  };
-}();
 // CONCATENATED MODULE: ./node_modules/babel-loader/lib!./node_modules/ts-loader??ref--14-1!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/Graph.vue?vue&type=script&lang=ts&
 
 
@@ -93459,12 +106344,6 @@ var getPercBrightness = function () {
 
 
 
-
-
- // Show 'parent' and 'child' label on entities and relations
-
-var debugHierarchy = false;
-
 var Graphvue_type_script_lang_ts_generateStyle = function generateStyle(vm) {
   var getStyle = function getStyle(element, property) {
     var item = element.isNode() ? element.data('entity') : element.data('relation');
@@ -93489,75 +106368,15 @@ var Graphvue_type_script_lang_ts_generateStyle = function generateStyle(vm) {
         return node.data('height');
       },
       'background-opacity': 0,
-      'text-valign': 'center',
       'shape': 'rectangle'
     }
   }, {
     selector: 'edge',
-    style: _objectSpread2(_objectSpread2({
+    style: _objectSpread2({
       'width': getEdgeWidth,
-      'label': function label(edge) {
-        var relation = edge.data('relation');
-        var strings = [];
-
-        if (debugHierarchy) {
-          var labelStrings = [];
-          if (relation.isParent) labelStrings.push('parent');
-          if (relation.isChild) labelStrings.push('child');
-          if (labelStrings.length) strings.push(labelStrings.join(', '));
-        }
-
-        var _iterator = _createForOfIteratorHelper(relation.fieldGroups),
-            _step;
-
-        try {
-          for (_iterator.s(); !(_step = _iterator.n()).done;) {
-            var fieldGroup = _step.value;
-
-            var _iterator2 = _createForOfIteratorHelper(fieldGroup.fields),
-                _step2;
-
-            try {
-              for (_iterator2.s(); !(_step2 = _iterator2.n()).done;) {
-                var field = _step2.value;
-                if (!field.isRelationLabel) continue;
-                if (!field.active) continue;
-                var value = field.getValue(relation.data);
-                var formatted = String(field.formatter ? field.formatter(value) : value !== null && value !== void 0 ? value : '');
-                if (formatted) strings.push(formatted);
-              }
-            } catch (err) {
-              _iterator2.e(err);
-            } finally {
-              _iterator2.f();
-            }
-          }
-        } catch (err) {
-          _iterator.e(err);
-        } finally {
-          _iterator.f();
-        }
-
-        return strings.join('\n');
+      'curve-style': function curveStyle(edge) {
+        return getStyle(edge, 'taxi') ? 'taxi' : 'bezier';
       },
-      'color': function color(edge) {
-        return vm.printMode ? '#000' : edge.selected() ? '#cd4b3d' : '#777';
-      },
-      'font-family': function () {
-        var string = getComputedStyle(vm.$el).fontFamily.trim();
-        if (string && !string.endsWith(',')) string += ', ';
-        string += 'sans-serif';
-        return string;
-      }(),
-      'font-size': '14px'
-    }, {
-      'line-height': '1.7142857142857142'
-    }), {}, {
-      'text-max-width': '200px',
-      'text-wrap': 'wrap',
-      'curve-style': 'bezier',
-      'text-background-color': '#fff',
-      'text-background-opacity': 1,
       'line-color': getEdgeColor,
       'source-arrow-color': getEdgeColor,
       'target-arrow-color': getEdgeColor,
@@ -93581,9 +106400,6 @@ var Graphvue_type_script_lang_ts_generateStyle = function generateStyle(vm) {
       },
       'control-point-step-size': function controlPointStepSize() {
         return 100;
-      },
-      'text-background-padding': function textBackgroundPadding() {
-        return '4px';
       }
     }, {
       'loop-direction': function loopDirection() {
@@ -93594,144 +106410,15 @@ var Graphvue_type_script_lang_ts_generateStyle = function generateStyle(vm) {
       }
     })
   }, {
-    selector: 'edge[?hidden], edge[?hiddenByFilter]',
+    selector: '[?hidden], [?hiddenByFilter]',
     style: {
       'visibility': 'hidden'
     }
   }];
 };
 
-var Graphvue_type_script_lang_ts_initNodeHtmlLabel = function initNodeHtmlLabel(vm) {
-  var _vm$_graph;
-
-  (_vm$_graph = vm._graph) === null || _vm$_graph === void 0 ? void 0 : _vm$_graph.nodeHtmlLabel([{
-    query: '.entity:inside',
-    tpl: function tpl(data) {
-      var _getStyleValue, _getStyleValue2, _getStyleValue3;
-
-      var entity = data.entity;
-      var classes = ['lassox-diagram__Graph_entity', "lassox-diagram__Graph_entity--id-".concat(data.id), entity.isMainEntity && 'lassox-diagram__Graph_entity--main-entity', !vm.printMode && data.selected && 'lassox-diagram__Graph_entity--selected'].filter(function (v) {
-        return !!v;
-      }).join(' ');
-
-      var createStyleString = function createStyleString(style) {
-        return style.map(function (_ref, i) {
-          var _ref2 = _slicedToArray(_ref, 2),
-              prop = _ref2[0],
-              value = _ref2[1];
-
-          if (!value) return '';
-          var string = '';
-          if (i) string += ' ';
-          string += "".concat(prop, ": ").concat(value, ";");
-          return string;
-        }).join('');
-      };
-
-      var getStyleValue = function getStyleValue(prop) {
-        return (vm.printMode ? entity.builtPrintStyle : entity.builtStyle)[prop];
-      };
-
-      var getContrastingTextColor = function getContrastingTextColor(bgColor) {
-        return getPercBrightness(new iro_es.Color(bgColor)) > 165 ? 'rgba(0, 0, 0, 0.54)' : 'rgba(255, 255, 255, 0.92)';
-      };
-
-      var borderWidth = (_getStyleValue = getStyleValue('borderWidth')) !== null && _getStyleValue !== void 0 ? _getStyleValue : 2;
-      var borderStyle = getStyleValue('borderStyle');
-      var borderColor = getStyleValue('borderColor');
-      var bgColor = (_getStyleValue2 = getStyleValue('backgroundColor')) !== null && _getStyleValue2 !== void 0 ? _getStyleValue2 : '#ffffff';
-      var labelsBgColor = (_getStyleValue3 = getStyleValue('labelsBackgroundColor')) !== null && _getStyleValue3 !== void 0 ? _getStyleValue3 : bgColor;
-      var style = createStyleString([['visibility', data.hidden || data.hiddenByFilter ? 'hidden' : 'visible'], ['border-width', "".concat(borderWidth, "px")], ['border-style', borderStyle], ['border-color', borderColor]]);
-      var selectedOutlineStyle = createStyleString([['top', "".concat(-borderWidth, "px")], ['left', "".concat(-borderWidth, "px")], ['right', "".concat(-borderWidth, "px")], ['bottom', "".concat(-borderWidth, "px")]]);
-      var labelsStyle = createStyleString([['color', getContrastingTextColor(labelsBgColor)], ['background-color', labelsBgColor]]);
-      var fieldsStyle = createStyleString([['border-top-width', "".concat(borderWidth, "px")], ['border-style', borderStyle], ['border-color', borderColor], ['color', getContrastingTextColor(bgColor)], ['background-color', bgColor]]);
-
-      var createHtmlField = function createHtmlField(options) {
-        var _options$legendColor, _options$field, _options$text;
-
-        var getFormattedFieldValue = function getFormattedFieldValue(field) {
-          var value = field.getValue(entity.data);
-          if (field.formatter) return field.formatter(value);
-          return String(value !== null && value !== void 0 ? value : '');
-        };
-
-        var encodeHTML = function encodeHTML(string) {
-          return string.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
-        };
-
-        var legendColor = (_options$legendColor = options.legendColor) !== null && _options$legendColor !== void 0 ? _options$legendColor : (_options$field = options.field) !== null && _options$field !== void 0 && _options$field.addToLegend ? options.field.legendColor : null;
-        var text = (_options$text = options.text) !== null && _options$text !== void 0 ? _options$text : options.field ? getFormattedFieldValue(options.field) : '';
-        if (!text) return '';
-        var html = '';
-        html += '<div class="lassox-diagram__Graph_entity-field">';
-        if (legendColor) html += "<div class=\"lassox-diagram__Graph_entity-field-legend-color\" style=\"background-color: ".concat(legendColor, ";\"></div>");
-        html += "<div class=\"lassox-diagram__Graph_entity-field-value\">".concat(encodeHTML(text), "</div>");
-        html += '</div>';
-        return html;
-      };
-
-      var labels = [];
-      var fields = [];
-
-      if (debugHierarchy) {
-        var labelStrings = [];
-        if (entity.isParent) labelStrings.push('parent');
-        if (entity.isChild) labelStrings.push('child');
-        if (labelStrings.length) labels.push(createHtmlField({
-          text: labelStrings.join(', ')
-        }));
-      }
-
-      var _iterator3 = _createForOfIteratorHelper(entity.fieldGroups),
-          _step3;
-
-      try {
-        for (_iterator3.s(); !(_step3 = _iterator3.n()).done;) {
-          var fieldGroup = _step3.value;
-
-          var _iterator4 = _createForOfIteratorHelper(fieldGroup.fields),
-              _step4;
-
-          try {
-            for (_iterator4.s(); !(_step4 = _iterator4.n()).done;) {
-              var field = _step4.value;
-              if (!field.active) continue;
-              var htmlField = createHtmlField({
-                field: field
-              });
-              if (!htmlField) continue;
-              if (field.isEntityLabel) labels.push(htmlField);else fields.push(htmlField);
-            }
-          } catch (err) {
-            _iterator4.e(err);
-          } finally {
-            _iterator4.f();
-          }
-        }
-      } catch (err) {
-        _iterator3.e(err);
-      } finally {
-        _iterator3.f();
-      }
-
-      if (!labels.length) {
-        labels.push(createHtmlField({
-          text: entity.type.labels.singular
-        }));
-      }
-
-      var labelsHtml = labels.join('');
-      var fieldsHtml = fields.join('');
-      return "<div class=\"".concat(classes, "\" style=\"").concat(style, "\">") + "<div class=\"lassox-diagram__Graph_entity-selected-outline\" style=\"".concat(selectedOutlineStyle, "\"></div>") + "<div class=\"lassox-diagram__Graph_entity-labels-wrapper\" style=\"".concat(labelsStyle, "\">") + (entity.type.icon ? "<div class=\"lassox-diagram__Graph_entity-icon material-icons-outlined\">".concat(entity.type.icon, "</div>") : '') + '<div class="lassox-diagram__Graph_entity-labels">' + labelsHtml + '</div>' + '</div>' + (fieldsHtml ? "<div class=\"lassox-diagram__Graph_entity-fields\" style=\"".concat(fieldsStyle, "\">") + fieldsHtml + '</div>' : '') + '</div>';
-    }
-  }], {
-    enablePointerEvents: true
-  });
-};
-
 cytoscape_panzoom_default()(cytoscape_cjs_default.a);
-cytoscape_node_html_label_default()(cytoscape_cjs_default.a);
-cytoscape_cjs_default.a.use(cytoscape_cxtmenu_default.a);
+cytoscape_cjs_default.a.use(cytoscape_dagre_default.a);
 
 var Graphvue_type_script_lang_ts_Graph = /*#__PURE__*/function (_Vue) {
   _inherits(Graph, _Vue);
@@ -93745,6 +106432,9 @@ var Graphvue_type_script_lang_ts_Graph = /*#__PURE__*/function (_Vue) {
 
     _this = _super.apply(this, arguments);
     _this.addedItems = new Map();
+    _this.entities = [];
+    _this.relations = [];
+    _this.elementHovered = false;
     _this.contextMenu = {
       show: false,
       position: {
@@ -93761,6 +106451,11 @@ var Graphvue_type_script_lang_ts_Graph = /*#__PURE__*/function (_Vue) {
   }
 
   _createClass(Graph, [{
+    key: "graphVm",
+    get: function get() {
+      return this;
+    }
+  }, {
     key: "diagram",
     get: function get() {
       return this.diagramVm.diagram;
@@ -93781,37 +106476,40 @@ var Graphvue_type_script_lang_ts_Graph = /*#__PURE__*/function (_Vue) {
       var _this2 = this;
 
       var destroyCallbacks = [];
-      this.initialize();
       destroyCallbacks.push(watchRect(this.el, this.onResize).unwatch);
+      this.initialize();
 
       if (!this.printMode) {
-        destroyCallbacks.push(this.diagram.eventBus.on('graph.layout', function (_ref3) {
+        destroyCallbacks.push(this.diagram.eventBus.on('graph.layout', function (_ref) {
           var _this2$layout;
 
-          var layout = _ref3.layout;
+          var layout = _ref.layout,
+              applyToLastChange = _ref.applyToLastChange;
           (_this2$layout = _this2.layout(layout, false)) === null || _this2$layout === void 0 ? void 0 : _this2$layout.then(function () {
-            var createMoveEntities = function createMoveEntities() {
-              var _this2$_graph;
+            var _this2$_graph;
 
-              var moveEntities = [];
-              (_this2$_graph = _this2._graph) === null || _this2$_graph === void 0 ? void 0 : _this2$_graph.nodes().forEach(function (node) {
-                var _node$position = node.position(),
-                    x = _node$position.x,
-                    y = _node$position.y;
+            var moveEntities = [];
+            (_this2$_graph = _this2._graph) === null || _this2$_graph === void 0 ? void 0 : _this2$_graph.nodes().forEach(function (node) {
+              var _node$position = node.position(),
+                  x = _node$position.x,
+                  y = _node$position.y;
 
-                moveEntities.push({
-                  id: node.id(),
-                  x: x,
-                  y: y
-                });
+              moveEntities.push({
+                id: node.id(),
+                x: x,
+                y: y
               });
-              return moveEntities;
+            });
+            var change = {
+              layout: layout.id,
+              moveEntities: moveEntities
             };
 
-            _this2.diagram.activeDiagram.data.commitChange({
-              layout: layout.id,
-              moveEntities: createMoveEntities()
-            });
+            if (applyToLastChange) {
+              _this2.diagram.activeDiagram.data.applyLayoutToLastChange(change);
+            } else {
+              _this2.diagram.activeDiagram.data.commitChange(change);
+            }
           });
         }), this.diagram.eventBus.on('graph.fit', function () {
           return _this2.fit();
@@ -93820,7 +106518,7 @@ var Graphvue_type_script_lang_ts_Graph = /*#__PURE__*/function (_Vue) {
 
           _this2.runFilters();
         }), this.diagram.eventBus.on('activeFiltersChanged', function () {
-          _this2.runFilters();
+          return _this2.runFilters();
         }));
         this.$watch(function () {
           return _this2.diagram.activeDiagram;
@@ -93839,23 +106537,25 @@ var Graphvue_type_script_lang_ts_Graph = /*#__PURE__*/function (_Vue) {
         updateElementsPromise.then(function () {
           _this2.fit();
 
-          _this2.$emit('readyToPrint');
+          requestAnimationFrame(function () {
+            return _this2.$emit('readyToPrint');
+          });
         });
       }
 
       this.onDestroy = function () {
-        var _iterator5 = _createForOfIteratorHelper(destroyCallbacks),
-            _step5;
+        var _iterator = _createForOfIteratorHelper(destroyCallbacks),
+            _step;
 
         try {
-          for (_iterator5.s(); !(_step5 = _iterator5.n()).done;) {
-            var cb = _step5.value;
+          for (_iterator.s(); !(_step = _iterator.n()).done;) {
+            var cb = _step.value;
             cb();
           }
         } catch (err) {
-          _iterator5.e(err);
+          _iterator.e(err);
         } finally {
-          _iterator5.f();
+          _iterator.f();
         }
       };
     }
@@ -93934,10 +106634,21 @@ var Graphvue_type_script_lang_ts_Graph = /*#__PURE__*/function (_Vue) {
         container: this.graphContainerEl,
         style: Graphvue_type_script_lang_ts_generateStyle(this),
         wheelSensitivity: 0.05,
-        maxZoom: !this.printMode ? 1 : undefined
-      }); // Initialize node-html-label
+        maxZoom: !this.printMode ? 1 : undefined,
+        pixelRatio: !this.printMode ? 2 : 1
+      });
+      graph.on('viewport', function () {
+        var _graph$pan = graph.pan(),
+            x = _graph$pan.x,
+            y = _graph$pan.y;
 
-      Graphvue_type_script_lang_ts_initNodeHtmlLabel(this);
+        var zoom = graph.zoom();
+        _this4.graphNodesEl.style.transform = ["translateX(".concat(x, "px)"), "translateY(".concat(y, "px)"), "scale(".concat(zoom, ")")].join(' ');
+      });
+
+      var isElement = function isElement(target) {
+        return 'isNode' in target && 'isEdge' in target && (target.isNode() || target.isEdge());
+      };
 
       if (!this.printMode) {
         // Initialize panzoom
@@ -93949,22 +106660,113 @@ var Graphvue_type_script_lang_ts_Graph = /*#__PURE__*/function (_Vue) {
           zoomOutIcon: 'material-icons-outlined',
           resetIcon: 'material-icons-outlined',
           zoomFactor: 0.1
-        });
+        }); // Track node position changes
+
+        if (this.diagram.enableDragAndDrop) {
+          if (this.diagram.dragAndDropGridSize > 0) {
+            var grabbing = false;
+            var startPos = {
+              x: 0,
+              y: 0
+            };
+            var delta = {
+              x: 0,
+              y: 0
+            };
+            var dragNodes = new Map();
+
+            var snapPos = function snapPos(pos) {
+              var size = _this4.diagram.dragAndDropGridSize;
+
+              var snapNumber = function snapNumber(n) {
+                return Math.round(n / size) * size;
+              };
+
+              return {
+                x: snapNumber(pos.x),
+                y: snapNumber(pos.y)
+              };
+            };
+
+            graph.on('grab', 'node', function (event) {
+              if (!grabbing) {
+                grabbing = true;
+                startPos = snapPos(event.position);
+                delta = {
+                  x: 0,
+                  y: 0
+                };
+              }
+
+              var node = event.target;
+              if (node.locked()) return;
+              dragNodes.set(node, {
+                startPos: snapPos(node.position())
+              });
+            });
+            graph.on('tapdrag', function (event) {
+              if (!grabbing) return;
+              var pos = snapPos(event.position);
+              delta = {
+                x: pos.x - startPos.x,
+                y: pos.y - startPos.y
+              };
+            });
+            graph.on('drag', 'node', function (event) {
+              var _dragNodes$get;
+
+              if (!grabbing) return;
+              var node = event.target;
+              var nodeStartPos = (_dragNodes$get = dragNodes.get(node)) === null || _dragNodes$get === void 0 ? void 0 : _dragNodes$get.startPos;
+              if (!nodeStartPos) return;
+              node.position({
+                x: nodeStartPos.x + delta.x,
+                y: nodeStartPos.y + delta.y
+              });
+            });
+            graph.on('tapend', function () {
+              if (!grabbing) return;
+              grabbing = false;
+              dragNodes.clear();
+            });
+          }
+
+          var movedNodes = new Set();
+          graph.on('dragfree', 'node', function (event) {
+            var node = event.target;
+            var pos = node.position();
+            var oldPos = node.data('entity').position;
+            if (oldPos && pos.x === oldPos.x && pos.y === oldPos.y) return;
+            movedNodes.add(node);
+            if (movedNodes.size == 1) requestAnimationFrame(function () {
+              _this4.diagram.activeDiagram.data.commitChange({
+                moveEntities: toConsumableArray_toConsumableArray(movedNodes).map(function (node) {
+                  var position = node.position();
+                  return {
+                    id: node.id(),
+                    x: position.x,
+                    y: position.y
+                  };
+                })
+              });
+
+              movedNodes.clear();
+            });
+          });
+        }
       } // Fit elements in graph when graph is resized
 
 
       graph.on('resize', function () {
-        _this4.fit();
+        return _this4.fit();
       });
 
       if (!this.printMode) {
-        var isElement = function isElement(target) {
-          return 'isNode' in target && 'isEdge' in target && (target.isNode() || target.isEdge());
-        };
-
+        graph.on('vmousemove', function (event) {
+          return _this4.elementHovered = isElement(event.target);
+        });
         graph.on('tap', function (event) {
-          if (!isElement(event.target)) return;
-          if (_this4.contextMenu.show) return;
+          if (!isElement(event.target) || _this4.contextMenu.show || event.originalEvent.ctrlKey || event.originalEvent.shiftKey || event.originalEvent.altKey || event.originalEvent.metaKey) return;
 
           _this4.diagram.eventBus.emit({
             name: 'editor.open',
@@ -94001,26 +106803,6 @@ var Graphvue_type_script_lang_ts_Graph = /*#__PURE__*/function (_Vue) {
         graph.on('unselect', function (event) {
           if (!isElement(event.target)) return;
           event.target.data('selected', false);
-        }); // Track node position changes
-
-        var movedNodes = new Set();
-        graph.on('dragfree', function (event) {
-          if (!isElement(event.target) || !event.target.isNode()) return;
-          movedNodes.add(event.target);
-          if (movedNodes.size == 1) requestAnimationFrame(function () {
-            _this4.diagram.activeDiagram.data.commitChange({
-              moveEntities: toConsumableArray_toConsumableArray(movedNodes).map(function (node) {
-                var position = node.position();
-                return {
-                  id: node.id(),
-                  x: position.x,
-                  y: position.y
-                };
-              })
-            });
-
-            movedNodes.clear();
-          });
         });
       }
     }
@@ -94031,6 +106813,8 @@ var Graphvue_type_script_lang_ts_Graph = /*#__PURE__*/function (_Vue) {
       if (!graph) return;
       graph.elements().remove();
       this.addedItems.clear();
+      this.entities = [];
+      this.relations = [];
     }
   }, {
     key: "updateElements",
@@ -94040,6 +106824,8 @@ var Graphvue_type_script_lang_ts_Graph = /*#__PURE__*/function (_Vue) {
       return new Promise(function (resolve) {
         var graph = _this5._graph;
         if (!graph) return resolve();
+        _this5.entities = _this5.diagram.activeDiagram.data.entities.slice();
+        _this5.relations = _this5.diagram.activeDiagram.data.relations.slice();
         graph.batch(function () {
           var shouldLayout = !_this5.printMode && !graph.elements().length;
           var items = new Map([].concat(toConsumableArray_toConsumableArray(_this5.diagram.activeDiagram.data.entitiesMap), toConsumableArray_toConsumableArray(_this5.diagram.activeDiagram.data.relationsMap)));
@@ -94047,38 +106833,38 @@ var Graphvue_type_script_lang_ts_Graph = /*#__PURE__*/function (_Vue) {
           var toUpdate = [];
           var toRemove = [];
 
-          var _iterator6 = _createForOfIteratorHelper(items),
-              _step6;
+          var _iterator2 = _createForOfIteratorHelper(items),
+              _step2;
 
           try {
-            for (_iterator6.s(); !(_step6 = _iterator6.n()).done;) {
-              var _step6$value = _slicedToArray(_step6.value, 2),
-                  id = _step6$value[0],
-                  _item4 = _step6$value[1];
+            for (_iterator2.s(); !(_step2 = _iterator2.n()).done;) {
+              var _step2$value = _slicedToArray(_step2.value, 2),
+                  id = _step2$value[0],
+                  _item4 = _step2$value[1];
 
               if (!_this5.addedItems.has(id)) toAdd.push(_item4);else toUpdate.push(_item4);
             }
           } catch (err) {
-            _iterator6.e(err);
+            _iterator2.e(err);
           } finally {
-            _iterator6.f();
+            _iterator2.f();
           }
 
-          var _iterator7 = _createForOfIteratorHelper(_this5.addedItems),
-              _step7;
+          var _iterator3 = _createForOfIteratorHelper(_this5.addedItems),
+              _step3;
 
           try {
-            for (_iterator7.s(); !(_step7 = _iterator7.n()).done;) {
-              var _step7$value = _slicedToArray(_step7.value, 2),
-                  _id = _step7$value[0],
-                  _item5 = _step7$value[1];
+            for (_iterator3.s(); !(_step3 = _iterator3.n()).done;) {
+              var _step3$value = _slicedToArray(_step3.value, 2),
+                  _id = _step3$value[0],
+                  _item5 = _step3$value[1];
 
               if (!items.has(_id)) toRemove.push(_item5);
             }
           } catch (err) {
-            _iterator7.e(err);
+            _iterator3.e(err);
           } finally {
-            _iterator7.f();
+            _iterator3.f();
           }
 
           var selectAddedElements = !!(!_this5.printMode && graph.elements().length && toAdd.length);
@@ -94099,13 +106885,16 @@ var Graphvue_type_script_lang_ts_Graph = /*#__PURE__*/function (_Vue) {
           }
 
           var addedElements = graph.add(toAdd.map(function (item) {
-            var _item$position;
+            var _ref2, _item$position;
 
             return item.isEntity ? {
               group: 'nodes',
               classes: 'entity' + (item.position ? '' : ' needs-position'),
               grabbable: !_this5.printMode && _this5.diagram.enableDragAndDrop,
-              position: (_item$position = item.position) !== null && _item$position !== void 0 ? _item$position : toAddPos,
+              position: _objectSpread2({}, (_ref2 = (_item$position = item.position) !== null && _item$position !== void 0 ? _item$position : toAddPos) !== null && _ref2 !== void 0 ? _ref2 : {
+                x: 0,
+                y: 0
+              }),
               data: {
                 id: item.id,
                 entity: item,
@@ -94125,22 +106914,32 @@ var Graphvue_type_script_lang_ts_Graph = /*#__PURE__*/function (_Vue) {
           }));
 
           if (selectAddedElements) {
-            graph.elements(':selected').unselect();
+            graph.elements().unselect();
             addedElements.select();
           }
-
-          var addedNodes = addedElements.nodes();
-          var hiddenElements = graph.elements('.needs-position');
-          hiddenElements.data('hidden', true);
 
           for (var _i = 0, _toUpdate = toUpdate; _i < _toUpdate.length; _i++) {
             var item = _toUpdate[_i];
             var element = graph.$id(item.id);
-            element.data(item.isEntity ? 'entity' : 'relation', item);
+            var itemKey = item.isEntity ? 'entity' : 'relation';
+            if (element.data(itemKey) !== item) element.data(itemKey, item);
 
             if (item.isEntity) {
               element.toggleClass('needs-position', !item.position);
-              if (item.position) element.position(item.position);
+
+              if (item.position) {
+                var _element$position = element.position(),
+                    oldX = _element$position.x,
+                    oldY = _element$position.y;
+
+                var _item$position2 = item.position,
+                    x = _item$position2.x,
+                    y = _item$position2.y;
+                if (x !== oldX || y !== oldY) element.position({
+                  x: x,
+                  y: y
+                });
+              }
             }
           }
 
@@ -94154,19 +106953,19 @@ var Graphvue_type_script_lang_ts_Graph = /*#__PURE__*/function (_Vue) {
           _this5.addedItems = items; // Calculate hierarchy
 
           if (!_this5.printMode) {
-            var _iterator8 = _createForOfIteratorHelper(items.values()),
-                _step8;
+            var _iterator4 = _createForOfIteratorHelper(items.values()),
+                _step4;
 
             try {
-              for (_iterator8.s(); !(_step8 = _iterator8.n()).done;) {
-                var _item2 = _step8.value;
+              for (_iterator4.s(); !(_step4 = _iterator4.n()).done;) {
+                var _item2 = _step4.value;
                 _item2.isParent = false;
                 _item2.isChild = false;
               }
             } catch (err) {
-              _iterator8.e(err);
+              _iterator4.e(err);
             } finally {
-              _iterator8.f();
+              _iterator4.f();
             }
 
             mainEntityNode.predecessors().not(mainEntityNode).forEach(function (element) {
@@ -94181,19 +106980,19 @@ var Graphvue_type_script_lang_ts_Graph = /*#__PURE__*/function (_Vue) {
 
 
           if (!_this5.printMode) {
-            var _iterator9 = _createForOfIteratorHelper(items.values()),
-                _step9;
+            var _iterator5 = _createForOfIteratorHelper(items.values()),
+                _step5;
 
             try {
-              for (_iterator9.s(); !(_step9 = _iterator9.n()).done;) {
-                var _item3 = _step9.value;
+              for (_iterator5.s(); !(_step5 = _iterator5.n()).done;) {
+                var _item3 = _step5.value;
 
                 _item3.buildStyle();
               }
             } catch (err) {
-              _iterator9.e(err);
+              _iterator5.e(err);
             } finally {
-              _iterator9.f();
+              _iterator5.f();
             }
           }
 
@@ -94218,62 +107017,23 @@ var Graphvue_type_script_lang_ts_Graph = /*#__PURE__*/function (_Vue) {
               } // Fit graph to screen, if necessary
 
 
-              if (shouldLayout || toAddPos) _this5.fit(); // Unhide elements
-
-              hiddenElements.data('hidden', false);
+              if (shouldLayout || toAddPos) _this5.fit();
             });
           };
 
-          if (addedNodes.length) {
-            graph.one('render', function () {
-              graph.batch(function () {
-                addedNodes.forEach(function (node) {
-                  var _this5$el$querySelect;
+          var nodesToLayout = shouldLayout ? graph.nodes('.needs-position') : null;
 
-                  var nodeEl = (_this5$el$querySelect = _this5.el.querySelector(".lassox-diagram__Graph_entity--id-".concat(node.id()))) === null || _this5$el$querySelect === void 0 ? void 0 : _this5$el$querySelect.parentElement;
-                  if (!nodeEl) return;
-                  nodeEl.style.cursor = 'pointer';
+          if (nodesToLayout !== null && nodesToLayout !== void 0 && nodesToLayout.length) {
+            _this5.$nextTick(function () {
+              var _this5$layout;
 
-                  var onRectChanged = function onRectChanged(rect, oldRect) {
-                    var _this5$_graph$zoom, _this5$_graph;
-
-                    if (oldRect && rect.width === oldRect.width && rect.height === oldRect.height) return;
-                    var zoom = (_this5$_graph$zoom = (_this5$_graph = _this5._graph) === null || _this5$_graph === void 0 ? void 0 : _this5$_graph.zoom()) !== null && _this5$_graph$zoom !== void 0 ? _this5$_graph$zoom : 1;
-                    var width = rect.width / zoom;
-                    var height = rect.height / zoom;
-
-                    var _node$data = node.data(),
-                        oldWidth = _node$data.width,
-                        oldHeight = _node$data.height;
-
-                    if (width === oldWidth && height === oldHeight) return;
-                    node.data({
-                      width: width,
-                      height: height
-                    });
-                  };
-
-                  var unwatchRect = watchRect(nodeEl, onRectChanged).unwatch;
-                  node.on('remove', unwatchRect);
-                });
-              });
-              graph.one('render', function () {
-                var nodesToLayout = shouldLayout ? graph.nodes('.needs-position') : null;
-
-                if (nodesToLayout !== null && nodesToLayout !== void 0 && nodesToLayout.length) {
-                  var _this5$layout;
-
-                  var nodesToLock = graph.nodes().not(nodesToLayout).not(':locked');
-                  nodesToLock.lock();
-                  (_this5$layout = _this5.layout(_this5.diagram.activeDiagram.settings.activeLayout, false)) === null || _this5$layout === void 0 ? void 0 : _this5$layout.then(function () {
-                    return graph.batch(function () {
-                      nodesToLock.unlock();
-                      onDone();
-                    });
-                  });
-                } else {
+              var nodesToLock = graph.nodes().not(nodesToLayout).not(':locked');
+              nodesToLock.lock();
+              (_this5$layout = _this5.layout(_this5.diagram.activeDiagram.settings.activeLayout, false)) === null || _this5$layout === void 0 ? void 0 : _this5$layout.then(function () {
+                return graph.batch(function () {
+                  nodesToLock.unlock();
                   onDone();
-                }
+                });
               });
             });
           } else {
@@ -94330,34 +107090,60 @@ var Graphvue_type_script_lang_ts_Graph = /*#__PURE__*/function (_Vue) {
       var graph = this._graph;
       if (!graph) return;
       return new Promise(function (resolve) {
-        var _layout$directed, _layout$grid, _layout$spacingFactor, _layout$maximal, _layout$animationDura, _layout$animationEasi;
+        var _layout$spacingFactor, _layout$animationDura, _layout$animationEasi;
 
         var elements = graph.elements('[!hiddenByFilter]');
-        elements.layout({
-          sort: function sort(a, b) {
-            console.log('SORT', a, b);
-            return 0;
-          },
-          name: 'breadthfirst',
+        var baseOptions = {
           fit: false,
-          directed: (_layout$directed = _layout === null || _layout === void 0 ? void 0 : _layout.directed) !== null && _layout$directed !== void 0 ? _layout$directed : false,
-          grid: (_layout$grid = _layout === null || _layout === void 0 ? void 0 : _layout.grid) !== null && _layout$grid !== void 0 ? _layout$grid : false,
           spacingFactor: (_layout$spacingFactor = _layout === null || _layout === void 0 ? void 0 : _layout.spacingFactor) !== null && _layout$spacingFactor !== void 0 ? _layout$spacingFactor : 1.3,
-          maximal: (_layout$maximal = _layout === null || _layout === void 0 ? void 0 : _layout.maximal) !== null && _layout$maximal !== void 0 ? _layout$maximal : false,
-          avoidOverlap: true,
           animate: animate,
           animationDuration: animate ? (_layout$animationDura = _layout === null || _layout === void 0 ? void 0 : _layout.animationDuration) !== null && _layout$animationDura !== void 0 ? _layout$animationDura : 1000 : undefined,
           animationEasing: animate ? (_layout$animationEasi = _layout === null || _layout === void 0 ? void 0 : _layout.animationEasing) !== null && _layout$animationEasi !== void 0 ? _layout$animationEasi : 'ease-out' : undefined,
-          transform: _layout !== null && _layout !== void 0 && _layout.inverted ? function (_, pos) {
+          transform: _layout !== null && _layout !== void 0 && _layout.inverted ? function (_, _ref3) {
+            var x = _ref3.x,
+                y = _ref3.y;
             return {
-              x: -pos.x,
-              y: -pos.y
+              x: -x,
+              y: -y
             };
           } : undefined,
           stop: function stop() {
-            resolve();
+            return resolve();
           }
-        }).run();
+        };
+        var options;
+
+        switch (_layout === null || _layout === void 0 ? void 0 : _layout.type) {
+          case 'dagre':
+            {
+              options = _objectSpread2(_objectSpread2({}, baseOptions), {}, {
+                name: 'dagre',
+                nodeSep: _layout.nodeSep,
+                edgeSep: _layout.edgeSep,
+                rankSep: _layout.rankSep,
+                rankDir: _layout.rankDir,
+                align: _layout.align,
+                ranker: _layout.ranker
+              });
+              break;
+            }
+
+          default:
+            {
+              var _layout$directed, _layout$grid, _layout$maximal;
+
+              options = _objectSpread2(_objectSpread2({}, baseOptions), {}, {
+                name: 'breadthfirst',
+                directed: (_layout$directed = _layout === null || _layout === void 0 ? void 0 : _layout.directed) !== null && _layout$directed !== void 0 ? _layout$directed : false,
+                grid: (_layout$grid = _layout === null || _layout === void 0 ? void 0 : _layout.grid) !== null && _layout$grid !== void 0 ? _layout$grid : false,
+                maximal: (_layout$maximal = _layout === null || _layout === void 0 ? void 0 : _layout.maximal) !== null && _layout$maximal !== void 0 ? _layout$maximal : false,
+                avoidOverlap: true
+              });
+              break;
+            }
+        }
+
+        elements.layout(options).run();
       });
     }
   }, {
@@ -94374,6 +107160,8 @@ var Graphvue_type_script_lang_ts_Graph = /*#__PURE__*/function (_Vue) {
 
 __decorate([Inject()], Graphvue_type_script_lang_ts_Graph.prototype, "diagramVm", void 0);
 
+__decorate([Provide()], Graphvue_type_script_lang_ts_Graph.prototype, "graphVm", null);
+
 __decorate([Prop({
   type: Boolean,
   default: false
@@ -94381,8 +107169,12 @@ __decorate([Prop({
 
 __decorate([Ref()], Graphvue_type_script_lang_ts_Graph.prototype, "graphContainerEl", void 0);
 
+__decorate([Ref()], Graphvue_type_script_lang_ts_Graph.prototype, "graphNodesEl", void 0);
+
 Graphvue_type_script_lang_ts_Graph = __decorate([vue_class_component_esm({
   components: {
+    GraphNode: components_GraphNode,
+    GraphEdge: components_GraphEdge,
     GraphContextMenu: components_GraphContextMenu
   }
 })], Graphvue_type_script_lang_ts_Graph);
@@ -94403,8 +107195,8 @@ var Graphvue_type_style_index_0_lang_scss_ = __webpack_require__("2a3c");
 
 var Graph_component = normalizeComponent(
   components_Graphvue_type_script_lang_ts_,
-  Graphvue_type_template_id_6138144a_render,
-  Graphvue_type_template_id_6138144a_staticRenderFns,
+  Graphvue_type_template_id_050a5a05_render,
+  Graphvue_type_template_id_050a5a05_staticRenderFns,
   false,
   null,
   null,
@@ -94413,21 +107205,21 @@ var Graph_component = normalizeComponent(
 )
 
 /* harmony default export */ var components_Graph = (Graph_component.exports);
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"e8630cbc-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/Customizer.vue?vue&type=template&id=474c8b64&
-var Customizervue_type_template_id_474c8b64_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"lassox-diagram__Customizer"},[(_vm.compact)?_c('div',{staticClass:"lassox-diagram__Customizer_header"},[_c('div',{staticClass:"lassox-diagram__Customizer_header-title"},[_vm._v("Tilpas")]),_c('IconButton',{attrs:{"icon":"close","size":"normal"},on:{"click":function () { return _vm.diagramVm.showCustomizer = false; }}})],1):_vm._e(),(_vm.diagram.fieldGroups.length)?_c('div',{staticClass:"lassox-diagram__Customizer_fields"},_vm._l((_vm.diagram.fieldGroups),function(fieldGroup){return _c('CustomizerFieldGroup',{key:fieldGroup.id,attrs:{"fieldGroup":fieldGroup}})}),1):_vm._e(),(_vm.diagram.fieldGroups.length && _vm.diagram.filters.length)?_c('div',{staticClass:"lassox-diagram__Customizer_seperator"}):_vm._e(),(_vm.diagram.filters.length)?_c('div',{staticClass:"lassox-diagram__Customizer_filters"},[_c('div',{staticClass:"lassox-diagram__Customizer_filters-headline",domProps:{"textContent":_vm._s('Filtre')}}),_vm._l((_vm.diagram.filters),function(filter){return _c('BaseButton',{key:filter.id,staticClass:"lassox-diagram__Customizer_filter-button",attrs:{"label":filter.title,"icon":filter.active ? 'check_box' : 'check_box_outline_blank'},on:{"click":function () { return filter.active = !filter.active; }}})})],2):_vm._e()])}
-var Customizervue_type_template_id_474c8b64_staticRenderFns = []
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"00b53798-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/Customizer.vue?vue&type=template&id=141db7ea&
+var Customizervue_type_template_id_141db7ea_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"lassox-diagram__Customizer"},[(_vm.compact)?_c('div',{staticClass:"lassox-diagram__Customizer_header"},[_c('div',{staticClass:"lassox-diagram__Customizer_header-title"},[_vm._v("Tilpas")]),_c('IconButton',{attrs:{"icon":"close","size":"normal"},on:{"click":function () { return _vm.diagramVm.showCustomizer = false; }}})],1):_vm._e(),(_vm.diagram.fieldGroups.length)?_c('div',{staticClass:"lassox-diagram__Customizer_fields"},_vm._l((_vm.diagram.fieldGroups),function(fieldGroup){return _c('CustomizerFieldGroup',{key:fieldGroup.id,attrs:{"fieldGroup":fieldGroup}})}),1):_vm._e(),(_vm.diagram.fieldGroups.length && _vm.diagram.filters.length)?_c('div',{staticClass:"lassox-diagram__Customizer_seperator"}):_vm._e(),(_vm.diagram.filters.length)?_c('div',{staticClass:"lassox-diagram__Customizer_filters"},[_c('div',{staticClass:"lassox-diagram__Customizer_filters-headline",domProps:{"textContent":_vm._s('Filtre')}}),_vm._l((_vm.diagram.filters),function(filter){return _c('BaseButton',{key:filter.id,staticClass:"lassox-diagram__Customizer_filter-button",attrs:{"label":filter.title,"icon":filter.active ? 'check_box' : 'check_box_outline_blank'},on:{"click":function () { return filter.active = !filter.active; }}})})],2):_vm._e()])}
+var Customizervue_type_template_id_141db7ea_staticRenderFns = []
 
 
-// CONCATENATED MODULE: ./src/components/Customizer.vue?vue&type=template&id=474c8b64&
+// CONCATENATED MODULE: ./src/components/Customizer.vue?vue&type=template&id=141db7ea&
 
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"e8630cbc-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/CustomizerFieldGroup.vue?vue&type=template&id=2795d6c6&
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"00b53798-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/CustomizerFieldGroup.vue?vue&type=template&id=2795d6c6&
 var CustomizerFieldGroupvue_type_template_id_2795d6c6_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"lassox-diagram__CustomizerFieldGroup"},[_c('CustomizerFieldGroupDropdownButton',{attrs:{"fieldGroup":_vm.fieldGroup}}),(_vm.activeFields.length)?_c('div',{staticClass:"lassox-diagram__CustomizerFieldGroup_fields"},_vm._l((_vm.activeFields),function(field){return _c('div',{key:field.id,staticClass:"lassox-diagram__CustomizerFieldGroup_field"},[_c('div',{staticClass:"lassox-diagram__CustomizerFieldGroup_field-legend-color",style:({ backgroundColor: field.legendColor })}),_c('div',{staticClass:"lassox-diagram__CustomizerFieldGroup_field-title",domProps:{"textContent":_vm._s(field.title)}})])}),0):_vm._e()],1)}
 var CustomizerFieldGroupvue_type_template_id_2795d6c6_staticRenderFns = []
 
 
 // CONCATENATED MODULE: ./src/components/CustomizerFieldGroup.vue?vue&type=template&id=2795d6c6&
 
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"e8630cbc-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/CustomizerFieldGroupDropdownButton.vue?vue&type=template&id=0688dc2f&
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"00b53798-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/CustomizerFieldGroupDropdownButton.vue?vue&type=template&id=0688dc2f&
 var CustomizerFieldGroupDropdownButtonvue_type_template_id_0688dc2f_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"lassox-diagram__CustomizerFieldGroupDropdownButton"},[_c('BaseButton',{ref:"button",staticClass:"lassox-diagram__CustomizerFieldGroupDropdownButton_button",attrs:{"label":_vm.fieldGroup.title,"trailingIcon":_vm.showDropdownMenu ? 'expand_less' : 'expand_more'},on:{"click":function () { return _vm.showDropdownMenu = !_vm.showDropdownMenu; },"focusout":_vm.onFocusOut}}),_c('div',{directives:[{name:"show",rawName:"v-show",value:(_vm.showDropdownMenu),expression:"showDropdownMenu"}],ref:"dropdownMenuEl",staticClass:"lassox-diagram__CustomizerFieldGroupDropdownButton_dropdown-menu",style:(_vm.dropdownStyle),attrs:{"tabindex":"-1"},on:{"focusout":_vm.onFocusOut}},_vm._l((_vm.fields),function(field){return _c('BaseButton',{key:field.id,staticClass:"lassox-diagram__CustomizerFieldGroupDropdownButton_dropdown-menu-item",attrs:{"label":field.title,"icon":field.active ? 'check_box' : 'check_box_outline_blank'},on:{"click":function () { return field.active = !field.active; }}})}),1),_c('div',{ref:"boundsEl",staticClass:"lassox-diagram__CustomizerFieldGroupDropdownButton_dropdown-menu-bounds"})],1)}
 var CustomizerFieldGroupDropdownButtonvue_type_template_id_0688dc2f_staticRenderFns = []
 
@@ -94718,8 +107510,8 @@ var Customizervue_type_style_index_0_lang_scss_ = __webpack_require__("7fc0");
 
 var Customizer_component = normalizeComponent(
   components_Customizervue_type_script_lang_ts_,
-  Customizervue_type_template_id_474c8b64_render,
-  Customizervue_type_template_id_474c8b64_staticRenderFns,
+  Customizervue_type_template_id_141db7ea_render,
+  Customizervue_type_template_id_141db7ea_staticRenderFns,
   false,
   null,
   null,
@@ -94728,12 +107520,12 @@ var Customizer_component = normalizeComponent(
 )
 
 /* harmony default export */ var components_Customizer = (Customizer_component.exports);
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"e8630cbc-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/Editor.vue?vue&type=template&id=0af556c8&
-var Editorvue_type_template_id_0af556c8_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"lassox-diagram__Editor"},[_c('header',{staticClass:"lassox-diagram__Editor_header"},[_c('div',{staticClass:"lassox-diagram__Editor_header-title-bar"},[_c('div',{staticClass:"lassox-diagram__Editor_header-title-bar-title",domProps:{"textContent":_vm._s(("Rediger " + _vm.label))}}),_c('IconButton',{attrs:{"icon":"close","size":"normal"},on:{"click":function () { return _vm.close(); }}})],1),(_vm.description)?_c('div',{staticClass:"lassox-diagram__Editor_header-description",domProps:{"textContent":_vm._s(_vm.description)}}):_vm._e(),_c('div',{staticClass:"lassox-diagram__Editor_header-actions"},[_c('ButtonGroup',[(_vm.object.isEntity)?_c('Button',{ref:"addDropdownButton",attrs:{"label":"Tilføj","trailingIcon":_vm.showAddDropdownMenu ? 'expand_less' : 'expand_more',"disabled":!_vm.object.type.supportedRelations.size},on:{"click":function () { return _vm.showAddDropdownMenu = !_vm.showAddDropdownMenu; }}}):_vm._e(),_c('Button',{attrs:{"label":"Fjern","disabled":_vm.object.isEntity && _vm.object.isMainEntity},on:{"click":_vm.remove}})],1),(_vm.object.isEntity && _vm.object.type.supportedRelations.size)?_c('AddRelationDropdownMenu',{attrs:{"entity":_vm.object,"opener":_vm.showAddDropdownMenu ? _vm.$refs.addDropdownButton.$el : null,"close":function () { return _vm.showAddDropdownMenu = false; }}}):_vm._e()],1)]),_c('div',{staticClass:"lassox-diagram__Editor_body-wrapper"},[_c('div',{staticClass:"lassox-diagram__Editor_body"},[_c('EditorFieldGroups',_vm._l((_vm.fieldGroups),function(fieldGroup){return _c('EditorFieldGroup',{key:fieldGroup.id,attrs:{"title":fieldGroup.title}},_vm._l((fieldGroup.fields),function(field){return _c('EditorField',{key:field.id,attrs:{"id":field.id,"type":field.type,"title":field.title,"editable":field.editable,"options":field.options,"initialValue":field.initialValue,"initialValueLabel":field.initialValueLabel,"resetValue":field.resetValue},model:{value:(field.value),callback:function ($$v) {_vm.$set(field, "value", $$v)},expression:"field.value"}})}),1)}),1)],1)]),_c('footer',{staticClass:"lassox-diagram__Editor_footer"},[_c('ButtonGroup',{attrs:{"align":"right"}},[_c('Button',{attrs:{"label":"Luk"},on:{"click":function () { return _vm.close(); }}}),_c('Button',{attrs:{"type":"primary","label":"Gem ændringer","disabled":!_vm.hasChanges},on:{"click":function () { return _vm.saveChanges(); }}})],1)],1)])}
-var Editorvue_type_template_id_0af556c8_staticRenderFns = []
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"00b53798-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/Editor.vue?vue&type=template&id=65781ff5&
+var Editorvue_type_template_id_65781ff5_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return (_vm.object)?_c('div',{staticClass:"lassox-diagram__Editor"},[_c('header',{staticClass:"lassox-diagram__Editor_header"},[_c('div',{staticClass:"lassox-diagram__Editor_header-title-bar"},[_c('div',{staticClass:"lassox-diagram__Editor_header-title-bar-title",domProps:{"textContent":_vm._s(("Rediger " + _vm.label))}}),_c('IconButton',{attrs:{"icon":"close","size":"normal"},on:{"click":function () { return _vm.object = null; }}})],1),(_vm.description)?_c('div',{staticClass:"lassox-diagram__Editor_header-description",domProps:{"textContent":_vm._s(_vm.description)}}):_vm._e(),_c('div',{staticClass:"lassox-diagram__Editor_header-actions"},[_c('ButtonGroup',[(_vm.object.isEntity)?_c('Button',{ref:"addDropdownButton",attrs:{"label":"Tilføj","trailingIcon":_vm.showAddDropdownMenu ? 'expand_less' : 'expand_more',"disabled":!_vm.object.type.supportedRelations.size},on:{"click":function () { return _vm.showAddDropdownMenu = !_vm.showAddDropdownMenu; }}}):_vm._e(),_c('Button',{attrs:{"label":"Fjern","disabled":_vm.object.isEntity && _vm.object.isMainEntity},on:{"click":_vm.remove}})],1),(_vm.object.isEntity && _vm.object.type.supportedRelations.size)?_c('AddRelationDropdownMenu',{attrs:{"entity":_vm.object,"opener":_vm.showAddDropdownMenu ? _vm.$refs.addDropdownButton.$el : null,"close":function () { return _vm.showAddDropdownMenu = false; }}}):_vm._e()],1)]),_c('div',{staticClass:"lassox-diagram__Editor_body-wrapper"},[_c('div',{staticClass:"lassox-diagram__Editor_body"},[_c('EditorFieldGroups',_vm._l((_vm.fieldGroups),function(fieldGroup){return _c('EditorFieldGroup',{key:fieldGroup.id,attrs:{"title":fieldGroup.title}},_vm._l((fieldGroup.fields),function(field){return _c('EditorField',{key:field.id,attrs:{"id":field.id,"type":field.type,"title":field.title,"editable":field.editable,"options":field.options,"initialValue":field.initialValue,"initialValueLabel":field.initialValueLabel,"resetValue":field.resetValue},model:{value:(field.value),callback:function ($$v) {_vm.$set(field, "value", $$v)},expression:"field.value"}})}),1)}),1)],1)]),_c('footer',{staticClass:"lassox-diagram__Editor_footer"},[_c('ButtonGroup',{attrs:{"align":"right"}},[_c('Button',{attrs:{"label":"Luk"},on:{"click":function () { return _vm.object = null; }}}),_c('Button',{attrs:{"type":"primary","label":"Gem ændringer","disabled":!_vm.hasChanges},on:{"click":_vm.saveChanges}})],1)],1)]):_vm._e()}
+var Editorvue_type_template_id_65781ff5_staticRenderFns = []
 
 
-// CONCATENATED MODULE: ./src/components/Editor.vue?vue&type=template&id=0af556c8&
+// CONCATENATED MODULE: ./src/components/Editor.vue?vue&type=template&id=65781ff5&
 
 // CONCATENATED MODULE: ./node_modules/babel-loader/lib!./node_modules/ts-loader??ref--14-1!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/Editor.vue?vue&type=script&lang=ts&
 
@@ -94774,6 +107566,7 @@ var Editorvue_type_script_lang_ts_Editor = /*#__PURE__*/function (_Vue) {
     _classCallCheck(this, Editor);
 
     _this = _super.apply(this, arguments);
+    _this.object = null;
     _this.showAddDropdownMenu = false;
     _this.fieldGroups = [];
     return _this;
@@ -94784,6 +107577,7 @@ var Editorvue_type_script_lang_ts_Editor = /*#__PURE__*/function (_Vue) {
     get: function get() {
       var _this$object$type$lab, _this$object$type$lab2, _this$object$type$lab3;
 
+      if (!this.object) return '';
       return (_this$object$type$lab = (_this$object$type$lab2 = (_this$object$type$lab3 = this.object.type.labels).editorLabel) === null || _this$object$type$lab2 === void 0 ? void 0 : _this$object$type$lab2.call(_this$object$type$lab3, this.object.data)) !== null && _this$object$type$lab !== void 0 ? _this$object$type$lab : this.object.type.labels.singular.toLowerCase();
     }
   }, {
@@ -94791,6 +107585,7 @@ var Editorvue_type_script_lang_ts_Editor = /*#__PURE__*/function (_Vue) {
     get: function get() {
       var _this$object$type$lab4, _this$object$type$lab5;
 
+      if (!this.object) return undefined;
       return (_this$object$type$lab4 = (_this$object$type$lab5 = this.object.type.labels).editorDescription) === null || _this$object$type$lab4 === void 0 ? void 0 : _this$object$type$lab4.call(_this$object$type$lab5, this.object.data);
     }
   }, {
@@ -94812,18 +107607,26 @@ var Editorvue_type_script_lang_ts_Editor = /*#__PURE__*/function (_Vue) {
       return !!this.changedFieldGroups.length;
     }
   }, {
+    key: "created",
+    value: function created() {
+      var _this2 = this;
+
+      this.diagram.eventBus.on('editor.open', function (_ref) {
+        var target = _ref.target;
+        return _this2.object = target;
+      });
+      this.diagram.eventBus.on('dataUpdated', function () {
+        return _this2.object = null;
+      });
+    }
+  }, {
     key: "remove",
     value: function remove() {
+      if (!this.object) return;
+
       if (this.object.isEntity) {
-        var entityId = this.object.id;
-        var connectedRelationIds = this.diagram.activeDiagram.data.relations.filter(function (relation) {
-          return relation.from == entityId || relation.to == entityId;
-        }).map(function (relation) {
-          return relation.id;
-        });
         this.diagram.activeDiagram.data.remove({
-          entities: [entityId],
-          relations: connectedRelationIds
+          entities: [this.object.id]
         });
       } else {
         this.diagram.activeDiagram.data.remove({
@@ -94831,11 +107634,12 @@ var Editorvue_type_script_lang_ts_Editor = /*#__PURE__*/function (_Vue) {
         });
       }
 
-      this.close();
+      this.object = null;
     }
   }, {
     key: "saveChanges",
     value: function saveChanges() {
+      if (!this.object) return;
       var id = this.object.id;
       var newData = {};
       var newStyle = {};
@@ -94885,12 +107689,12 @@ var Editorvue_type_script_lang_ts_Editor = /*#__PURE__*/function (_Vue) {
         });
       }
 
-      this.close();
+      this.object = null;
     }
   }, {
     key: "onObjectChanged",
-    value: function onObjectChanged() {
-      var object = this.object;
+    value: function onObjectChanged(object) {
+      if (!object) return;
 
       var createField = function createField(options) {
         var _options$editable, _options$initialValue, _options$initialValue2;
@@ -95132,16 +107936,6 @@ __decorate([Inject()], Editorvue_type_script_lang_ts_Editor.prototype, "diagramV
 
 __decorate([Inject()], Editorvue_type_script_lang_ts_Editor.prototype, "diagram", void 0);
 
-__decorate([Prop({
-  type: Object,
-  required: true
-})], Editorvue_type_script_lang_ts_Editor.prototype, "object", void 0);
-
-__decorate([Prop({
-  type: Function,
-  required: true
-})], Editorvue_type_script_lang_ts_Editor.prototype, "close", void 0);
-
 __decorate([Watch('object', {
   immediate: true
 })], Editorvue_type_script_lang_ts_Editor.prototype, "onObjectChanged", null);
@@ -95181,8 +107975,8 @@ var Editorvue_type_style_index_0_lang_scss_ = __webpack_require__("58d3");
 
 var Editor_component = normalizeComponent(
   components_Editorvue_type_script_lang_ts_,
-  Editorvue_type_template_id_0af556c8_render,
-  Editorvue_type_template_id_0af556c8_staticRenderFns,
+  Editorvue_type_template_id_65781ff5_render,
+  Editorvue_type_template_id_65781ff5_staticRenderFns,
   false,
   null,
   null,
@@ -95191,12 +107985,12 @@ var Editor_component = normalizeComponent(
 )
 
 /* harmony default export */ var components_Editor = (Editor_component.exports);
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"e8630cbc-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/GraphLegend.vue?vue&type=template&id=e3e95160&
-var GraphLegendvue_type_template_id_e3e95160_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"lassox-diagram__GraphLegend"},[_c('img',{staticClass:"lassox-diagram__GraphLegend-logo",attrs:{"src":__webpack_require__("cf05"),"alt":"Lasso X"}}),_c('div',{staticClass:"lassox-diagram__GraphLegend-fields"},_vm._l((_vm.fields),function(field){return _c('div',{key:field.fullId,staticClass:"lassox-diagram__GraphLegend-field"},[_c('div',{staticClass:"lassox-diagram__GraphLegend-field-legend-color",style:({ backgroundColor: field.legendColor })}),_c('div',{staticClass:"lassox-diagram__GraphLegend-field-title",domProps:{"textContent":_vm._s(field.title)}})])}),0)])}
-var GraphLegendvue_type_template_id_e3e95160_staticRenderFns = []
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"00b53798-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/GraphLegend.vue?vue&type=template&id=068dac86&
+var GraphLegendvue_type_template_id_068dac86_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"lassox-diagram__GraphLegend"},[_c('img',{staticClass:"lassox-diagram__GraphLegend-logo",attrs:{"src":__webpack_require__("cf05"),"alt":"Lasso X"}}),_c('div',{staticClass:"lassox-diagram__GraphLegend-fields"},_vm._l((_vm.fields),function(field){return _c('div',{key:field.fullId,staticClass:"lassox-diagram__GraphLegend-field"},[_c('div',{staticClass:"lassox-diagram__GraphLegend-field-legend-color",style:({ backgroundColor: field.legendColor })}),_c('div',{staticClass:"lassox-diagram__GraphLegend-field-title",domProps:{"textContent":_vm._s(field.title)}})])}),0)])}
+var GraphLegendvue_type_template_id_068dac86_staticRenderFns = []
 
 
-// CONCATENATED MODULE: ./src/components/GraphLegend.vue?vue&type=template&id=e3e95160&
+// CONCATENATED MODULE: ./src/components/GraphLegend.vue?vue&type=template&id=068dac86&
 
 // CONCATENATED MODULE: ./node_modules/babel-loader/lib!./node_modules/ts-loader??ref--14-1!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/GraphLegend.vue?vue&type=script&lang=ts&
 
@@ -95255,8 +108049,8 @@ var GraphLegendvue_type_style_index_0_lang_scss_ = __webpack_require__("b1cd");
 
 var GraphLegend_component = normalizeComponent(
   components_GraphLegendvue_type_script_lang_ts_,
-  GraphLegendvue_type_template_id_e3e95160_render,
-  GraphLegendvue_type_template_id_e3e95160_staticRenderFns,
+  GraphLegendvue_type_template_id_068dac86_render,
+  GraphLegendvue_type_template_id_068dac86_staticRenderFns,
   false,
   null,
   null,
@@ -95265,33 +108059,29 @@ var GraphLegend_component = normalizeComponent(
 )
 
 /* harmony default export */ var components_GraphLegend = (GraphLegend_component.exports);
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"e8630cbc-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/GraphPrint.vue?vue&type=template&id=dedf0522&
-var GraphPrintvue_type_template_id_dedf0522_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"lassox-diagram__GraphPrint",style:({
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"00b53798-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/GraphPrint.vue?vue&type=template&id=47e5b402&
+var GraphPrintvue_type_template_id_47e5b402_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"lassox-diagram__GraphPrint",style:({
     width: ((_vm.finalSize.width) + "mm"),
     height: ((_vm.finalSize.height) + "mm"),
   })},[(_vm.printing)?_c('div',{ref:"printContentEl",staticClass:"lassox-diagram__GraphPrint-print-content",style:({
       padding: ((_vm.finalSize.margin) + "mm"),
     })},[_c('div',{staticClass:"lassox-diagram__GraphPrint-print-content-title",domProps:{"textContent":_vm._s(_vm.title)}}),_c('div',{staticClass:"lassox-diagram__GraphPrint-print-content-graph-padding"},[_c('Graph',{attrs:{"printMode":""},on:{"readyToPrint":_vm.onReadyToPrint}})],1),_c('GraphLegend')],1):_vm._e()])}
-var GraphPrintvue_type_template_id_dedf0522_staticRenderFns = []
+var GraphPrintvue_type_template_id_47e5b402_staticRenderFns = []
 
 
-// CONCATENATED MODULE: ./src/components/GraphPrint.vue?vue&type=template&id=dedf0522&
+// CONCATENATED MODULE: ./src/components/GraphPrint.vue?vue&type=template&id=47e5b402&
 
 // EXTERNAL MODULE: ./node_modules/core-js/modules/es.string.pad-start.js
 var es_string_pad_start = __webpack_require__("4d90");
 
-// EXTERNAL MODULE: ./node_modules/core-js/modules/web.url.js
-var web_url = __webpack_require__("2b3d");
+// EXTERNAL MODULE: ./node_modules/core-js/modules/es.string.replace.js
+var es_string_replace = __webpack_require__("5319");
 
 // EXTERNAL MODULE: ./node_modules/html2canvas/dist/html2canvas.js
 var html2canvas = __webpack_require__("c0e9");
 var html2canvas_default = /*#__PURE__*/__webpack_require__.n(html2canvas);
 
 // CONCATENATED MODULE: ./node_modules/babel-loader/lib!./node_modules/ts-loader??ref--14-1!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/GraphPrint.vue?vue&type=script&lang=ts&
-
-
-
-
 
 
 
@@ -95397,16 +108187,17 @@ var GraphPrintvue_type_script_lang_ts_GraphPrint = /*#__PURE__*/function (_Vue) 
             _this$diagram$methods5,
             _this$diagram$methods6;
 
-        var cleanup, diagram, activeDiagram, data, date, context, filename, canvas, printContentRect, width, height, iFrameEl, iFrameWindow, cleanupPrint, blob, url, aEl;
+        var cleanup, diagram, activeDiagram, data, date, context, filename, canvas, printContentRect, width, height, iFrameEl, resolveLoad, loadPromise, iFrameWindow, cleanupPrint, blob;
         return regeneratorRuntime.wrap(function _callee$(_context) {
           while (1) {
             switch (_context.prev = _context.next) {
               case 0:
-                cleanup = function cleanup() {
+                cleanup = function cleanup(file) {
                   _this3.printing = false;
 
                   _this3.diagram.eventBus.emit({
-                    name: 'printDone'
+                    name: 'printDone',
+                    file: file
                   });
                 };
 
@@ -95443,27 +108234,22 @@ var GraphPrintvue_type_script_lang_ts_GraphPrint = /*#__PURE__*/function (_Vue) 
                   formattedTime: ["".concat(date.getHours()).padStart(2, '0'), "".concat(date.getMinutes()).padStart(2, '0'), "".concat(date.getSeconds()).padStart(2, '0')].join(':')
                 };
                 this.title = (_this$diagram$methods = (_this$diagram$methods2 = (_this$diagram$methods3 = this.diagram.methods).getPrintTitle) === null || _this$diagram$methods2 === void 0 ? void 0 : _this$diagram$methods2.call(_this$diagram$methods3, context)) !== null && _this$diagram$methods !== void 0 ? _this$diagram$methods : "".concat(context.hasDataChanges ? 'Manuelt tilpasset ejerstruktur' : 'Ejerstruktur', " d. ").concat(context.formattedDate, " kl. ").concat(context.formattedTime);
-                filename = ((_this$diagram$methods4 = (_this$diagram$methods5 = (_this$diagram$methods6 = this.diagram.methods).getPrintFilename) === null || _this$diagram$methods5 === void 0 ? void 0 : _this$diagram$methods5.call(_this$diagram$methods6, context)) !== null && _this$diagram$methods4 !== void 0 ? _this$diagram$methods4 : "ejerdiagram-".concat(context.formattedDate, "-").concat(context.formattedTime)).replace(/[ .:]+/g, '-').replace(/[^\w-]+/g, ''); // TODO : Make this less dumb
-
+                filename = ((_this$diagram$methods4 = (_this$diagram$methods5 = (_this$diagram$methods6 = this.diagram.methods).getPrintFilename) === null || _this$diagram$methods5 === void 0 ? void 0 : _this$diagram$methods5.call(_this$diagram$methods6, context)) !== null && _this$diagram$methods4 !== void 0 ? _this$diagram$methods4 : "ejerdiagram-".concat(context.formattedDate, "-").concat(context.formattedTime)).replace(/[ .:]+/g, '-').replace(/[^\w-]+/g, '');
                 _context.next = 14;
                 return this.$nextTick();
 
               case 14:
                 _context.next = 16;
-                return GraphPrintvue_type_script_lang_ts_timeout(500);
-
-              case 16:
-                _context.next = 18;
                 return html2canvas_default()(this.printContentEl, {
                   logging: false,
                   scale: 1
                 });
 
-              case 18:
+              case 16:
                 canvas = _context.sent;
 
                 if (!(this.mode === 'print')) {
-                  _context.next = 39;
+                  _context.next = 43;
                   break;
                 }
 
@@ -95474,7 +108260,18 @@ var GraphPrintvue_type_script_lang_ts_GraphPrint = /*#__PURE__*/function (_Vue) 
                 iFrameEl.className = 'lassox-diagram__GraphPrint-iframe';
                 iFrameEl.style.width = "".concat(width, "px");
                 iFrameEl.style.height = "".concat(height, "px");
+
+                resolveLoad = function resolveLoad() {};
+
+                loadPromise = new Promise(function (resolve) {
+                  resolveLoad = resolve;
+                });
+                iFrameEl.onload = resolveLoad;
                 document.body.appendChild(iFrameEl);
+                _context.next = 31;
+                return loadPromise;
+
+              case 31:
                 iFrameWindow = iFrameEl.contentWindow;
 
                 cleanupPrint = function cleanupPrint() {
@@ -95483,53 +108280,56 @@ var GraphPrintvue_type_script_lang_ts_GraphPrint = /*#__PURE__*/function (_Vue) 
                 };
 
                 if (iFrameWindow) {
-                  _context.next = 32;
+                  _context.next = 35;
                   break;
                 }
 
-                return _context.abrupt("return", cleanup());
+                return _context.abrupt("return", cleanupPrint());
 
-              case 32:
-                iFrameWindow.document.head.innerHTML = ['<style>', '@page {', "  size: ".concat(width, "mm ").concat(height, "mm;"), "  margin: 0;", '}', 'html, body {', '  width: 100%;', '  height: 100%;', '  padding: 0;', '  margin: 0;', '  overflow: hidden;', '}', '</style>'].join('\n');
+              case 35:
+                iFrameWindow.document.head.innerHTML = ['<style>', '@page {', "  size: ".concat(this.size, " ").concat(this.orientation, ";"), "  margin: 0;", '}', 'html, body {', '  width: 100%;', '  height: 100%;', '  padding: 0;', '  margin: 0;', '  overflow: hidden;', '}', '</style>'].join('\n');
                 canvas.style.width = '100%';
                 canvas.style.height = '100%';
+                canvas.style.border = '1px solid black';
                 iFrameWindow.document.body.appendChild(canvas);
-                iFrameWindow.addEventListener('afterprint', cleanupPrint);
+                iFrameWindow.addEventListener('afterprint', function () {
+                  return requestAnimationFrame(cleanupPrint);
+                });
                 iFrameWindow.print();
                 return _context.abrupt("return");
 
-              case 39:
-                _context.next = 41;
+              case 43:
+                _context.next = 45;
                 return new Promise(function (resolve) {
                   return canvas.toBlob(resolve, 'image/png');
                 });
 
-              case 41:
+              case 45:
                 blob = _context.sent;
 
                 if (blob) {
-                  _context.next = 45;
+                  _context.next = 49;
                   break;
                 }
 
                 console.error('Something went wrong when trying to get canvas blob');
                 return _context.abrupt("return", cleanup());
 
-              case 45:
+              case 49:
                 if (!(this.mode === 'pdf')) {
-                  _context.next = 51;
+                  _context.next = 55;
                   break;
                 }
 
                 if (this.diagram.methods.convertPngToPdf) {
-                  _context.next = 48;
+                  _context.next = 52;
                   break;
                 }
 
                 return _context.abrupt("return", cleanup());
 
-              case 48:
-                _context.next = 50;
+              case 52:
+                _context.next = 54;
                 return this.diagram.methods.convertPngToPdf({
                   blob: blob,
                   title: this.title,
@@ -95538,21 +108338,16 @@ var GraphPrintvue_type_script_lang_ts_GraphPrint = /*#__PURE__*/function (_Vue) 
                   orientation: this.orientation
                 });
 
-              case 50:
+              case 54:
                 blob = _context.sent;
 
-              case 51:
-                url = window.URL.createObjectURL(blob);
-                aEl = document.createElement('a');
-                aEl.href = url;
-                aEl.download = "".concat(filename, ".").concat(this.mode === 'pdf' ? 'pdf' : 'png');
-                document.body.appendChild(aEl);
-                aEl.click();
-                aEl.remove();
-                window.URL.revokeObjectURL(url);
-                cleanup();
+              case 55:
+                cleanup({
+                  filename: "".concat(filename, ".").concat(this.mode === 'pdf' ? 'pdf' : 'png'),
+                  blob: blob
+                });
 
-              case 60:
+              case 56:
               case "end":
                 return _context.stop();
             }
@@ -95598,8 +108393,8 @@ var GraphPrintvue_type_style_index_0_lang_scss_ = __webpack_require__("f645");
 
 var GraphPrint_component = normalizeComponent(
   components_GraphPrintvue_type_script_lang_ts_,
-  GraphPrintvue_type_template_id_dedf0522_render,
-  GraphPrintvue_type_template_id_dedf0522_staticRenderFns,
+  GraphPrintvue_type_template_id_47e5b402_render,
+  GraphPrintvue_type_template_id_47e5b402_staticRenderFns,
   false,
   null,
   null,
@@ -95608,6 +108403,955 @@ var GraphPrint_component = normalizeComponent(
 )
 
 /* harmony default export */ var components_GraphPrint = (GraphPrint_component.exports);
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"00b53798-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/TooltipRoot.vue?vue&type=template&id=198d25dc&
+var TooltipRootvue_type_template_id_198d25dc_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"lassox-diagram__TooltipRoot"},_vm._l((_vm.tooltips),function(tooltip,i){return _c('Tooltip',_vm._b({key:i},'Tooltip',tooltip,false))}),1)}
+var TooltipRootvue_type_template_id_198d25dc_staticRenderFns = []
+
+
+// CONCATENATED MODULE: ./src/components/TooltipRoot.vue?vue&type=template&id=198d25dc&
+
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"00b53798-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/Tooltip.vue?vue&type=template&id=9cb8a308&
+var Tooltipvue_type_template_id_9cb8a308_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"lassox-diagram__Tooltip",style:(_vm.style),domProps:{"textContent":_vm._s(_vm.text)}})}
+var Tooltipvue_type_template_id_9cb8a308_staticRenderFns = []
+
+
+// CONCATENATED MODULE: ./src/components/Tooltip.vue?vue&type=template&id=9cb8a308&
+
+// CONCATENATED MODULE: ./node_modules/babel-loader/lib!./node_modules/ts-loader??ref--14-1!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/Tooltip.vue?vue&type=script&lang=ts&
+
+
+
+
+
+
+
+
+
+
+
+var Tooltipvue_type_script_lang_ts_isPlacement = function isPlacement(v) {
+  return type_guards_isOneOf(v, ['auto', 'top', 'left', 'right', 'bottom']);
+};
+
+var Tooltipvue_type_script_lang_ts_Tooltip = /*#__PURE__*/function (_Vue) {
+  _inherits(Tooltip, _Vue);
+
+  var _super = _createSuper(Tooltip);
+
+  function Tooltip() {
+    var _this;
+
+    _classCallCheck(this, Tooltip);
+
+    _this = _super.apply(this, arguments);
+    _this.mousedOver = false;
+    _this.show = false;
+    _this.boundsRect = null;
+    _this.elRect = null;
+    return _this;
+  }
+
+  _createClass(Tooltip, [{
+    key: "fOffset",
+    get: function get() {
+      var _this$offset, _ref2, _ref3, _ref4, _ref5, _ref6, _ref7, _ref8, _ref9;
+
+      if (typeof this.offset === 'number') return {
+        top: this.offset,
+        left: this.offset,
+        right: this.offset,
+        bottom: this.offset
+      };
+
+      var _ref = (_this$offset = this.offset) !== null && _this$offset !== void 0 ? _this$offset : {},
+          all = _ref.all,
+          x = _ref.x,
+          y = _ref.y,
+          top = _ref.top,
+          left = _ref.left,
+          right = _ref.right,
+          bottom = _ref.bottom;
+
+      return {
+        top: (_ref2 = (_ref3 = top !== null && top !== void 0 ? top : y) !== null && _ref3 !== void 0 ? _ref3 : all) !== null && _ref2 !== void 0 ? _ref2 : 4,
+        left: (_ref4 = (_ref5 = left !== null && left !== void 0 ? left : x) !== null && _ref5 !== void 0 ? _ref5 : all) !== null && _ref4 !== void 0 ? _ref4 : 4,
+        right: (_ref6 = (_ref7 = right !== null && right !== void 0 ? right : x) !== null && _ref7 !== void 0 ? _ref7 : all) !== null && _ref6 !== void 0 ? _ref6 : 4,
+        bottom: (_ref8 = (_ref9 = bottom !== null && bottom !== void 0 ? bottom : y) !== null && _ref9 !== void 0 ? _ref9 : all) !== null && _ref8 !== void 0 ? _ref8 : 4
+      };
+    }
+  }, {
+    key: "style",
+    get: function get() {
+      var placement = this.placement;
+      var maxWidth = 300;
+      var maxHeight = null;
+      var transforms = [];
+
+      if (this.elRect) {
+        var rect = this.elRect;
+        var elXLeft = rect.left - this.fOffset.left;
+        var elXCenter = rect.left + rect.width / 2;
+        var elXRight = rect.left + rect.width + this.fOffset.right;
+        var elYTop = rect.top - this.fOffset.top;
+        var elYCenter = rect.top + rect.height / 2;
+        var elYBottom = rect.top + rect.height + this.fOffset.bottom;
+
+        if (this.boundsRect) {
+          var bounds = {
+            top: this.boundsRect.top,
+            left: this.boundsRect.left,
+            right: this.boundsRect.left + this.boundsRect.width,
+            bottom: this.boundsRect.top + this.boundsRect.height
+          };
+          var space = {
+            xLeft: Math.min(elXLeft - bounds.left, maxWidth),
+            xCenter: Math.min(Math.min(elXCenter - bounds.left, bounds.right - elXCenter) * 2, maxWidth),
+            xRight: Math.min(bounds.right - elXRight, maxWidth),
+            yTop: elYTop - bounds.top,
+            yCenter: Math.min(elYCenter - bounds.top, bounds.bottom - elYCenter) * 2,
+            yBottom: bounds.bottom - elYBottom
+          };
+
+          if (placement === 'auto') {
+            if (space.xCenter >= Math.max(space.xLeft, space.xRight)) {
+              placement = space.yTop > space.yBottom ? 'top' : 'bottom';
+            } else {
+              placement = space.xLeft > space.xRight ? 'left' : 'right';
+            }
+          }
+
+          switch (placement) {
+            case 'top':
+            case 'bottom':
+              maxWidth = space.xCenter;
+              maxHeight = placement === 'top' ? space.yTop : space.yBottom;
+              break;
+
+            case 'left':
+            case 'right':
+              maxWidth = placement === 'left' ? space.xLeft : space.xRight;
+              maxHeight = space.yCenter;
+              break;
+          }
+        }
+
+        if (placement === 'auto') placement = 'bottom';
+
+        switch (placement) {
+          case 'top':
+          case 'bottom':
+            transforms.push("translateX(".concat(elXCenter, "px)"), 'translateX(-50%)', "translateY(".concat(placement === 'top' ? elYTop : elYBottom, "px)"));
+            if (placement === 'top') transforms.push('translateY(-100%)');
+            break;
+
+          case 'left':
+          case 'right':
+            transforms.push("translateX(".concat(placement === 'left' ? elXLeft : elXRight, "px)"), "translateY(".concat(elYCenter, "px)"), 'translateY(-50%)');
+            if (placement === 'left') transforms.push('translateX(-100%)');
+            break;
+        }
+      }
+
+      return {
+        maxWidth: "".concat(maxWidth, "px"),
+        maxHeight: maxHeight !== null ? "".concat(maxHeight, "px") : '',
+        opacity: this.show ? '1' : '0',
+        transform: transforms.join(' ')
+      };
+    }
+  }, {
+    key: "mounted",
+    value: function mounted() {
+      if (this.$root.$el instanceof HTMLElement) watchRect(this.$root.$el, this.onBoundsRectChanged);
+    }
+  }, {
+    key: "beforeDestroy",
+    value: function beforeDestroy() {
+      if (this.$root.$el instanceof HTMLElement) watch_rect_unwatchRect(this.$root.$el, this.onBoundsRectChanged);
+
+      if (this.el) {
+        watch_rect_unwatchRect(this.el, this.onElRectChanged);
+        this.el.removeEventListener('mouseenter', this.onElMouseEnter);
+        this.el.removeEventListener('mouseleave', this.onElMouseLeave);
+      }
+    }
+  }, {
+    key: "onBoundsRectChanged",
+    value: function onBoundsRectChanged(rect) {
+      this.boundsRect = rect;
+    }
+  }, {
+    key: "onElRectChanged",
+    value: function onElRectChanged(rect) {
+      this.elRect = rect;
+    }
+  }, {
+    key: "onElMouseEnter",
+    value: function onElMouseEnter() {
+      this.mousedOver = true;
+      this.show = true;
+    }
+  }, {
+    key: "onElMouseLeave",
+    value: function onElMouseLeave() {
+      var _this2 = this;
+
+      this.mousedOver = false;
+      requestAnimationFrame(function () {
+        if (!_this2.mousedOver) _this2.show = false;
+      });
+    }
+  }, {
+    key: "onElChanged",
+    value: function onElChanged(el, oldEl) {
+      this.mousedOver = false;
+      this.show = false;
+
+      if (oldEl) {
+        watch_rect_unwatchRect(oldEl, this.onElRectChanged);
+        oldEl.removeEventListener('mouseenter', this.onElMouseEnter);
+        oldEl.removeEventListener('mouseleave', this.onElMouseLeave);
+      }
+
+      if (el) {
+        watchRect(el, this.onElRectChanged);
+        el.addEventListener('mouseenter', this.onElMouseEnter);
+        el.addEventListener('mouseleave', this.onElMouseLeave);
+      }
+    }
+  }]);
+
+  return Tooltip;
+}(external_commonjs_vue_commonjs2_vue_root_Vue_default.a);
+
+__decorate([Prop({
+  type: HTMLElement
+})], Tooltipvue_type_script_lang_ts_Tooltip.prototype, "el", void 0);
+
+__decorate([Prop({
+  type: String,
+  required: true
+})], Tooltipvue_type_script_lang_ts_Tooltip.prototype, "text", void 0);
+
+__decorate([Prop({
+  type: String,
+  validator: Tooltipvue_type_script_lang_ts_isPlacement,
+  default: 'auto'
+})], Tooltipvue_type_script_lang_ts_Tooltip.prototype, "placement", void 0);
+
+__decorate([Prop({
+  type: [Number, Object],
+  default: 4
+})], Tooltipvue_type_script_lang_ts_Tooltip.prototype, "offset", void 0);
+
+__decorate([Watch('el', {
+  immediate: true
+})], Tooltipvue_type_script_lang_ts_Tooltip.prototype, "onElChanged", null);
+
+Tooltipvue_type_script_lang_ts_Tooltip = __decorate([vue_class_component_esm({})], Tooltipvue_type_script_lang_ts_Tooltip);
+/* harmony default export */ var Tooltipvue_type_script_lang_ts_ = (Tooltipvue_type_script_lang_ts_Tooltip);
+// CONCATENATED MODULE: ./src/components/Tooltip.vue?vue&type=script&lang=ts&
+ /* harmony default export */ var components_Tooltipvue_type_script_lang_ts_ = (Tooltipvue_type_script_lang_ts_); 
+// EXTERNAL MODULE: ./src/components/Tooltip.vue?vue&type=style&index=0&lang=scss&
+var Tooltipvue_type_style_index_0_lang_scss_ = __webpack_require__("0fb9");
+
+// CONCATENATED MODULE: ./src/components/Tooltip.vue
+
+
+
+
+
+
+/* normalize component */
+
+var Tooltip_component = normalizeComponent(
+  components_Tooltipvue_type_script_lang_ts_,
+  Tooltipvue_type_template_id_9cb8a308_render,
+  Tooltipvue_type_template_id_9cb8a308_staticRenderFns,
+  false,
+  null,
+  null,
+  null
+  
+)
+
+/* harmony default export */ var components_Tooltip = (Tooltip_component.exports);
+// CONCATENATED MODULE: ./node_modules/babel-loader/lib!./node_modules/ts-loader??ref--14-1!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/TooltipRoot.vue?vue&type=script&lang=ts&
+
+
+
+
+
+
+
+
+
+var TooltipRootvue_type_script_lang_ts_TooltipRoot = /*#__PURE__*/function (_Vue) {
+  _inherits(TooltipRoot, _Vue);
+
+  var _super = _createSuper(TooltipRoot);
+
+  function TooltipRoot() {
+    _classCallCheck(this, TooltipRoot);
+
+    return _super.apply(this, arguments);
+  }
+
+  _createClass(TooltipRoot, [{
+    key: "store",
+    get: function get() {
+      return tooltips_getStore(this.$root);
+    }
+  }, {
+    key: "tooltips",
+    get: function get() {
+      return this.store.tooltips;
+    }
+  }]);
+
+  return TooltipRoot;
+}(external_commonjs_vue_commonjs2_vue_root_Vue_default.a);
+
+TooltipRootvue_type_script_lang_ts_TooltipRoot = __decorate([vue_class_component_esm({
+  components: {
+    Tooltip: components_Tooltip
+  }
+})], TooltipRootvue_type_script_lang_ts_TooltipRoot);
+/* harmony default export */ var TooltipRootvue_type_script_lang_ts_ = (TooltipRootvue_type_script_lang_ts_TooltipRoot);
+// CONCATENATED MODULE: ./src/components/TooltipRoot.vue?vue&type=script&lang=ts&
+ /* harmony default export */ var components_TooltipRootvue_type_script_lang_ts_ = (TooltipRootvue_type_script_lang_ts_); 
+// EXTERNAL MODULE: ./src/components/TooltipRoot.vue?vue&type=style&index=0&lang=scss&
+var TooltipRootvue_type_style_index_0_lang_scss_ = __webpack_require__("4730");
+
+// CONCATENATED MODULE: ./src/components/TooltipRoot.vue
+
+
+
+
+
+
+/* normalize component */
+
+var TooltipRoot_component = normalizeComponent(
+  components_TooltipRootvue_type_script_lang_ts_,
+  TooltipRootvue_type_template_id_198d25dc_render,
+  TooltipRootvue_type_template_id_198d25dc_staticRenderFns,
+  false,
+  null,
+  null,
+  null
+  
+)
+
+/* harmony default export */ var components_TooltipRoot = (TooltipRoot_component.exports);
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"00b53798-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/Toast.vue?vue&type=template&id=71d3f022&
+var Toastvue_type_template_id_71d3f022_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('transition',{attrs:{"appear":""},on:{"enter":_vm.onEnter,"leave":_vm.onLeave}},[_c('div',{staticClass:"lassox-diagram__Toast"},[_c('div',{ref:"boxEl",staticClass:"lassox-diagram__Toast-box"},[(_vm.showLoadingSpinner)?_c('LoadingSpinner',{attrs:{"preset":"small"}}):_vm._e(),(_vm.content)?_c('div',{staticClass:"lassox-diagram__Toast-content",domProps:{"textContent":_vm._s(_vm.content)}}):_vm._e(),(_vm.dismissable)?_c('IconButton',{attrs:{"icon":"close","light":""},on:{"click":_vm.close}}):_vm._e()],1)])])}
+var Toastvue_type_template_id_71d3f022_staticRenderFns = []
+
+
+// CONCATENATED MODULE: ./src/components/Toast.vue?vue&type=template&id=71d3f022&
+
+// EXTERNAL MODULE: ./node_modules/core-js/modules/es.regexp.to-string.js
+var es_regexp_to_string = __webpack_require__("25f0");
+
+// CONCATENATED MODULE: ./node_modules/babel-loader/lib!./node_modules/ts-loader??ref--14-1!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/Toast.vue?vue&type=script&lang=ts&
+
+
+
+
+
+
+
+
+
+
+
+
+
+var Toastvue_type_script_lang_ts_Toast = /*#__PURE__*/function (_Vue) {
+  _inherits(Toast, _Vue);
+
+  var _super = _createSuper(Toast);
+
+  function Toast() {
+    var _this;
+
+    _classCallCheck(this, Toast);
+
+    _this = _super.apply(this, arguments);
+    _this.height = 0;
+    _this.closed = false;
+    _this.timeoutId = null;
+    return _this;
+  }
+
+  _createClass(Toast, [{
+    key: "onEnter",
+    value: function onEnter() {
+      var _this2 = this;
+
+      watchRect(this.boxEl, this.onResize);
+      this.$watch(function () {
+        return _this2.height;
+      }, function () {
+        return _this2.$el.style.height = "".concat(_this2.height + 16, "px");
+      }, {
+        immediate: true
+      });
+    }
+  }, {
+    key: "onLeave",
+    value: function onLeave() {
+      watch_rect_unwatchRect(this.boxEl, this.onResize);
+      this.$el.style.height = "0";
+    }
+  }, {
+    key: "onResize",
+    value: function onResize(rect) {
+      this.height = rect.height;
+    }
+  }, {
+    key: "clearTimeout",
+    value: function (_clearTimeout) {
+      function clearTimeout() {
+        return _clearTimeout.apply(this, arguments);
+      }
+
+      clearTimeout.toString = function () {
+        return _clearTimeout.toString();
+      };
+
+      return clearTimeout;
+    }(function () {
+      if (this.timeoutId !== null) clearTimeout(this.timeoutId);
+    })
+  }, {
+    key: "setTimeout",
+    value: function (_setTimeout) {
+      function setTimeout() {
+        return _setTimeout.apply(this, arguments);
+      }
+
+      setTimeout.toString = function () {
+        return _setTimeout.toString();
+      };
+
+      return setTimeout;
+    }(function () {
+      this.clearTimeout();
+      if (this.duration > 0) this.timeoutId = setTimeout(this.close, this.duration);
+    })
+  }, {
+    key: "close",
+    value: function close() {
+      if (closed) return;
+      this.closed = true;
+      this.clearTimeout();
+      this.$emit('close');
+    }
+  }, {
+    key: "onDurationChanged",
+    value: function onDurationChanged() {
+      this.setTimeout();
+    }
+  }]);
+
+  return Toast;
+}(external_commonjs_vue_commonjs2_vue_root_Vue_default.a);
+
+__decorate([Ref()], Toastvue_type_script_lang_ts_Toast.prototype, "boxEl", void 0);
+
+__decorate([Prop({
+  type: String
+})], Toastvue_type_script_lang_ts_Toast.prototype, "content", void 0);
+
+__decorate([Prop({
+  type: Boolean,
+  default: true
+})], Toastvue_type_script_lang_ts_Toast.prototype, "dismissable", void 0);
+
+__decorate([Prop({
+  type: Number,
+  default: 5000
+})], Toastvue_type_script_lang_ts_Toast.prototype, "duration", void 0);
+
+__decorate([Prop({
+  type: Boolean,
+  default: false
+})], Toastvue_type_script_lang_ts_Toast.prototype, "showLoadingSpinner", void 0);
+
+__decorate([Watch('duration', {
+  immediate: true
+})], Toastvue_type_script_lang_ts_Toast.prototype, "onDurationChanged", null);
+
+Toastvue_type_script_lang_ts_Toast = __decorate([vue_class_component_esm({
+  components: {
+    LoadingSpinner: components_LoadingSpinner,
+    IconButton: components_IconButton
+  }
+})], Toastvue_type_script_lang_ts_Toast);
+/* harmony default export */ var Toastvue_type_script_lang_ts_ = (Toastvue_type_script_lang_ts_Toast);
+// CONCATENATED MODULE: ./src/components/Toast.vue?vue&type=script&lang=ts&
+ /* harmony default export */ var components_Toastvue_type_script_lang_ts_ = (Toastvue_type_script_lang_ts_); 
+// EXTERNAL MODULE: ./src/components/Toast.vue?vue&type=style&index=0&lang=scss&
+var Toastvue_type_style_index_0_lang_scss_ = __webpack_require__("9370");
+
+// CONCATENATED MODULE: ./src/components/Toast.vue
+
+
+
+
+
+
+/* normalize component */
+
+var Toast_component = normalizeComponent(
+  components_Toastvue_type_script_lang_ts_,
+  Toastvue_type_template_id_71d3f022_render,
+  Toastvue_type_template_id_71d3f022_staticRenderFns,
+  false,
+  null,
+  null,
+  null
+  
+)
+
+/* harmony default export */ var components_Toast = (Toast_component.exports);
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"00b53798-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/PrintDialog.vue?vue&type=template&id=2ace7416&
+var PrintDialogvue_type_template_id_2ace7416_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('Dialog',{staticClass:"lassox-diagram__PrintDialog",attrs:{"dismissable":true,"title":_vm.title,"size":"3x","onClose":_vm.close},scopedSlots:_vm._u([{key:"content",fn:function(){return [(_vm.description)?_c('p',{staticStyle:{"margin-bottom":"16px"},domProps:{"textContent":_vm._s(_vm.description)}}):_vm._e(),_c('EditorFields',[_c('EditorField',{attrs:{"id":"print-orientation","type":"radio-buttons","title":"Orientering","options":[
+          { label: 'Stående', value: 'portrait' },
+          { label: 'Liggende', value: 'landscape' } ],"editable":!_vm.printing},model:{value:(_vm.orientation),callback:function ($$v) {_vm.orientation=$$v},expression:"orientation"}}),_c('EditorField',{attrs:{"id":"print-size","type":"radio-buttons","title":"Størrelse","options":[
+          { label: 'A5', value: 'A5' },
+          { label: 'A4', value: 'A4' },
+          { label: 'A3', value: 'A3' } ],"editable":!_vm.printing},model:{value:(_vm.size),callback:function ($$v) {_vm.size=$$v},expression:"size"}}),(_vm.mode !== 'png')?_c('EditorField',{attrs:{"id":"print-margin","type":"boolean","title":"Margen","helperText":"Inkluder en margen (1 cm) eller udskriv til papirets kant.","editable":!_vm.printing},model:{value:(_vm.includeMargin),callback:function ($$v) {_vm.includeMargin=$$v},expression:"includeMargin"}}):_vm._e()],1)]},proxy:true},{key:"actions",fn:function(){return [_c('ButtonGroup',{attrs:{"align":"right"}},[_c('Button',{attrs:{"label":"Luk"},on:{"click":_vm.close}}),_c('Button',{attrs:{"type":"primary","label":_vm.buttonLabel,"disabled":_vm.printing},on:{"click":_vm.confirm}})],1)]},proxy:true}])})}
+var PrintDialogvue_type_template_id_2ace7416_staticRenderFns = []
+
+
+// CONCATENATED MODULE: ./src/components/PrintDialog.vue?vue&type=template&id=2ace7416&
+
+// EXTERNAL MODULE: ./node_modules/core-js/modules/web.url.js
+var web_url = __webpack_require__("2b3d");
+
+// CONCATENATED MODULE: ./node_modules/babel-loader/lib!./node_modules/ts-loader??ref--14-1!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/PrintDialog.vue?vue&type=script&lang=ts&
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var PrintDialogvue_type_script_lang_ts_PrintDialog = /*#__PURE__*/function (_Vue) {
+  _inherits(PrintDialog, _Vue);
+
+  var _super = _createSuper(PrintDialog);
+
+  function PrintDialog() {
+    var _this;
+
+    _classCallCheck(this, PrintDialog);
+
+    _this = _super.apply(this, arguments);
+    _this.orientation = 'landscape';
+    _this.size = 'A4';
+    _this.includeMargin = true;
+    _this.printing = false;
+    return _this;
+  }
+
+  _createClass(PrintDialog, [{
+    key: "diagram",
+    get: function get() {
+      return this.diagramVm.diagram;
+    }
+  }, {
+    key: "title",
+    get: function get() {
+      switch (this.mode) {
+        case 'print':
+          return 'Udskriv';
+
+        case 'pdf':
+          return 'Gem som PDF';
+
+        case 'png':
+          return 'Gem som billede';
+
+        default:
+          return 'Udskriv';
+      }
+    }
+  }, {
+    key: "description",
+    get: function get() {
+      switch (this.mode) {
+        case 'print':
+          return 'Din computers udskriftsindstillinger skal være de samme som de nedenfor valgte.';
+
+        case 'pdf':
+          return 'Gem diagrammet til din computer som PDF.';
+
+        case 'png':
+          return 'Gem diagrammet til din computer i .png format.';
+
+        default:
+          return '';
+      }
+    }
+  }, {
+    key: "buttonLabel",
+    get: function get() {
+      switch (this.mode) {
+        case 'print':
+          return !this.printing ? 'Udskriv' : 'Udskriver...';
+
+        default:
+          return !this.printing ? 'Gem' : 'Gemmer...';
+      }
+    }
+  }, {
+    key: "created",
+    value: function created() {
+      var _this2 = this;
+
+      this.loadFromLocalStorage();
+      this.$watch(function () {
+        return [_this2.orientation, _this2.size, _this2.includeMargin];
+      }, this.saveToLocalStorage, {
+        immediate: true
+      });
+    }
+  }, {
+    key: "beforeDestroy",
+    value: function beforeDestroy() {
+      this.diagram.eventBus.off('printDone', this.onPrintDone);
+    }
+  }, {
+    key: "loadFromLocalStorage",
+    value: function loadFromLocalStorage() {
+      if (!this.diagram.saveSettingsToLocalStorage) return;
+
+      try {
+        var json = localStorage.getItem('lassox-diagram/print-settings');
+        if (!json) return;
+        var settings = JSON.parse(json);
+        if (!type_guards_isRecord(settings)) return;
+        var orientation = settings.orientation,
+            size = settings.size,
+            includeMargin = settings.includeMargin;
+
+        if (orientation === 'portrait' || orientation === 'landscape') {
+          this.orientation = orientation;
+        }
+
+        if (size === 'A5' || size === 'A4' || size === 'A3') {
+          this.size = size;
+        }
+
+        if (typeof includeMargin === 'boolean') {
+          this.includeMargin = includeMargin;
+        }
+      } catch (_unused) {
+        return;
+      }
+    }
+  }, {
+    key: "saveToLocalStorage",
+    value: function saveToLocalStorage() {
+      if (!this.diagram.saveSettingsToLocalStorage) return;
+
+      try {
+        localStorage.setItem('lassox-diagram/print-settings', JSON.stringify({
+          orientation: this.orientation,
+          size: this.size,
+          includeMargin: this.includeMargin
+        }));
+      } catch (_unused2) {
+        return;
+      }
+    }
+  }, {
+    key: "close",
+    value: function close() {
+      this.$emit('close');
+    }
+  }, {
+    key: "confirm",
+    value: function confirm() {
+      var _this3 = this;
+
+      this.printing = true;
+      requestAnimationFrame(function () {
+        _this3.diagram.eventBus.one('printDone', _this3.onPrintDone);
+
+        _this3.diagram.eventBus.emit({
+          name: 'print',
+          mode: _this3.mode,
+          orientation: _this3.orientation,
+          size: _this3.size,
+          includeMargin: _this3.includeMargin
+        });
+      });
+    }
+  }, {
+    key: "onPrintDone",
+    value: function onPrintDone(_ref) {
+      var file = _ref.file;
+
+      if (file && this.mode !== 'print') {
+        var url = window.URL.createObjectURL(file.blob);
+        var aEl = document.createElement('a');
+        aEl.href = url;
+        aEl.download = file.filename;
+        document.body.appendChild(aEl);
+        aEl.click();
+        aEl.remove();
+        window.URL.revokeObjectURL(url);
+      }
+
+      this.printing = false;
+      this.close();
+    }
+  }]);
+
+  return PrintDialog;
+}(external_commonjs_vue_commonjs2_vue_root_Vue_default.a);
+
+__decorate([Inject()], PrintDialogvue_type_script_lang_ts_PrintDialog.prototype, "diagramVm", void 0);
+
+__decorate([Prop({
+  type: String,
+  required: true
+})], PrintDialogvue_type_script_lang_ts_PrintDialog.prototype, "mode", void 0);
+
+PrintDialogvue_type_script_lang_ts_PrintDialog = __decorate([vue_class_component_esm({
+  components: {
+    Dialog: components_Dialog,
+    EditorFields: components_EditorFields,
+    EditorField: components_EditorField,
+    ButtonGroup: components_ButtonGroup,
+    Button: components_Button
+  }
+})], PrintDialogvue_type_script_lang_ts_PrintDialog);
+/* harmony default export */ var PrintDialogvue_type_script_lang_ts_ = (PrintDialogvue_type_script_lang_ts_PrintDialog);
+// CONCATENATED MODULE: ./src/components/PrintDialog.vue?vue&type=script&lang=ts&
+ /* harmony default export */ var components_PrintDialogvue_type_script_lang_ts_ = (PrintDialogvue_type_script_lang_ts_); 
+// CONCATENATED MODULE: ./src/components/PrintDialog.vue
+
+
+
+
+
+/* normalize component */
+
+var PrintDialog_component = normalizeComponent(
+  components_PrintDialogvue_type_script_lang_ts_,
+  PrintDialogvue_type_template_id_2ace7416_render,
+  PrintDialogvue_type_template_id_2ace7416_staticRenderFns,
+  false,
+  null,
+  null,
+  null
+  
+)
+
+/* harmony default export */ var components_PrintDialog = (PrintDialog_component.exports);
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"00b53798-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/LoadDialog.vue?vue&type=template&id=4e5ceb18&
+var LoadDialogvue_type_template_id_4e5ceb18_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('Dialog',{staticClass:"lassox-diagram__LoadDialog",attrs:{"dismissable":_vm.diagram.hasActiveDiagram,"title":"Indlæs diagram","size":"3x","onClose":_vm.close},scopedSlots:_vm._u([{key:"content",fn:function(){return [_c('div',{staticClass:"lassox-diagram__LoadDialog-loading-overlay",style:({
+        opacity: _vm.loading ? '1' : '0',
+        pointerEvents: _vm.loading ? '' : 'none',
+      })},[_c('LoadingSpinner',{staticStyle:{"margin":"auto"}})],1),_c('div',{staticClass:"lassox-diagram__LoadDialog-saved-diagrams"},[_c('BaseButton',{class:[
+          'lassox-diagram__LoadDialog-saved-diagram',
+          _vm.selectedSavedDiagram === 'new' && 'lassox-diagram__LoadDialog-saved-diagram--selected' ],on:{"click":function () { return _vm.selectedSavedDiagram = 'new'; }}},[_c('div',{staticClass:"lassox-diagram__LoadDialog-saved-diagram-icons"},[_c('Icon',{attrs:{"icon":"add"}})],1),_c('div',{staticClass:"lassox-diagram__LoadDialog-saved-diagram-text"},[_c('div',{staticClass:"lassox-diagram__LoadDialog-saved-diagram-title",domProps:{"textContent":_vm._s('Nyt diagram')}}),_c('div',{staticClass:"lassox-diagram__LoadDialog-saved-diagram-description",domProps:{"textContent":_vm._s('Opret et nyt diagram med seneste data')}})])]),_vm._l((_vm.diagram.savedDiagrams),function(savedDiagram){return _c('BaseButton',{key:savedDiagram.id,class:[
+          'lassox-diagram__LoadDialog-saved-diagram',
+          savedDiagram.id === _vm.diagram.activeDiagram.id && 'lassox-diagram__LoadDialog-saved-diagram--active',
+          savedDiagram === _vm.selectedSavedDiagram && 'lassox-diagram__LoadDialog-saved-diagram--selected' ],on:{"click":function () { return _vm.selectedSavedDiagram = savedDiagram; }}},[_c('div',{staticClass:"lassox-diagram__LoadDialog-saved-diagram-icons"},[(_vm.diagram.enableSharing)?_c('Icon',{attrs:{"icon":savedDiagram.shared ? 'lock_open' : 'lock'}}):_c('Icon',{attrs:{"icon":" "}})],1),_c('div',{staticClass:"lassox-diagram__LoadDialog-saved-diagram-text"},[_c('div',{staticClass:"lassox-diagram__LoadDialog-saved-diagram-title",domProps:{"textContent":_vm._s(savedDiagram.title || 'Unavngivet diagram')}}),(savedDiagram.description)?_c('div',{staticClass:"lassox-diagram__LoadDialog-saved-diagram-description",domProps:{"textContent":_vm._s(savedDiagram.description)}}):_vm._e()]),_c('div',{staticClass:"lassox-diagram__LoadDialog-saved-diagram-actions"},[(savedDiagram.id === _vm.diagram.defaultSavedDiagramId)?_c('Icon',{attrs:{"icon":"check"}}):_vm._e()],1)])})],2)]},proxy:true},{key:"actions",fn:function(){return [(_vm.canSetDefault)?_c('CheckBoxField',{staticStyle:{"margin-right":"16px"},attrs:{"label":"Åbn som standard","disabled":!_vm.selectedSavedDiagram || _vm.selectedSavedDiagram == 'new'},model:{value:(_vm.setAsDefault),callback:function ($$v) {_vm.setAsDefault=$$v},expression:"setAsDefault"}}):_vm._e(),_c('div',{staticStyle:{"margin":"auto"}}),_c('ButtonGroup',{attrs:{"align":"right"}},[(_vm.diagram.hasActiveDiagram)?_c('Button',{attrs:{"label":"Luk"},on:{"click":_vm.close}}):_vm._e(),_c('Button',{attrs:{"label":"Indlæs","type":"primary","disabled":!_vm.selectedSavedDiagram},on:{"click":function () {
+          if (_vm.selectedSavedDiagram === 'new') { _vm.load() }
+          else { _vm.load(_vm.selectedSavedDiagram) }
+        }}})],1)]},proxy:true}])})}
+var LoadDialogvue_type_template_id_4e5ceb18_staticRenderFns = []
+
+
+// CONCATENATED MODULE: ./src/components/LoadDialog.vue?vue&type=template&id=4e5ceb18&
+
+// CONCATENATED MODULE: ./node_modules/babel-loader/lib!./node_modules/ts-loader??ref--14-1!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/LoadDialog.vue?vue&type=script&lang=ts&
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var LoadDialogvue_type_script_lang_ts_LoadDialog = /*#__PURE__*/function (_Vue) {
+  _inherits(LoadDialog, _Vue);
+
+  var _super = _createSuper(LoadDialog);
+
+  function LoadDialog() {
+    var _this;
+
+    _classCallCheck(this, LoadDialog);
+
+    _this = _super.apply(this, arguments);
+    _this.loading = false;
+    _this.selectedSavedDiagram = null;
+    _this.setAsDefault = false;
+    return _this;
+  }
+
+  _createClass(LoadDialog, [{
+    key: "canSetDefault",
+    get: function get() {
+      return !!this.diagram.methods.setDefaultSavedDiagramId || this.diagram.saveSettingsToLocalStorage;
+    }
+  }, {
+    key: "created",
+    value: function created() {
+      var _this2 = this;
+
+      this.$watch(function () {
+        return _this2.diagram.savedDiagrams;
+      }, function () {
+        return _this2.selectedSavedDiagram = null;
+      }, {
+        immediate: true
+      });
+      this.$watch(function () {
+        return [_this2.diagram.defaultSavedDiagramId, _this2.selectedSavedDiagram];
+      }, function () {
+        if (!_this2.selectedSavedDiagram || _this2.selectedSavedDiagram === 'new') _this2.setAsDefault = false;else _this2.setAsDefault = _this2.selectedSavedDiagram.id === _this2.diagram.defaultSavedDiagramId;
+      }, {
+        immediate: true
+      });
+    }
+  }, {
+    key: "close",
+    value: function close() {
+      this.$emit('close');
+    }
+  }, {
+    key: "load",
+    value: function () {
+      var _load = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee(savedDiagram) {
+        var tasks;
+        return regeneratorRuntime.wrap(function _callee$(_context) {
+          while (1) {
+            switch (_context.prev = _context.next) {
+              case 0:
+                this.loading = true;
+                tasks = [];
+
+                if (savedDiagram) {
+                  if (this.setAsDefault) {
+                    tasks.push(this.diagram.setDefaultSavedDiagramId(savedDiagram.id));
+                  } else if (savedDiagram.id === this.diagram.defaultSavedDiagramId) {
+                    tasks.push(this.diagram.setDefaultSavedDiagramId(null));
+                  }
+                }
+
+                tasks.push(this.diagram.load(savedDiagram));
+                _context.next = 6;
+                return Promise.all(tasks);
+
+              case 6:
+                this.close();
+                this.loading = false;
+
+              case 8:
+              case "end":
+                return _context.stop();
+            }
+          }
+        }, _callee, this);
+      }));
+
+      function load(_x) {
+        return _load.apply(this, arguments);
+      }
+
+      return load;
+    }()
+  }, {
+    key: "showEditDiagramDialog",
+    value: function showEditDiagramDialog(savedDiagram) {
+      this.diagramVm.showDialog(components_EditDiagramDialog, {
+        savedDiagram: savedDiagram
+      });
+    }
+  }]);
+
+  return LoadDialog;
+}(external_commonjs_vue_commonjs2_vue_root_Vue_default.a);
+
+__decorate([Inject()], LoadDialogvue_type_script_lang_ts_LoadDialog.prototype, "diagramVm", void 0);
+
+__decorate([Inject()], LoadDialogvue_type_script_lang_ts_LoadDialog.prototype, "diagram", void 0);
+
+LoadDialogvue_type_script_lang_ts_LoadDialog = __decorate([vue_class_component_esm({
+  components: {
+    Dialog: components_Dialog,
+    LoadingSpinner: components_LoadingSpinner,
+    BaseButton: components_BaseButton,
+    Icon: components_Icon,
+    IconButton: components_IconButton,
+    CheckBoxField: components_CheckBoxField,
+    ButtonGroup: components_ButtonGroup,
+    Button: components_Button
+  }
+})], LoadDialogvue_type_script_lang_ts_LoadDialog);
+/* harmony default export */ var LoadDialogvue_type_script_lang_ts_ = (LoadDialogvue_type_script_lang_ts_LoadDialog);
+// CONCATENATED MODULE: ./src/components/LoadDialog.vue?vue&type=script&lang=ts&
+ /* harmony default export */ var components_LoadDialogvue_type_script_lang_ts_ = (LoadDialogvue_type_script_lang_ts_); 
+// EXTERNAL MODULE: ./src/components/LoadDialog.vue?vue&type=style&index=0&lang=scss&
+var LoadDialogvue_type_style_index_0_lang_scss_ = __webpack_require__("96c8");
+
+// CONCATENATED MODULE: ./src/components/LoadDialog.vue
+
+
+
+
+
+
+/* normalize component */
+
+var LoadDialog_component = normalizeComponent(
+  components_LoadDialogvue_type_script_lang_ts_,
+  LoadDialogvue_type_template_id_4e5ceb18_render,
+  LoadDialogvue_type_template_id_4e5ceb18_staticRenderFns,
+  false,
+  null,
+  null,
+  null
+  
+)
+
+/* harmony default export */ var components_LoadDialog = (LoadDialog_component.exports);
 // CONCATENATED MODULE: ./node_modules/babel-loader/lib!./node_modules/ts-loader??ref--14-1!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/Diagram.vue?vue&type=script&lang=ts&
 
 
@@ -95624,42 +109368,104 @@ var GraphPrint_component = normalizeComponent(
 
 
 
-var Diagramvue_type_script_lang_ts_DiagramVue = /*#__PURE__*/function (_Vue) {
-  _inherits(DiagramVue, _Vue);
 
-  var _super = _createSuper(DiagramVue);
 
-  function DiagramVue() {
+
+
+
+
+
+
+
+var Diagramvue_type_script_lang_ts_DiagramVm = /*#__PURE__*/function (_Vue) {
+  _inherits(DiagramVm, _Vue);
+
+  var _super = _createSuper(DiagramVm);
+
+  function DiagramVm() {
     var _this;
 
-    _classCallCheck(this, DiagramVue);
+    _classCallCheck(this, DiagramVm);
 
     _this = _super.apply(this, arguments);
     _this.compact = false;
     _this.showCustomizer = true;
-    _this.editorTarget = null;
+    _this.lastDialogId = 0;
     _this.dialogs = [];
+    _this.lastToastId = 0;
+    _this.toasts = [];
     return _this;
   }
 
-  _createClass(DiagramVue, [{
+  _createClass(DiagramVm, [{
     key: "diagramVm",
     get: function get() {
       return this;
     }
   }, {
+    key: "created",
+    value: function () {
+      var _created = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee() {
+        var diagram, defaultSavedDiagram;
+        return regeneratorRuntime.wrap(function _callee$(_context) {
+          while (1) {
+            switch (_context.prev = _context.next) {
+              case 0:
+                diagram = this.diagram;
+                diagram.isLoading = true;
+                _context.next = 4;
+                return diagram.loadSavedDiagrams();
+
+              case 4:
+                defaultSavedDiagram = diagram.defaultSavedDiagramId && diagram.savedDiagramsMap.get(diagram.defaultSavedDiagramId);
+
+                if (!defaultSavedDiagram) {
+                  _context.next = 10;
+                  break;
+                }
+
+                _context.next = 8;
+                return diagram.load(defaultSavedDiagram);
+
+              case 8:
+                diagram.isLoading = false;
+                return _context.abrupt("return");
+
+              case 10:
+                if (!diagram.savedDiagrams.length) {
+                  _context.next = 14;
+                  break;
+                }
+
+                diagram.isLoading = false;
+                this.showLoadDialog();
+                return _context.abrupt("return");
+
+              case 14:
+                _context.next = 16;
+                return diagram.load();
+
+              case 16:
+                diagram.isLoading = false;
+
+              case 17:
+              case "end":
+                return _context.stop();
+            }
+          }
+        }, _callee, this);
+      }));
+
+      function created() {
+        return _created.apply(this, arguments);
+      }
+
+      return created;
+    }()
+  }, {
     key: "mounted",
     value: function mounted() {
-      var _this2 = this;
-
       watchRect(this.$el, this.onResize);
-      this.diagram.eventBus.on('editor.open', function (_ref) {
-        var target = _ref.target;
-        return _this2.editorTarget = target;
-      });
-      this.diagram.eventBus.on('dataUpdated', function () {
-        return _this2.editorTarget = null;
-      });
     }
   }, {
     key: "beforeDestroy",
@@ -95670,15 +109476,64 @@ var Diagramvue_type_script_lang_ts_DiagramVue = /*#__PURE__*/function (_Vue) {
     key: "showDialog",
     value: function showDialog(component, props) {
       this.dialogs.push({
+        id: this.lastDialogId++,
         component: component,
         props: props
       });
     }
   }, {
+    key: "showPrintDialog",
+    value: function showPrintDialog(mode) {
+      this.showDialog(components_PrintDialog, {
+        mode: mode
+      });
+    }
+  }, {
+    key: "showLoadDialog",
+    value: function showLoadDialog() {
+      this.showDialog(components_LoadDialog);
+    }
+  }, {
+    key: "showToast",
+    value: function showToast(props) {
+      var _this2 = this;
+
+      var id = this.lastToastId++;
+      this.toasts.push({
+        id: id,
+        component: components_Toast,
+        props: props
+      });
+      return function () {
+        var i = 0;
+
+        var _iterator = _createForOfIteratorHelper(_this2.toasts),
+            _step;
+
+        try {
+          for (_iterator.s(); !(_step = _iterator.n()).done;) {
+            var toast = _step.value;
+
+            if (toast.id === id) {
+              _this2.toasts.splice(i, 1);
+
+              return;
+            }
+
+            i++;
+          }
+        } catch (err) {
+          _iterator.e(err);
+        } finally {
+          _iterator.f();
+        }
+      };
+    }
+  }, {
     key: "onResize",
-    value: function onResize(_ref2) {
-      var width = _ref2.width;
-      this.compact = width < 768;
+    value: function onResize(_ref) {
+      var width = _ref.width;
+      this.compact = width <= this.diagram.compactWidth;
     }
   }, {
     key: "onKeyDown",
@@ -95688,9 +109543,7 @@ var Diagramvue_type_script_lang_ts_DiagramVue = /*#__PURE__*/function (_Vue) {
 
       if (ctrlOrMeta && event.key.toLowerCase() === 'p') {
         event.preventDefault();
-        this.showDialog(components_PrintDialog, {
-          mode: 'print'
-        });
+        this.showPrintDialog('print');
       }
     }
   }, {
@@ -95700,29 +109553,34 @@ var Diagramvue_type_script_lang_ts_DiagramVue = /*#__PURE__*/function (_Vue) {
     }
   }]);
 
-  return DiagramVue;
+  return DiagramVm;
 }(external_commonjs_vue_commonjs2_vue_root_Vue_default.a);
 
-__decorate([Provide('diagramVm')], Diagramvue_type_script_lang_ts_DiagramVue.prototype, "diagramVm", null);
+__decorate([Provide('diagramVm')], Diagramvue_type_script_lang_ts_DiagramVm.prototype, "diagramVm", null);
 
 __decorate([Provide('diagram'), Prop({
   type: Object,
   required: true
-})], Diagramvue_type_script_lang_ts_DiagramVue.prototype, "diagram", void 0);
+})], Diagramvue_type_script_lang_ts_DiagramVm.prototype, "diagram", void 0);
 
-__decorate([Watch('compact')], Diagramvue_type_script_lang_ts_DiagramVue.prototype, "onCompactChanged", null);
+__decorate([Watch('compact')], Diagramvue_type_script_lang_ts_DiagramVm.prototype, "onCompactChanged", null);
 
-Diagramvue_type_script_lang_ts_DiagramVue = __decorate([vue_class_component_esm({
+Diagramvue_type_script_lang_ts_DiagramVm = __decorate([vue_class_component_esm({
   components: {
+    LoadingSpinner: components_LoadingSpinner,
     TopBar: components_TopBar,
     Graph: components_Graph,
     Customizer: components_Customizer,
     Editor: components_Editor,
     GraphLegend: components_GraphLegend,
-    GraphPrint: components_GraphPrint
+    GraphPrint: components_GraphPrint,
+    TooltipRoot: components_TooltipRoot
+  },
+  directives: {
+    tooltip: directives_tooltip
   }
-})], Diagramvue_type_script_lang_ts_DiagramVue);
-/* harmony default export */ var Diagramvue_type_script_lang_ts_ = (Diagramvue_type_script_lang_ts_DiagramVue);
+})], Diagramvue_type_script_lang_ts_DiagramVm);
+/* harmony default export */ var Diagramvue_type_script_lang_ts_ = (Diagramvue_type_script_lang_ts_DiagramVm);
 // CONCATENATED MODULE: ./src/components/Diagram.vue?vue&type=script&lang=ts&
  /* harmony default export */ var components_Diagramvue_type_script_lang_ts_ = (Diagramvue_type_script_lang_ts_); 
 // EXTERNAL MODULE: ./src/components/Diagram.vue?vue&type=style&index=0&lang=scss&
@@ -95739,7 +109597,7 @@ var Diagramvue_type_style_index_0_lang_scss_ = __webpack_require__("034b");
 
 var Diagram_component = normalizeComponent(
   components_Diagramvue_type_script_lang_ts_,
-  Diagramvue_type_template_id_6f2abd3e_render,
+  Diagramvue_type_template_id_f02dcada_render,
   staticRenderFns,
   false,
   null,
@@ -95805,7 +109663,7 @@ var EventBus_EventBus = /*#__PURE__*/function () {
         return handler(event);
       };
 
-      var off = this.on(names, handler);
+      var off = this.on(names, wrappedHandler);
       return off;
     }
   }, {
@@ -95871,9 +109729,6 @@ var DiagramEventBus_DiagramEventBus = /*#__PURE__*/function (_EventBus) {
 }(types_EventBus);
 
 
-// EXTERNAL MODULE: ./node_modules/core-js/modules/es.array.splice.js
-var es_array_splice = __webpack_require__("a434");
-
 // CONCATENATED MODULE: ./src/util/revertible-object-manipulation.ts
 
 
@@ -95931,6 +109786,7 @@ function set(object, key, value) {
   };
 }
 // CONCATENATED MODULE: ./src/types/DiagramData.ts
+
 
 
 
@@ -96055,12 +109911,49 @@ var DiagramData_DiagramData = /*#__PURE__*/function () {
 
       var compiledChange = this._compileChange(change);
 
-      if (compiledChange.apply(!isInitial) == false) return;
+      if (compiledChange.apply(!isInitial) === false) return;
 
       if (!isInitial) {
         this.changes.push(compiledChange);
         this.undoneChanges = [];
       }
+    }
+  }, {
+    key: "applyLayoutToLastChange",
+    value: function applyLayoutToLastChange(change) {
+      var lastChange = this.changes[this.changes.length - 1];
+      if (!lastChange) return this.commitChange(change);
+
+      var compiledChange = this._compileChange(change);
+
+      if (compiledChange.apply() === false) return;
+      change = compiledChange.change;
+
+      if (change.layout) {
+        lastChange.change.layout = change.layout;
+      }
+
+      if (change.moveEntities) {
+        var _lastChange$change, _lastChange$change$mo, _lastChange$change$mo2;
+
+        (_lastChange$change$mo = (_lastChange$change = lastChange.change).moveEntities) !== null && _lastChange$change$mo !== void 0 ? _lastChange$change$mo : _lastChange$change.moveEntities = [];
+
+        (_lastChange$change$mo2 = lastChange.change.moveEntities).push.apply(_lastChange$change$mo2, toConsumableArray_toConsumableArray(change.moveEntities));
+      }
+
+      var oldApply = lastChange.apply,
+          oldRevert = lastChange.revert;
+      var newApply = compiledChange.apply,
+          newRevert = compiledChange.revert;
+
+      lastChange.apply = function () {
+        return oldApply() && newApply();
+      };
+
+      lastChange.revert = function () {
+        newRevert();
+        oldRevert();
+      };
     }
   }, {
     key: "undo",
@@ -96142,19 +110035,20 @@ var DiagramData_DiagramData = /*#__PURE__*/function () {
         applyFns.push(function () {
           var _removal$entities, _removal$relations;
 
-          var entities = [];
-          var relations = [];
+          var entities = new Map();
+          var relations = new Map();
 
           var _iterator2 = _createForOfIteratorHelper((_removal$entities = removal.entities) !== null && _removal$entities !== void 0 ? _removal$entities : []),
               _step2;
 
           try {
             for (_iterator2.s(); !(_step2 = _iterator2.n()).done;) {
-              var id = _step2.value;
+              var _id = _step2.value;
+              if (_id === _this2.diagram.mainEntityId) continue;
 
-              var entity = _this2.entitiesMap.get(id);
+              var _entity = _this2.entitiesMap.get(_id);
 
-              if (entity) entities.push(entity);
+              if (_entity) entities.set(_id, _entity);
             }
           } catch (err) {
             _iterator2.e(err);
@@ -96167,31 +110061,76 @@ var DiagramData_DiagramData = /*#__PURE__*/function () {
 
           try {
             for (_iterator3.s(); !(_step3 = _iterator3.n()).done;) {
-              var _id = _step3.value;
+              var _id2 = _step3.value;
 
-              var relation = _this2.relationsMap.get(_id);
+              var _relation = _this2.relationsMap.get(_id2);
 
-              if (relation) relations.push(relation);
-            }
+              if (_relation) relations.set(_id2, _relation);
+            } // Cancel if nothing to remove
+
           } catch (err) {
             _iterator3.e(err);
           } finally {
             _iterator3.f();
           }
 
-          removal.entities = removal.entities && entities.map(function (e) {
-            return e.id;
-          });
-          removal.relations = removal.relations && relations.map(function (r) {
-            return r.id;
-          }); // Cancel if nothing to remove
+          if (!entities.size && !relations.size) return false; // Entities to set expanded = false on
 
-          if (!entities.length && !relations.length) return false;
-          if (entities.length) _this2._removeEntities(entities);
-          if (relations.length) _this2._removeRelations(relations);
+          var entitiesToMarkAsNotExpanded = new Set(entities.values()); // Also remove connected relations
+
+          if (entities.size) {
+            var _iterator4 = _createForOfIteratorHelper(_this2.relations),
+                _step4;
+
+            try {
+              for (_iterator4.s(); !(_step4 = _iterator4.n()).done;) {
+                var relation = _step4.value;
+                if (relations.has(relation.id)) continue;
+                if (!entities.has(relation.from) && !entities.has(relation.to)) continue;
+                relations.set(relation.id, relation); // Add connected entities to entitiesToMarkAsNotExpanded
+
+                for (var _i = 0, _arr = [relation.to, relation.from]; _i < _arr.length; _i++) {
+                  var id = _arr[_i];
+
+                  var entity = _this2.entitiesMap.get(id);
+
+                  if (entity) entitiesToMarkAsNotExpanded.add(entity);
+                }
+              }
+            } catch (err) {
+              _iterator4.e(err);
+            } finally {
+              _iterator4.f();
+            }
+          }
+
+          removal.entities = toConsumableArray_toConsumableArray(entities.keys());
+          removal.relations = toConsumableArray_toConsumableArray(relations.keys());
+
+          var entitiesArray = toConsumableArray_toConsumableArray(entities.values());
+
+          var relationsArray = toConsumableArray_toConsumableArray(relations.values());
+
+          if (entities.size) _this2._removeEntities(entitiesArray);
+          if (relations.size) _this2._removeRelations(relationsArray);
+
+          var _iterator5 = _createForOfIteratorHelper(entitiesToMarkAsNotExpanded),
+              _step5;
+
+          try {
+            for (_iterator5.s(); !(_step5 = _iterator5.n()).done;) {
+              var _entity2 = _step5.value;
+              revertFns.push(set(_entity2, 'expanded', false));
+            }
+          } catch (err) {
+            _iterator5.e(err);
+          } finally {
+            _iterator5.f();
+          }
+
           revertFns.push(function () {
-            if (entities.length) _this2._addEntities(entities);
-            if (relations.length) _this2._addRelations(relations);
+            if (entities.size) _this2._addEntities(entitiesArray);
+            if (relations.size) _this2._addRelations(relationsArray);
           });
         });
       }
@@ -96206,14 +110145,14 @@ var DiagramData_DiagramData = /*#__PURE__*/function () {
           var relationEdits = edit.relations && [];
           var reverters = [];
 
-          var _iterator4 = _createForOfIteratorHelper((_edit$entities = edit.entities) !== null && _edit$entities !== void 0 ? _edit$entities : []),
-              _step4;
+          var _iterator6 = _createForOfIteratorHelper((_edit$entities = edit.entities) !== null && _edit$entities !== void 0 ? _edit$entities : []),
+              _step6;
 
           try {
-            for (_iterator4.s(); !(_step4 = _iterator4.n()).done;) {
+            for (_iterator6.s(); !(_step6 = _iterator6.n()).done;) {
               var _entityEdit$data, _entityEdit$style;
 
-              var entityEdit = _step4.value;
+              var entityEdit = _step6.value;
 
               var entity = _this2.entitiesMap.get(entityEdit.id);
 
@@ -96225,19 +110164,19 @@ var DiagramData_DiagramData = /*#__PURE__*/function () {
               }));
             }
           } catch (err) {
-            _iterator4.e(err);
+            _iterator6.e(err);
           } finally {
-            _iterator4.f();
+            _iterator6.f();
           }
 
-          var _iterator5 = _createForOfIteratorHelper((_edit$relations = edit.relations) !== null && _edit$relations !== void 0 ? _edit$relations : []),
-              _step5;
+          var _iterator7 = _createForOfIteratorHelper((_edit$relations = edit.relations) !== null && _edit$relations !== void 0 ? _edit$relations : []),
+              _step7;
 
           try {
-            for (_iterator5.s(); !(_step5 = _iterator5.n()).done;) {
+            for (_iterator7.s(); !(_step7 = _iterator7.n()).done;) {
               var _relationEdit$data, _relationEdit$style;
 
-              var relationEdit = _step5.value;
+              var relationEdit = _step7.value;
 
               var relation = _this2.relationsMap.get(relationEdit.id);
 
@@ -96249,9 +110188,9 @@ var DiagramData_DiagramData = /*#__PURE__*/function () {
               }));
             }
           } catch (err) {
-            _iterator5.e(err);
+            _iterator7.e(err);
           } finally {
-            _iterator5.f();
+            _iterator7.f();
           }
 
           edit.entities = entityEdits;
@@ -96284,15 +110223,15 @@ var DiagramData_DiagramData = /*#__PURE__*/function () {
         applyFns.push(function () {
           var reverters = [];
 
-          var _iterator6 = _createForOfIteratorHelper(moveEntities),
-              _step6;
+          var _iterator8 = _createForOfIteratorHelper(moveEntities),
+              _step8;
 
           try {
-            for (_iterator6.s(); !(_step6 = _iterator6.n()).done;) {
-              var _step6$value = _step6.value,
-                  id = _step6$value.id,
-                  x = _step6$value.x,
-                  y = _step6$value.y;
+            for (_iterator8.s(); !(_step8 = _iterator8.n()).done;) {
+              var _step8$value = _step8.value,
+                  id = _step8$value.id,
+                  x = _step8$value.x,
+                  y = _step8$value.y;
 
               var entity = _this2.entitiesMap.get(id);
 
@@ -96306,9 +110245,9 @@ var DiagramData_DiagramData = /*#__PURE__*/function () {
             } // Cancel if nothing was changed
 
           } catch (err) {
-            _iterator6.e(err);
+            _iterator8.e(err);
           } finally {
-            _iterator6.f();
+            _iterator8.f();
           }
 
           if (!reverters.length) return false;
@@ -96329,21 +110268,21 @@ var DiagramData_DiagramData = /*#__PURE__*/function () {
           applied = true;
           var success = true;
 
-          var _iterator7 = _createForOfIteratorHelper(applyFns),
-              _step7;
+          var _iterator9 = _createForOfIteratorHelper(applyFns),
+              _step9;
 
           try {
-            for (_iterator7.s(); !(_step7 = _iterator7.n()).done;) {
-              var fn = _step7.value;
+            for (_iterator9.s(); !(_step9 = _iterator9.n()).done;) {
+              var fn = _step9.value;
 
               if (fn() === false) {
                 success = false;
               }
             }
           } catch (err) {
-            _iterator7.e(err);
+            _iterator9.e(err);
           } finally {
-            _iterator7.f();
+            _iterator9.f();
           }
 
           if (trackEvents) {
@@ -96374,18 +110313,18 @@ var DiagramData_DiagramData = /*#__PURE__*/function () {
 
           applied = false;
 
-          var _iterator8 = _createForOfIteratorHelper([].concat(revertFns).reverse()),
-              _step8;
+          var _iterator10 = _createForOfIteratorHelper([].concat(revertFns).reverse()),
+              _step10;
 
           try {
-            for (_iterator8.s(); !(_step8 = _iterator8.n()).done;) {
-              var fn = _step8.value;
+            for (_iterator10.s(); !(_step10 = _iterator10.n()).done;) {
+              var fn = _step10.value;
               fn();
             }
           } catch (err) {
-            _iterator8.e(err);
+            _iterator10.e(err);
           } finally {
-            _iterator8.f();
+            _iterator10.f();
           }
 
           revertFns.splice(0);
@@ -96413,55 +110352,13 @@ var DiagramData_DiagramData = /*#__PURE__*/function () {
     value: function _addEntities(entities) {
       if (!entities.length) return;
 
-      var _iterator9 = _createForOfIteratorHelper(entities),
-          _step9;
-
-      try {
-        for (_iterator9.s(); !(_step9 = _iterator9.n()).done;) {
-          var entity = _step9.value;
-          this.entitiesMap.set(entity.id, entity);
-        }
-      } catch (err) {
-        _iterator9.e(err);
-      } finally {
-        _iterator9.f();
-      }
-
-      this._updateEntitiesArray();
-    }
-  }, {
-    key: "_addRelations",
-    value: function _addRelations(relations) {
-      if (!relations.length) return;
-
-      var _iterator10 = _createForOfIteratorHelper(relations),
-          _step10;
-
-      try {
-        for (_iterator10.s(); !(_step10 = _iterator10.n()).done;) {
-          var relation = _step10.value;
-          this.relationsMap.set(relation.id, relation);
-        }
-      } catch (err) {
-        _iterator10.e(err);
-      } finally {
-        _iterator10.f();
-      }
-
-      this._updateRelationsArray();
-    }
-  }, {
-    key: "_removeEntities",
-    value: function _removeEntities(entities) {
-      if (!entities.length) return;
-
       var _iterator11 = _createForOfIteratorHelper(entities),
           _step11;
 
       try {
         for (_iterator11.s(); !(_step11 = _iterator11.n()).done;) {
           var entity = _step11.value;
-          this.entitiesMap.delete(entity.id);
+          this.entitiesMap.set(entity.id, entity);
         }
       } catch (err) {
         _iterator11.e(err);
@@ -96472,8 +110369,8 @@ var DiagramData_DiagramData = /*#__PURE__*/function () {
       this._updateEntitiesArray();
     }
   }, {
-    key: "_removeRelations",
-    value: function _removeRelations(relations) {
+    key: "_addRelations",
+    value: function _addRelations(relations) {
       if (!relations.length) return;
 
       var _iterator12 = _createForOfIteratorHelper(relations),
@@ -96482,12 +110379,54 @@ var DiagramData_DiagramData = /*#__PURE__*/function () {
       try {
         for (_iterator12.s(); !(_step12 = _iterator12.n()).done;) {
           var relation = _step12.value;
-          this.relationsMap.delete(relation.id);
+          this.relationsMap.set(relation.id, relation);
         }
       } catch (err) {
         _iterator12.e(err);
       } finally {
         _iterator12.f();
+      }
+
+      this._updateRelationsArray();
+    }
+  }, {
+    key: "_removeEntities",
+    value: function _removeEntities(entities) {
+      if (!entities.length) return;
+
+      var _iterator13 = _createForOfIteratorHelper(entities),
+          _step13;
+
+      try {
+        for (_iterator13.s(); !(_step13 = _iterator13.n()).done;) {
+          var entity = _step13.value;
+          this.entitiesMap.delete(entity.id);
+        }
+      } catch (err) {
+        _iterator13.e(err);
+      } finally {
+        _iterator13.f();
+      }
+
+      this._updateEntitiesArray();
+    }
+  }, {
+    key: "_removeRelations",
+    value: function _removeRelations(relations) {
+      if (!relations.length) return;
+
+      var _iterator14 = _createForOfIteratorHelper(relations),
+          _step14;
+
+      try {
+        for (_iterator14.s(); !(_step14 = _iterator14.n()).done;) {
+          var relation = _step14.value;
+          this.relationsMap.delete(relation.id);
+        }
+      } catch (err) {
+        _iterator14.e(err);
+      } finally {
+        _iterator14.f();
       }
 
       this._updateRelationsArray();
@@ -96513,12 +110452,12 @@ var DiagramData_DiagramData = /*#__PURE__*/function () {
 var DiagramData_mapThrowable = function mapThrowable(items, transformer) {
   var result = [];
 
-  var _iterator13 = _createForOfIteratorHelper(items),
-      _step13;
+  var _iterator15 = _createForOfIteratorHelper(items),
+      _step15;
 
   try {
-    for (_iterator13.s(); !(_step13 = _iterator13.n()).done;) {
-      var item = _step13.value;
+    for (_iterator15.s(); !(_step15 = _iterator15.n()).done;) {
+      var item = _step15.value;
 
       try {
         result.push(transformer(item));
@@ -96527,9 +110466,9 @@ var DiagramData_mapThrowable = function mapThrowable(items, transformer) {
       }
     }
   } catch (err) {
-    _iterator13.e(err);
+    _iterator15.e(err);
   } finally {
-    _iterator13.f();
+    _iterator15.f();
   }
 
   return result;
@@ -96581,6 +110520,426 @@ function setDeep(obj, path, value) {
   var targetProp = path[path.length - 1];
   targetParent[targetProp] = value;
 }
+// CONCATENATED MODULE: ./src/types/SavedDiagram.ts
+
+
+
+
+
+
+
+
+
+
+
+
+var SavedDiagram_createSavedDiagram = function createSavedDiagram(diagram) {
+  var _diagram$activeDiagra;
+
+  return {
+    id: diagram.activeDiagram.id,
+    title: diagram.activeDiagram.title,
+    description: diagram.activeDiagram.description,
+    shared: diagram.activeDiagram.shared,
+    mainEntityId: diagram.mainEntityId,
+    data: {
+      entities: diagram.activeDiagram.data.initialData.entities.map(function (e) {
+        return _objectSpread2({
+          type: e.type.id,
+          id: e.id
+        }, e.initialState);
+      }),
+      relations: diagram.activeDiagram.data.initialData.relations.map(function (r) {
+        return _objectSpread2({
+          type: r.type.id,
+          id: r.id,
+          from: r.from,
+          to: r.to
+        }, r.initialState);
+      })
+    },
+    changes: [].concat(toConsumableArray_toConsumableArray(diagram.activeDiagram.data.initialData.changes), toConsumableArray_toConsumableArray(diagram.activeDiagram.data.changes.map(function (c) {
+      return c.change;
+    }))),
+    settings: {
+      activeFields: Object.keys(diagram.activeDiagram.settings.activeFields).filter(function (id) {
+        return diagram.activeDiagram.settings.activeFields[id];
+      }),
+      activeFilters: Object.keys(diagram.activeDiagram.settings.activeFilters).filter(function (id) {
+        return diagram.activeDiagram.settings.activeFilters[id];
+      }),
+      activeLayout: (_diagram$activeDiagra = diagram.activeDiagram.settings.activeLayout) === null || _diagram$activeDiagra === void 0 ? void 0 : _diagram$activeDiagra.id
+    }
+  };
+};
+var parseSavedDiagramJSON = function parseSavedDiagramJSON(json) {
+  var _obj$title, _obj$description, _obj$shared;
+
+  var obj = JSON.parse(json);
+  if (!SavedDiagram_isRecord(obj)) return null;
+  if (typeof obj.id !== 'string') return null;
+  var id = obj.id;
+  if (!isNullish(obj.title) && typeof obj.title !== 'string') return null;
+  var title = (_obj$title = obj.title) !== null && _obj$title !== void 0 ? _obj$title : undefined;
+  if (!isNullish(obj.description) && typeof obj.description !== 'string') return null;
+  var description = (_obj$description = obj.description) !== null && _obj$description !== void 0 ? _obj$description : undefined;
+  if (!isNullish(obj.shared) && typeof obj.shared !== 'boolean') return null;
+  var shared = (_obj$shared = obj.shared) !== null && _obj$shared !== void 0 ? _obj$shared : undefined;
+  if (typeof obj.mainEntityId !== 'string') return null;
+  var mainEntityId = obj.mainEntityId;
+  var data = parseData(obj.data);
+  var changes = SavedDiagram_parseChanges(obj.changes);
+  var settings = SavedDiagram_parseSettings(obj.settings);
+  return {
+    id: id,
+    title: title,
+    description: description,
+    shared: shared,
+    mainEntityId: mainEntityId,
+    data: data,
+    changes: changes,
+    settings: settings
+  };
+};
+
+var parseData = function parseData(v) {
+  if (!SavedDiagram_isRecord(v)) return;
+  return {
+    entities: SavedDiagram_parseEntities(v.entities),
+    relations: SavedDiagram_parseRelations(v.relations)
+  };
+};
+
+var SavedDiagram_parseChanges = function parseChanges(v) {
+  if (!isArray(v)) return;
+  var changes = [];
+
+  var _iterator = _createForOfIteratorHelper(v),
+      _step;
+
+  try {
+    var _loop = function _loop() {
+      var change = _step.value;
+      if (!SavedDiagram_isRecord(change)) return "continue";
+      var parsedChange = {};
+
+      if (SavedDiagram_isRecord(change.add)) {
+        parsedChange.add = {
+          entities: SavedDiagram_parseEntities(change.add.entities),
+          relations: SavedDiagram_parseRelations(change.add.relations)
+        };
+      }
+
+      if (SavedDiagram_isRecord(change.remove)) {
+        parsedChange.remove = {
+          entities: SavedDiagram_parseStringArray(change.remove.entities),
+          relations: SavedDiagram_parseStringArray(change.remove.relations)
+        };
+      }
+
+      if (SavedDiagram_isRecord(change.edit)) {
+        parsedChange.edit = {
+          entities: function () {
+            if (!isArray(change.edit.entities)) return;
+            var entities = [];
+
+            var _iterator2 = _createForOfIteratorHelper(change.edit.entities),
+                _step2;
+
+            try {
+              for (_iterator2.s(); !(_step2 = _iterator2.n()).done;) {
+                var entity = _step2.value;
+                if (!SavedDiagram_isRecord(entity) || !isString(entity.id)) continue;
+                entities.push({
+                  id: entity.id,
+                  data: parseRecord(entity.data),
+                  style: parseEntityStyle(entity.style)
+                });
+              }
+            } catch (err) {
+              _iterator2.e(err);
+            } finally {
+              _iterator2.f();
+            }
+
+            return entities;
+          }(),
+          relations: function () {
+            if (!isArray(change.edit.relations)) return;
+            var relations = [];
+
+            var _iterator3 = _createForOfIteratorHelper(change.edit.relations),
+                _step3;
+
+            try {
+              for (_iterator3.s(); !(_step3 = _iterator3.n()).done;) {
+                var relation = _step3.value;
+                if (!SavedDiagram_isRecord(relation) || !isString(relation.id)) continue;
+                relations.push({
+                  id: relation.id,
+                  data: parseRecord(relation.data),
+                  style: parseRelationStyle(relation.style)
+                });
+              }
+            } catch (err) {
+              _iterator3.e(err);
+            } finally {
+              _iterator3.f();
+            }
+
+            return relations;
+          }()
+        };
+      }
+
+      if (isString(change.layout)) {
+        parsedChange.layout = change.layout;
+      }
+
+      if (isArray(change.moveEntities)) {
+        parsedChange.moveEntities = [];
+
+        var _iterator4 = _createForOfIteratorHelper(change.moveEntities),
+            _step4;
+
+        try {
+          for (_iterator4.s(); !(_step4 = _iterator4.n()).done;) {
+            var moveEntity = _step4.value;
+            if (!SavedDiagram_isRecord(moveEntity) || !isString(moveEntity.id) || !isNumber(moveEntity.x) || !isNumber(moveEntity.y)) continue;
+            parsedChange.moveEntities.push({
+              id: moveEntity.id,
+              x: moveEntity.x,
+              y: moveEntity.y
+            });
+          }
+        } catch (err) {
+          _iterator4.e(err);
+        } finally {
+          _iterator4.f();
+        }
+      }
+
+      changes.push(parsedChange);
+    };
+
+    for (_iterator.s(); !(_step = _iterator.n()).done;) {
+      var _ret = _loop();
+
+      if (_ret === "continue") continue;
+    }
+  } catch (err) {
+    _iterator.e(err);
+  } finally {
+    _iterator.f();
+  }
+
+  return changes;
+};
+
+var SavedDiagram_parseEntities = function parseEntities(v) {
+  if (!isArray(v)) return;
+  var entities = [];
+
+  var _iterator5 = _createForOfIteratorHelper(v),
+      _step5;
+
+  try {
+    for (_iterator5.s(); !(_step5 = _iterator5.n()).done;) {
+      var e = _step5.value;
+      var entity = parseEntity(e);
+      if (entity) entities.push(entity);
+    }
+  } catch (err) {
+    _iterator5.e(err);
+  } finally {
+    _iterator5.f();
+  }
+
+  return entities;
+};
+
+var SavedDiagram_parseRelations = function parseRelations(v) {
+  if (!isArray(v)) return;
+  var relations = [];
+
+  var _iterator6 = _createForOfIteratorHelper(v),
+      _step6;
+
+  try {
+    for (_iterator6.s(); !(_step6 = _iterator6.n()).done;) {
+      var r = _step6.value;
+      var relation = parseRelation(r);
+      if (relation) relations.push(relation);
+    }
+  } catch (err) {
+    _iterator6.e(err);
+  } finally {
+    _iterator6.f();
+  }
+
+  return relations;
+};
+
+var parseEntity = function parseEntity(v) {
+  if (!SavedDiagram_isRecord(v) || !isString(v.type) || !isString(v.id)) return null;
+  return {
+    type: v.type,
+    id: v.id,
+    position: function () {
+      if (!SavedDiagram_isRecord(v.position) || !isNumber(v.position.x) || !isNumber(v.position.y)) return;
+      return {
+        x: v.position.x,
+        y: v.position.y
+      };
+    }(),
+    data: parseRecord(v.data),
+    style: parseEntityStyle(v.style)
+  };
+};
+
+var parseEntityStyle = function parseEntityStyle(v) {
+  if (!SavedDiagram_isRecord(v)) return;
+  var style = {};
+  if (isString(v.backgroundColor)) style.backgroundColor = v.backgroundColor;
+  if (isString(v.borderColor)) style.borderColor = v.borderColor;
+  if (isEnum(v.borderStyle, ['solid', 'dotted', 'dashed'])) style.borderStyle = v.borderStyle;
+  if (isNumber(v.borderWidth)) style.borderWidth = v.borderWidth;
+  if (isString(v.labelsBackgroundColor)) style.labelsBackgroundColor = v.labelsBackgroundColor;
+  return style;
+};
+
+var parseRelation = function parseRelation(v) {
+  if (!SavedDiagram_isRecord(v)) return null;
+  if (!isString(v.type)) return null;
+  var type = v.type;
+  if (!isString(v.id)) return null;
+  var id = v.id;
+  if (!isString(v.from)) return null;
+  var from = v.from;
+  if (!isString(v.to)) return null;
+  var to = v.to;
+  return {
+    type: type,
+    id: id,
+    from: from,
+    to: to,
+    data: parseRecord(v.data),
+    style: parseRelationStyle(v.style)
+  };
+};
+
+var parseRelationStyle = function parseRelationStyle(v) {
+  if (!SavedDiagram_isRecord(v)) return;
+  var style = {};
+  if (isBoolean(v.arrowFrom)) style.arrowFrom = v.arrowFrom;
+  if (isBoolean(v.arrowTo)) style.arrowTo = v.arrowTo;
+  if (isNumber(v.arrowSize)) style.arrowSize = v.arrowSize;
+  if (isNumber(v.lineWidth)) style.lineWidth = v.lineWidth;
+  if (isEnum(v.lineStyle, ['solid', 'dotted', 'dashed'])) style.lineStyle = v.lineStyle;
+  if (isString(v.lineColor)) style.lineColor = v.lineColor;
+  return style;
+};
+
+var parseRecord = function parseRecord(v) {
+  if (!SavedDiagram_isRecord(v)) return;
+  return v;
+};
+
+var SavedDiagram_parseSettings = function parseSettings(v) {
+  if (!SavedDiagram_isRecord(v)) return;
+  var settings = {};
+
+  if (isArray(v.activeFields)) {
+    settings.activeFields = [];
+
+    var _iterator7 = _createForOfIteratorHelper(v.activeFields),
+        _step7;
+
+    try {
+      for (_iterator7.s(); !(_step7 = _iterator7.n()).done;) {
+        var id = _step7.value;
+        if (isString(id)) settings.activeFields.push(id);
+      }
+    } catch (err) {
+      _iterator7.e(err);
+    } finally {
+      _iterator7.f();
+    }
+  }
+
+  if (isArray(v.activeFilters)) {
+    settings.activeFilters = [];
+
+    var _iterator8 = _createForOfIteratorHelper(v.activeFilters),
+        _step8;
+
+    try {
+      for (_iterator8.s(); !(_step8 = _iterator8.n()).done;) {
+        var _id = _step8.value;
+        if (isString(_id)) settings.activeFilters.push(_id);
+      }
+    } catch (err) {
+      _iterator8.e(err);
+    } finally {
+      _iterator8.f();
+    }
+  }
+
+  if (isString(v.activeLayout)) {
+    settings.activeLayout = v.activeLayout;
+  }
+
+  return settings;
+};
+
+var SavedDiagram_parseStringArray = function parseStringArray(v) {
+  if (!isArray(v)) return;
+  var array = [];
+
+  var _iterator9 = _createForOfIteratorHelper(v),
+      _step9;
+
+  try {
+    for (_iterator9.s(); !(_step9 = _iterator9.n()).done;) {
+      var item = _step9.value;
+      if (isString(item)) array.push(item);
+    }
+  } catch (err) {
+    _iterator9.e(err);
+  } finally {
+    _iterator9.f();
+  }
+
+  return array;
+};
+
+var isNullish = function isNullish(v) {
+  return v === null || v === undefined;
+};
+
+var isBoolean = function isBoolean(v) {
+  return typeof v === 'boolean';
+};
+
+var isString = function isString(v) {
+  return typeof v === 'string';
+};
+
+var isNumber = function isNumber(v) {
+  return typeof v === 'number';
+};
+
+var isEnum = function isEnum(v, values) {
+  return values.includes(v);
+};
+
+var SavedDiagram_isRecord = function isRecord(v) {
+  return typeof_typeof(v) == 'object' && !isArray(v) && v !== null;
+};
+
+var isArray = function isArray(v) {
+  return Array.isArray(v);
+};
 // EXTERNAL MODULE: ./node_modules/lodash/lodash.js
 var lodash = __webpack_require__("2ef0");
 
@@ -96595,9 +110954,6 @@ function mapGetOrSet(map, key, getDefault) {
 
   return value;
 }
-// EXTERNAL MODULE: ./node_modules/core-js/modules/es.regexp.to-string.js
-var es_regexp_to_string = __webpack_require__("25f0");
-
 // CONCATENATED MODULE: ./src/example.ts
 
 
@@ -97093,15 +111449,121 @@ var exampleConfig = {
     inverted: true
   }],
   methods: {
+    getSavedDiagrams: function () {
+      var _getSavedDiagrams = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee() {
+        return regeneratorRuntime.wrap(function _callee$(_context) {
+          while (1) {
+            switch (_context.prev = _context.next) {
+              case 0:
+                _context.next = 2;
+                return new Promise(function (resolve) {
+                  return setTimeout(resolve, 1000);
+                });
+
+              case 2:
+                return _context.abrupt("return", [{
+                  id: '1',
+                  title: 'LASSO X A/S',
+                  description: 'Beskrivelser er seje.',
+                  mainEntityId: 'CVR-1-34580820',
+                  data: exampleData
+                }, {
+                  id: '2',
+                  title: 'LASSO X A/S m. ændringer',
+                  shared: true,
+                  mainEntityId: 'CVR-1-34580820',
+                  data: exampleData,
+                  changes: [{
+                    add: {
+                      entities: [{
+                        type: 'person',
+                        id: 'custom-person--sean',
+                        data: {
+                          name: 'Sean'
+                        }
+                      }],
+                      relations: [{
+                        type: 'ownership',
+                        id: 'custom-relation--sean--to--lasso-x',
+                        from: 'custom-person--sean',
+                        to: 'CVR-1-34580820',
+                        data: {
+                          ownershipPercentage: '20.000%'
+                        }
+                      }]
+                    }
+                  }]
+                }]);
+
+              case 3:
+              case "end":
+                return _context.stop();
+            }
+          }
+        }, _callee);
+      }));
+
+      function getSavedDiagrams() {
+        return _getSavedDiagrams.apply(this, arguments);
+      }
+
+      return getSavedDiagrams;
+    }(),
     // Normally this would send the savedDiagram to a server, but for now we'll just console.log it.
-    saveDiagram: function saveDiagram(savedDiagram) {
-      return new Promise(function (resolve) {
-        setTimeout(function () {
-          console.log('Saved diagram:', savedDiagram);
-          resolve();
-        }, 1500);
-      });
-    },
+    saveDiagram: function () {
+      var _saveDiagram = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee2(_ref6) {
+        var savedDiagram, generatePng, pngBlob;
+        return regeneratorRuntime.wrap(function _callee2$(_context2) {
+          while (1) {
+            switch (_context2.prev = _context2.next) {
+              case 0:
+                savedDiagram = _ref6.savedDiagram, generatePng = _ref6.generatePng;
+                _context2.next = 3;
+                return generatePng();
+
+              case 3:
+                pngBlob = _context2.sent;
+                console.log('Saved diagram', {
+                  savedDiagram: savedDiagram,
+                  pngBlob: pngBlob
+                });
+
+              case 5:
+              case "end":
+                return _context2.stop();
+            }
+          }
+        }, _callee2);
+      }));
+
+      function saveDiagram(_x) {
+        return _saveDiagram.apply(this, arguments);
+      }
+
+      return saveDiagram;
+    }(),
+    deleteSavedDiagram: function () {
+      var _deleteSavedDiagram = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee3(savedDiagram) {
+        return regeneratorRuntime.wrap(function _callee3$(_context3) {
+          while (1) {
+            switch (_context3.prev = _context3.next) {
+              case 0:
+                console.log('delete savedDiagram', savedDiagram.id, savedDiagram);
+
+              case 1:
+              case "end":
+                return _context3.stop();
+            }
+          }
+        }, _callee3);
+      }));
+
+      function deleteSavedDiagram(_x2) {
+        return _deleteSavedDiagram.apply(this, arguments);
+      }
+
+      return deleteSavedDiagram;
+    }(),
     // (Optional) Generate the print title.
     getPrintTitle: function getPrintTitle(context) {
       return (context.hasDataChanges ? 'Manuelt tilpasset ejerstruktur' : 'Ejerstruktur') + " for ".concat(context.mainEntity.data.name, " d. ").concat(context.formattedDate, " kl. ").concat(context.formattedTime);
@@ -97112,22 +111574,22 @@ var exampleConfig = {
     },
     // Normally this would fetch data from an API, but we'll just return the example data.
     getEntityData: function () {
-      var _getEntityData = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee(options) {
-        return regeneratorRuntime.wrap(function _callee$(_context) {
+      var _getEntityData = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee4(options) {
+        return regeneratorRuntime.wrap(function _callee4$(_context4) {
           while (1) {
-            switch (_context.prev = _context.next) {
+            switch (_context4.prev = _context4.next) {
               case 0:
-                return _context.abrupt("return", exampleData);
+                return _context4.abrupt("return", exampleData);
 
               case 1:
               case "end":
-                return _context.stop();
+                return _context4.stop();
             }
           }
-        }, _callee);
+        }, _callee4);
       }));
 
-      function getEntityData(_x) {
+      function getEntityData(_x3) {
         return _getEntityData.apply(this, arguments);
       }
 
@@ -97155,9 +111617,26 @@ var exampleConfig = {
         onClick: function onClick() {
           return console.log('Start indskrivningsforløb klikket');
         }
+      }, {
+        label: 'Mere...',
+        submenu: [{
+          icon: 'thumb_up',
+          label: 'Fedt mand'
+        }, {
+          label: 'Meget mere',
+          submenu: [{
+            label: 'Ej hvor nice'
+          }, {
+            label: 'Det kan vi li\''
+          }]
+        }]
       }]];
     }
   },
+  // (Optional) Set the width where the diagram goes compact (certain top bar actions become hidden, customizer becomes toggleable).
+  compactWidth: 839,
+  // (Optional) Set grid size for drag and drop snapping (0 = disabled).
+  dragAndDropGridSize: 16,
   // (Optional) Enable editing.
   enableEditing: true,
   // (Optional) Enable editing style fields.
@@ -97780,6 +112259,7 @@ var exampleData = {
 
 
 
+
 var diagram_Diagram = /*#__PURE__*/function () {
   function Diagram(config) {
     var _config$entityTypes,
@@ -97797,9 +112277,13 @@ var diagram_Diagram = /*#__PURE__*/function () {
         _config$methods5,
         _config$methods6,
         _config$methods7,
-        _config$saveSettingsT,
-        _this$methods$getEnti,
-        _this$methods;
+        _config$methods8,
+        _config$methods9,
+        _config$methods10,
+        _config$methods11,
+        _config$compactWidth,
+        _config$dragAndDropGr,
+        _config$saveSettingsT;
 
     _classCallCheck(this, Diagram);
 
@@ -97810,6 +112294,12 @@ var diagram_Diagram = /*#__PURE__*/function () {
     this.enableExpand = false;
     this.enableSaving = false;
     this.enableSharing = false;
+    this.isLoading = false;
+    this.loadSavedDiagramsPromise = null;
+    this.savedDiagrams = [];
+    this.savedDiagramsMap = new Map();
+    this.defaultSavedDiagramId = null;
+    this.hasActiveDiagram = false;
     this.hasUnsavedChanges = false;
     this.isSaving = false;
     this.mainEntityId = config.mainEntityId;
@@ -97826,14 +112316,20 @@ var diagram_Diagram = /*#__PURE__*/function () {
     })) !== null && _config$filters$map !== void 0 ? _config$filters$map : [];
     this.layouts = (_config$layouts = config.layouts) !== null && _config$layouts !== void 0 ? _config$layouts : [];
     this.methods = {
-      saveDiagram: (_config$methods = config.methods) === null || _config$methods === void 0 ? void 0 : _config$methods.saveDiagram,
-      getPrintTitle: (_config$methods2 = config.methods) === null || _config$methods2 === void 0 ? void 0 : _config$methods2.getPrintTitle,
-      getPrintFilename: (_config$methods3 = config.methods) === null || _config$methods3 === void 0 ? void 0 : _config$methods3.getPrintFilename,
-      convertPngToPdf: (_config$methods4 = config.methods) === null || _config$methods4 === void 0 ? void 0 : _config$methods4.convertPngToPdf,
-      getEntityData: (_config$methods5 = config.methods) === null || _config$methods5 === void 0 ? void 0 : _config$methods5.getEntityData,
-      searchEntities: (_config$methods6 = config.methods) === null || _config$methods6 === void 0 ? void 0 : _config$methods6.searchEntities,
-      getContextMenuActions: (_config$methods7 = config.methods) === null || _config$methods7 === void 0 ? void 0 : _config$methods7.getContextMenuActions
+      getSavedDiagrams: (_config$methods = config.methods) === null || _config$methods === void 0 ? void 0 : _config$methods.getSavedDiagrams,
+      saveDiagram: (_config$methods2 = config.methods) === null || _config$methods2 === void 0 ? void 0 : _config$methods2.saveDiagram,
+      deleteSavedDiagram: (_config$methods3 = config.methods) === null || _config$methods3 === void 0 ? void 0 : _config$methods3.deleteSavedDiagram,
+      getDefaultSavedDiagramId: (_config$methods4 = config.methods) === null || _config$methods4 === void 0 ? void 0 : _config$methods4.getDefaultSavedDiagramId,
+      setDefaultSavedDiagramId: (_config$methods5 = config.methods) === null || _config$methods5 === void 0 ? void 0 : _config$methods5.setDefaultSavedDiagramId,
+      getPrintTitle: (_config$methods6 = config.methods) === null || _config$methods6 === void 0 ? void 0 : _config$methods6.getPrintTitle,
+      getPrintFilename: (_config$methods7 = config.methods) === null || _config$methods7 === void 0 ? void 0 : _config$methods7.getPrintFilename,
+      convertPngToPdf: (_config$methods8 = config.methods) === null || _config$methods8 === void 0 ? void 0 : _config$methods8.convertPngToPdf,
+      getEntityData: (_config$methods9 = config.methods) === null || _config$methods9 === void 0 ? void 0 : _config$methods9.getEntityData,
+      searchEntities: (_config$methods10 = config.methods) === null || _config$methods10 === void 0 ? void 0 : _config$methods10.searchEntities,
+      getContextMenuActions: (_config$methods11 = config.methods) === null || _config$methods11 === void 0 ? void 0 : _config$methods11.getContextMenuActions
     };
+    this.compactWidth = (_config$compactWidth = config.compactWidth) !== null && _config$compactWidth !== void 0 ? _config$compactWidth : 767;
+    this.dragAndDropGridSize = (_config$dragAndDropGr = config.dragAndDropGridSize) !== null && _config$dragAndDropGr !== void 0 ? _config$dragAndDropGr : 0;
 
     if (config.enableEditing) {
       this.enableEditing = true;
@@ -97852,7 +112348,7 @@ var diagram_Diagram = /*#__PURE__*/function () {
     }
 
     if (config.enableSaving) {
-      var _config$methods8;
+      var _config$methods12;
 
       this.enableSaving = true;
 
@@ -97861,7 +112357,7 @@ var diagram_Diagram = /*#__PURE__*/function () {
         this.enableSaving = false;
       }
 
-      if (!((_config$methods8 = config.methods) !== null && _config$methods8 !== void 0 && _config$methods8.saveDiagram)) {
+      if (!((_config$methods12 = config.methods) !== null && _config$methods12 !== void 0 && _config$methods12.saveDiagram)) {
         console.warn('Cannot enable saving without providing a saveDiagram method.');
         this.enableSaving = false;
       }
@@ -98025,22 +112521,6 @@ var diagram_Diagram = /*#__PURE__*/function () {
     }
 
     this.activeDiagram = new diagram_ActiveDiagram(this);
-    (_this$methods$getEnti = (_this$methods = this.methods).getEntityData) === null || _this$methods$getEnti === void 0 ? void 0 : _this$methods$getEnti.call(_this$methods, {
-      ids: [this.mainEntityId],
-      relationTypes: this.relationTypes.items.map(function (rt) {
-        return rt.id;
-      }),
-      parents: 10,
-      children: 10
-    }).then(function (data) {
-      requestAnimationFrame(function () {
-        _this.setActiveDiagram(new diagram_ActiveDiagram(_this, {
-          data: new DiagramData_DiagramData(_this, {
-            data: data
-          })
-        }));
-      });
-    });
     this.eventBus.on(['dataUpdated', 'settingsChanged'], function () {
       _this.hasUnsavedChanges = true;
     });
@@ -98076,51 +112556,252 @@ var diagram_Diagram = /*#__PURE__*/function () {
     key: "setActiveDiagram",
     value: function setActiveDiagram(activeDiagram) {
       this.activeDiagram = activeDiagram;
-      this.hasUnsavedChanges = false;
+      this.hasActiveDiagram = true;
       this.eventBus.emit({
         name: 'settingsChanged'
       });
+      this.hasUnsavedChanges = false;
     }
   }, {
-    key: "save",
+    key: "loadSavedDiagrams",
     value: function () {
-      var _save = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee() {
-        var overwrite,
-            saveDiagram,
-            savedDiagram,
-            _args = arguments;
+      var _loadSavedDiagrams = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee() {
+        var getSavedDiagrams, loadSavedDiagramsPromise, getDefaultSavedDiagramIdPromise, _yield$Promise$all, _yield$Promise$all2, savedDiagrams, _iterator7, _step7, savedDiagram;
+
         return regeneratorRuntime.wrap(function _callee$(_context) {
           while (1) {
             switch (_context.prev = _context.next) {
               case 0:
-                overwrite = _args.length > 0 && _args[0] !== undefined ? _args[0] : true;
-                saveDiagram = this.methods.saveDiagram;
+                getSavedDiagrams = this.methods.getSavedDiagrams;
 
-                if (!(this.isSaving || !saveDiagram)) {
-                  _context.next = 4;
+                if (getSavedDiagrams) {
+                  _context.next = 3;
                   break;
                 }
 
                 return _context.abrupt("return");
 
-              case 4:
-                this.isSaving = true;
-                savedDiagram = SavedDiagram_createSavedDiagram(this);
-                _context.next = 8;
-                return saveDiagram(_objectSpread2(_objectSpread2({}, savedDiagram), {}, {
-                  id: overwrite ? savedDiagram.id : ''
-                }));
+              case 3:
+                loadSavedDiagramsPromise = this.loadSavedDiagramsPromise = getSavedDiagrams();
+                getDefaultSavedDiagramIdPromise = this.getDefaultSavedDiagramId();
+                _context.next = 7;
+                return Promise.all([loadSavedDiagramsPromise, getDefaultSavedDiagramIdPromise]);
 
-              case 8:
-                this.hasUnsavedChanges = false;
-                this.isSaving = false;
+              case 7:
+                _yield$Promise$all = _context.sent;
+                _yield$Promise$all2 = _slicedToArray(_yield$Promise$all, 1);
+                savedDiagrams = _yield$Promise$all2[0];
 
-              case 10:
+                if (!(loadSavedDiagramsPromise !== this.loadSavedDiagramsPromise)) {
+                  _context.next = 12;
+                  break;
+                }
+
+                return _context.abrupt("return");
+
+              case 12:
+                this.loadSavedDiagramsPromise = null;
+                this.savedDiagrams = savedDiagrams;
+                this.savedDiagramsMap.clear();
+                _iterator7 = _createForOfIteratorHelper(savedDiagrams);
+
+                try {
+                  for (_iterator7.s(); !(_step7 = _iterator7.n()).done;) {
+                    savedDiagram = _step7.value;
+                    this.savedDiagramsMap.set(savedDiagram.id, savedDiagram);
+                  }
+                } catch (err) {
+                  _iterator7.e(err);
+                } finally {
+                  _iterator7.f();
+                }
+
+              case 17:
               case "end":
                 return _context.stop();
             }
           }
         }, _callee, this);
+      }));
+
+      function loadSavedDiagrams() {
+        return _loadSavedDiagrams.apply(this, arguments);
+      }
+
+      return loadSavedDiagrams;
+    }()
+  }, {
+    key: "getDefaultSavedDiagramId",
+    value: function () {
+      var _getDefaultSavedDiagramId = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee2() {
+        return regeneratorRuntime.wrap(function _callee2$(_context2) {
+          while (1) {
+            switch (_context2.prev = _context2.next) {
+              case 0:
+                _context2.prev = 0;
+
+                if (!this.methods.getDefaultSavedDiagramId) {
+                  _context2.next = 7;
+                  break;
+                }
+
+                _context2.next = 4;
+                return this.methods.getDefaultSavedDiagramId();
+
+              case 4:
+                this.defaultSavedDiagramId = _context2.sent;
+                _context2.next = 8;
+                break;
+
+              case 7:
+                if (this.saveSettingsToLocalStorage) {
+                  this.defaultSavedDiagramId = localStorage.getItem("lassox-diagram/default-diagram-for-".concat(this.mainEntityId));
+                } else {
+                  this.defaultSavedDiagramId = null;
+                }
+
+              case 8:
+                _context2.next = 13;
+                break;
+
+              case 10:
+                _context2.prev = 10;
+                _context2.t0 = _context2["catch"](0);
+                this.defaultSavedDiagramId = null;
+
+              case 13:
+                return _context2.abrupt("return", this.defaultSavedDiagramId);
+
+              case 14:
+              case "end":
+                return _context2.stop();
+            }
+          }
+        }, _callee2, this, [[0, 10]]);
+      }));
+
+      function getDefaultSavedDiagramId() {
+        return _getDefaultSavedDiagramId.apply(this, arguments);
+      }
+
+      return getDefaultSavedDiagramId;
+    }()
+  }, {
+    key: "setDefaultSavedDiagramId",
+    value: function () {
+      var _setDefaultSavedDiagramId = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee3(id) {
+        return regeneratorRuntime.wrap(function _callee3$(_context3) {
+          while (1) {
+            switch (_context3.prev = _context3.next) {
+              case 0:
+                this.defaultSavedDiagramId = id;
+                _context3.prev = 1;
+
+                if (!this.methods.setDefaultSavedDiagramId) {
+                  _context3.next = 7;
+                  break;
+                }
+
+                _context3.next = 5;
+                return this.methods.setDefaultSavedDiagramId(id);
+
+              case 5:
+                _context3.next = 8;
+                break;
+
+              case 7:
+                if (this.saveSettingsToLocalStorage) {
+                  if (id) localStorage.setItem("lassox-diagram/default-diagram-for-".concat(this.mainEntityId), id);else localStorage.removeItem("lassox-diagram/default-diagram-for-".concat(this.mainEntityId));
+                }
+
+              case 8:
+                _context3.next = 13;
+                break;
+
+              case 10:
+                _context3.prev = 10;
+                _context3.t0 = _context3["catch"](1);
+                return _context3.abrupt("return");
+
+              case 13:
+              case "end":
+                return _context3.stop();
+            }
+          }
+        }, _callee3, this, [[1, 10]]);
+      }));
+
+      function setDefaultSavedDiagramId(_x) {
+        return _setDefaultSavedDiagramId.apply(this, arguments);
+      }
+
+      return setDefaultSavedDiagramId;
+    }()
+  }, {
+    key: "save",
+    value: function () {
+      var _save = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee4() {
+        var _this3 = this;
+
+        var overwrite,
+            saveDiagram,
+            savedDiagram,
+            id,
+            _args4 = arguments;
+        return regeneratorRuntime.wrap(function _callee4$(_context4) {
+          while (1) {
+            switch (_context4.prev = _context4.next) {
+              case 0:
+                overwrite = _args4.length > 0 && _args4[0] !== undefined ? _args4[0] : true;
+                saveDiagram = this.methods.saveDiagram;
+
+                if (!(this.isSaving || !saveDiagram)) {
+                  _context4.next = 4;
+                  break;
+                }
+
+                return _context4.abrupt("return");
+
+              case 4:
+                this.isSaving = true;
+                savedDiagram = SavedDiagram_createSavedDiagram(this);
+                if (!overwrite) savedDiagram.id = '';
+                _context4.next = 9;
+                return saveDiagram({
+                  savedDiagram: savedDiagram,
+                  generatePng: function generatePng(options) {
+                    return new Promise(function (resolve) {
+                      var _options$orientation, _options$size;
+
+                      _this3.eventBus.one('printDone', function (_ref) {
+                        var file = _ref.file;
+                        if (!file) throw Error('printDone did not return a file');
+                        resolve(file.blob);
+                      });
+
+                      _this3.eventBus.emit({
+                        name: 'print',
+                        mode: 'png',
+                        orientation: (_options$orientation = options === null || options === void 0 ? void 0 : options.orientation) !== null && _options$orientation !== void 0 ? _options$orientation : 'landscape',
+                        size: (_options$size = options === null || options === void 0 ? void 0 : options.size) !== null && _options$size !== void 0 ? _options$size : 'A4',
+                        includeMargin: false
+                      });
+                    });
+                  }
+                });
+
+              case 9:
+                id = _context4.sent;
+                if (id) this.activeDiagram.id = id;
+                this.hasUnsavedChanges = false;
+                this.isSaving = false;
+
+              case 13:
+              case "end":
+                return _context4.stop();
+            }
+          }
+        }, _callee4, this);
       }));
 
       function save() {
@@ -98131,72 +112812,132 @@ var diagram_Diagram = /*#__PURE__*/function () {
     }()
   }, {
     key: "load",
-    value: function load(savedDiagram) {
-      var activeDiagram = new diagram_ActiveDiagram(this, {
-        id: savedDiagram.id,
-        title: savedDiagram.title,
-        description: savedDiagram.description,
-        shared: savedDiagram.shared,
-        data: new DiagramData_DiagramData(this, {
-          data: savedDiagram.data,
-          changes: savedDiagram.changes
-        })
-      });
+    value: function () {
+      var _load = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee5(savedDiagram) {
+        var activeDiagram, _activeDiagram, settings, id, _iterator8, _step8, _id, _id2, _iterator9, _step9, _id3, _id4, layout, data;
 
-      if (savedDiagram.settings) {
-        var settings = activeDiagram.settings;
+        return regeneratorRuntime.wrap(function _callee5$(_context5) {
+          while (1) {
+            switch (_context5.prev = _context5.next) {
+              case 0:
+                if (!savedDiagram) {
+                  _context5.next = 5;
+                  break;
+                }
 
-        if (savedDiagram.settings.activeFields) {
-          for (var id in settings.activeFields) {
-            settings.activeFields[id] = false;
-          }
+                activeDiagram = new diagram_ActiveDiagram(this, {
+                  id: savedDiagram.id,
+                  title: savedDiagram.title,
+                  description: savedDiagram.description,
+                  shared: savedDiagram.shared,
+                  data: new DiagramData_DiagramData(this, {
+                    data: savedDiagram.data,
+                    changes: savedDiagram.changes
+                  })
+                });
 
-          var _iterator7 = _createForOfIteratorHelper(savedDiagram.settings.activeFields),
-              _step7;
+                if (savedDiagram.settings) {
+                  _activeDiagram = activeDiagram, settings = _activeDiagram.settings;
 
-          try {
-            for (_iterator7.s(); !(_step7 = _iterator7.n()).done;) {
-              var _id = _step7.value;
-              if (_id in settings.activeFields) settings.activeFields[_id] = true;
+                  if (savedDiagram.settings.activeFields) {
+                    for (id in settings.activeFields) {
+                      settings.activeFields[id] = false;
+                    }
+
+                    _iterator8 = _createForOfIteratorHelper(savedDiagram.settings.activeFields);
+
+                    try {
+                      for (_iterator8.s(); !(_step8 = _iterator8.n()).done;) {
+                        _id = _step8.value;
+                        if (_id in settings.activeFields) settings.activeFields[_id] = true;
+                      }
+                    } catch (err) {
+                      _iterator8.e(err);
+                    } finally {
+                      _iterator8.f();
+                    }
+                  }
+
+                  if (savedDiagram.settings.activeFilters) {
+                    for (_id2 in settings.activeFilters) {
+                      settings.activeFilters[_id2] = false;
+                    }
+
+                    _iterator9 = _createForOfIteratorHelper(savedDiagram.settings.activeFilters);
+
+                    try {
+                      for (_iterator9.s(); !(_step9 = _iterator9.n()).done;) {
+                        _id3 = _step9.value;
+                        if (_id3 in settings.activeFilters) settings.activeFilters[_id3] = true;
+                      }
+                    } catch (err) {
+                      _iterator9.e(err);
+                    } finally {
+                      _iterator9.f();
+                    }
+                  }
+
+                  if (savedDiagram.settings.activeLayout) {
+                    _id4 = savedDiagram.settings.activeLayout;
+                    layout = this.layouts.find(function (l) {
+                      return l.id === _id4;
+                    });
+                    if (layout) settings.activeLayout = layout;
+                  }
+                }
+
+                _context5.next = 15;
+                break;
+
+              case 5:
+                data = undefined;
+
+                if (!this.methods.getEntityData) {
+                  _context5.next = 14;
+                  break;
+                }
+
+                _context5.t0 = DiagramData_DiagramData;
+                _context5.t1 = this;
+                _context5.next = 11;
+                return this.methods.getEntityData({
+                  ids: [this.mainEntityId],
+                  relationTypes: this.relationTypes.items.map(function (rt) {
+                    return rt.id;
+                  }),
+                  parents: 10,
+                  children: 10
+                });
+
+              case 11:
+                _context5.t2 = _context5.sent;
+                _context5.t3 = {
+                  data: _context5.t2
+                };
+                data = new _context5.t0(_context5.t1, _context5.t3);
+
+              case 14:
+                activeDiagram = new diagram_ActiveDiagram(this, {
+                  data: data
+                });
+
+              case 15:
+                this.setActiveDiagram(activeDiagram);
+
+              case 16:
+              case "end":
+                return _context5.stop();
             }
-          } catch (err) {
-            _iterator7.e(err);
-          } finally {
-            _iterator7.f();
           }
-        }
+        }, _callee5, this);
+      }));
 
-        if (savedDiagram.settings.activeFilters) {
-          for (var _id2 in settings.activeFilters) {
-            settings.activeFilters[_id2] = false;
-          }
-
-          var _iterator8 = _createForOfIteratorHelper(savedDiagram.settings.activeFilters),
-              _step8;
-
-          try {
-            for (_iterator8.s(); !(_step8 = _iterator8.n()).done;) {
-              var _id3 = _step8.value;
-              if (_id3 in settings.activeFilters) settings.activeFilters[_id3] = true;
-            }
-          } catch (err) {
-            _iterator8.e(err);
-          } finally {
-            _iterator8.f();
-          }
-        }
-
-        if (savedDiagram.settings.activeLayout) {
-          var _id4 = savedDiagram.settings.activeLayout;
-          var layout = this.layouts.find(function (l) {
-            return l.id === _id4;
-          });
-          if (layout) settings.activeLayout = layout;
-        }
+      function load(_x2) {
+        return _load.apply(this, arguments);
       }
 
-      this.setActiveDiagram(activeDiagram);
-    }
+      return load;
+    }()
   }, {
     key: "reset",
     value: function reset() {
@@ -98221,24 +112962,24 @@ var diagram_Diagram = /*#__PURE__*/function () {
       if (!searchString || !type.searchable || !type.searchableFields.length) return [];
       var results = [];
 
-      var _iterator9 = _createForOfIteratorHelper(this.activeDiagram.data[type instanceof diagram_EntityType ? 'entities' : 'relations']),
-          _step9;
+      var _iterator10 = _createForOfIteratorHelper(this.activeDiagram.data[type instanceof diagram_EntityType ? 'entities' : 'relations']),
+          _step10;
 
       try {
-        for (_iterator9.s(); !(_step9 = _iterator9.n()).done;) {
-          var item = _step9.value;
+        for (_iterator10.s(); !(_step10 = _iterator10.n()).done;) {
+          var item = _step10.value;
           if (item.type !== type) continue;
 
-          var _iterator10 = _createForOfIteratorHelper(type.searchableFields),
-              _step10;
+          var _iterator11 = _createForOfIteratorHelper(type.searchableFields),
+              _step11;
 
           try {
-            for (_iterator10.s(); !(_step10 = _iterator10.n()).done;) {
-              var _ref;
+            for (_iterator11.s(); !(_step11 = _iterator11.n()).done;) {
+              var _ref2;
 
-              var field = _step10.value;
+              var field = _step11.value;
               var value = field.getValue(item.data);
-              var string = "".concat((_ref = field.formatter ? field.formatter(value) : value) !== null && _ref !== void 0 ? _ref : '').trim().toLowerCase();
+              var string = "".concat((_ref2 = field.formatter ? field.formatter(value) : value) !== null && _ref2 !== void 0 ? _ref2 : '').trim().toLowerCase();
 
               if (string && string.includes(searchString)) {
                 results.push(item);
@@ -98246,15 +112987,15 @@ var diagram_Diagram = /*#__PURE__*/function () {
               }
             }
           } catch (err) {
-            _iterator10.e(err);
+            _iterator11.e(err);
           } finally {
-            _iterator10.f();
+            _iterator11.f();
           }
         }
       } catch (err) {
-        _iterator9.e(err);
+        _iterator10.e(err);
       } finally {
-        _iterator9.f();
+        _iterator10.f();
       }
 
       return results;
@@ -98322,10 +113063,10 @@ var diagram_EntityTypes = /*#__PURE__*/function () {
   }, {
     key: "getMultiple",
     value: function getMultiple(ids) {
-      var _this3 = this;
+      var _this4 = this;
 
       return ids.map(function (id) {
-        return _this3.get(id);
+        return _this4.get(id);
       });
     }
   }, {
@@ -98364,10 +113105,10 @@ var diagram_RelationTypes = /*#__PURE__*/function () {
   }, {
     key: "getMultiple",
     value: function getMultiple(ids) {
-      var _this4 = this;
+      var _this5 = this;
 
       return ids.map(function (id) {
-        return _this4.get(id);
+        return _this5.get(id);
       });
     }
   }, {
@@ -98410,7 +113151,7 @@ var diagram_EntityType = function EntityType(options) {
   };
 };
 var diagram_RelationType = function RelationType(options) {
-  var _style$arrowFrom, _style$arrowTo, _style$arrowSize, _style$lineWidth, _style$lineStyle, _style$lineColor, _options$searchable2;
+  var _style$taxi, _style$arrowFrom, _style$arrowTo, _style$arrowSize, _style$lineWidth, _style$lineStyle, _style$lineColor, _options$searchable2;
 
   _classCallCheck(this, RelationType);
 
@@ -98421,12 +113162,13 @@ var diagram_RelationType = function RelationType(options) {
   this.labels = options.labels;
   var style = typeof options.style === 'function' ? undefined : options.style;
   this.style = {
+    taxi: (_style$taxi = style === null || style === void 0 ? void 0 : style.taxi) !== null && _style$taxi !== void 0 ? _style$taxi : false,
     arrowFrom: (_style$arrowFrom = style === null || style === void 0 ? void 0 : style.arrowFrom) !== null && _style$arrowFrom !== void 0 ? _style$arrowFrom : false,
     arrowTo: (_style$arrowTo = style === null || style === void 0 ? void 0 : style.arrowTo) !== null && _style$arrowTo !== void 0 ? _style$arrowTo : true,
     arrowSize: (_style$arrowSize = style === null || style === void 0 ? void 0 : style.arrowSize) !== null && _style$arrowSize !== void 0 ? _style$arrowSize : 6,
     lineWidth: (_style$lineWidth = style === null || style === void 0 ? void 0 : style.lineWidth) !== null && _style$lineWidth !== void 0 ? _style$lineWidth : 4,
     lineStyle: (_style$lineStyle = style === null || style === void 0 ? void 0 : style.lineStyle) !== null && _style$lineStyle !== void 0 ? _style$lineStyle : 'solid',
-    lineColor: (_style$lineColor = style === null || style === void 0 ? void 0 : style.lineColor) !== null && _style$lineColor !== void 0 ? _style$lineColor : '#d8d8d8'
+    lineColor: (_style$lineColor = style === null || style === void 0 ? void 0 : style.lineColor) !== null && _style$lineColor !== void 0 ? _style$lineColor : '#e0e0e0'
   };
   this.styleBuilder = typeof options.style === 'function' ? options.style : undefined;
   this.printStyle = typeof options.printStyle === 'function' ? undefined : options.printStyle;
@@ -98456,6 +113198,7 @@ var diagram_Entity = /*#__PURE__*/function () {
     this.isMainEntity = false;
     this.isParent = false;
     this.isChild = false;
+    this.expanded = false;
     this.builtTypeStyle = {};
     this.builtTypePrintStyle = {};
     this.builtStyle = {};
@@ -98542,14 +113285,14 @@ var diagram_Relation = /*#__PURE__*/function () {
   return Relation;
 }();
 var diagram_FieldGroup = function FieldGroup(diagram, options) {
-  var _this5 = this;
+  var _this6 = this;
 
   _classCallCheck(this, FieldGroup);
 
   this.id = options.id;
   this.title = options.title;
   this.fields = options.fields.map(function (f) {
-    return f instanceof diagram_Field ? f : new diagram_Field(diagram, _this5, f);
+    return f instanceof diagram_Field ? f : new diagram_Field(diagram, _this6, f);
   });
 };
 var diagram_Field = /*#__PURE__*/function () {
@@ -98670,32 +113413,18 @@ var diagram_Settings = /*#__PURE__*/function () {
   _createClass(Settings, [{
     key: "init",
     value: function init() {
-      var _ref2, _this$diagram$layouts;
+      var _ref3, _this$diagram$layouts;
 
       this.activeFields = {};
       this.activeFilters = {};
 
-      var _iterator11 = _createForOfIteratorHelper(this.diagram.fields),
-          _step11;
-
-      try {
-        for (_iterator11.s(); !(_step11 = _iterator11.n()).done;) {
-          var field = _step11.value;
-          this.activeFields[field.fullId] = field.startActive;
-        }
-      } catch (err) {
-        _iterator11.e(err);
-      } finally {
-        _iterator11.f();
-      }
-
-      var _iterator12 = _createForOfIteratorHelper(this.diagram.filters),
+      var _iterator12 = _createForOfIteratorHelper(this.diagram.fields),
           _step12;
 
       try {
         for (_iterator12.s(); !(_step12 = _iterator12.n()).done;) {
-          var filter = _step12.value;
-          this.activeFilters[filter.id] = filter.startActive;
+          var field = _step12.value;
+          this.activeFields[field.fullId] = field.startActive;
         }
       } catch (err) {
         _iterator12.e(err);
@@ -98703,9 +113432,23 @@ var diagram_Settings = /*#__PURE__*/function () {
         _iterator12.f();
       }
 
-      this.activeLayout = (_ref2 = (_this$diagram$layouts = this.diagram.layouts.find(function (l) {
+      var _iterator13 = _createForOfIteratorHelper(this.diagram.filters),
+          _step13;
+
+      try {
+        for (_iterator13.s(); !(_step13 = _iterator13.n()).done;) {
+          var filter = _step13.value;
+          this.activeFilters[filter.id] = filter.startActive;
+        }
+      } catch (err) {
+        _iterator13.e(err);
+      } finally {
+        _iterator13.f();
+      }
+
+      this.activeLayout = (_ref3 = (_this$diagram$layouts = this.diagram.layouts.find(function (l) {
         return l.default;
-      })) !== null && _this$diagram$layouts !== void 0 ? _this$diagram$layouts : this.diagram.layouts[0]) !== null && _ref2 !== void 0 ? _ref2 : null;
+      })) !== null && _this$diagram$layouts !== void 0 ? _this$diagram$layouts : this.diagram.layouts[0]) !== null && _ref3 !== void 0 ? _ref3 : null;
       this.loadFromLocalStorage();
       this.saveToLocalStorage();
       this.initialState.activeFields = _objectSpread2({}, this.activeFields);
@@ -98734,36 +113477,36 @@ var diagram_Settings = /*#__PURE__*/function () {
             activeLayout = settings.activeLayout;
 
         if (type_guards_isRecord(activeFields)) {
-          var _iterator13 = _createForOfIteratorHelper(this.diagram.fields),
-              _step13;
-
-          try {
-            for (_iterator13.s(); !(_step13 = _iterator13.n()).done;) {
-              var field = _step13.value;
-              var active = activeFields[field.fullId];
-              if (typeof active == 'boolean') this.activeFields[field.fullId] = active;
-            }
-          } catch (err) {
-            _iterator13.e(err);
-          } finally {
-            _iterator13.f();
-          }
-        }
-
-        if (type_guards_isRecord(activeFilters)) {
-          var _iterator14 = _createForOfIteratorHelper(this.diagram.filters),
+          var _iterator14 = _createForOfIteratorHelper(this.diagram.fields),
               _step14;
 
           try {
             for (_iterator14.s(); !(_step14 = _iterator14.n()).done;) {
-              var filter = _step14.value;
-              var _active = activeFilters[filter.id];
-              if (typeof _active == 'boolean') this.activeFilters[filter.id] = _active;
+              var field = _step14.value;
+              var active = activeFields[field.fullId];
+              if (typeof active == 'boolean') this.activeFields[field.fullId] = active;
             }
           } catch (err) {
             _iterator14.e(err);
           } finally {
             _iterator14.f();
+          }
+        }
+
+        if (type_guards_isRecord(activeFilters)) {
+          var _iterator15 = _createForOfIteratorHelper(this.diagram.filters),
+              _step15;
+
+          try {
+            for (_iterator15.s(); !(_step15 = _iterator15.n()).done;) {
+              var filter = _step15.value;
+              var _active = activeFilters[filter.id];
+              if (typeof _active == 'boolean') this.activeFilters[filter.id] = _active;
+            }
+          } catch (err) {
+            _iterator15.e(err);
+          } finally {
+            _iterator15.f();
           }
         }
 
@@ -98773,7 +113516,7 @@ var diagram_Settings = /*#__PURE__*/function () {
           });
           if (layout) this.activeLayout = layout;
         }
-      } catch (_unused) {
+      } catch (_unused3) {
         return;
       }
     }
@@ -98790,7 +113533,7 @@ var diagram_Settings = /*#__PURE__*/function () {
           activeFilters: this.activeFilters,
           activeLayout: (_this$activeLayout = this.activeLayout) === null || _this$activeLayout === void 0 ? void 0 : _this$activeLayout.id
         }));
-      } catch (_unused2) {
+      } catch (_unused4) {
         return;
       }
     }
@@ -98811,7 +113554,7 @@ var createContextItem = function createContextItem(item) {
   };
 };
 
-// CONCATENATED MODULE: ./src/bundles/lasso-diagram/index.ts
+// CONCATENATED MODULE: ./src/index.ts
 
 var LassoDiagram = {
   init: function init(config) {
@@ -98823,13 +113566,13 @@ var LassoDiagram = {
     };
   }
 };
-/* harmony default export */ var lasso_diagram = (LassoDiagram);
+/* harmony default export */ var src_0 = (LassoDiagram);
 
 
 // CONCATENATED MODULE: ./node_modules/@vue/cli-service/lib/commands/build/entry-lib.js
 
 
-/* harmony default export */ var entry_lib = __webpack_exports__["default"] = (lasso_diagram);
+/* harmony default export */ var entry_lib = __webpack_exports__["default"] = (src_0);
 
 
 
@@ -98886,6 +113629,29 @@ $({ target: 'Array', proto: true, forced: !HAS_SPECIES_SUPPORT }, {
     return result;
   }
 });
+
+
+/***/ }),
+
+/***/ "fba5":
+/***/ (function(module, exports, __webpack_require__) {
+
+var assocIndexOf = __webpack_require__("cb5a");
+
+/**
+ * Checks if a list cache value for `key` exists.
+ *
+ * @private
+ * @name has
+ * @memberOf ListCache
+ * @param {string} key The key of the entry to check.
+ * @returns {boolean} Returns `true` if an entry for `key` exists, else `false`.
+ */
+function listCacheHas(key) {
+  return assocIndexOf(this.__data__, key) > -1;
+}
+
+module.exports = listCacheHas;
 
 
 /***/ }),
@@ -98993,10 +113759,57 @@ module.exports = global.Promise;
 
 /***/ }),
 
+/***/ "ff1d":
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+/* harmony import */ var _node_modules_mini_css_extract_plugin_dist_loader_js_ref_8_oneOf_1_0_node_modules_css_loader_dist_cjs_js_ref_8_oneOf_1_1_node_modules_vue_loader_lib_loaders_stylePostLoader_js_node_modules_postcss_loader_src_index_js_ref_8_oneOf_1_2_node_modules_sass_loader_dist_cjs_js_ref_8_oneOf_1_3_node_modules_cache_loader_dist_cjs_js_ref_0_0_node_modules_vue_loader_lib_index_js_vue_loader_options_GraphNode_vue_vue_type_style_index_0_lang_scss___WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__("197a");
+/* harmony import */ var _node_modules_mini_css_extract_plugin_dist_loader_js_ref_8_oneOf_1_0_node_modules_css_loader_dist_cjs_js_ref_8_oneOf_1_1_node_modules_vue_loader_lib_loaders_stylePostLoader_js_node_modules_postcss_loader_src_index_js_ref_8_oneOf_1_2_node_modules_sass_loader_dist_cjs_js_ref_8_oneOf_1_3_node_modules_cache_loader_dist_cjs_js_ref_0_0_node_modules_vue_loader_lib_index_js_vue_loader_options_GraphNode_vue_vue_type_style_index_0_lang_scss___WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(_node_modules_mini_css_extract_plugin_dist_loader_js_ref_8_oneOf_1_0_node_modules_css_loader_dist_cjs_js_ref_8_oneOf_1_1_node_modules_vue_loader_lib_loaders_stylePostLoader_js_node_modules_postcss_loader_src_index_js_ref_8_oneOf_1_2_node_modules_sass_loader_dist_cjs_js_ref_8_oneOf_1_3_node_modules_cache_loader_dist_cjs_js_ref_0_0_node_modules_vue_loader_lib_index_js_vue_loader_options_GraphNode_vue_vue_type_style_index_0_lang_scss___WEBPACK_IMPORTED_MODULE_0__);
+/* unused harmony reexport * */
+
+
+/***/ }),
+
 /***/ "ff22":
 /***/ (function(module, exports, __webpack_require__) {
 
 // extracted by mini-css-extract-plugin
+
+/***/ }),
+
+/***/ "ffd6":
+/***/ (function(module, exports, __webpack_require__) {
+
+var baseGetTag = __webpack_require__("3729"),
+    isObjectLike = __webpack_require__("1310");
+
+/** `Object#toString` result references. */
+var symbolTag = '[object Symbol]';
+
+/**
+ * Checks if `value` is classified as a `Symbol` primitive or object.
+ *
+ * @static
+ * @memberOf _
+ * @since 4.0.0
+ * @category Lang
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if `value` is a symbol, else `false`.
+ * @example
+ *
+ * _.isSymbol(Symbol.iterator);
+ * // => true
+ *
+ * _.isSymbol('abc');
+ * // => false
+ */
+function isSymbol(value) {
+  return typeof value == 'symbol' ||
+    (isObjectLike(value) && baseGetTag(value) == symbolTag);
+}
+
+module.exports = isSymbol;
+
 
 /***/ })
 

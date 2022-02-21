@@ -1,7 +1,7 @@
 import { Vue } from 'vue-property-decorator';
-import type DiagramVue from './Diagram.vue';
+import type DiagramVm from './Diagram.vue';
 export default class GraphLegend extends Vue {
-    readonly diagramVm: DiagramVue;
+    readonly diagramVm: DiagramVm;
     get diagram(): import("../diagram").default;
     get fields(): import("../diagram").Field[];
 }

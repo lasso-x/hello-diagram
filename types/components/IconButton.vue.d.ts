@@ -14,6 +14,7 @@ export default class IconButton extends Vue {
     readonly size: keyof typeof sizes;
     readonly iconSize?: number;
     readonly buttonSize?: number;
+    readonly light: boolean;
     get finalSize(): {
         iconSize: number;
         buttonSize: number;

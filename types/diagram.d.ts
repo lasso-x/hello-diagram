@@ -15,6 +15,7 @@ export default class Diagram {
     filters: Filter[];
     layouts: LayoutDefinition[];
     methods: Pick<DiagramConfigMethods, ('getSavedDiagrams' | 'saveDiagram' | 'deleteSavedDiagram' | 'getDefaultSavedDiagramId' | 'setDefaultSavedDiagramId' | 'getPrintTitle' | 'getPrintFilename' | 'convertPngToPdf' | 'getEntityData' | 'searchEntities' | 'getContextMenuActions')>;
+    initialZoomLevel: number | null;
     compactWidth: number;
     dragAndDropGridSize: number;
     enableEditing: boolean;
@@ -53,6 +54,7 @@ export interface DiagramConfig {
     filters?: FilterDefinition[];
     layouts?: LayoutDefinition[];
     methods?: DiagramConfigMethods;
+    initialZoomLevel?: number;
     compactWidth?: number;
     dragAndDropGridSize?: number;
     enableEditing?: boolean;
@@ -287,6 +289,8 @@ export interface EntityDefinition {
     style?: EntityStyle;
 }
 export interface EntityStyle {
+    minWidth?: number;
+    maxWidth?: number | 'none';
     backgroundColor?: string;
     borderColor?: string;
     borderStyle?: 'solid' | 'dotted' | 'dashed';
@@ -449,6 +453,7 @@ export interface ContextItem {
     isMainEntity: boolean;
     isParent: boolean;
     isChild: boolean;
+    activeLayout: LayoutDefinition | null;
 }
 export declare type Arrayable<T> = T | T[];
 export * from './example';

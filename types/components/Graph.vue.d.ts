@@ -23,7 +23,7 @@ export default class Graph extends Vue {
     onDestroy?: () => void;
     get diagram(): import("../diagram").default;
     get el(): HTMLElement;
-    get fitPadding(): 0 | 16;
+    get fitPadding(): number;
     mounted(): void;
     beforeDestroy(): void;
     redirectCytoscapeBlur(event: Event): void;

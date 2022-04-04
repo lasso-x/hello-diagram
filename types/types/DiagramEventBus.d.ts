@@ -26,6 +26,7 @@ export declare type DiagramEvent = ({
     mode: 'print' | 'pdf' | 'png';
     orientation: 'portrait' | 'landscape';
     size: 'A5' | 'A4' | 'A3';
+    fitToPaper: boolean;
     includeMargin: boolean;
 } | {
     name: 'printDone';

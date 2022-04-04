@@ -5,6 +5,7 @@ export default class PrintDialog extends Vue {
     readonly mode: 'print' | 'pdf' | 'png';
     orientation: 'portrait' | 'landscape';
     size: 'A5' | 'A4' | 'A3';
+    fitToPaper: boolean;
     includeMargin: boolean;
     printing: boolean;
     get diagram(): import("../diagram").default;

@@ -102752,8 +102752,8 @@ var DropdownField_component = normalizeComponent(
 )
 
 /* harmony default export */ var components_DropdownField = (DropdownField_component.exports);
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"00b53798-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/EntitySearchBar.vue?vue&type=template&id=1f813814&
-var EntitySearchBarvue_type_template_id_1f813814_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"lassox-diagram__EntitySearchBar"},[_c('TextField',{ref:"textField",attrs:{"autocomplete":"off","leadingIcon":"search","trailingIcon":_vm.inputText ? 'cancel' : null,"onClickTrailingIcon":function () { return _vm.selectSuggestion(null); },"value":_vm.inputText,"tabindex":"-1"},on:{"mousedown":function () {
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"00b53798-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/EntitySearchBar.vue?vue&type=template&id=7c0a62e0&
+var EntitySearchBarvue_type_template_id_7c0a62e0_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"lassox-diagram__EntitySearchBar"},[_c('TextField',{ref:"textField",attrs:{"autocomplete":"off","leadingIcon":"search","trailingIcon":_vm.inputText ? 'cancel' : null,"onClickTrailingIcon":function () { return _vm.selectSuggestion(null); },"value":_vm.inputText,"tabindex":"-1"},on:{"mousedown":function () {
       if (_vm.inputText) { _vm.showSuggestions = true }
     },"keydown":_vm.onInputKeyDown,"input":function (event) { return _vm.inputText = event.target.value; }},nativeOn:{"focusin":function($event){return (function () { return _vm.inputFocused = true; }).apply(null, arguments)},"focusout":function($event){return (function () { return _vm.inputFocused = false; }).apply(null, arguments)}}}),_c('div',{ref:"suggestionsEl",staticClass:"lassox-diagram__EntitySearchBar_suggestions",style:([
       _vm.suggestionsStyle,
@@ -102763,10 +102763,10 @@ var EntitySearchBarvue_type_template_id_1f813814_render = function () {var _vm=t
           _vm.textField.inputEl.focus()
           _vm.selectSuggestion(suggestion)
         }}},[_c('div',{staticClass:"lassox-diagram__EntitySearchBar_suggestion-column-1"},[(suggestion.supertext)?_c('div',{staticClass:"lassox-diagram__EntitySearchBar_suggestion-supertext",domProps:{"textContent":_vm._s(suggestion.supertext)}}):_vm._e(),_c('div',{staticClass:"lassox-diagram__EntitySearchBar_suggestion-text",domProps:{"textContent":_vm._s(suggestion.text || (("Id: " + (suggestion.id))))}}),(suggestion.subtext)?_c('div',{staticClass:"lassox-diagram__EntitySearchBar_suggestion-subtext",domProps:{"textContent":_vm._s(suggestion.subtext)}}):_vm._e()]),(suggestion.entity)?_c('div',{staticClass:"lassox-diagram__EntitySearchBar_suggestion-column-2"},[_c('div',{staticClass:"lassox-diagram__EntitySearchBar_suggestion-side-text",domProps:{"textContent":_vm._s('I diagram')}})]):_vm._e()])})],2)],1)}
-var EntitySearchBarvue_type_template_id_1f813814_staticRenderFns = []
+var EntitySearchBarvue_type_template_id_7c0a62e0_staticRenderFns = []
 
 
-// CONCATENATED MODULE: ./src/components/EntitySearchBar.vue?vue&type=template&id=1f813814&
+// CONCATENATED MODULE: ./src/components/EntitySearchBar.vue?vue&type=template&id=7c0a62e0&
 
 // EXTERNAL MODULE: ./node_modules/core-js/modules/es.string.ends-with.js
 var es_string_ends_with = __webpack_require__("8a79");
@@ -103073,7 +103073,8 @@ var EntitySearchBarvue_type_script_lang_ts_EntitySearchBar = /*#__PURE__*/functi
                     data: (_entity$data = entity.data) !== null && _entity$data !== void 0 ? _entity$data : {},
                     isMainEntity: entity.id === _this3.diagram.mainEntityId,
                     isParent: false,
-                    isChild: false
+                    isChild: false,
+                    activeLayout: _this3.diagram.activeDiagram.settings.activeLayout || null
                   }),
                       text = _entityType$searchRes2.text,
                       supertext = _entityType$searchRes2.supertext,
@@ -103324,8 +103325,8 @@ var EntitySearchBarvue_type_style_index_0_lang_scss_ = __webpack_require__("636b
 
 var EntitySearchBar_component = normalizeComponent(
   components_EntitySearchBarvue_type_script_lang_ts_,
-  EntitySearchBarvue_type_template_id_1f813814_render,
-  EntitySearchBarvue_type_template_id_1f813814_staticRenderFns,
+  EntitySearchBarvue_type_template_id_7c0a62e0_render,
+  EntitySearchBarvue_type_template_id_7c0a62e0_staticRenderFns,
   false,
   null,
   null,
@@ -104536,14 +104537,14 @@ var TopBar_component = normalizeComponent(
 )
 
 /* harmony default export */ var components_TopBar = (TopBar_component.exports);
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"00b53798-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/Graph.vue?vue&type=template&id=050a5a05&
-var Graphvue_type_template_id_050a5a05_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{class:[
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"00b53798-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/Graph.vue?vue&type=template&id=4b119dec&
+var Graphvue_type_template_id_4b119dec_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{class:[
     'lassox-diagram__Graph',
     _vm.elementHovered && 'lassox-diagram__Graph--has-hovered-element' ],attrs:{"tabindex":_vm.printMode ? '' : '-1'},on:{"keydown":_vm.onKeyDown,"contextmenu":function($event){$event.preventDefault();return (function () {}).apply(null, arguments)}}},[_c('div',{ref:"graphContainerEl",staticClass:"lassox-diagram__Graph-container",staticStyle:{"width":"100%","height":"100%"},on:{"mousedown":_vm.redirectCytoscapeBlur,"touchstart":_vm.redirectCytoscapeBlur}},[_c('div',{ref:"graphNodesEl",staticClass:"lassox-diagram__Graph-nodes"},[_vm._l((_vm.relations),function(relation){return _c('GraphEdge',{key:relation.id,attrs:{"id":relation.id}})}),_vm._l((_vm.entities),function(entity){return _c('GraphNode',{key:entity.id,attrs:{"id":entity.id}})})],2)]),(!_vm.printMode)?_c('GraphContextMenu'):_vm._e()],1)}
-var Graphvue_type_template_id_050a5a05_staticRenderFns = []
+var Graphvue_type_template_id_4b119dec_staticRenderFns = []
 
 
-// CONCATENATED MODULE: ./src/components/Graph.vue?vue&type=template&id=050a5a05&
+// CONCATENATED MODULE: ./src/components/Graph.vue?vue&type=template&id=4b119dec&
 
 // EXTERNAL MODULE: ./node_modules/cytoscape/dist/cytoscape.cjs.js
 var cytoscape_cjs = __webpack_require__("44e1");
@@ -104560,12 +104561,12 @@ var cytoscape_js_panzoom = __webpack_require__("df13");
 var cytoscape_dagre = __webpack_require__("b17d");
 var cytoscape_dagre_default = /*#__PURE__*/__webpack_require__.n(cytoscape_dagre);
 
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"00b53798-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/GraphNode.vue?vue&type=template&id=5a6e8466&
-var GraphNodevue_type_template_id_5a6e8466_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"lassox-diagram__GraphNode",style:(_vm.style)},[(_vm.labels.length)?_c('div',{staticClass:"lassox-diagram__GraphNode-labels-wrapper",style:(_vm.labelsStyle)},[(_vm.entity.type.icon)?_c('Icon',{attrs:{"icon":_vm.entity.type.icon}}):_vm._e(),_c('div',{staticClass:"lassox-diagram__GraphNode-labels"},_vm._l((_vm.labels),function(field,i){return _c('div',{key:i,staticClass:"lassox-diagram__GraphNode-field"},[(field.legendColor)?_c('div',{staticClass:"lassox-diagram__GraphNode-field-legend-color",style:({ backgroundColor: field.legendColor })}):_vm._e(),_c('div',{staticClass:"lassox-diagram__GraphNode-field-value",domProps:{"textContent":_vm._s(field.text)}})])}),0)],1):_vm._e(),(_vm.fields.length)?_c('div',{staticClass:"lassox-diagram__GraphNode-fields",style:(_vm.fieldsStyle)},_vm._l((_vm.fields),function(field,i){return _c('div',{key:i,staticClass:"lassox-diagram__GraphNode-field"},[(field.legendColor)?_c('div',{staticClass:"lassox-diagram__GraphNode-field-legend-color",style:({ backgroundColor: field.legendColor })}):_vm._e(),_c('div',{staticClass:"lassox-diagram__GraphNode-field-value",domProps:{"textContent":_vm._s(field.text)}})])}),0):_vm._e()])}
-var GraphNodevue_type_template_id_5a6e8466_staticRenderFns = []
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"00b53798-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/GraphNode.vue?vue&type=template&id=1578860e&
+var GraphNodevue_type_template_id_1578860e_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"lassox-diagram__GraphNode",style:(_vm.style)},[(_vm.labels.length)?_c('div',{staticClass:"lassox-diagram__GraphNode-labels-wrapper",style:(_vm.labelsStyle)},[(_vm.entity.type.icon)?_c('Icon',{attrs:{"icon":_vm.entity.type.icon}}):_vm._e(),_c('div',{staticClass:"lassox-diagram__GraphNode-labels"},_vm._l((_vm.labels),function(field,i){return _c('div',{key:i,staticClass:"lassox-diagram__GraphNode-field"},[(field.legendColor)?_c('div',{staticClass:"lassox-diagram__GraphNode-field-legend-color",style:({ backgroundColor: field.legendColor })}):_vm._e(),_c('div',{staticClass:"lassox-diagram__GraphNode-field-value",domProps:{"textContent":_vm._s(field.text)}})])}),0)],1):_vm._e(),(_vm.fields.length)?_c('div',{staticClass:"lassox-diagram__GraphNode-fields",style:(_vm.fieldsStyle)},_vm._l((_vm.fields),function(field,i){return _c('div',{key:i,staticClass:"lassox-diagram__GraphNode-field"},[(field.legendColor)?_c('div',{staticClass:"lassox-diagram__GraphNode-field-legend-color",style:({ backgroundColor: field.legendColor })}):_vm._e(),_c('div',{staticClass:"lassox-diagram__GraphNode-field-value",domProps:{"textContent":_vm._s(field.text)}})])}),0):_vm._e()])}
+var GraphNodevue_type_template_id_1578860e_staticRenderFns = []
 
 
-// CONCATENATED MODULE: ./src/components/GraphNode.vue?vue&type=template&id=5a6e8466&
+// CONCATENATED MODULE: ./src/components/GraphNode.vue?vue&type=template&id=1578860e&
 
 // CONCATENATED MODULE: ./src/util/color.ts
 
@@ -104636,9 +104637,9 @@ var GraphNodevue_type_script_lang_ts_GraphNode = /*#__PURE__*/function (_Vue) {
   }, {
     key: "entityStyle",
     get: function get() {
-      var _this$entity, _this$entity2;
+      var _ref, _this$entity, _this$entity2;
 
-      return this.graphVm.printMode ? (_this$entity = this.entity) === null || _this$entity === void 0 ? void 0 : _this$entity.builtPrintStyle : (_this$entity2 = this.entity) === null || _this$entity2 === void 0 ? void 0 : _this$entity2.builtStyle;
+      return (_ref = this.graphVm.printMode ? (_this$entity = this.entity) === null || _this$entity === void 0 ? void 0 : _this$entity.builtPrintStyle : (_this$entity2 = this.entity) === null || _this$entity2 === void 0 ? void 0 : _this$entity2.builtStyle) !== null && _ref !== void 0 ? _ref : {};
     }
   }, {
     key: "style",
@@ -104648,9 +104649,11 @@ var GraphNodevue_type_script_lang_ts_GraphNode = /*#__PURE__*/function (_Vue) {
       return {
         transform: "translate(-50%, -50%) translate(100vw, 100vh) translate(".concat(position.x, "px, ").concat(position.y, "px)"),
         visibility: this.hidden ? 'hidden' : '',
-        borderWidth: "".concat(style === null || style === void 0 ? void 0 : style.borderWidth, "px"),
-        borderStyle: style === null || style === void 0 ? void 0 : style.borderStyle,
-        borderColor: style === null || style === void 0 ? void 0 : style.borderColor,
+        minWidth: typeof style.minWidth === 'number' ? "".concat(style.minWidth, "px") : style.minWidth,
+        maxWidth: typeof style.maxWidth === 'number' ? "".concat(style.maxWidth, "px") : style.maxWidth,
+        borderWidth: "".concat(style.borderWidth, "px"),
+        borderStyle: style.borderStyle,
+        borderColor: style.borderColor,
         boxShadow: this.selected ? '0 0 2px 2px #cd4b3d' : ''
       };
     }
@@ -104853,8 +104856,8 @@ var GraphNodevue_type_style_index_0_lang_scss_ = __webpack_require__("ff1d");
 
 var GraphNode_component = normalizeComponent(
   components_GraphNodevue_type_script_lang_ts_,
-  GraphNodevue_type_template_id_5a6e8466_render,
-  GraphNodevue_type_template_id_5a6e8466_staticRenderFns,
+  GraphNodevue_type_template_id_1578860e_render,
+  GraphNodevue_type_template_id_1578860e_staticRenderFns,
   false,
   null,
   null,
@@ -106468,7 +106471,7 @@ var Graphvue_type_script_lang_ts_Graph = /*#__PURE__*/function (_Vue) {
   }, {
     key: "fitPadding",
     get: function get() {
-      return this.printMode ? 0 : 16;
+      return this.printMode ? 16 * 4 : 16;
     }
   }, {
     key: "mounted",
@@ -106478,6 +106481,8 @@ var Graphvue_type_script_lang_ts_Graph = /*#__PURE__*/function (_Vue) {
       var destroyCallbacks = [];
       destroyCallbacks.push(watchRect(this.el, this.onResize).unwatch);
       this.initialize();
+      var graph = this._graph;
+      if (!graph) return;
 
       if (!this.printMode) {
         destroyCallbacks.push(this.diagram.eventBus.on('graph.layout', function (_ref) {
@@ -106486,10 +106491,8 @@ var Graphvue_type_script_lang_ts_Graph = /*#__PURE__*/function (_Vue) {
           var layout = _ref.layout,
               applyToLastChange = _ref.applyToLastChange;
           (_this2$layout = _this2.layout(layout, false)) === null || _this2$layout === void 0 ? void 0 : _this2$layout.then(function () {
-            var _this2$_graph;
-
             var moveEntities = [];
-            (_this2$_graph = _this2._graph) === null || _this2$_graph === void 0 ? void 0 : _this2$_graph.nodes().forEach(function (node) {
+            graph.nodes().forEach(function (node) {
               var _node$position = node.position(),
                   x = _node$position.x,
                   y = _node$position.y;
@@ -106525,9 +106528,18 @@ var Graphvue_type_script_lang_ts_Graph = /*#__PURE__*/function (_Vue) {
         }, function () {
           _this2.clearElements();
 
-          _this2.updateElements();
+          var updateElementsPromise = _this2.updateElements();
 
-          _this2.runFilters();
+          _this2.runFilters(); // Apply diagram.initialZoomLevel if set
+
+
+          var initialZoomLevel = _this2.diagram.initialZoomLevel;
+
+          if (initialZoomLevel !== null) {
+            updateElementsPromise.then(function () {
+              graph.zoom(initialZoomLevel).center();
+            });
+          }
         }, {
           immediate: true
         });
@@ -106538,7 +106550,7 @@ var Graphvue_type_script_lang_ts_Graph = /*#__PURE__*/function (_Vue) {
           _this2.fit();
 
           requestAnimationFrame(function () {
-            return _this2.$emit('readyToPrint');
+            return _this2.$emit('readyToPrint', graph);
           });
         });
       }
@@ -106634,6 +106646,7 @@ var Graphvue_type_script_lang_ts_Graph = /*#__PURE__*/function (_Vue) {
         container: this.graphContainerEl,
         style: Graphvue_type_script_lang_ts_generateStyle(this),
         wheelSensitivity: 0.05,
+        minZoom: 0,
         maxZoom: !this.printMode ? 1 : undefined,
         pixelRatio: !this.printMode ? 2 : 1
       });
@@ -107195,8 +107208,8 @@ var Graphvue_type_style_index_0_lang_scss_ = __webpack_require__("2a3c");
 
 var Graph_component = normalizeComponent(
   components_Graphvue_type_script_lang_ts_,
-  Graphvue_type_template_id_050a5a05_render,
-  Graphvue_type_template_id_050a5a05_staticRenderFns,
+  Graphvue_type_template_id_4b119dec_render,
+  Graphvue_type_template_id_4b119dec_staticRenderFns,
   false,
   null,
   null,
@@ -108059,17 +108072,18 @@ var GraphLegend_component = normalizeComponent(
 )
 
 /* harmony default export */ var components_GraphLegend = (GraphLegend_component.exports);
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"00b53798-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/GraphPrint.vue?vue&type=template&id=47e5b402&
-var GraphPrintvue_type_template_id_47e5b402_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"lassox-diagram__GraphPrint",style:({
-    width: ((_vm.finalSize.width) + "mm"),
-    height: ((_vm.finalSize.height) + "mm"),
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"00b53798-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/GraphPrint.vue?vue&type=template&id=aada846c&
+var GraphPrintvue_type_template_id_aada846c_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"lassox-diagram__GraphPrint",style:({
+    width: ((_vm.contentSize.width) + "mm"),
+    height: ((_vm.contentSize.height) + "mm"),
   })},[(_vm.printing)?_c('div',{ref:"printContentEl",staticClass:"lassox-diagram__GraphPrint-print-content",style:({
-      padding: ((_vm.finalSize.margin) + "mm"),
-    })},[_c('div',{staticClass:"lassox-diagram__GraphPrint-print-content-title",domProps:{"textContent":_vm._s(_vm.title)}}),_c('div',{staticClass:"lassox-diagram__GraphPrint-print-content-graph-padding"},[_c('Graph',{attrs:{"printMode":""},on:{"readyToPrint":_vm.onReadyToPrint}})],1),_c('GraphLegend')],1):_vm._e()])}
-var GraphPrintvue_type_template_id_47e5b402_staticRenderFns = []
+      width: ((_vm.contentSize.width) + "mm"),
+      height: ((_vm.contentSize.height) + "mm"),
+    })},[_c('div',{staticClass:"lassox-diagram__GraphPrint-print-content-title",domProps:{"textContent":_vm._s(_vm.title)}}),_c('Graph',{attrs:{"printMode":""},on:{"readyToPrint":_vm.onReadyToPrint}}),_c('GraphLegend')],1):_vm._e()])}
+var GraphPrintvue_type_template_id_aada846c_staticRenderFns = []
 
 
-// CONCATENATED MODULE: ./src/components/GraphPrint.vue?vue&type=template&id=47e5b402&
+// CONCATENATED MODULE: ./src/components/GraphPrint.vue?vue&type=template&id=aada846c&
 
 // EXTERNAL MODULE: ./node_modules/core-js/modules/es.string.pad-start.js
 var es_string_pad_start = __webpack_require__("4d90");
@@ -108119,6 +108133,12 @@ var GraphPrintvue_type_script_lang_ts_timeout = function timeout() {
   });
 };
 
+var paperSizes = {
+  'A5': [210, 148],
+  'A4': [297, 210],
+  'A3': [420, 297]
+};
+
 var GraphPrintvue_type_script_lang_ts_GraphPrint = /*#__PURE__*/function (_Vue) {
   _inherits(GraphPrint, _Vue);
 
@@ -108136,30 +108156,31 @@ var GraphPrintvue_type_script_lang_ts_GraphPrint = /*#__PURE__*/function (_Vue) 
     _this.mode = 'print';
     _this.orientation = 'landscape';
     _this.size = 'A4';
+    _this.fitToPaper = true;
     _this.includeMargin = true;
+    _this.rotate = false;
+    _this.contentSize = {
+      width: 0,
+      height: 0
+    };
     return _this;
   }
 
   _createClass(GraphPrint, [{
-    key: "diagram",
+    key: "paperSize",
     get: function get() {
-      return this.diagramVm.diagram;
-    }
-  }, {
-    key: "finalSize",
-    get: function get() {
-      var sizes = {
-        'A5': [210, 148],
-        'A4': [297, 210],
-        'A3': [420, 297]
-      };
-      var size = sizes[this.size];
+      var size = paperSizes[this.size];
       if (this.orientation === 'portrait') size = [size[1], size[0]];
       return {
         width: size[0] * this.scaling,
         height: size[1] * this.scaling,
-        margin: (this.includeMargin ? 10 : 0) * this.scaling
+        margin: this.includeMargin ? 10 * this.scaling : 0
       };
+    }
+  }, {
+    key: "diagram",
+    get: function get() {
+      return this.diagramVm.diagram;
     }
   }, {
     key: "mounted",
@@ -108172,13 +108193,19 @@ var GraphPrintvue_type_script_lang_ts_GraphPrint = /*#__PURE__*/function (_Vue) 
         _this2.mode = event.mode;
         _this2.orientation = event.orientation;
         _this2.size = event.size;
+        _this2.fitToPaper = _this2.mode !== 'png' ? event.fitToPaper : true;
         _this2.includeMargin = _this2.mode !== 'png' && event.includeMargin;
+        _this2.rotate = false;
+        _this2.contentSize = {
+          width: _this2.paperSize.width - _this2.paperSize.margin * 2,
+          height: _this2.paperSize.height - _this2.paperSize.margin * 2
+        };
       });
     }
   }, {
     key: "onReadyToPrint",
     value: function () {
-      var _onReadyToPrint = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee() {
+      var _onReadyToPrint = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee(graph) {
         var _this3 = this,
             _this$diagram$methods,
             _this$diagram$methods2,
@@ -108187,7 +108214,8 @@ var GraphPrintvue_type_script_lang_ts_GraphPrint = /*#__PURE__*/function (_Vue) 
             _this$diagram$methods5,
             _this$diagram$methods6;
 
-        var cleanup, diagram, activeDiagram, data, date, context, filename, canvas, printContentRect, width, height, iFrameEl, resolveLoad, loadPromise, iFrameWindow, cleanupPrint, blob;
+        var cleanup, diagram, activeDiagram, data, date, context, filename, pages, _graph$elements$bound, width, height, graphRatio, contentRatio, canvas, printContentRect, _width, _height, iFrameEl, resolveLoad, loadPromise, iFrameWindow, cleanupPrint, orientation, _canvas$style, _height2, _width2, blob;
+
         return regeneratorRuntime.wrap(function _callee$(_context) {
           while (1) {
             switch (_context.prev = _context.next) {
@@ -108239,27 +108267,64 @@ var GraphPrintvue_type_script_lang_ts_GraphPrint = /*#__PURE__*/function (_Vue) 
                 return this.$nextTick();
 
               case 14:
-                _context.next = 16;
+                pages = 1;
+
+                if (this.fitToPaper) {
+                  _context.next = 27;
+                  break;
+                }
+
+                _graph$elements$bound = graph.elements().boundingBox({}), width = _graph$elements$bound.w, height = _graph$elements$bound.h;
+                graphRatio = width / height;
+                contentRatio = this.contentSize.width / this.contentSize.height;
+
+                if (contentRatio < graphRatio) {
+                  pages = Math.round(graphRatio / contentRatio);
+                  this.contentSize.width *= pages;
+                  this.rotate = true;
+                } else if (contentRatio > graphRatio) {
+                  pages = Math.round(contentRatio / graphRatio);
+                  this.contentSize.height *= pages;
+                }
+
+                if (!(pages > 1)) {
+                  _context.next = 27;
+                  break;
+                }
+
+                _context.next = 23;
+                return this.$nextTick();
+
+              case 23:
+                _context.next = 25;
+                return graph.promiseOn('render');
+
+              case 25:
+                _context.next = 27;
+                return nextFrame();
+
+              case 27:
+                _context.next = 29;
                 return html2canvas_default()(this.printContentEl, {
                   logging: false,
                   scale: 1
                 });
 
-              case 16:
+              case 29:
                 canvas = _context.sent;
 
                 if (!(this.mode === 'print')) {
-                  _context.next = 43;
+                  _context.next = 59;
                   break;
                 }
 
                 printContentRect = this.printContentEl.getBoundingClientRect();
-                width = Math.floor(printContentRect.width);
-                height = Math.floor(printContentRect.height);
+                _width = Math.floor(printContentRect.width);
+                _height = Math.floor(printContentRect.height);
                 iFrameEl = document.createElement('iframe');
                 iFrameEl.className = 'lassox-diagram__GraphPrint-iframe';
-                iFrameEl.style.width = "".concat(width, "px");
-                iFrameEl.style.height = "".concat(height, "px");
+                iFrameEl.style.width = "".concat(_width, "px");
+                iFrameEl.style.height = "".concat(_height, "px");
 
                 resolveLoad = function resolveLoad() {};
 
@@ -108268,10 +108333,10 @@ var GraphPrintvue_type_script_lang_ts_GraphPrint = /*#__PURE__*/function (_Vue) 
                 });
                 iFrameEl.onload = resolveLoad;
                 document.body.appendChild(iFrameEl);
-                _context.next = 31;
+                _context.next = 44;
                 return loadPromise;
 
-              case 31:
+              case 44:
                 iFrameWindow = iFrameEl.contentWindow;
 
                 cleanupPrint = function cleanupPrint() {
@@ -108280,17 +108345,28 @@ var GraphPrintvue_type_script_lang_ts_GraphPrint = /*#__PURE__*/function (_Vue) 
                 };
 
                 if (iFrameWindow) {
-                  _context.next = 35;
+                  _context.next = 48;
                   break;
                 }
 
                 return _context.abrupt("return", cleanupPrint());
 
-              case 35:
-                iFrameWindow.document.head.innerHTML = ['<style>', '@page {', "  size: ".concat(this.size, " ").concat(this.orientation, ";"), "  margin: 0;", '}', 'html, body {', '  width: 100%;', '  height: 100%;', '  padding: 0;', '  margin: 0;', '  overflow: hidden;', '}', '</style>'].join('\n');
-                canvas.style.width = '100%';
-                canvas.style.height = '100%';
-                canvas.style.border = '1px solid black';
+              case 48:
+                orientation = this.orientation;
+                if (this.rotate) orientation = orientation === 'portrait' ? 'landscape' : 'portrait';
+                iFrameWindow.document.head.innerHTML = ['<style>', '@page {', "  size: ".concat(this.size, " ").concat(orientation, ";"), "  margin: ".concat(this.includeMargin ? 10 : 0, "mm;"), '}', 'html, body {', '  padding: 0;', '  margin: 0;', '  overflow: hidden;', '}', 'html {', "  width: 100%;", "  height: ".concat(pages * 100, "%;"), '}', 'body {', '  width: 100%;', '  height: 100%;', '}', '</style>'].join('\n');
+                canvas.style.width = '100vw';
+                canvas.style.height = "".concat(pages * 100, "vh");
+
+                if (this.rotate) {
+                  _canvas$style = canvas.style, _height2 = _canvas$style.width, _width2 = _canvas$style.height;
+                  canvas.style.width = _width2;
+                  canvas.style.height = _height2;
+                  canvas.style.transformOrigin = '50vw 50vw';
+                  canvas.style.transform = 'rotate(90deg)';
+                }
+
+                canvas.style.border = 'none';
                 iFrameWindow.document.body.appendChild(canvas);
                 iFrameWindow.addEventListener('afterprint', function () {
                   return requestAnimationFrame(cleanupPrint);
@@ -108298,38 +108374,38 @@ var GraphPrintvue_type_script_lang_ts_GraphPrint = /*#__PURE__*/function (_Vue) 
                 iFrameWindow.print();
                 return _context.abrupt("return");
 
-              case 43:
-                _context.next = 45;
+              case 59:
+                _context.next = 61;
                 return new Promise(function (resolve) {
                   return canvas.toBlob(resolve, 'image/png');
                 });
 
-              case 45:
+              case 61:
                 blob = _context.sent;
 
                 if (blob) {
-                  _context.next = 49;
+                  _context.next = 65;
                   break;
                 }
 
                 console.error('Something went wrong when trying to get canvas blob');
                 return _context.abrupt("return", cleanup());
 
-              case 49:
+              case 65:
                 if (!(this.mode === 'pdf')) {
-                  _context.next = 55;
+                  _context.next = 71;
                   break;
                 }
 
                 if (this.diagram.methods.convertPngToPdf) {
-                  _context.next = 52;
+                  _context.next = 68;
                   break;
                 }
 
                 return _context.abrupt("return", cleanup());
 
-              case 52:
-                _context.next = 54;
+              case 68:
+                _context.next = 70;
                 return this.diagram.methods.convertPngToPdf({
                   blob: blob,
                   title: this.title,
@@ -108338,16 +108414,16 @@ var GraphPrintvue_type_script_lang_ts_GraphPrint = /*#__PURE__*/function (_Vue) 
                   orientation: this.orientation
                 });
 
-              case 54:
+              case 70:
                 blob = _context.sent;
 
-              case 55:
+              case 71:
                 cleanup({
                   filename: "".concat(filename, ".").concat(this.mode === 'pdf' ? 'pdf' : 'png'),
                   blob: blob
                 });
 
-              case 56:
+              case 72:
               case "end":
                 return _context.stop();
             }
@@ -108355,7 +108431,7 @@ var GraphPrintvue_type_script_lang_ts_GraphPrint = /*#__PURE__*/function (_Vue) 
         }, _callee, this);
       }));
 
-      function onReadyToPrint() {
+      function onReadyToPrint(_x) {
         return _onReadyToPrint.apply(this, arguments);
       }
 
@@ -108393,8 +108469,8 @@ var GraphPrintvue_type_style_index_0_lang_scss_ = __webpack_require__("f645");
 
 var GraphPrint_component = normalizeComponent(
   components_GraphPrintvue_type_script_lang_ts_,
-  GraphPrintvue_type_template_id_47e5b402_render,
-  GraphPrintvue_type_template_id_47e5b402_staticRenderFns,
+  GraphPrintvue_type_template_id_aada846c_render,
+  GraphPrintvue_type_template_id_aada846c_staticRenderFns,
   false,
   null,
   null,
@@ -108917,17 +108993,17 @@ var Toast_component = normalizeComponent(
 )
 
 /* harmony default export */ var components_Toast = (Toast_component.exports);
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"00b53798-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/PrintDialog.vue?vue&type=template&id=2ace7416&
-var PrintDialogvue_type_template_id_2ace7416_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('Dialog',{staticClass:"lassox-diagram__PrintDialog",attrs:{"dismissable":true,"title":_vm.title,"size":"3x","onClose":_vm.close},scopedSlots:_vm._u([{key:"content",fn:function(){return [(_vm.description)?_c('p',{staticStyle:{"margin-bottom":"16px"},domProps:{"textContent":_vm._s(_vm.description)}}):_vm._e(),_c('EditorFields',[_c('EditorField',{attrs:{"id":"print-orientation","type":"radio-buttons","title":"Orientering","options":[
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"00b53798-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/PrintDialog.vue?vue&type=template&id=4347fcec&
+var PrintDialogvue_type_template_id_4347fcec_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('Dialog',{staticClass:"lassox-diagram__PrintDialog",attrs:{"dismissable":true,"title":_vm.title,"size":"3x","onClose":_vm.close},scopedSlots:_vm._u([{key:"content",fn:function(){return [(_vm.description)?_c('p',{staticStyle:{"margin-bottom":"16px"},domProps:{"textContent":_vm._s(_vm.description)}}):_vm._e(),_c('EditorFields',[_c('EditorField',{attrs:{"id":"print-orientation","type":"radio-buttons","title":"Orientering","options":[
           { label: 'Stående', value: 'portrait' },
           { label: 'Liggende', value: 'landscape' } ],"editable":!_vm.printing},model:{value:(_vm.orientation),callback:function ($$v) {_vm.orientation=$$v},expression:"orientation"}}),_c('EditorField',{attrs:{"id":"print-size","type":"radio-buttons","title":"Størrelse","options":[
           { label: 'A5', value: 'A5' },
           { label: 'A4', value: 'A4' },
-          { label: 'A3', value: 'A3' } ],"editable":!_vm.printing},model:{value:(_vm.size),callback:function ($$v) {_vm.size=$$v},expression:"size"}}),(_vm.mode !== 'png')?_c('EditorField',{attrs:{"id":"print-margin","type":"boolean","title":"Margen","helperText":"Inkluder en margen (1 cm) eller udskriv til papirets kant.","editable":!_vm.printing},model:{value:(_vm.includeMargin),callback:function ($$v) {_vm.includeMargin=$$v},expression:"includeMargin"}}):_vm._e()],1)]},proxy:true},{key:"actions",fn:function(){return [_c('ButtonGroup',{attrs:{"align":"right"}},[_c('Button',{attrs:{"label":"Luk"},on:{"click":_vm.close}}),_c('Button',{attrs:{"type":"primary","label":_vm.buttonLabel,"disabled":_vm.printing},on:{"click":_vm.confirm}})],1)]},proxy:true}])})}
-var PrintDialogvue_type_template_id_2ace7416_staticRenderFns = []
+          { label: 'A3', value: 'A3' } ],"editable":!_vm.printing},model:{value:(_vm.size),callback:function ($$v) {_vm.size=$$v},expression:"size"}}),(_vm.mode !== 'png')?_c('EditorField',{attrs:{"id":"print-fit","type":"boolean","title":"Begræns til én side","editable":!_vm.printing},model:{value:(_vm.fitToPaper),callback:function ($$v) {_vm.fitToPaper=$$v},expression:"fitToPaper"}}):_vm._e(),(_vm.mode !== 'png')?_c('EditorField',{attrs:{"id":"print-margin","type":"boolean","title":"Margen","helperText":"Inkluder en margen (1 cm) eller udskriv til papirets kant.","editable":!_vm.printing},model:{value:(_vm.includeMargin),callback:function ($$v) {_vm.includeMargin=$$v},expression:"includeMargin"}}):_vm._e()],1)]},proxy:true},{key:"actions",fn:function(){return [_c('ButtonGroup',{attrs:{"align":"right"}},[_c('Button',{attrs:{"label":"Luk"},on:{"click":_vm.close}}),_c('Button',{attrs:{"type":"primary","label":_vm.buttonLabel,"disabled":_vm.printing},on:{"click":_vm.confirm}})],1)]},proxy:true}])})}
+var PrintDialogvue_type_template_id_4347fcec_staticRenderFns = []
 
 
-// CONCATENATED MODULE: ./src/components/PrintDialog.vue?vue&type=template&id=2ace7416&
+// CONCATENATED MODULE: ./src/components/PrintDialog.vue?vue&type=template&id=4347fcec&
 
 // EXTERNAL MODULE: ./node_modules/core-js/modules/web.url.js
 var web_url = __webpack_require__("2b3d");
@@ -108964,6 +109040,7 @@ var PrintDialogvue_type_script_lang_ts_PrintDialog = /*#__PURE__*/function (_Vue
     _this = _super.apply(this, arguments);
     _this.orientation = 'landscape';
     _this.size = 'A4';
+    _this.fitToPaper = true;
     _this.includeMargin = true;
     _this.printing = false;
     return _this;
@@ -109026,7 +109103,7 @@ var PrintDialogvue_type_script_lang_ts_PrintDialog = /*#__PURE__*/function (_Vue
 
       this.loadFromLocalStorage();
       this.$watch(function () {
-        return [_this2.orientation, _this2.size, _this2.includeMargin];
+        return [_this2.orientation, _this2.size, _this2.fitToPaper, _this2.includeMargin];
       }, this.saveToLocalStorage, {
         immediate: true
       });
@@ -109048,6 +109125,7 @@ var PrintDialogvue_type_script_lang_ts_PrintDialog = /*#__PURE__*/function (_Vue
         if (!type_guards_isRecord(settings)) return;
         var orientation = settings.orientation,
             size = settings.size,
+            fitToPaper = settings.fitToPaper,
             includeMargin = settings.includeMargin;
 
         if (orientation === 'portrait' || orientation === 'landscape') {
@@ -109056,6 +109134,10 @@ var PrintDialogvue_type_script_lang_ts_PrintDialog = /*#__PURE__*/function (_Vue
 
         if (size === 'A5' || size === 'A4' || size === 'A3') {
           this.size = size;
+        }
+
+        if (typeof fitToPaper === 'boolean') {
+          this.fitToPaper = fitToPaper;
         }
 
         if (typeof includeMargin === 'boolean') {
@@ -109074,6 +109156,7 @@ var PrintDialogvue_type_script_lang_ts_PrintDialog = /*#__PURE__*/function (_Vue
         localStorage.setItem('lassox-diagram/print-settings', JSON.stringify({
           orientation: this.orientation,
           size: this.size,
+          fitToPaper: this.fitToPaper,
           includeMargin: this.includeMargin
         }));
       } catch (_unused2) {
@@ -109099,6 +109182,7 @@ var PrintDialogvue_type_script_lang_ts_PrintDialog = /*#__PURE__*/function (_Vue
           mode: _this3.mode,
           orientation: _this3.orientation,
           size: _this3.size,
+          fitToPaper: _this3.fitToPaper,
           includeMargin: _this3.includeMargin
         });
       });
@@ -109156,8 +109240,8 @@ PrintDialogvue_type_script_lang_ts_PrintDialog = __decorate([vue_class_component
 
 var PrintDialog_component = normalizeComponent(
   components_PrintDialogvue_type_script_lang_ts_,
-  PrintDialogvue_type_template_id_2ace7416_render,
-  PrintDialogvue_type_template_id_2ace7416_staticRenderFns,
+  PrintDialogvue_type_template_id_4347fcec_render,
+  PrintDialogvue_type_template_id_4347fcec_staticRenderFns,
   false,
   null,
   null,
@@ -110800,6 +110884,8 @@ var parseEntity = function parseEntity(v) {
 var parseEntityStyle = function parseEntityStyle(v) {
   if (!SavedDiagram_isRecord(v)) return;
   var style = {};
+  if (isNumber(v.minWidth)) style.minWidth = v.minWidth;
+  if (isNumber(v.maxWidth) || v.maxWidth === 'none') style.maxWidth = v.maxWidth;
   if (isString(v.backgroundColor)) style.backgroundColor = v.backgroundColor;
   if (isString(v.borderColor)) style.borderColor = v.borderColor;
   if (isEnum(v.borderStyle, ['solid', 'dotted', 'dashed'])) style.borderStyle = v.borderStyle;
@@ -111633,6 +111719,8 @@ var exampleConfig = {
       }]];
     }
   },
+  // (Optional) Set an initial zoom level
+  // initialZoomLevel: 0.5,
   // (Optional) Set the width where the diagram goes compact (certain top bar actions become hidden, customizer becomes toggleable).
   compactWidth: 839,
   // (Optional) Set grid size for drag and drop snapping (0 = disabled).
@@ -112281,6 +112369,7 @@ var diagram_Diagram = /*#__PURE__*/function () {
         _config$methods9,
         _config$methods10,
         _config$methods11,
+        _config$initialZoomLe,
         _config$compactWidth,
         _config$dragAndDropGr,
         _config$saveSettingsT;
@@ -112288,6 +112377,7 @@ var diagram_Diagram = /*#__PURE__*/function () {
     _classCallCheck(this, Diagram);
 
     this.eventBus = new DiagramEventBus_DiagramEventBus();
+    this.initialZoomLevel = null;
     this.enableEditing = false;
     this.enableStyleEditing = false;
     this.enableDragAndDrop = false;
@@ -112328,6 +112418,7 @@ var diagram_Diagram = /*#__PURE__*/function () {
       searchEntities: (_config$methods10 = config.methods) === null || _config$methods10 === void 0 ? void 0 : _config$methods10.searchEntities,
       getContextMenuActions: (_config$methods11 = config.methods) === null || _config$methods11 === void 0 ? void 0 : _config$methods11.getContextMenuActions
     };
+    this.initialZoomLevel = (_config$initialZoomLe = config.initialZoomLevel) !== null && _config$initialZoomLe !== void 0 ? _config$initialZoomLe : null;
     this.compactWidth = (_config$compactWidth = config.compactWidth) !== null && _config$compactWidth !== void 0 ? _config$compactWidth : 767;
     this.dragAndDropGridSize = (_config$dragAndDropGr = config.dragAndDropGridSize) !== null && _config$dragAndDropGr !== void 0 ? _config$dragAndDropGr : 0;
 
@@ -112784,6 +112875,7 @@ var diagram_Diagram = /*#__PURE__*/function () {
                         mode: 'png',
                         orientation: (_options$orientation = options === null || options === void 0 ? void 0 : options.orientation) !== null && _options$orientation !== void 0 ? _options$orientation : 'landscape',
                         size: (_options$size = options === null || options === void 0 ? void 0 : options.size) !== null && _options$size !== void 0 ? _options$size : 'A4',
+                        fitToPaper: true,
                         includeMargin: false
                       });
                     });
@@ -113121,7 +113213,7 @@ var diagram_RelationTypes = /*#__PURE__*/function () {
   return RelationTypes;
 }();
 var diagram_EntityType = function EntityType(options) {
-  var _options$icon, _style$backgroundColo, _style$borderColor, _style$borderStyle, _style$borderWidth, _style$labelsBackgrou, _options$searchable, _options$searchResult;
+  var _options$icon, _style$minWidth, _style$maxWidth, _style$backgroundColo, _style$borderColor, _style$borderStyle, _style$borderWidth, _style$labelsBackgrou, _options$searchable, _options$searchResult;
 
   _classCallCheck(this, EntityType);
 
@@ -113134,6 +113226,8 @@ var diagram_EntityType = function EntityType(options) {
   this.labels = options.labels;
   var style = typeof options.style === 'function' ? undefined : options.style;
   this.style = {
+    minWidth: (_style$minWidth = style === null || style === void 0 ? void 0 : style.minWidth) !== null && _style$minWidth !== void 0 ? _style$minWidth : 160,
+    maxWidth: (_style$maxWidth = style === null || style === void 0 ? void 0 : style.maxWidth) !== null && _style$maxWidth !== void 0 ? _style$maxWidth : 480,
     backgroundColor: (_style$backgroundColo = style === null || style === void 0 ? void 0 : style.backgroundColor) !== null && _style$backgroundColo !== void 0 ? _style$backgroundColo : '#ffffff',
     borderColor: (_style$borderColor = style === null || style === void 0 ? void 0 : style.borderColor) !== null && _style$borderColor !== void 0 ? _style$borderColor : '#e0e0e0',
     borderStyle: (_style$borderStyle = style === null || style === void 0 ? void 0 : style.borderStyle) !== null && _style$borderStyle !== void 0 ? _style$borderStyle : 'solid',
@@ -113550,7 +113644,8 @@ var createContextItem = function createContextItem(item) {
     data: item.data,
     isMainEntity: item.isEntity && item.isMainEntity,
     isParent: item.isParent,
-    isChild: item.isChild
+    isChild: item.isChild,
+    activeLayout: item.diagram.activeDiagram.settings.activeLayout
   };
 };
 

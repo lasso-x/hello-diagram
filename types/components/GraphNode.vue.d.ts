@@ -20,10 +20,12 @@ export default class GraphNode extends Vue {
     labels: Field[];
     fields: Field[];
     get entity(): import("../diagram").Entity | undefined;
-    get entityStyle(): import("../diagram").EntityStyle | undefined;
+    get entityStyle(): import("../diagram").EntityStyle;
     get style(): {
         transform: string;
         visibility: string;
+        minWidth: string | undefined;
+        maxWidth: string | undefined;
         borderWidth: string;
         borderStyle: "solid" | "dotted" | "dashed" | undefined;
         borderColor: string | undefined;

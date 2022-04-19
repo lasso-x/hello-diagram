@@ -10,6 +10,7 @@ interface StateMenu {
 interface StateMenuAction {
     id: string;
     icon?: string;
+    iconColor?: string;
     label: string;
     trailingIcon?: string;
     disabled?: boolean;

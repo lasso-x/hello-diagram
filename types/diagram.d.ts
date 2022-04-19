@@ -15,7 +15,10 @@ export default class Diagram {
     filters: Filter[];
     layouts: LayoutDefinition[];
     methods: Pick<DiagramConfigMethods, ('getSavedDiagrams' | 'saveDiagram' | 'deleteSavedDiagram' | 'getDefaultSavedDiagramId' | 'setDefaultSavedDiagramId' | 'getPrintTitle' | 'getPrintFilename' | 'convertPngToPdf' | 'getEntityData' | 'searchEntities' | 'getContextMenuActions')>;
+    spreadTaxiEdges: boolean;
     initialZoomLevel: number | null;
+    initialPan: NonNullable<DiagramConfig['initialPan']> | null;
+    fitOnResize: boolean;
     compactWidth: number;
     dragAndDropGridSize: number;
     enableEditing: boolean;
@@ -54,7 +57,13 @@ export interface DiagramConfig {
     filters?: FilterDefinition[];
     layouts?: LayoutDefinition[];
     methods?: DiagramConfigMethods;
+    spreadTaxiEdges?: boolean;
     initialZoomLevel?: number;
+    initialPan?: {
+        x?: 'left' | 'center' | 'right';
+        y?: 'top' | 'center' | 'bottom';
+    };
+    fitOnResize?: boolean;
     compactWidth?: number;
     dragAndDropGridSize?: number;
     enableEditing?: boolean;
@@ -119,6 +128,7 @@ export interface PrintContext {
 export declare type ContextMenuActions = Arrayable<ContextMenuAction | null>[];
 export interface ContextMenuAction {
     icon?: string;
+    iconColor?: string;
     label: string;
     disabled?: boolean;
     submenu?: ContextMenuActions;

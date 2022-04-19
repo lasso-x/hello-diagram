@@ -450,6 +450,18 @@ module.exports = baseKeys;
 
 /***/ }),
 
+/***/ "04d1":
+/***/ (function(module, exports, __webpack_require__) {
+
+var userAgent = __webpack_require__("342f");
+
+var firefox = userAgent.match(/firefox\/(\d+)/i);
+
+module.exports = !!firefox && +firefox[1];
+
+
+/***/ }),
+
 /***/ "0538":
 /***/ (function(module, exports, __webpack_require__) {
 
@@ -67756,6 +67768,116 @@ module.exports = function from(arrayLike /* , mapfn = undefined, thisArg = undef
 
 /***/ }),
 
+/***/ "4e82":
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+var $ = __webpack_require__("23e7");
+var aFunction = __webpack_require__("1c0b");
+var toObject = __webpack_require__("7b0b");
+var toLength = __webpack_require__("50c4");
+var toString = __webpack_require__("577e");
+var fails = __webpack_require__("d039");
+var internalSort = __webpack_require__("addb");
+var arrayMethodIsStrict = __webpack_require__("a640");
+var FF = __webpack_require__("04d1");
+var IE_OR_EDGE = __webpack_require__("d998");
+var V8 = __webpack_require__("2d00");
+var WEBKIT = __webpack_require__("512c");
+
+var test = [];
+var nativeSort = test.sort;
+
+// IE8-
+var FAILS_ON_UNDEFINED = fails(function () {
+  test.sort(undefined);
+});
+// V8 bug
+var FAILS_ON_NULL = fails(function () {
+  test.sort(null);
+});
+// Old WebKit
+var STRICT_METHOD = arrayMethodIsStrict('sort');
+
+var STABLE_SORT = !fails(function () {
+  // feature detection can be too slow, so check engines versions
+  if (V8) return V8 < 70;
+  if (FF && FF > 3) return;
+  if (IE_OR_EDGE) return true;
+  if (WEBKIT) return WEBKIT < 603;
+
+  var result = '';
+  var code, chr, value, index;
+
+  // generate an array with more 512 elements (Chakra and old V8 fails only in this case)
+  for (code = 65; code < 76; code++) {
+    chr = String.fromCharCode(code);
+
+    switch (code) {
+      case 66: case 69: case 70: case 72: value = 3; break;
+      case 68: case 71: value = 4; break;
+      default: value = 2;
+    }
+
+    for (index = 0; index < 47; index++) {
+      test.push({ k: chr + index, v: value });
+    }
+  }
+
+  test.sort(function (a, b) { return b.v - a.v; });
+
+  for (index = 0; index < test.length; index++) {
+    chr = test[index].k.charAt(0);
+    if (result.charAt(result.length - 1) !== chr) result += chr;
+  }
+
+  return result !== 'DGBEFHACIJK';
+});
+
+var FORCED = FAILS_ON_UNDEFINED || !FAILS_ON_NULL || !STRICT_METHOD || !STABLE_SORT;
+
+var getSortCompare = function (comparefn) {
+  return function (x, y) {
+    if (y === undefined) return -1;
+    if (x === undefined) return 1;
+    if (comparefn !== undefined) return +comparefn(x, y) || 0;
+    return toString(x) > toString(y) ? 1 : -1;
+  };
+};
+
+// `Array.prototype.sort` method
+// https://tc39.es/ecma262/#sec-array.prototype.sort
+$({ target: 'Array', proto: true, forced: FORCED }, {
+  sort: function sort(comparefn) {
+    if (comparefn !== undefined) aFunction(comparefn);
+
+    var array = toObject(this);
+
+    if (STABLE_SORT) return comparefn === undefined ? nativeSort.call(array) : nativeSort.call(array, comparefn);
+
+    var items = [];
+    var arrayLength = toLength(array.length);
+    var itemsLength, index;
+
+    for (index = 0; index < arrayLength; index++) {
+      if (index in array) items.push(array[index]);
+    }
+
+    items = internalSort(items, getSortCompare(comparefn));
+    itemsLength = items.length;
+    index = 0;
+
+    while (index < itemsLength) array[index] = items[index++];
+    while (index < arrayLength) delete array[index++];
+
+    return array;
+  }
+});
+
+
+/***/ }),
+
 /***/ "4ec9":
 /***/ (function(module, exports, __webpack_require__) {
 
@@ -67999,6 +68121,18 @@ function baseTimes(n, iteratee) {
 }
 
 module.exports = baseTimes;
+
+
+/***/ }),
+
+/***/ "512c":
+/***/ (function(module, exports, __webpack_require__) {
+
+var userAgent = __webpack_require__("342f");
+
+var webkit = userAgent.match(/AppleWebKit\/(\d+)\./);
+
+module.exports = !!webkit && +webkit[1];
 
 
 /***/ }),
@@ -77447,6 +77581,58 @@ module.exports = function () {
   if (that.sticky) result += 'y';
   return result;
 };
+
+
+/***/ }),
+
+/***/ "addb":
+/***/ (function(module, exports) {
+
+// TODO: use something more complex like timsort?
+var floor = Math.floor;
+
+var mergeSort = function (array, comparefn) {
+  var length = array.length;
+  var middle = floor(length / 2);
+  return length < 8 ? insertionSort(array, comparefn) : merge(
+    mergeSort(array.slice(0, middle), comparefn),
+    mergeSort(array.slice(middle), comparefn),
+    comparefn
+  );
+};
+
+var insertionSort = function (array, comparefn) {
+  var length = array.length;
+  var i = 1;
+  var element, j;
+
+  while (i < length) {
+    j = i;
+    element = array[i];
+    while (j && comparefn(array[j - 1], element) > 0) {
+      array[j] = array[--j];
+    }
+    if (j !== i++) array[j] = element;
+  } return array;
+};
+
+var merge = function (left, right, comparefn) {
+  var llength = left.length;
+  var rlength = right.length;
+  var lindex = 0;
+  var rindex = 0;
+  var result = [];
+
+  while (lindex < llength || rindex < rlength) {
+    if (lindex < llength && rindex < rlength) {
+      result.push(comparefn(left[lindex], right[rindex]) <= 0 ? left[lindex++] : right[rindex++]);
+    } else {
+      result.push(lindex < llength ? left[lindex++] : right[rindex++]);
+    }
+  } return result;
+};
+
+module.exports = mergeSort;
 
 
 /***/ }),
@@ -90204,6 +90390,16 @@ module.exports = {
 
 /***/ }),
 
+/***/ "d998":
+/***/ (function(module, exports, __webpack_require__) {
+
+var UA = __webpack_require__("342f");
+
+module.exports = /MSIE|Trident/.test(UA);
+
+
+/***/ }),
+
 /***/ "d9a8":
 /***/ (function(module, exports) {
 
@@ -96609,8 +96805,8 @@ var es_array_concat = __webpack_require__("99af");
 var external_commonjs_vue_commonjs2_vue_root_Vue_ = __webpack_require__("8bbf");
 var external_commonjs_vue_commonjs2_vue_root_Vue_default = /*#__PURE__*/__webpack_require__.n(external_commonjs_vue_commonjs2_vue_root_Vue_);
 
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"00b53798-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/Diagram.vue?vue&type=template&id=f02dcada&
-var Diagramvue_type_template_id_f02dcada_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{class:[
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"00b53798-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/Diagram.vue?vue&type=template&id=2daaf2e6&
+var Diagramvue_type_template_id_2daaf2e6_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{class:[
     'lassox-diagram__Diagram',
     _vm.compact && 'lassox-diagram__Diagram--compact' ],attrs:{"tabindex":"-1"},on:{"keydown":_vm.onKeyDown}},[_c('div',{staticClass:"lassox-diagram__Diagram-loading-screen",style:({
       opacity: _vm.diagram.isLoading ? '1' : '0',
@@ -96619,7 +96815,7 @@ var Diagramvue_type_template_id_f02dcada_render = function () {var _vm=this;var 
 var staticRenderFns = []
 
 
-// CONCATENATED MODULE: ./src/components/Diagram.vue?vue&type=template&id=f02dcada&
+// CONCATENATED MODULE: ./src/components/Diagram.vue?vue&type=template&id=2daaf2e6&
 
 // CONCATENATED MODULE: ./node_modules/@babel/runtime/helpers/esm/setPrototypeOf.js
 function _setPrototypeOf(o, p) {
@@ -98230,15 +98426,15 @@ var Buttonvue_type_template_id_4b2ecc88_staticRenderFns = []
 
 // CONCATENATED MODULE: ./src/components/Button.vue?vue&type=template&id=4b2ecc88&
 
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"00b53798-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/BaseButton.vue?vue&type=template&id=21a3d09d&
-var BaseButtonvue_type_template_id_21a3d09d_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('button',_vm._g({class:[
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"00b53798-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/BaseButton.vue?vue&type=template&id=0bd36dc0&
+var BaseButtonvue_type_template_id_0bd36dc0_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('button',_vm._g({class:[
     'lassox-diagram__BaseButton',
     _vm.disabled && 'lassox-diagram__BaseButton--disabled' ],attrs:{"disabled":_vm.disabled}},Object.assign({}, _vm.$listeners,
-    {click: function (e) { return !_vm.disabled && _vm.$emit('click', e); }})),[_vm._t("default"),(_vm.finalLeadingIcon)?_c('Icon',{staticClass:"lassox-diagram__BaseButton_leading-icon",attrs:{"icon":_vm.finalLeadingIcon}}):_vm._e(),(_vm.label)?_c('div',{staticClass:"lassox-diagram__BaseButton_label",domProps:{"textContent":_vm._s(_vm.label)}}):_vm._e(),(_vm.finalTrailingIcon)?_c('Icon',{staticClass:"lassox-diagram__BaseButton_trailing-icon",attrs:{"icon":_vm.finalTrailingIcon}}):_vm._e(),_c('div',{staticClass:"lassox-diagram__BaseButton_outline"}),_c('div',{staticClass:"lassox-diagram__BaseButton_overlay"})],2)}
-var BaseButtonvue_type_template_id_21a3d09d_staticRenderFns = []
+    {click: function (e) { return !_vm.disabled && _vm.$emit('click', e); }})),[_vm._t("default"),(_vm.finalLeadingIcon)?_c('Icon',{staticClass:"lassox-diagram__BaseButton_leading-icon",style:({ color: _vm.finalLeadingIconColor }),attrs:{"icon":_vm.finalLeadingIcon}}):_vm._e(),(_vm.label)?_c('div',{staticClass:"lassox-diagram__BaseButton_label",domProps:{"textContent":_vm._s(_vm.label)}}):_vm._e(),(_vm.finalTrailingIcon)?_c('Icon',{staticClass:"lassox-diagram__BaseButton_trailing-icon",style:({ color: _vm.finalTrailingIconColor }),attrs:{"icon":_vm.finalTrailingIcon}}):_vm._e(),_c('div',{staticClass:"lassox-diagram__BaseButton_outline"}),_c('div',{staticClass:"lassox-diagram__BaseButton_overlay"})],2)}
+var BaseButtonvue_type_template_id_0bd36dc0_staticRenderFns = []
 
 
-// CONCATENATED MODULE: ./src/components/BaseButton.vue?vue&type=template&id=21a3d09d&
+// CONCATENATED MODULE: ./src/components/BaseButton.vue?vue&type=template&id=0bd36dc0&
 
 // CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"00b53798-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/Icon.vue?vue&type=template&id=6045477e&
 var Iconvue_type_template_id_6045477e_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{class:[
@@ -98348,6 +98544,20 @@ var BaseButtonvue_type_script_lang_ts_BaseButton = /*#__PURE__*/function (_Vue) 
 
       return (_this$trailingIcon = this.trailingIcon) !== null && _this$trailingIcon !== void 0 ? _this$trailingIcon : '';
     }
+  }, {
+    key: "finalLeadingIconColor",
+    get: function get() {
+      var _ref2, _this$leadingIconColo;
+
+      return (_ref2 = (_this$leadingIconColo = this.leadingIconColor) !== null && _this$leadingIconColo !== void 0 ? _this$leadingIconColo : this.iconColor) !== null && _ref2 !== void 0 ? _ref2 : '';
+    }
+  }, {
+    key: "finalTrailingIconColor",
+    get: function get() {
+      var _this$trailingIconCol;
+
+      return (_this$trailingIconCol = this.trailingIconColor) !== null && _this$trailingIconCol !== void 0 ? _this$trailingIconCol : '';
+    }
   }]);
 
   return BaseButton;
@@ -98368,6 +98578,18 @@ __decorate([Prop({
 __decorate([Prop({
   type: String
 })], BaseButtonvue_type_script_lang_ts_BaseButton.prototype, "trailingIcon", void 0);
+
+__decorate([Prop({
+  type: String
+})], BaseButtonvue_type_script_lang_ts_BaseButton.prototype, "iconColor", void 0);
+
+__decorate([Prop({
+  type: String
+})], BaseButtonvue_type_script_lang_ts_BaseButton.prototype, "leadingIconColor", void 0);
+
+__decorate([Prop({
+  type: String
+})], BaseButtonvue_type_script_lang_ts_BaseButton.prototype, "trailingIconColor", void 0);
 
 __decorate([Prop({
   type: Boolean,
@@ -98396,8 +98618,8 @@ var BaseButtonvue_type_style_index_0_lang_scss_ = __webpack_require__("55ae");
 
 var BaseButton_component = normalizeComponent(
   components_BaseButtonvue_type_script_lang_ts_,
-  BaseButtonvue_type_template_id_21a3d09d_render,
-  BaseButtonvue_type_template_id_21a3d09d_staticRenderFns,
+  BaseButtonvue_type_template_id_0bd36dc0_render,
+  BaseButtonvue_type_template_id_0bd36dc0_staticRenderFns,
   false,
   null,
   null,
@@ -98648,7 +98870,7 @@ var watchedProps = ['top', 'left', 'right', 'bottom', 'width', 'height'];
 var watchers = new Map();
 var rafId = null;
 
-function start() {
+function watch_rect_start() {
   if (rafId != null) {
     var _iterator = _createForOfIteratorHelper(watchers.entries()),
         _step;
@@ -98691,7 +98913,7 @@ function start() {
     }
   }
 
-  rafId = requestAnimationFrame(start);
+  rafId = requestAnimationFrame(watch_rect_start);
 }
 
 function stop() {
@@ -98742,7 +98964,7 @@ function watchRect(element, callback) {
 
   callback(state.rect, null, {});
   state.callbacks.add(callback);
-  if (rafId == null) start();
+  if (rafId == null) watch_rect_start();
   return {
     unwatch: function unwatch() {
       return watch_rect_unwatchRect(element, callback);
@@ -98762,15 +98984,15 @@ function watch_rect_unwatchRect(element, callback) {
     stop();
   }
 }
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"00b53798-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/DropdownMenuItem.vue?vue&type=template&id=41923d30&
-var DropdownMenuItemvue_type_template_id_41923d30_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('BaseButton',_vm._g({staticClass:"lassox-diagram__DropdownMenuItem",attrs:{"icon":_vm.icon,"label":_vm.label,"trailingIcon":_vm.trailingIcon,"disabled":_vm.disabled,"tabindex":"0"}},Object.assign({}, _vm.$listeners,
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"00b53798-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/DropdownMenuItem.vue?vue&type=template&id=6c174384&
+var DropdownMenuItemvue_type_template_id_6c174384_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('BaseButton',_vm._g({staticClass:"lassox-diagram__DropdownMenuItem",attrs:{"icon":_vm.icon,"iconColor":_vm.iconColor,"label":_vm.label,"trailingIcon":_vm.trailingIcon,"trailingIconColor":_vm.trailingIconColor,"disabled":_vm.disabled,"tabindex":"0"}},Object.assign({}, _vm.$listeners,
     {click: _vm.onClick,
     mouseover: _vm.onMouseOver,
     mouseout: _vm.onMouseOut})))}
-var DropdownMenuItemvue_type_template_id_41923d30_staticRenderFns = []
+var DropdownMenuItemvue_type_template_id_6c174384_staticRenderFns = []
 
 
-// CONCATENATED MODULE: ./src/components/DropdownMenuItem.vue?vue&type=template&id=41923d30&
+// CONCATENATED MODULE: ./src/components/DropdownMenuItem.vue?vue&type=template&id=6c174384&
 
 // CONCATENATED MODULE: ./node_modules/babel-loader/lib!./node_modules/ts-loader??ref--14-1!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/DropdownMenuItem.vue?vue&type=script&lang=ts&
 
@@ -98857,12 +99079,16 @@ __decorate([Inject()], DropdownMenuItemvue_type_script_lang_ts_DropdownMenuItem.
 
 __decorate([Prop(String)], DropdownMenuItemvue_type_script_lang_ts_DropdownMenuItem.prototype, "icon", void 0);
 
+__decorate([Prop(String)], DropdownMenuItemvue_type_script_lang_ts_DropdownMenuItem.prototype, "iconColor", void 0);
+
 __decorate([Prop({
   type: String,
   required: true
 })], DropdownMenuItemvue_type_script_lang_ts_DropdownMenuItem.prototype, "label", void 0);
 
 __decorate([Prop(String)], DropdownMenuItemvue_type_script_lang_ts_DropdownMenuItem.prototype, "trailingIcon", void 0);
+
+__decorate([Prop(String)], DropdownMenuItemvue_type_script_lang_ts_DropdownMenuItem.prototype, "trailingIconColor", void 0);
 
 __decorate([Prop({
   type: Boolean,
@@ -98896,8 +99122,8 @@ var DropdownMenuItemvue_type_style_index_0_lang_scss_ = __webpack_require__("21a
 
 var DropdownMenuItem_component = normalizeComponent(
   components_DropdownMenuItemvue_type_script_lang_ts_,
-  DropdownMenuItemvue_type_template_id_41923d30_render,
-  DropdownMenuItemvue_type_template_id_41923d30_staticRenderFns,
+  DropdownMenuItemvue_type_template_id_6c174384_render,
+  DropdownMenuItemvue_type_template_id_6c174384_staticRenderFns,
   false,
   null,
   null,
@@ -104537,14 +104763,17 @@ var TopBar_component = normalizeComponent(
 )
 
 /* harmony default export */ var components_TopBar = (TopBar_component.exports);
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"00b53798-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/Graph.vue?vue&type=template&id=4b119dec&
-var Graphvue_type_template_id_4b119dec_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{class:[
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"00b53798-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/Graph.vue?vue&type=template&id=1ed9a3b6&
+var Graphvue_type_template_id_1ed9a3b6_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{class:[
     'lassox-diagram__Graph',
     _vm.elementHovered && 'lassox-diagram__Graph--has-hovered-element' ],attrs:{"tabindex":_vm.printMode ? '' : '-1'},on:{"keydown":_vm.onKeyDown,"contextmenu":function($event){$event.preventDefault();return (function () {}).apply(null, arguments)}}},[_c('div',{ref:"graphContainerEl",staticClass:"lassox-diagram__Graph-container",staticStyle:{"width":"100%","height":"100%"},on:{"mousedown":_vm.redirectCytoscapeBlur,"touchstart":_vm.redirectCytoscapeBlur}},[_c('div',{ref:"graphNodesEl",staticClass:"lassox-diagram__Graph-nodes"},[_vm._l((_vm.relations),function(relation){return _c('GraphEdge',{key:relation.id,attrs:{"id":relation.id}})}),_vm._l((_vm.entities),function(entity){return _c('GraphNode',{key:entity.id,attrs:{"id":entity.id}})})],2)]),(!_vm.printMode)?_c('GraphContextMenu'):_vm._e()],1)}
-var Graphvue_type_template_id_4b119dec_staticRenderFns = []
+var Graphvue_type_template_id_1ed9a3b6_staticRenderFns = []
 
 
-// CONCATENATED MODULE: ./src/components/Graph.vue?vue&type=template&id=4b119dec&
+// CONCATENATED MODULE: ./src/components/Graph.vue?vue&type=template&id=1ed9a3b6&
+
+// EXTERNAL MODULE: ./node_modules/core-js/modules/es.array.sort.js
+var es_array_sort = __webpack_require__("4e82");
 
 // EXTERNAL MODULE: ./node_modules/cytoscape/dist/cytoscape.cjs.js
 var cytoscape_cjs = __webpack_require__("44e1");
@@ -104866,12 +105095,12 @@ var GraphNode_component = normalizeComponent(
 )
 
 /* harmony default export */ var components_GraphNode = (GraphNode_component.exports);
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"00b53798-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/GraphEdge.vue?vue&type=template&id=e5694368&
-var GraphEdgevue_type_template_id_e5694368_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"lassox-diagram__GraphEdge",style:(_vm.style)},_vm._l((_vm.labels),function(label,i){return _c('div',{key:i,staticClass:"lassox-diagram__GraphEdge-label",domProps:{"textContent":_vm._s(label)}})}),0)}
-var GraphEdgevue_type_template_id_e5694368_staticRenderFns = []
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"00b53798-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/GraphEdge.vue?vue&type=template&id=268e1cf1&
+var GraphEdgevue_type_template_id_268e1cf1_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"lassox-diagram__GraphEdge",style:(_vm.style)},_vm._l((_vm.labels),function(label,i){return _c('div',{key:i,staticClass:"lassox-diagram__GraphEdge-label",domProps:{"textContent":_vm._s(label)}})}),0)}
+var GraphEdgevue_type_template_id_268e1cf1_staticRenderFns = []
 
 
-// CONCATENATED MODULE: ./src/components/GraphEdge.vue?vue&type=template&id=e5694368&
+// CONCATENATED MODULE: ./src/components/GraphEdge.vue?vue&type=template&id=268e1cf1&
 
 // CONCATENATED MODULE: ./node_modules/babel-loader/lib!./node_modules/ts-loader??ref--14-1!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/GraphEdge.vue?vue&type=script&lang=ts&
 
@@ -104901,6 +105130,7 @@ var GraphEdgevue_type_script_lang_ts_GraphEdge = /*#__PURE__*/function (_Vue) {
       x: 0,
       y: 0
     };
+    _this.customPath = null;
     _this.hidden = false;
     _this.selected = false;
     _this.positioning = false;
@@ -104917,6 +105147,7 @@ var GraphEdgevue_type_script_lang_ts_GraphEdge = /*#__PURE__*/function (_Vue) {
     get: function get() {
       var position = this.position;
       return {
+        zIndex: this.selected ? '1' : '',
         transform: "translate(-50%, -50%) translate(100vw, 100vh) translate(".concat(position.x, "px, ").concat(position.y, "px)"),
         visibility: this.hidden || !this.labels.length ? 'hidden' : '',
         color: this.selected ? '#cd4b3d' : 'rgba(0, 0, 0, 0.68)'
@@ -104991,6 +105222,9 @@ var GraphEdgevue_type_script_lang_ts_GraphEdge = /*#__PURE__*/function (_Vue) {
       }, {
         immediate: true
       });
+      this.$watch(function () {
+        return _this2.customPath;
+      }, this.onPosition);
     }
   }, {
     key: "beforeDestroy",
@@ -105022,21 +105256,21 @@ var GraphEdgevue_type_script_lang_ts_GraphEdge = /*#__PURE__*/function (_Vue) {
     value: function onPosition() {
       var _this3 = this;
 
-      if (this.positioning) return;
-      this.positioning = true;
+      // if (this.positioning) return
+      // this.positioning = true
       this.updatePosition();
       requestAnimationFrame(function () {
-        _this3.updatePosition();
+        _this3.updatePosition(); // this.positioning = false
 
-        _this3.positioning = false;
       });
     }
   }, {
     key: "onData",
     value: function onData() {
-      var _this$edge2;
+      var _this$edge2, _data$customPath;
 
       var data = (_this$edge2 = this.edge) === null || _this$edge2 === void 0 ? void 0 : _this$edge2.data();
+      this.customPath = (_data$customPath = data.customPath) !== null && _data$customPath !== void 0 ? _data$customPath : null;
       this.hidden = !!(data.hidden || data.hiddenByFilter);
       this.selected = !this.graphVm.printMode && !!data.selected;
     }
@@ -105074,8 +105308,8 @@ var GraphEdgevue_type_style_index_0_lang_scss_ = __webpack_require__("6a22");
 
 var GraphEdge_component = normalizeComponent(
   components_GraphEdgevue_type_script_lang_ts_,
-  GraphEdgevue_type_template_id_e5694368_render,
-  GraphEdgevue_type_template_id_e5694368_staticRenderFns,
+  GraphEdgevue_type_template_id_268e1cf1_render,
+  GraphEdgevue_type_template_id_268e1cf1_staticRenderFns,
   false,
   null,
   null,
@@ -105097,20 +105331,20 @@ var GraphContextMenuvue_type_template_id_21db9217_staticRenderFns = []
 
 // CONCATENATED MODULE: ./src/components/GraphContextMenu.vue?vue&type=template&id=21db9217&
 
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"00b53798-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/ContextMenu.vue?vue&type=template&id=065097ea&
-var ContextMenuvue_type_template_id_065097ea_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"lassox-diagram__ContextMenu"},[_c('div',{ref:"positionEl",staticClass:"lassox-diagram__GraphContextMenu-position",style:({
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"00b53798-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/ContextMenu.vue?vue&type=template&id=164b3cd3&
+var ContextMenuvue_type_template_id_164b3cd3_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"lassox-diagram__ContextMenu"},[_c('div',{ref:"positionEl",staticClass:"lassox-diagram__GraphContextMenu-position",style:({
       top: ((_vm.position.y) + "px"),
       left: ((_vm.position.x) + "px"),
-    })}),_vm._l((_vm.menus),function(menu){return _c('DropdownMenu',{key:menu.id,attrs:{"opener":menu.opener,"close":menu.close,"closeOnLongMouseOut":menu.closeOnLongMouseOut}},[_vm._l((menu.actions),function(items,groupI){return [(groupI)?_c('DropdownMenuDivider',{key:("group-" + groupI + "-divider")}):_vm._e(),_vm._l((items),function(item){return _c('DropdownMenuItem',{key:item.id,ref:item.id,refInFor:true,attrs:{"icon":item.icon,"label":item.label,"trailingIcon":item.trailingIcon,"disabled":item.disabled,"closeMenuOnClick":!item.submenu},on:{"longmouseover":function () {
+    })}),_vm._l((_vm.menus),function(menu){return _c('DropdownMenu',{key:menu.id,attrs:{"opener":menu.opener,"close":menu.close,"closeOnLongMouseOut":menu.closeOnLongMouseOut}},[_vm._l((menu.actions),function(items,groupI){return [(groupI)?_c('DropdownMenuDivider',{key:("group-" + groupI + "-divider")}):_vm._e(),_vm._l((items),function(item){return _c('DropdownMenuItem',{key:item.id,ref:item.id,refInFor:true,attrs:{"icon":item.icon,"iconColor":item.iconColor,"label":item.label,"trailingIcon":item.trailingIcon,"disabled":item.disabled,"closeMenuOnClick":!item.submenu},on:{"longmouseover":function () {
           if (item.submenu) { item.submenu.opener = _vm.$refs[item.id][0] }
         },"click":function () {
           if (item.submenu) { item.submenu.opener = item.submenu.opener ? null : _vm.$refs[item.id][0] }
           else if (item.onClick) { item.onClick() }
         }}})})]})],2)})],2)}
-var ContextMenuvue_type_template_id_065097ea_staticRenderFns = []
+var ContextMenuvue_type_template_id_164b3cd3_staticRenderFns = []
 
 
-// CONCATENATED MODULE: ./src/components/ContextMenu.vue?vue&type=template&id=065097ea&
+// CONCATENATED MODULE: ./src/components/ContextMenu.vue?vue&type=template&id=164b3cd3&
 
 // CONCATENATED MODULE: ./node_modules/babel-loader/lib!./node_modules/ts-loader??ref--14-1!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/ContextMenu.vue?vue&type=script&lang=ts&
 
@@ -105245,6 +105479,7 @@ var ContextMenuvue_type_script_lang_ts_ContextMenu = /*#__PURE__*/function (_Vue
                 return {
                   id: "".concat(groupId, "-action-").concat(actionI),
                   icon: action.icon,
+                  iconColor: action.iconColor,
                   label: action.label,
                   trailingIcon: action.submenu ? 'arrow_right' : '',
                   disabled: action.disabled || action.submenu && !action.submenu.length,
@@ -105328,8 +105563,8 @@ ContextMenuvue_type_script_lang_ts_ContextMenu = __decorate([vue_class_component
 
 var ContextMenu_component = normalizeComponent(
   components_ContextMenuvue_type_script_lang_ts_,
-  ContextMenuvue_type_template_id_065097ea_render,
-  ContextMenuvue_type_template_id_065097ea_staticRenderFns,
+  ContextMenuvue_type_template_id_164b3cd3_render,
+  ContextMenuvue_type_template_id_164b3cd3_staticRenderFns,
   false,
   null,
   null,
@@ -106347,6 +106582,9 @@ var GraphContextMenu_component = normalizeComponent(
 
 
 
+
+
+
 var Graphvue_type_script_lang_ts_generateStyle = function generateStyle(vm) {
   var getStyle = function getStyle(element, property) {
     var item = element.isNode() ? element.data('entity') : element.data('relation');
@@ -106376,6 +106614,9 @@ var Graphvue_type_script_lang_ts_generateStyle = function generateStyle(vm) {
   }, {
     selector: 'edge',
     style: _objectSpread2({
+      'z-index': function zIndex(edge) {
+        return !vm.printMode && edge.selected() ? 1 : 0;
+      },
       'width': getEdgeWidth,
       'curve-style': function curveStyle(edge) {
         return getStyle(edge, 'taxi') ? 'taxi' : 'bezier';
@@ -106413,12 +106654,358 @@ var Graphvue_type_script_lang_ts_generateStyle = function generateStyle(vm) {
       }
     })
   }, {
+    selector: 'edge[?customPath]',
+    style: {
+      'curve-style': 'segments',
+      'source-endpoint': function sourceEndpoint(edge) {
+        return edge.data('customPath').sourceEndpoint;
+      },
+      'target-endpoint': function targetEndpoint(edge) {
+        return edge.data('customPath').targetEndpoint;
+      },
+      'edge-distances': 'node-position',
+      'segment-distances': function segmentDistances(edge) {
+        return edge.data('customPath').segmentDistances;
+      },
+      'segment-weights': function segmentWeights(edge) {
+        return edge.data('customPath').segmentWeights;
+      }
+    }
+  }, {
     selector: '[?hidden], [?hiddenByFilter]',
     style: {
       'visibility': 'hidden'
     }
   }];
 };
+
+function getDistWeight(source, target, point) {
+  var getDistance = function getDistance(a, b) {
+    var x = b.x - a.x;
+    var y = b.y - a.y;
+    return Math.sqrt(x * x + y * y);
+  };
+
+  function radToDeg(rad) {
+    return rad * 180 / Math.PI;
+  }
+
+  function degToRad(deg) {
+    return deg * Math.PI / 180;
+  }
+
+  function getRadAngle(a, b) {
+    return Math.atan2(b.y - a.y, b.x - a.x);
+  }
+
+  var lineAngle = getRadAngle(source, target); //?
+
+  var pointAngle = getRadAngle(source, point); //?
+
+  var angleDiff = pointAngle - lineAngle; //?
+
+  var lineLength = getDistance(source, target); //?
+
+  var pointDistance = getDistance(source, point); //?
+
+  var distMult = Math.sin(angleDiff); //?
+
+  var distance = pointDistance * distMult; //?
+
+  var weightMult = Math.cos(angleDiff); //?
+
+  var weight = pointDistance * weightMult / lineLength; //?
+  // const distance = point.y - target.y //?
+  // const weight = point.x / target.x //?
+
+  return {
+    distance: distance,
+    weight: weight
+  };
+}
+
+var safePrecision = function safePrecision(number) {
+  var mag = Math.pow(10, 2);
+  return Math.round(number * mag) / mag;
+};
+
+function spreadTaxiEdges(graph) {
+  var sanitizePosition = function sanitizePosition(_ref) {
+    var x = _ref.x,
+        y = _ref.y;
+    return {
+      x: safePrecision(x),
+      y: safePrecision(y)
+    };
+  };
+
+  var sanitizePositions = function sanitizePositions(positions) {
+    return positions.map(sanitizePosition);
+  };
+
+  var nodeMap = new Map();
+  var edgeMap = new Map();
+
+  var getMapEdge = function getMapEdge(edge) {
+    var mapEdge = edgeMap.get(edge);
+
+    if (!mapEdge) {
+      mapEdge = {
+        edge: edge,
+        newSourceEndpoint: sanitizePosition(edge.sourceEndpoint()),
+        newTargetEndpoint: sanitizePosition(edge.targetEndpoint()),
+        newSegmentPoints: sanitizePositions(edge.segmentPoints())
+      };
+      edgeMap.set(edge, mapEdge);
+    }
+
+    return mapEdge;
+  };
+
+  graph.batch(function () {
+    var nodes = graph.nodes('[!hiddenByFilter]').toArray();
+
+    var _iterator = _createForOfIteratorHelper(nodes),
+        _step;
+
+    try {
+      var _loop = function _loop() {
+        var node = _step.value;
+        var edges = node.connectedEdges(':simple[!hiddenByFilter]').toArray().filter(function (edge) {
+          return edge.style('curve-style') === 'taxi';
+        });
+        if (!edges.length) return "continue";
+        var width = safePrecision(node.width());
+        var height = safePrecision(node.height());
+        var centerPos = sanitizePosition(node.position());
+        var topPos = safePrecision(centerPos.y - height / 2);
+        var bottomPos = safePrecision(centerPos.y + height / 2);
+        var leftPos = safePrecision(centerPos.x - width / 2);
+        var rightPos = safePrecision(centerPos.x + width / 2);
+        var sides = {
+          top: {
+            edges: []
+          },
+          left: {
+            edges: []
+          },
+          right: {
+            edges: []
+          },
+          bottom: {
+            edges: []
+          }
+        }; // Split edges by which side of node they come from
+
+        var _iterator3 = _createForOfIteratorHelper(edges),
+            _step3;
+
+        try {
+          for (_iterator3.s(); !(_step3 = _iterator3.n()).done;) {
+            var _edge = _step3.value;
+
+            var _mapEdge = getMapEdge(_edge);
+
+            var endpoints = [_mapEdge.newSourceEndpoint, _mapEdge.newTargetEndpoint];
+            if (_edge.source() !== node) endpoints.reverse();
+            var endpoint = endpoints[0],
+                oppositeEndpoint = endpoints[1];
+            var _side = sides.top;
+            if (endpoint.y - 1 <= topPos) _side = sides.top;else if (endpoint.y + 1 >= bottomPos) _side = sides.bottom;else if (endpoint.x - 1 <= leftPos) _side = sides.left;else if (endpoint.x + 1 >= rightPos) _side = sides.right;
+
+            _side.edges.push({
+              edge: _edge,
+              xDist: safePrecision(oppositeEndpoint.x - endpoint.x),
+              yDist: safePrecision(oppositeEndpoint.y - endpoint.y)
+            });
+          } // Sort edges for each side based on opposite endpoint position
+
+        } catch (err) {
+          _iterator3.e(err);
+        } finally {
+          _iterator3.f();
+        }
+
+        var _loop2 = function _loop2() {
+          var sideName = _arr[_i];
+          var side = sides[sideName];
+
+          var compareYDist = function compareYDist(a, b) {
+            return a.yDist === b.yDist ? 0 : a.yDist < b.yDist ? -1 : 1;
+          };
+
+          var compareXDist = function compareXDist(a, b) {
+            return a.xDist === b.xDist ? 0 : a.xDist < b.xDist ? -1 : 1;
+          };
+
+          var compareArrows = function compareArrows(a, b) {
+            var getScore = function getScore(_ref2) {
+              var edge = _ref2.edge;
+              var relation = edge.data('relation');
+              var arrows = [relation.builtStyle.arrowFrom, relation.builtStyle.arrowTo];
+              if (edge.source() === node) arrows.reverse();
+              if (arrows[0] && arrows[1]) return 3;
+              if (arrows[0]) return 2;
+              if (arrows[1]) return 1;
+              return 0;
+            };
+
+            return getScore(a) - getScore(b);
+          };
+
+          side.edges.sort(function (a, b) {
+            var xScore = compareXDist(a, b);
+            var yScore = compareYDist(a, b);
+
+            switch (sideName) {
+              case 'top':
+              case 'bottom':
+                {
+                  if (sideName === 'bottom') yScore *= -1;
+                  if (xScore === 0 && a.xDist < 0) yScore *= -1;
+                  if (xScore || yScore) return xScore || yScore;
+                  break;
+                }
+
+              case 'left':
+              case 'right':
+                {
+                  if (sideName === 'right') xScore *= -1;
+                  if (yScore === 0 && a.yDist < 0) xScore *= -1;
+                  if (xScore || yScore) return yScore || xScore;
+                  break;
+                }
+            }
+
+            return compareArrows(a, b);
+          });
+        };
+
+        for (var _i = 0, _arr = ['top', 'left', 'right', 'bottom']; _i < _arr.length; _i++) {
+          _loop2();
+        }
+
+        nodeMap.set(node, {
+          node: node,
+          sides: sides
+        }); // Calculate new endpoints and segment points
+
+        for (var _i2 = 0, _arr2 = ['top', 'left', 'right', 'bottom']; _i2 < _arr2.length; _i2++) {
+          var sideName = _arr2[_i2];
+          var side = sides[sideName];
+          var isVertical = sideName === 'top' || sideName === 'bottom';
+          var range = 100;
+          var interval = range / (side.edges.length + 1);
+          var min = -50 + (100 - range) / 2;
+
+          var _iterator4 = _createForOfIteratorHelper(side.edges.entries()),
+              _step4;
+
+          try {
+            for (_iterator4.s(); !(_step4 = _iterator4.n()).done;) {
+              var _step4$value = _slicedToArray(_step4.value, 2),
+                  index = _step4$value[0],
+                  edge = _step4$value[1].edge;
+
+              var mapEdge = getMapEdge(edge);
+              var isSource = edge.source() === node;
+              var mapEdgeEndpoint = mapEdge[isSource ? 'newSourceEndpoint' : 'newTargetEndpoint'];
+              var value = min + interval * (index + 1);
+              var delta = (isVertical ? node.width() : node.height()) * (value / 100);
+              var midpoint = {
+                x: (mapEdge.newSourceEndpoint.x + mapEdge.newTargetEndpoint.x) / 2,
+                y: (mapEdge.newSourceEndpoint.y + mapEdge.newTargetEndpoint.y) / 2
+              };
+
+              if (isVertical) {
+                mapEdgeEndpoint.x += delta;
+                mapEdge.newSegmentPoints = [{
+                  x: mapEdge.newSourceEndpoint.x,
+                  y: midpoint.y
+                }, {
+                  x: mapEdge.newTargetEndpoint.x,
+                  y: midpoint.y
+                }];
+              } else {
+                mapEdgeEndpoint.y += delta;
+                mapEdge.newSegmentPoints = [{
+                  x: midpoint.x,
+                  y: mapEdge.newSourceEndpoint.y
+                }, {
+                  x: midpoint.x,
+                  y: mapEdge.newTargetEndpoint.y
+                }];
+              }
+            }
+          } catch (err) {
+            _iterator4.e(err);
+          } finally {
+            _iterator4.f();
+          }
+        }
+      };
+
+      for (_iterator.s(); !(_step = _iterator.n()).done;) {
+        var _ret = _loop();
+
+        if (_ret === "continue") continue;
+      } // Apply new endpoints and segments
+
+    } catch (err) {
+      _iterator.e(err);
+    } finally {
+      _iterator.f();
+    }
+
+    var _iterator2 = _createForOfIteratorHelper(edgeMap.values()),
+        _step2;
+
+    try {
+      for (_iterator2.s(); !(_step2 = _iterator2.n()).done;) {
+        var _step2$value = _step2.value,
+            edge = _step2$value.edge,
+            newSourceEndpoint = _step2$value.newSourceEndpoint,
+            newTargetEndpoint = _step2$value.newTargetEndpoint,
+            newSegmentPoints = _step2$value.newSegmentPoints;
+        var source = edge.source().position();
+        var target = edge.target().position();
+        var segmentDistances = [];
+        var segmentWeights = [];
+
+        var _iterator5 = _createForOfIteratorHelper(newSegmentPoints),
+            _step5;
+
+        try {
+          for (_iterator5.s(); !(_step5 = _iterator5.n()).done;) {
+            var point = _step5.value;
+
+            var _getDistWeight = getDistWeight(source, target, point),
+                distance = _getDistWeight.distance,
+                weight = _getDistWeight.weight;
+
+            segmentDistances.push(distance);
+            segmentWeights.push(weight);
+          }
+        } catch (err) {
+          _iterator5.e(err);
+        } finally {
+          _iterator5.f();
+        }
+
+        edge.data('customPath', {
+          sourceEndpoint: "".concat(newSourceEndpoint.x - source.x, " ").concat(newSourceEndpoint.y - source.y),
+          targetEndpoint: "".concat(newTargetEndpoint.x - target.x, " ").concat(newTargetEndpoint.y - target.y),
+          segmentDistances: segmentDistances,
+          segmentWeights: segmentWeights
+        });
+      }
+    } catch (err) {
+      _iterator2.e(err);
+    } finally {
+      _iterator2.f();
+    }
+  });
+}
 
 cytoscape_panzoom_default()(cytoscape_cjs_default.a);
 cytoscape_cjs_default.a.use(cytoscape_dagre_default.a);
@@ -106485,11 +107072,11 @@ var Graphvue_type_script_lang_ts_Graph = /*#__PURE__*/function (_Vue) {
       if (!graph) return;
 
       if (!this.printMode) {
-        destroyCallbacks.push(this.diagram.eventBus.on('graph.layout', function (_ref) {
+        destroyCallbacks.push(this.diagram.eventBus.on('graph.layout', function (_ref3) {
           var _this2$layout;
 
-          var layout = _ref.layout,
-              applyToLastChange = _ref.applyToLastChange;
+          var layout = _ref3.layout,
+              applyToLastChange = _ref3.applyToLastChange;
           (_this2$layout = _this2.layout(layout, false)) === null || _this2$layout === void 0 ? void 0 : _this2$layout.then(function () {
             var moveEntities = [];
             graph.nodes().forEach(function (node) {
@@ -106537,7 +107124,26 @@ var Graphvue_type_script_lang_ts_Graph = /*#__PURE__*/function (_Vue) {
 
           if (initialZoomLevel !== null) {
             updateElementsPromise.then(function () {
-              graph.zoom(initialZoomLevel).center();
+              var _this2$diagram$initia, _this2$diagram$initia2, _this2$diagram$initia3, _this2$diagram$initia4;
+
+              graph.zoom(initialZoomLevel);
+              var bbox = graph.elements().renderedBoundingBox({});
+              var width = graph.width();
+              var height = graph.height();
+              var x = {
+                left: -(bbox.x1 - _this2.fitPadding),
+                center: -((bbox.x1 + bbox.x2) / 2 - width / 2),
+                right: -(bbox.x2 + _this2.fitPadding - width)
+              };
+              var y = {
+                top: -(bbox.y1 - _this2.fitPadding),
+                center: -((bbox.y1 + bbox.y2) / 2 - height / 2),
+                bottom: -(bbox.y2 + _this2.fitPadding - height)
+              };
+              graph.panBy({
+                x: x[(_this2$diagram$initia = (_this2$diagram$initia2 = _this2.diagram.initialPan) === null || _this2$diagram$initia2 === void 0 ? void 0 : _this2$diagram$initia2.x) !== null && _this2$diagram$initia !== void 0 ? _this2$diagram$initia : 'center'],
+                y: y[(_this2$diagram$initia3 = (_this2$diagram$initia4 = _this2.diagram.initialPan) === null || _this2$diagram$initia4 === void 0 ? void 0 : _this2$diagram$initia4.y) !== null && _this2$diagram$initia3 !== void 0 ? _this2$diagram$initia3 : 'center']
+              });
             });
           }
         }, {
@@ -106556,18 +107162,18 @@ var Graphvue_type_script_lang_ts_Graph = /*#__PURE__*/function (_Vue) {
       }
 
       this.onDestroy = function () {
-        var _iterator = _createForOfIteratorHelper(destroyCallbacks),
-            _step;
+        var _iterator6 = _createForOfIteratorHelper(destroyCallbacks),
+            _step6;
 
         try {
-          for (_iterator.s(); !(_step = _iterator.n()).done;) {
-            var cb = _step.value;
+          for (_iterator6.s(); !(_step6 = _iterator6.n()).done;) {
+            var cb = _step6.value;
             cb();
           }
         } catch (err) {
-          _iterator.e(err);
+          _iterator6.e(err);
         } finally {
-          _iterator.f();
+          _iterator6.f();
         }
       };
     }
@@ -106704,7 +107310,7 @@ var Graphvue_type_script_lang_ts_Graph = /*#__PURE__*/function (_Vue) {
             graph.on('grab', 'node', function (event) {
               if (!grabbing) {
                 grabbing = true;
-                startPos = snapPos(event.position);
+                startPos = event.position;
                 delta = {
                   x: 0,
                   y: 0
@@ -106719,11 +107325,11 @@ var Graphvue_type_script_lang_ts_Graph = /*#__PURE__*/function (_Vue) {
             });
             graph.on('tapdrag', function (event) {
               if (!grabbing) return;
-              var pos = snapPos(event.position);
-              delta = {
+              var pos = event.position;
+              delta = snapPos({
                 x: pos.x - startPos.x,
                 y: pos.y - startPos.y
-              };
+              });
             });
             graph.on('drag', 'node', function (event) {
               var _dragNodes$get;
@@ -106767,10 +107373,10 @@ var Graphvue_type_script_lang_ts_Graph = /*#__PURE__*/function (_Vue) {
             });
           });
         }
-      } // Fit elements in graph when graph is resized
+      } // Fit on resize
 
 
-      graph.on('resize', function () {
+      if (this.diagram.fitOnResize) graph.on('resize', function () {
         return _this4.fit();
       });
 
@@ -106817,6 +107423,88 @@ var Graphvue_type_script_lang_ts_Graph = /*#__PURE__*/function (_Vue) {
           if (!isElement(event.target)) return;
           event.target.data('selected', false);
         });
+      } // Spread taxi edges
+
+
+      if (this.diagram.spreadTaxiEdges) {
+        var handle = 0;
+
+        var start = /*#__PURE__*/function () {
+          var _ref4 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee() {
+            var thisHandle;
+            return regeneratorRuntime.wrap(function _callee$(_context) {
+              while (1) {
+                switch (_context.prev = _context.next) {
+                  case 0:
+                    thisHandle = ++handle;
+                    graph.batch(function () {
+                      graph.edges().forEach(function (edge) {
+                        if (edge.data('customPath')) edge.data('customPath', null);
+                      });
+                    });
+                    _context.next = 4;
+                    return new Promise(function (resolve) {
+                      return requestAnimationFrame(resolve);
+                    });
+
+                  case 4:
+                    if (!(handle !== thisHandle)) {
+                      _context.next = 6;
+                      break;
+                    }
+
+                    return _context.abrupt("return");
+
+                  case 6:
+                    handle = 0;
+                    spreadTaxiEdges(graph);
+
+                  case 8:
+                  case "end":
+                    return _context.stop();
+                }
+              }
+            }, _callee);
+          }));
+
+          return function start() {
+            return _ref4.apply(this, arguments);
+          };
+        }();
+
+        graph.on('add remove', 'node', function (e) {
+          start();
+        });
+        graph.on('bounds', 'node', function (e) {
+          var node = e.target;
+          var data = node.data();
+          var entity = data.entity;
+
+          var pos = _objectSpread2({}, node.position());
+
+          pos.x = safePrecision(pos.x);
+          pos.y = safePrecision(pos.y);
+          var width = safePrecision(node.width());
+          var height = safePrecision(node.height());
+
+          var oldPos = entity.position && _objectSpread2({}, entity.position);
+
+          if (oldPos) {
+            oldPos.x = safePrecision(oldPos.x);
+            oldPos.y = safePrecision(oldPos.y);
+          }
+
+          var oldWidth = typeof data.width === 'number' ? safePrecision(data.width) : null;
+          var oldHeight = typeof data.height === 'number' ? safePrecision(data.height) : null;
+          if (pos.x === (oldPos === null || oldPos === void 0 ? void 0 : oldPos.x) && pos.y === (oldPos === null || oldPos === void 0 ? void 0 : oldPos.y) && width === oldWidth && height === oldHeight) return;
+          start();
+        });
+        graph.on('add remove', 'edge', function (e) {
+          start();
+        });
+        graph.on('layoutstop', function (e) {
+          start();
+        });
       }
     }
   }, {
@@ -106846,38 +107534,38 @@ var Graphvue_type_script_lang_ts_Graph = /*#__PURE__*/function (_Vue) {
           var toUpdate = [];
           var toRemove = [];
 
-          var _iterator2 = _createForOfIteratorHelper(items),
-              _step2;
+          var _iterator7 = _createForOfIteratorHelper(items),
+              _step7;
 
           try {
-            for (_iterator2.s(); !(_step2 = _iterator2.n()).done;) {
-              var _step2$value = _slicedToArray(_step2.value, 2),
-                  id = _step2$value[0],
-                  _item4 = _step2$value[1];
+            for (_iterator7.s(); !(_step7 = _iterator7.n()).done;) {
+              var _step7$value = _slicedToArray(_step7.value, 2),
+                  id = _step7$value[0],
+                  _item4 = _step7$value[1];
 
               if (!_this5.addedItems.has(id)) toAdd.push(_item4);else toUpdate.push(_item4);
             }
           } catch (err) {
-            _iterator2.e(err);
+            _iterator7.e(err);
           } finally {
-            _iterator2.f();
+            _iterator7.f();
           }
 
-          var _iterator3 = _createForOfIteratorHelper(_this5.addedItems),
-              _step3;
+          var _iterator8 = _createForOfIteratorHelper(_this5.addedItems),
+              _step8;
 
           try {
-            for (_iterator3.s(); !(_step3 = _iterator3.n()).done;) {
-              var _step3$value = _slicedToArray(_step3.value, 2),
-                  _id = _step3$value[0],
-                  _item5 = _step3$value[1];
+            for (_iterator8.s(); !(_step8 = _iterator8.n()).done;) {
+              var _step8$value = _slicedToArray(_step8.value, 2),
+                  _id = _step8$value[0],
+                  _item5 = _step8$value[1];
 
               if (!items.has(_id)) toRemove.push(_item5);
             }
           } catch (err) {
-            _iterator3.e(err);
+            _iterator8.e(err);
           } finally {
-            _iterator3.f();
+            _iterator8.f();
           }
 
           var selectAddedElements = !!(!_this5.printMode && graph.elements().length && toAdd.length);
@@ -106898,13 +107586,13 @@ var Graphvue_type_script_lang_ts_Graph = /*#__PURE__*/function (_Vue) {
           }
 
           var addedElements = graph.add(toAdd.map(function (item) {
-            var _ref2, _item$position;
+            var _ref5, _item$position;
 
             return item.isEntity ? {
               group: 'nodes',
               classes: 'entity' + (item.position ? '' : ' needs-position'),
               grabbable: !_this5.printMode && _this5.diagram.enableDragAndDrop,
-              position: _objectSpread2({}, (_ref2 = (_item$position = item.position) !== null && _item$position !== void 0 ? _item$position : toAddPos) !== null && _ref2 !== void 0 ? _ref2 : {
+              position: _objectSpread2({}, (_ref5 = (_item$position = item.position) !== null && _item$position !== void 0 ? _item$position : toAddPos) !== null && _ref5 !== void 0 ? _ref5 : {
                 x: 0,
                 y: 0
               }),
@@ -106931,8 +107619,8 @@ var Graphvue_type_script_lang_ts_Graph = /*#__PURE__*/function (_Vue) {
             addedElements.select();
           }
 
-          for (var _i = 0, _toUpdate = toUpdate; _i < _toUpdate.length; _i++) {
-            var item = _toUpdate[_i];
+          for (var _i3 = 0, _toUpdate = toUpdate; _i3 < _toUpdate.length; _i3++) {
+            var item = _toUpdate[_i3];
             var element = graph.$id(item.id);
             var itemKey = item.isEntity ? 'entity' : 'relation';
             if (element.data(itemKey) !== item) element.data(itemKey, item);
@@ -106956,8 +107644,8 @@ var Graphvue_type_script_lang_ts_Graph = /*#__PURE__*/function (_Vue) {
             }
           }
 
-          for (var _i2 = 0, _toRemove = toRemove; _i2 < _toRemove.length; _i2++) {
-            var _item = _toRemove[_i2];
+          for (var _i4 = 0, _toRemove = toRemove; _i4 < _toRemove.length; _i4++) {
+            var _item = _toRemove[_i4];
             graph.$id(_item.id).remove();
           }
 
@@ -106966,19 +107654,19 @@ var Graphvue_type_script_lang_ts_Graph = /*#__PURE__*/function (_Vue) {
           _this5.addedItems = items; // Calculate hierarchy
 
           if (!_this5.printMode) {
-            var _iterator4 = _createForOfIteratorHelper(items.values()),
-                _step4;
+            var _iterator9 = _createForOfIteratorHelper(items.values()),
+                _step9;
 
             try {
-              for (_iterator4.s(); !(_step4 = _iterator4.n()).done;) {
-                var _item2 = _step4.value;
+              for (_iterator9.s(); !(_step9 = _iterator9.n()).done;) {
+                var _item2 = _step9.value;
                 _item2.isParent = false;
                 _item2.isChild = false;
               }
             } catch (err) {
-              _iterator4.e(err);
+              _iterator9.e(err);
             } finally {
-              _iterator4.f();
+              _iterator9.f();
             }
 
             mainEntityNode.predecessors().not(mainEntityNode).forEach(function (element) {
@@ -106993,19 +107681,19 @@ var Graphvue_type_script_lang_ts_Graph = /*#__PURE__*/function (_Vue) {
 
 
           if (!_this5.printMode) {
-            var _iterator5 = _createForOfIteratorHelper(items.values()),
-                _step5;
+            var _iterator10 = _createForOfIteratorHelper(items.values()),
+                _step10;
 
             try {
-              for (_iterator5.s(); !(_step5 = _iterator5.n()).done;) {
-                var _item3 = _step5.value;
+              for (_iterator10.s(); !(_step10 = _iterator10.n()).done;) {
+                var _item3 = _step10.value;
 
                 _item3.buildStyle();
               }
             } catch (err) {
-              _iterator5.e(err);
+              _iterator10.e(err);
             } finally {
-              _iterator5.f();
+              _iterator10.f();
             }
           }
 
@@ -107112,9 +107800,9 @@ var Graphvue_type_script_lang_ts_Graph = /*#__PURE__*/function (_Vue) {
           animate: animate,
           animationDuration: animate ? (_layout$animationDura = _layout === null || _layout === void 0 ? void 0 : _layout.animationDuration) !== null && _layout$animationDura !== void 0 ? _layout$animationDura : 1000 : undefined,
           animationEasing: animate ? (_layout$animationEasi = _layout === null || _layout === void 0 ? void 0 : _layout.animationEasing) !== null && _layout$animationEasi !== void 0 ? _layout$animationEasi : 'ease-out' : undefined,
-          transform: _layout !== null && _layout !== void 0 && _layout.inverted ? function (_, _ref3) {
-            var x = _ref3.x,
-                y = _ref3.y;
+          transform: _layout !== null && _layout !== void 0 && _layout.inverted ? function (_, _ref6) {
+            var x = _ref6.x,
+                y = _ref6.y;
             return {
               x: -x,
               y: -y
@@ -107208,8 +107896,8 @@ var Graphvue_type_style_index_0_lang_scss_ = __webpack_require__("2a3c");
 
 var Graph_component = normalizeComponent(
   components_Graphvue_type_script_lang_ts_,
-  Graphvue_type_template_id_4b119dec_render,
-  Graphvue_type_template_id_4b119dec_staticRenderFns,
+  Graphvue_type_template_id_1ed9a3b6_render,
+  Graphvue_type_template_id_1ed9a3b6_staticRenderFns,
   false,
   null,
   null,
@@ -109681,7 +110369,7 @@ var Diagramvue_type_style_index_0_lang_scss_ = __webpack_require__("034b");
 
 var Diagram_component = normalizeComponent(
   components_Diagramvue_type_script_lang_ts_,
-  Diagramvue_type_template_id_f02dcada_render,
+  Diagramvue_type_template_id_2daaf2e6_render,
   staticRenderFns,
   false,
   null,
@@ -111163,6 +111851,13 @@ var exampleConfig = {
       existingParents: 'Eksisterende ejere',
       existingChildren: 'Eksisterende ejerskaber'
     },
+    style: function style(context) {
+      var _context$activeLayout;
+
+      return {
+        taxi: ((_context$activeLayout = context.activeLayout) === null || _context$activeLayout === void 0 ? void 0 : _context$activeLayout.type) === 'dagre'
+      };
+    },
     printStyle: {
       lineColor: '#999999'
     },
@@ -111533,6 +112228,22 @@ var exampleConfig = {
     id: 'company-layout-2',
     name: 'Layout 2',
     inverted: true
+  }, // Layouts for if the main entity is a person
+  // {
+  //   id: 'person-layout-1',
+  //   name: 'Layout 1',
+  //   default: true,
+  //   directed: true,
+  // },
+  // {
+  //   id: 'person-layout-2',
+  //   name: 'Layout 2',
+  // },
+  // Dagre layout
+  {
+    id: 'dagre-layout',
+    name: 'Dagre',
+    type: 'dagre'
   }],
   methods: {
     getSavedDiagrams: function () {
@@ -111719,8 +112430,15 @@ var exampleConfig = {
       }]];
     }
   },
+  // (Optional) Spread taxi edges evenly so they don't all merge with eachother
+  spreadTaxiEdges: true,
   // (Optional) Set an initial zoom level
   // initialZoomLevel: 0.5,
+  // (Optional) Set an initial pan position (used with initialZoomLevel)
+  // initialPan: {
+  //   x: 'left',
+  //   y: 'top',
+  // },
   // (Optional) Set the width where the diagram goes compact (certain top bar actions become hidden, customizer becomes toggleable).
   compactWidth: 839,
   // (Optional) Set grid size for drag and drop snapping (0 = disabled).
@@ -112369,7 +113087,10 @@ var diagram_Diagram = /*#__PURE__*/function () {
         _config$methods9,
         _config$methods10,
         _config$methods11,
+        _config$spreadTaxiEdg,
         _config$initialZoomLe,
+        _config$initialPan,
+        _config$fitOnResize,
         _config$compactWidth,
         _config$dragAndDropGr,
         _config$saveSettingsT;
@@ -112377,7 +113098,6 @@ var diagram_Diagram = /*#__PURE__*/function () {
     _classCallCheck(this, Diagram);
 
     this.eventBus = new DiagramEventBus_DiagramEventBus();
-    this.initialZoomLevel = null;
     this.enableEditing = false;
     this.enableStyleEditing = false;
     this.enableDragAndDrop = false;
@@ -112418,7 +113138,10 @@ var diagram_Diagram = /*#__PURE__*/function () {
       searchEntities: (_config$methods10 = config.methods) === null || _config$methods10 === void 0 ? void 0 : _config$methods10.searchEntities,
       getContextMenuActions: (_config$methods11 = config.methods) === null || _config$methods11 === void 0 ? void 0 : _config$methods11.getContextMenuActions
     };
+    this.spreadTaxiEdges = (_config$spreadTaxiEdg = config.spreadTaxiEdges) !== null && _config$spreadTaxiEdg !== void 0 ? _config$spreadTaxiEdg : false;
     this.initialZoomLevel = (_config$initialZoomLe = config.initialZoomLevel) !== null && _config$initialZoomLe !== void 0 ? _config$initialZoomLe : null;
+    this.initialPan = (_config$initialPan = config.initialPan) !== null && _config$initialPan !== void 0 ? _config$initialPan : null;
+    this.fitOnResize = (_config$fitOnResize = config.fitOnResize) !== null && _config$fitOnResize !== void 0 ? _config$fitOnResize : true;
     this.compactWidth = (_config$compactWidth = config.compactWidth) !== null && _config$compactWidth !== void 0 ? _config$compactWidth : 767;
     this.dragAndDropGridSize = (_config$dragAndDropGr = config.dragAndDropGridSize) !== null && _config$dragAndDropGr !== void 0 ? _config$dragAndDropGr : 0;
 

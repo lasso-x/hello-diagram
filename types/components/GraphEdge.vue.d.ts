@@ -12,11 +12,13 @@ export default class GraphEdge extends Vue {
     fromNode?: cytoscape.NodeSingular;
     toNode?: cytoscape.NodeSingular;
     position: cytoscape.Position;
+    customPath: any;
     hidden: boolean;
     selected: boolean;
     positioning: boolean;
     get relation(): import("../diagram").Relation | undefined;
     get style(): {
+        zIndex: string;
         transform: string;
         visibility: string;
         color: string;

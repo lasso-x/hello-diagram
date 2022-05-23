@@ -23,6 +23,7 @@ export default class Diagram {
     dragAndDropGridSize: number;
     enableEditing: boolean;
     enableStyleEditing: boolean;
+    showInactiveEditorFields: boolean;
     enableDragAndDrop: boolean;
     enableExpand: boolean;
     enableSaving: boolean;
@@ -68,6 +69,7 @@ export interface DiagramConfig {
     dragAndDropGridSize?: number;
     enableEditing?: boolean;
     enableStyleEditing?: boolean;
+    showInactiveEditorFields?: boolean;
     enableDragAndDrop?: boolean;
     enableExpand?: boolean;
     enableSaving?: boolean;
@@ -449,6 +451,7 @@ export declare class Settings {
     activeLayout: LayoutDefinition | null;
     constructor(diagram: Diagram);
     init(): void;
+    setInitialState(): void;
     reset(): void;
     loadFromLocalStorage(): void;
     saveToLocalStorage(): void;

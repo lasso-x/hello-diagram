@@ -10,6 +10,7 @@ export default class Graph extends Vue {
     readonly graphContainerEl: HTMLElement;
     readonly graphNodesEl: HTMLElement;
     _graph?: cytoscape.Core;
+    graphReady: boolean;
     addedItems: Map<string, Entity | Relation>;
     entities: Entity[];
     relations: Relation[];

@@ -19,6 +19,7 @@ export default class DiagramData {
     get mainEntity(): Entity | undefined;
     get canUndo(): boolean;
     get canRedo(): boolean;
+    setInitialChanges(): void;
     add(options: Exclude<Change['add'], undefined>): void;
     remove(options: Exclude<Change['remove'], undefined>): void;
     edit(options: Exclude<Change['edit'], undefined>): void;

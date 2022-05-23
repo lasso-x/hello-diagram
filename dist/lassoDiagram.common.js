@@ -34988,6 +34988,48 @@ module.exports = values;
 
 /***/ }),
 
+/***/ "4057":
+/***/ (function(module, exports, __webpack_require__) {
+
+var $ = __webpack_require__("23e7");
+
+// eslint-disable-next-line es/no-math-hypot -- required for testing
+var $hypot = Math.hypot;
+var abs = Math.abs;
+var sqrt = Math.sqrt;
+
+// Chrome 77 bug
+// https://bugs.chromium.org/p/v8/issues/detail?id=9546
+var BUGGY = !!$hypot && $hypot(Infinity, NaN) !== Infinity;
+
+// `Math.hypot` method
+// https://tc39.es/ecma262/#sec-math.hypot
+$({ target: 'Math', stat: true, forced: BUGGY }, {
+  // eslint-disable-next-line no-unused-vars -- required for `.length`
+  hypot: function hypot(value1, value2) {
+    var sum = 0;
+    var i = 0;
+    var aLen = arguments.length;
+    var larg = 0;
+    var arg, div;
+    while (i < aLen) {
+      arg = abs(arguments[i++]);
+      if (larg < arg) {
+        div = larg / arg;
+        sum = sum * div * div + 1;
+        larg = arg;
+      } else if (arg > 0) {
+        div = arg / larg;
+        sum += div * div;
+      } else sum += arg;
+    }
+    return larg === Infinity ? Infinity : larg * sqrt(sum);
+  }
+});
+
+
+/***/ }),
+
 /***/ "408c":
 /***/ (function(module, exports, __webpack_require__) {
 
@@ -68339,6 +68381,13 @@ fixRegExpWellKnownSymbolLogic('replace', function (_, nativeReplace, maybeCallNa
 
 /***/ }),
 
+/***/ "53a1":
+/***/ (function(module, exports, __webpack_require__) {
+
+// extracted by mini-css-extract-plugin
+
+/***/ }),
+
 /***/ "5492":
 /***/ (function(module, exports, __webpack_require__) {
 
@@ -68931,6 +68980,17 @@ module.exports = arrayIncludesWith;
 /***/ (function(module, exports, __webpack_require__) {
 
 // extracted by mini-css-extract-plugin
+
+/***/ }),
+
+/***/ "5f8c":
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+/* harmony import */ var _node_modules_mini_css_extract_plugin_dist_loader_js_ref_8_oneOf_1_0_node_modules_css_loader_dist_cjs_js_ref_8_oneOf_1_1_node_modules_vue_loader_lib_loaders_stylePostLoader_js_node_modules_postcss_loader_src_index_js_ref_8_oneOf_1_2_node_modules_sass_loader_dist_cjs_js_ref_8_oneOf_1_3_node_modules_cache_loader_dist_cjs_js_ref_0_0_node_modules_vue_loader_lib_index_js_vue_loader_options_GraphEdgePoints_vue_vue_type_style_index_0_lang_scss___WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__("53a1");
+/* harmony import */ var _node_modules_mini_css_extract_plugin_dist_loader_js_ref_8_oneOf_1_0_node_modules_css_loader_dist_cjs_js_ref_8_oneOf_1_1_node_modules_vue_loader_lib_loaders_stylePostLoader_js_node_modules_postcss_loader_src_index_js_ref_8_oneOf_1_2_node_modules_sass_loader_dist_cjs_js_ref_8_oneOf_1_3_node_modules_cache_loader_dist_cjs_js_ref_0_0_node_modules_vue_loader_lib_index_js_vue_loader_options_GraphEdgePoints_vue_vue_type_style_index_0_lang_scss___WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(_node_modules_mini_css_extract_plugin_dist_loader_js_ref_8_oneOf_1_0_node_modules_css_loader_dist_cjs_js_ref_8_oneOf_1_1_node_modules_vue_loader_lib_loaders_stylePostLoader_js_node_modules_postcss_loader_src_index_js_ref_8_oneOf_1_2_node_modules_sass_loader_dist_cjs_js_ref_8_oneOf_1_3_node_modules_cache_loader_dist_cjs_js_ref_0_0_node_modules_vue_loader_lib_index_js_vue_loader_options_GraphEdgePoints_vue_vue_type_style_index_0_lang_scss___WEBPACK_IMPORTED_MODULE_0__);
+/* unused harmony reexport * */
+
 
 /***/ }),
 
@@ -102678,12 +102738,12 @@ var EditorField_component = normalizeComponent(
 )
 
 /* harmony default export */ var components_EditorField = (EditorField_component.exports);
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"00b53798-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/DataCreator.vue?vue&type=template&id=6e3b23fc&
-var DataCreatorvue_type_template_id_6e3b23fc_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return (_vm.fields.length)?_c('EditorFields',_vm._l((_vm.fieldStates),function(state){return _c('EditorField',{key:state.field.fullId,attrs:{"id":state.field.fullId,"type":state.field.type,"title":state.field.title,"value":state.value},on:{"change":state.onChange}})}),1):_vm._e()}
-var DataCreatorvue_type_template_id_6e3b23fc_staticRenderFns = []
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"00b53798-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/DataCreator.vue?vue&type=template&id=b62ca34c&
+var DataCreatorvue_type_template_id_b62ca34c_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return (_vm.fields.length)?_c('EditorFields',_vm._l((_vm.fieldStates),function(state){return _c('EditorField',{key:state.field.fullId,attrs:{"id":state.field.fullId,"type":state.field.type,"title":state.field.title,"editable":state.field.editable,"value":state.value},on:{"change":state.onChange}})}),1):_vm._e()}
+var DataCreatorvue_type_template_id_b62ca34c_staticRenderFns = []
 
 
-// CONCATENATED MODULE: ./src/components/DataCreator.vue?vue&type=template&id=6e3b23fc&
+// CONCATENATED MODULE: ./src/components/DataCreator.vue?vue&type=template&id=b62ca34c&
 
 // EXTERNAL MODULE: ./node_modules/lodash.set/index.js
 var lodash_set = __webpack_require__("f4c4");
@@ -102767,8 +102827,8 @@ DataCreatorvue_type_script_lang_ts_DataCreator = __decorate([vue_class_component
 
 var DataCreator_component = normalizeComponent(
   components_DataCreatorvue_type_script_lang_ts_,
-  DataCreatorvue_type_template_id_6e3b23fc_render,
-  DataCreatorvue_type_template_id_6e3b23fc_staticRenderFns,
+  DataCreatorvue_type_template_id_b62ca34c_render,
+  DataCreatorvue_type_template_id_b62ca34c_staticRenderFns,
   false,
   null,
   null,
@@ -104754,14 +104814,14 @@ var TopBar_component = normalizeComponent(
 )
 
 /* harmony default export */ var components_TopBar = (TopBar_component.exports);
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"00b53798-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/Graph.vue?vue&type=template&id=1ed9a3b6&
-var Graphvue_type_template_id_1ed9a3b6_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{class:[
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"00b53798-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/Graph.vue?vue&type=template&id=37f9be17&
+var Graphvue_type_template_id_37f9be17_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{class:[
     'lassox-diagram__Graph',
     _vm.elementHovered && 'lassox-diagram__Graph--has-hovered-element' ],attrs:{"tabindex":_vm.printMode ? '' : '-1'},on:{"keydown":_vm.onKeyDown,"contextmenu":function($event){$event.preventDefault();return (function () {}).apply(null, arguments)}}},[_c('div',{ref:"graphContainerEl",staticClass:"lassox-diagram__Graph-container",staticStyle:{"width":"100%","height":"100%"},on:{"mousedown":_vm.redirectCytoscapeBlur,"touchstart":_vm.redirectCytoscapeBlur}},[_c('div',{ref:"graphNodesEl",staticClass:"lassox-diagram__Graph-nodes"},[_vm._l((_vm.relations),function(relation){return _c('GraphEdge',{key:relation.id,attrs:{"id":relation.id}})}),_vm._l((_vm.entities),function(entity){return _c('GraphNode',{key:entity.id,attrs:{"id":entity.id}})})],2)]),(!_vm.printMode)?_c('GraphContextMenu'):_vm._e()],1)}
-var Graphvue_type_template_id_1ed9a3b6_staticRenderFns = []
+var Graphvue_type_template_id_37f9be17_staticRenderFns = []
 
 
-// CONCATENATED MODULE: ./src/components/Graph.vue?vue&type=template&id=1ed9a3b6&
+// CONCATENATED MODULE: ./src/components/Graph.vue?vue&type=template&id=37f9be17&
 
 // EXTERNAL MODULE: ./node_modules/core-js/modules/es.array.sort.js
 var es_array_sort = __webpack_require__("4e82");
@@ -105309,6 +105369,651 @@ var GraphEdge_component = normalizeComponent(
 )
 
 /* harmony default export */ var components_GraphEdge = (GraphEdge_component.exports);
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"00b53798-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/GraphEdgePoints.vue?vue&type=template&id=6d804a39&
+var GraphEdgePointsvue_type_template_id_6d804a39_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"lassox-diagram__GraphEdgePoints"},[_vm._l((_vm.n_liness),function(line,i){return _c('div',{key:("line-" + i),staticClass:"lassox-diagram__GraphEdgePoints-line",style:({
+      width: ((line.width) + "px"),
+      transformOrigin: 'center left',
+      transform: ("\n        translateY(-50%)\n        translate(100vw, 100vh)\n        translate(" + (line.x) + "px, " + (line.y) + "px)\n        rotate(" + (line.rotation) + "deg)\n      "),
+    }),on:{"mousedown":function($event){$event.stopPropagation();$event.preventDefault();return (function (e) {
+      var pos = _vm.mousePosToModelPos(e.clientX, e.clientY)
+
+      var offset = { x: 0, y: 0 }
+
+      offset[line.crossAxis] = line
+
+      _vm.n_dragging = {
+        lines: [ line ],
+        // offset:
+      }
+    }).apply(null, arguments)},"mouseup":function($event){$event.stopPropagation();$event.preventDefault();return (function () {}).apply(null, arguments)},"click":function($event){$event.stopPropagation();$event.preventDefault();return (function () {
+      line.crossAxisValue += Math.random() * 200 - 100
+      // line.line.length += Math.random() * 100 - 50
+    }).apply(null, arguments)}}})}),_vm._l((_vm.n_points),function(point,i){return _c('div',{key:("point-" + i),staticClass:"lassox-diagram__GraphEdgePoints-point",style:({
+      transform: ("\n        translate(-50%, -50%)\n        translate(100vw, 100vh)\n        translate(" + (point.x) + "px, " + (point.y) + "px)\n      ")
+    })})})],2)}
+var GraphEdgePointsvue_type_template_id_6d804a39_staticRenderFns = []
+
+
+// CONCATENATED MODULE: ./src/components/GraphEdgePoints.vue?vue&type=template&id=6d804a39&
+
+// EXTERNAL MODULE: ./node_modules/core-js/modules/es.math.hypot.js
+var es_math_hypot = __webpack_require__("4057");
+
+// CONCATENATED MODULE: ./node_modules/babel-loader/lib!./node_modules/ts-loader??ref--14-1!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/GraphEdgePoints.vue?vue&type=script&lang=ts&
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var getDistance = function getDistance(a, b) {
+  return Math.hypot(b.x - a.x, b.y - a.y);
+};
+
+var getAngle = function getAngle(a, b) {
+  return Math.atan2(b.y - a.y, b.x - a.x);
+};
+
+var GraphEdgePointsvue_type_script_lang_ts_clamp = function clamp(number, min, max) {
+  if (typeof min === 'number' && number < min) number = min;
+  if (typeof max === 'number' && number > max) number = max;
+  return number;
+};
+
+var getCrossAxis = function getCrossAxis(axis) {
+  return axis === 'x' ? 'y' : 'x';
+};
+
+var cyUtil = {
+  pos: {
+    renderedToModel: function renderedToModel(cy, pos) {
+      var pan = cy.pan();
+      var zoom = cy.zoom();
+      return {
+        x: (pos.x - pan.x) / zoom,
+        y: (pos.y - pan.y) / zoom
+      };
+    },
+    modelToRendered: function modelToRendered(cy, pos) {
+      var pan = cy.pan();
+      var zoom = cy.zoom();
+      return {
+        x: pos.x * zoom + pan.x,
+        y: pos.y * zoom + pan.y
+      };
+    }
+  },
+  node: {
+    getRect: function getRect(node) {
+      var _node$position = node.position(),
+          x = _node$position.x,
+          y = _node$position.y;
+
+      var width = node.width();
+      var height = node.height();
+      return {
+        width: width,
+        height: height,
+        x: {
+          left: x - width / 2,
+          center: x,
+          right: x + width / 2
+        },
+        y: {
+          top: y - height / 2,
+          center: y,
+          bottom: y + height / 2
+        }
+      };
+    }
+  }
+};
+
+var GraphEdgePointsvue_type_script_lang_ts_GraphEdgePoints = /*#__PURE__*/function (_Vue) {
+  _inherits(GraphEdgePoints, _Vue);
+
+  var _super = _createSuper(GraphEdgePoints);
+
+  function GraphEdgePoints() {
+    var _this;
+
+    _classCallCheck(this, GraphEdgePoints);
+
+    _this = _super.apply(this, arguments);
+    _this.log = console.log;
+    _this._edge = null;
+    _this.n_sourceEndpoint = null;
+    _this.n_targetEndpoint = null;
+    _this.n_points = [];
+    _this.n_lines = [];
+    _this.n_dragging = null;
+    _this.points = [];
+    _this.dragging = null;
+    _this.onDestroy = null;
+    return _this;
+  }
+
+  _createClass(GraphEdgePoints, [{
+    key: "graph",
+    get: function get() {
+      if (!this.graphVm._graph) throw Error();
+      return this.graphVm._graph;
+    }
+  }, {
+    key: "n_liness",
+    get: function get() {
+      var _this$n_sourceEndpoin,
+          _this2 = this;
+
+      var axes = ['x', 'y'];
+      if (((_this$n_sourceEndpoin = this.n_sourceEndpoint) === null || _this$n_sourceEndpoin === void 0 ? void 0 : _this$n_sourceEndpoin.axis) === 'y') axes.reverse();
+      return this.n_points.slice(0, -1).map(function (point1, i) {
+        var point2 = _this2.n_points[i + 1];
+        var axis = axes[0],
+            crossAxis = axes[1];
+        axes.reverse();
+        return {
+          points: [point1, point2],
+          axis: axis,
+          crossAxis: crossAxis,
+
+          get x() {
+            return point1.x;
+          },
+
+          get y() {
+            return point1.y;
+          },
+
+          get width() {
+            return Math.abs(this.length);
+          },
+
+          get rotation() {
+            return (axis === 'x' ? 0 : 90) + (this.length < 0 ? 180 : 0);
+          },
+
+          get axisValue1() {
+            return point1[axis];
+          },
+
+          set axisValue1(value) {
+            point1[axis] = value;
+          },
+
+          get axisValue2() {
+            return point2[axis];
+          },
+
+          set axisValue2(value) {
+            point2[axis] = value;
+          },
+
+          get crossAxisValue() {
+            return point1[crossAxis];
+          },
+
+          set crossAxisValue(value) {
+            point1[crossAxis] = value;
+            point2[crossAxis] = value;
+          },
+
+          get length() {
+            return point2[axis] - point1[axis];
+          },
+
+          set length(value) {
+            point2[axis] = point1[axis] + value;
+          }
+
+        };
+      });
+    }
+  }, {
+    key: "n_tLines",
+    get: function get() {
+      console.log('n_tLines');
+      return this.n_lines.map(function (line) {
+        return {
+          line: line,
+
+          get x() {
+            return line.x;
+          },
+
+          get y() {
+            return line.y;
+          },
+
+          get width() {
+            return Math.abs(line.length);
+          },
+
+          get rotation() {
+            return (line.axis === 'x' ? 0 : 90) + (line.length < 0 ? 180 : 0);
+          }
+
+        };
+      });
+    }
+  }, {
+    key: "lines",
+    get: function get() {
+      if (!this.points.length) return [];
+      var lines = [];
+
+      var _iterator = _createForOfIteratorHelper(this.points.entries()),
+          _step;
+
+      try {
+        for (_iterator.s(); !(_step = _iterator.n()).done;) {
+          var _step$value = _slicedToArray(_step.value, 2),
+              i = _step$value[0],
+              point = _step$value[1];
+
+          if (!i) continue;
+          var prevPoint = this.points[i - 1];
+          lines.push({
+            position: prevPoint,
+            length: getDistance(prevPoint, point),
+            rotation: getAngle(prevPoint, point) * 180 / Math.PI
+          });
+        }
+      } catch (err) {
+        _iterator.e(err);
+      } finally {
+        _iterator.f();
+      }
+
+      return lines;
+    }
+  }, {
+    key: "mounted",
+    value: function mounted() {
+      var graph = this.graphVm._graph;
+      if (!graph) return;
+      graph.on('add remove select unselect', 'edge', this.updateEdge);
+      this.updateEdge();
+    }
+  }, {
+    key: "beforeDestroy",
+    value: function beforeDestroy() {
+      var graph = this.graphVm._graph;
+      if (!graph) return;
+      graph.off('add remove select unselect', 'edge', this.updateEdge);
+      this.setEdge(null);
+    }
+  }, {
+    key: "setEdge",
+    value: function setEdge(edge) {
+      var oldEdge = this._edge;
+      if (edge === oldEdge) return;
+      this._edge = edge; // const { graph } = this
+      // if (oldEdge) {
+      //   // unbind
+      // }
+      // if (edge) {
+      //   // bind
+      // }
+
+      this.updatePoints();
+    }
+  }, {
+    key: "updateEdge",
+    value: function updateEdge() {
+      var graph = this.graph;
+      var selectedEdges = graph.edges(':selected');
+      this.setEdge(selectedEdges.length === 1 ? selectedEdges[0] : null);
+    }
+  }, {
+    key: "updatePoints",
+    value: function updatePoints() {
+      var edge = this._edge;
+
+      if (!edge) {
+        this.n_sourceEndpoint = null;
+        this.n_targetEndpoint = null;
+        this.n_points = [];
+        this.n_lines = [];
+        return;
+      } // TODO : Handle existing customTaxi points
+
+
+      var getRectPositionSide = function getRectPositionSide(rect, position) {
+        if (position.y === rect.y.top) return 'top';
+        if (position.y === rect.y.bottom) return 'bottom';
+        if (position.x === rect.x.left) return 'left';
+        if (position.x === rect.x.right) return 'right';
+        return 'top';
+      };
+
+      var getSideAxis = function getSideAxis(side) {
+        return side === 'left' || side === 'right' ? 'x' : 'y';
+      };
+
+      var getEndpoint = function getEndpoint(type) {
+        var nodeRect = cyUtil.node.getRect(edge[type]());
+        var endpointPosition = edge["".concat(type, "Endpoint")]();
+        var side = getRectPositionSide(nodeRect, endpointPosition);
+        return {
+          side: side,
+          axis: getSideAxis(side),
+          x: endpointPosition.x,
+          y: endpointPosition.y
+        };
+      };
+
+      var sourceEndpoint = getEndpoint('source');
+      var targetEndpoint = getEndpoint('target');
+      var minLines = sourceEndpoint.axis === targetEndpoint.axis ? 3 : 2;
+      var minPoints = minLines + 1;
+      var points = [];
+      var segmentPoints = edge.segmentPoints();
+
+      if (segmentPoints.length >= minPoints - 2) {
+        var _prevPoint = sourceEndpoint;
+        var prevAxis = getCrossAxis(sourceEndpoint.axis);
+
+        var _iterator2 = _createForOfIteratorHelper(segmentPoints),
+            _step2;
+
+        try {
+          for (_iterator2.s(); !(_step2 = _iterator2.n()).done;) {
+            var point = _step2.value;
+            point = _objectSpread2({}, point);
+
+            var _axis = getCrossAxis(prevAxis);
+
+            var crossAxis = prevAxis; // A point should only differ from the previous point on the main axis,
+            // so if it doesn't, we create a new point between the two.
+
+            if (point[crossAxis] !== _prevPoint[crossAxis]) {
+              var newPoint = _objectSpread2(_objectSpread2({}, point), {}, _defineProperty({}, crossAxis, _prevPoint[crossAxis]));
+
+              points.push(newPoint);
+            }
+
+            points.push(point);
+            _prevPoint = point;
+            prevAxis = _axis;
+          }
+        } catch (err) {
+          _iterator2.e(err);
+        } finally {
+          _iterator2.f();
+        }
+
+        var lastPoint = _prevPoint;
+        var lastAxis = prevAxis;
+        var targetAxis = targetEndpoint.axis;
+        var targetCrossAxis = getCrossAxis(targetAxis); // If the last points axis is the same as the target endpoint,
+        // we need to create a new point.
+
+        if (lastAxis === targetAxis) {
+          lastPoint = _objectSpread2({}, lastPoint);
+          lastAxis = getCrossAxis(lastAxis);
+          points.push(lastPoint);
+        } // Make sure the last point is aligned with the target endpoint on the crossAxis.
+
+
+        lastPoint[targetCrossAxis] = targetEndpoint[targetCrossAxis];
+      }
+
+      var lines = [];
+
+      var createLine = function createLine(axis, point1, point2) {
+        var crossAxis = getCrossAxis(axis);
+        return {
+          axis: axis,
+          points: [point1, point2],
+          x: point1.x,
+          y: point1.y,
+          length: point2[axis] - point1[axis]
+        };
+      };
+
+      var prevPoint = sourceEndpoint;
+      var axis = sourceEndpoint.axis;
+
+      for (var _i = 0, _arr = [].concat(points, [targetEndpoint]); _i < _arr.length; _i++) {
+        var _point = _arr[_i];
+        lines.push(createLine(axis, prevPoint, _point));
+        prevPoint = _point;
+        axis = getCrossAxis(axis);
+      }
+
+      this.n_sourceEndpoint = sourceEndpoint;
+      this.n_targetEndpoint = targetEndpoint;
+      this.n_points = [sourceEndpoint].concat(points, [targetEndpoint]);
+      this.n_lines = lines;
+    } // mounted () {
+    //   const graph = this.graphVm._graph
+    //   if (!graph) return
+    //   let selectedEdge: EdgeSingular | null = null
+    //   const setSelectedEdge = (edge: EdgeSingular | null) => {
+    //     const oldSelectedEdge = selectedEdge
+    //     const newSelectedEdge = edge
+    //     if (newSelectedEdge === oldSelectedEdge) return
+    //     if (oldSelectedEdge) {
+    //       // unbind things
+    //     }
+    //     if (newSelectedEdge) {
+    //       // bind things
+    //     }
+    //     selectedEdge = newSelectedEdge
+    //     updatePoints()
+    //   }
+    //   const updateSelectedEdge = () => {
+    //     const selectedEdges = graph.edges(':selected')
+    //     const newSelectedEdge = selectedEdges.length === 1 ? selectedEdges[0] : null
+    //     setSelectedEdge(newSelectedEdge)
+    //   }
+    //   const createPoint = (position: Position, endpoint?: 'source' | 'target') => {
+    //     const point: Point = {
+    //       isSource: endpoint === 'source',
+    //       isTarget: endpoint === 'target',
+    //       x: position.x,
+    //       y: position.y,
+    //       bounds: {
+    //         x: { min: null, max: null },
+    //         y: { min: null, max: null },
+    //       },
+    //     }
+    //     if (selectedEdge && endpoint) {
+    //       const node = selectedEdge[endpoint]()
+    //       const rect = cyUtil.node.getRect(node)
+    //       let side: Side = 'top'
+    //       if (position.y === rect.y.top) side = 'top'
+    //       else if (position.y === rect.y.bottom) side = 'bottom'
+    //       else if (position.x === rect.x.left) side = 'left'
+    //       else if (position.x === rect.x.right) side = 'right'
+    //       switch (side) {
+    //         case 'top':
+    //         case 'bottom': {
+    //           point.directionAxis = 'y'
+    //           point.bounds.x.min = rect.x.left
+    //           point.bounds.x.max = rect.x.right
+    //           point.bounds.y.min = rect.y[side]
+    //           point.bounds.y.max = rect.y[side]
+    //           break
+    //         }
+    //         case 'left':
+    //         case 'right': {
+    //           point.directionAxis = 'x'
+    //           point.bounds.y.min = rect.y.top
+    //           point.bounds.y.max = rect.y.bottom
+    //           point.bounds.x.min = rect.x[side]
+    //           point.bounds.x.max = rect.x[side]
+    //           break
+    //         }
+    //       }
+    //     }
+    //     return point
+    //   }
+    //   const updatePoints = () => {
+    //     if (!selectedEdge) {
+    //       this.points = []
+    //       return
+    //     }
+    //     this.points = [
+    //       createPoint(selectedEdge.sourceEndpoint(), 'source'),
+    //       ...selectedEdge.segmentPoints().map(pos => createPoint(pos)),
+    //       createPoint(selectedEdge.targetEndpoint(), 'target'),
+    //     ]
+    //   }
+    //   const draggingOnMouseMove = (e: MouseEvent) => {
+    //     if (!this.dragging) return
+    //     const { point, line, offset } = this.dragging
+    //     if (!point && !line) return
+    //     e.preventDefault()
+    //     let mousePos = this.mousePosToModelPos(e.clientX, e.clientY)
+    //     mousePos.x += offset.x
+    //     mousePos.y += offset.y
+    //     const lines: [Point, Point][] = []
+    //     if (point) {
+    //       const i = this.points.indexOf(point)
+    //       const prevPoint = i > 0 ? this.points[i - 1] : null
+    //       const nextPoint = i < this.points.length - 1 ? this.points[i + 1] : null
+    //       if (prevPoint) lines.push([ prevPoint, point ])
+    //       if (nextPoint) lines.push([ point, nextPoint ])
+    //     } else if (line) {
+    //       lines.push(line)
+    //     }
+    //     if (!lines.length) return
+    //     const currentAxes: ('x' | 'y')[] = [ 'x', 'y' ]
+    //     if (this.points[0].directionAxis === 'x') currentAxes.reverse()
+    //     let i = this.points.indexOf(lines[0][0])
+    //     for (const line of lines) {
+    //       const axis = currentAxes[i % 2]
+    //       const bounds: Record<'min' | 'max', number | null> = { min: null, max: null }
+    //       for (const point of line) {
+    //         const pointBounds = point.bounds[axis]
+    //         if (pointBounds.min !== null) {
+    //           bounds.min = bounds.min === null
+    //             ? pointBounds.min
+    //             : Math.max(bounds.min, pointBounds.min)
+    //         }
+    //         if (pointBounds.max !== null) {
+    //           bounds.max = bounds.max === null
+    //             ? pointBounds.max
+    //             : Math.min(bounds.max, pointBounds.max)
+    //         }
+    //       }
+    //       for (const point of line) {
+    //         point[axis] = clamp(mousePos[axis], bounds.min, bounds.max)
+    //       }
+    //       i++
+    //     }
+    //     this.dragging.moved = true
+    //   }
+    //   const draggingOnMouseUp = (e: MouseEvent) => {
+    //     if (!this.dragging) return
+    //     e.preventDefault()
+    //     const { line, moved } = this.dragging
+    //     if (line && !moved) {
+    //       const i = this.points.indexOf(line[0])
+    //       const [ point1, point2 ] = line
+    //       const commonAxis = point1.x === point2.x ? 'x' : 'y'
+    //       const pos = this.mousePosToModelPos(e.clientX, e.clientY)
+    //       pos[commonAxis] = point1[commonAxis]
+    //       this.points.splice(i + 1, 0, createPoint(pos), createPoint(pos))
+    //     }
+    //     this.dragging = null
+    //   }
+    //   graph.on('add remove select unselect', 'edge', updateSelectedEdge)
+    //   this.$watch(
+    //     () => this.dragging,
+    //     (dragging, oldDragging) => {
+    //       if (dragging === oldDragging) return
+    //       if (oldDragging) {
+    //         window.removeEventListener('mousemove', draggingOnMouseMove)
+    //         window.removeEventListener('mouseup', draggingOnMouseUp)
+    //       }
+    //       if (dragging) {
+    //         window.addEventListener('mousemove', draggingOnMouseMove)
+    //         window.addEventListener('mouseup', draggingOnMouseUp)
+    //       }
+    //     },
+    //   )
+    //   this.onDestroy = () => {
+    //     graph.off('add remove select unselect', 'edge', updateSelectedEdge)
+    //     setSelectedEdge(null)
+    //     this.dragging = null
+    //   }
+    // }
+    // beforeDestroy () {
+    //   this.onDestroy?.()
+    // }
+
+  }, {
+    key: "mousePosToModelPos",
+    value: function mousePosToModelPos(clientX, clientY) {
+      var graph = this.graphVm._graph;
+      if (!graph) return {
+        x: clientX,
+        y: clientY
+      };
+      var graphRect = this.graphVm.el.getBoundingClientRect();
+      return cyUtil.pos.renderedToModel(graph, {
+        x: clientX - graphRect.left,
+        y: clientY - graphRect.top
+      });
+    }
+  }, {
+    key: "snapPos",
+    value: function snapPos(pos) {
+      return pos; // const size = this.graphVm.diagram.dragAndDropGridSize
+      // if (!size) return pos
+      // const snapNumber = (n: number) => Math.round(n / size) * size
+      // return { x: snapNumber(pos.x), y: snapNumber(pos.y) }
+    }
+  }]);
+
+  return GraphEdgePoints;
+}(external_commonjs_vue_commonjs2_vue_root_Vue_default.a);
+
+__decorate([Inject()], GraphEdgePointsvue_type_script_lang_ts_GraphEdgePoints.prototype, "graphVm", void 0);
+
+GraphEdgePointsvue_type_script_lang_ts_GraphEdgePoints = __decorate([vue_class_component_esm({})], GraphEdgePointsvue_type_script_lang_ts_GraphEdgePoints);
+/* harmony default export */ var GraphEdgePointsvue_type_script_lang_ts_ = (GraphEdgePointsvue_type_script_lang_ts_GraphEdgePoints);
+// CONCATENATED MODULE: ./src/components/GraphEdgePoints.vue?vue&type=script&lang=ts&
+ /* harmony default export */ var components_GraphEdgePointsvue_type_script_lang_ts_ = (GraphEdgePointsvue_type_script_lang_ts_); 
+// EXTERNAL MODULE: ./src/components/GraphEdgePoints.vue?vue&type=style&index=0&lang=scss&
+var GraphEdgePointsvue_type_style_index_0_lang_scss_ = __webpack_require__("5f8c");
+
+// CONCATENATED MODULE: ./src/components/GraphEdgePoints.vue
+
+
+
+
+
+
+/* normalize component */
+
+var GraphEdgePoints_component = normalizeComponent(
+  components_GraphEdgePointsvue_type_script_lang_ts_,
+  GraphEdgePointsvue_type_template_id_6d804a39_render,
+  GraphEdgePointsvue_type_template_id_6d804a39_staticRenderFns,
+  false,
+  null,
+  null,
+  null
+  
+)
+
+/* harmony default export */ var components_GraphEdgePoints = (GraphEdgePoints_component.exports);
 // CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"00b53798-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/GraphContextMenu.vue?vue&type=template&id=21db9217&
 var GraphContextMenuvue_type_template_id_21db9217_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"lassox-diagram__GraphContextMenu"},[_c('div',{ref:"positionEl",staticClass:"lassox-diagram__GraphContextMenu-position",style:({
       top: ((_vm.position.y) + "px"),
@@ -106576,6 +107281,7 @@ var GraphContextMenu_component = normalizeComponent(
 
 
 
+
 var Graphvue_type_script_lang_ts_generateStyle = function generateStyle(vm) {
   var getStyle = function getStyle(element, property) {
     var item = element.isNode() ? element.data('entity') : element.data('relation');
@@ -107012,6 +107718,7 @@ var Graphvue_type_script_lang_ts_Graph = /*#__PURE__*/function (_Vue) {
     _classCallCheck(this, Graph);
 
     _this = _super.apply(this, arguments);
+    _this.graphReady = false;
     _this.addedItems = new Map();
     _this.entities = [];
     _this.relations = [];
@@ -107174,6 +107881,7 @@ var Graphvue_type_script_lang_ts_Graph = /*#__PURE__*/function (_Vue) {
       var _this$onDestroy, _this$_graph;
 
       (_this$onDestroy = this.onDestroy) === null || _this$onDestroy === void 0 ? void 0 : _this$onDestroy.call(this);
+      this.graphReady = false;
       (_this$_graph = this._graph) === null || _this$_graph === void 0 ? void 0 : _this$_graph.destroy();
       this._graph = undefined;
     } // When clicking the graph container, cytoscape removes focus, so body ends up focused.
@@ -107497,6 +108205,8 @@ var Graphvue_type_script_lang_ts_Graph = /*#__PURE__*/function (_Vue) {
           start();
         });
       }
+
+      this.graphReady = true;
     }
   }, {
     key: "clearElements",
@@ -107867,6 +108577,7 @@ Graphvue_type_script_lang_ts_Graph = __decorate([vue_class_component_esm({
   components: {
     GraphNode: components_GraphNode,
     GraphEdge: components_GraphEdge,
+    GraphEdgePoints: components_GraphEdgePoints,
     GraphContextMenu: components_GraphContextMenu
   }
 })], Graphvue_type_script_lang_ts_Graph);
@@ -107887,8 +108598,8 @@ var Graphvue_type_style_index_0_lang_scss_ = __webpack_require__("2a3c");
 
 var Graph_component = normalizeComponent(
   components_Graphvue_type_script_lang_ts_,
-  Graphvue_type_template_id_1ed9a3b6_render,
-  Graphvue_type_template_id_1ed9a3b6_staticRenderFns,
+  Graphvue_type_template_id_37f9be17_render,
+  Graphvue_type_template_id_37f9be17_staticRenderFns,
   false,
   null,
   null,
@@ -108212,12 +108923,12 @@ var Customizer_component = normalizeComponent(
 )
 
 /* harmony default export */ var components_Customizer = (Customizer_component.exports);
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"00b53798-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/Editor.vue?vue&type=template&id=65781ff5&
-var Editorvue_type_template_id_65781ff5_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return (_vm.object)?_c('div',{staticClass:"lassox-diagram__Editor"},[_c('header',{staticClass:"lassox-diagram__Editor_header"},[_c('div',{staticClass:"lassox-diagram__Editor_header-title-bar"},[_c('div',{staticClass:"lassox-diagram__Editor_header-title-bar-title",domProps:{"textContent":_vm._s(("Rediger " + _vm.label))}}),_c('IconButton',{attrs:{"icon":"close","size":"normal"},on:{"click":function () { return _vm.object = null; }}})],1),(_vm.description)?_c('div',{staticClass:"lassox-diagram__Editor_header-description",domProps:{"textContent":_vm._s(_vm.description)}}):_vm._e(),_c('div',{staticClass:"lassox-diagram__Editor_header-actions"},[_c('ButtonGroup',[(_vm.object.isEntity)?_c('Button',{ref:"addDropdownButton",attrs:{"label":"Tilføj","trailingIcon":_vm.showAddDropdownMenu ? 'expand_less' : 'expand_more',"disabled":!_vm.object.type.supportedRelations.size},on:{"click":function () { return _vm.showAddDropdownMenu = !_vm.showAddDropdownMenu; }}}):_vm._e(),_c('Button',{attrs:{"label":"Fjern","disabled":_vm.object.isEntity && _vm.object.isMainEntity},on:{"click":_vm.remove}})],1),(_vm.object.isEntity && _vm.object.type.supportedRelations.size)?_c('AddRelationDropdownMenu',{attrs:{"entity":_vm.object,"opener":_vm.showAddDropdownMenu ? _vm.$refs.addDropdownButton.$el : null,"close":function () { return _vm.showAddDropdownMenu = false; }}}):_vm._e()],1)]),_c('div',{staticClass:"lassox-diagram__Editor_body-wrapper"},[_c('div',{staticClass:"lassox-diagram__Editor_body"},[_c('EditorFieldGroups',_vm._l((_vm.fieldGroups),function(fieldGroup){return _c('EditorFieldGroup',{key:fieldGroup.id,attrs:{"title":fieldGroup.title}},_vm._l((fieldGroup.fields),function(field){return _c('EditorField',{key:field.id,attrs:{"id":field.id,"type":field.type,"title":field.title,"editable":field.editable,"options":field.options,"initialValue":field.initialValue,"initialValueLabel":field.initialValueLabel,"resetValue":field.resetValue},model:{value:(field.value),callback:function ($$v) {_vm.$set(field, "value", $$v)},expression:"field.value"}})}),1)}),1)],1)]),_c('footer',{staticClass:"lassox-diagram__Editor_footer"},[_c('ButtonGroup',{attrs:{"align":"right"}},[_c('Button',{attrs:{"label":"Luk"},on:{"click":function () { return _vm.object = null; }}}),_c('Button',{attrs:{"type":"primary","label":"Gem ændringer","disabled":!_vm.hasChanges},on:{"click":_vm.saveChanges}})],1)],1)]):_vm._e()}
-var Editorvue_type_template_id_65781ff5_staticRenderFns = []
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"00b53798-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/Editor.vue?vue&type=template&id=4267c586&
+var Editorvue_type_template_id_4267c586_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return (_vm.object)?_c('div',{staticClass:"lassox-diagram__Editor"},[_c('header',{staticClass:"lassox-diagram__Editor_header"},[_c('div',{staticClass:"lassox-diagram__Editor_header-title-bar"},[_c('div',{staticClass:"lassox-diagram__Editor_header-title-bar-title",domProps:{"textContent":_vm._s(("Rediger " + _vm.label))}}),_c('IconButton',{attrs:{"icon":"close","size":"normal"},on:{"click":function () { return _vm.object = null; }}})],1),(_vm.description)?_c('div',{staticClass:"lassox-diagram__Editor_header-description",domProps:{"textContent":_vm._s(_vm.description)}}):_vm._e(),_c('div',{staticClass:"lassox-diagram__Editor_header-actions"},[_c('ButtonGroup',[(_vm.object.isEntity)?_c('Button',{ref:"addDropdownButton",attrs:{"label":"Tilføj","trailingIcon":_vm.showAddDropdownMenu ? 'expand_less' : 'expand_more',"disabled":!_vm.object.type.supportedRelations.size},on:{"click":function () { return _vm.showAddDropdownMenu = !_vm.showAddDropdownMenu; }}}):_vm._e(),_c('Button',{attrs:{"label":"Fjern","disabled":_vm.object.isEntity && _vm.object.isMainEntity},on:{"click":_vm.remove}})],1),(_vm.object.isEntity && _vm.object.type.supportedRelations.size)?_c('AddRelationDropdownMenu',{attrs:{"entity":_vm.object,"opener":_vm.showAddDropdownMenu ? _vm.$refs.addDropdownButton.$el : null,"close":function () { return _vm.showAddDropdownMenu = false; }}}):_vm._e()],1)]),_c('div',{staticClass:"lassox-diagram__Editor_body-wrapper"},[_c('div',{staticClass:"lassox-diagram__Editor_body"},[_c('EditorFieldGroups',_vm._l((_vm.fieldGroups),function(fieldGroup){return _c('EditorFieldGroup',{key:fieldGroup.id,attrs:{"title":fieldGroup.title}},_vm._l((fieldGroup.fields),function(field){return _c('EditorField',{key:field.id,attrs:{"id":field.id,"type":field.type,"title":field.title,"editable":field.editable,"options":field.options,"initialValue":field.initialValue,"initialValueLabel":field.initialValueLabel,"resetValue":field.resetValue},model:{value:(field.value),callback:function ($$v) {_vm.$set(field, "value", $$v)},expression:"field.value"}})}),1)}),1)],1)]),_c('footer',{staticClass:"lassox-diagram__Editor_footer"},[_c('ButtonGroup',{attrs:{"align":"right"}},[_c('Button',{attrs:{"label":"Luk"},on:{"click":function () { return _vm.object = null; }}}),_c('Button',{attrs:{"type":"primary","label":"Gem ændringer","disabled":!_vm.hasChanges},on:{"click":_vm.saveChanges}})],1)],1)]):_vm._e()}
+var Editorvue_type_template_id_4267c586_staticRenderFns = []
 
 
-// CONCATENATED MODULE: ./src/components/Editor.vue?vue&type=template&id=65781ff5&
+// CONCATENATED MODULE: ./src/components/Editor.vue?vue&type=template&id=4267c586&
 
 // CONCATENATED MODULE: ./node_modules/babel-loader/lib!./node_modules/ts-loader??ref--14-1!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/Editor.vue?vue&type=script&lang=ts&
 
@@ -108462,7 +109173,7 @@ var Editorvue_type_script_lang_ts_Editor = /*#__PURE__*/function (_Vue) {
           try {
             for (_iterator5.s(); !(_step5 = _iterator5.n()).done;) {
               var _field2 = _step5.value;
-              if (!_field2.active) continue;
+              if (!_field2.active && !this.diagram.showInactiveEditorFields) continue;
               var baseField = {
                 id: _field2.fullId,
                 title: _field2.title,
@@ -108667,8 +109378,8 @@ var Editorvue_type_style_index_0_lang_scss_ = __webpack_require__("58d3");
 
 var Editor_component = normalizeComponent(
   components_Editorvue_type_script_lang_ts_,
-  Editorvue_type_template_id_65781ff5_render,
-  Editorvue_type_template_id_65781ff5_staticRenderFns,
+  Editorvue_type_template_id_4267c586_render,
+  Editorvue_type_template_id_4267c586_staticRenderFns,
   false,
   null,
   null,
@@ -110638,6 +111349,23 @@ var DiagramData_DiagramData = /*#__PURE__*/function () {
       return this.undoneChanges.length > 0;
     }
   }, {
+    key: "setInitialChanges",
+    value: function setInitialChanges() {
+      var _iterator2 = _createForOfIteratorHelper(this.changes.splice(0)),
+          _step2;
+
+      try {
+        for (_iterator2.s(); !(_step2 = _iterator2.n()).done;) {
+          var change = _step2.value.change;
+          this.initialData.changes.push(change);
+        }
+      } catch (err) {
+        _iterator2.e(err);
+      } finally {
+        _iterator2.f();
+      }
+    }
+  }, {
     key: "add",
     value: function add(options) {
       this.commitChange({
@@ -110801,12 +111529,12 @@ var DiagramData_DiagramData = /*#__PURE__*/function () {
           var entities = new Map();
           var relations = new Map();
 
-          var _iterator2 = _createForOfIteratorHelper((_removal$entities = removal.entities) !== null && _removal$entities !== void 0 ? _removal$entities : []),
-              _step2;
+          var _iterator3 = _createForOfIteratorHelper((_removal$entities = removal.entities) !== null && _removal$entities !== void 0 ? _removal$entities : []),
+              _step3;
 
           try {
-            for (_iterator2.s(); !(_step2 = _iterator2.n()).done;) {
-              var _id = _step2.value;
+            for (_iterator3.s(); !(_step3 = _iterator3.n()).done;) {
+              var _id = _step3.value;
               if (_id === _this2.diagram.mainEntityId) continue;
 
               var _entity = _this2.entitiesMap.get(_id);
@@ -110814,17 +111542,17 @@ var DiagramData_DiagramData = /*#__PURE__*/function () {
               if (_entity) entities.set(_id, _entity);
             }
           } catch (err) {
-            _iterator2.e(err);
+            _iterator3.e(err);
           } finally {
-            _iterator2.f();
+            _iterator3.f();
           }
 
-          var _iterator3 = _createForOfIteratorHelper((_removal$relations = removal.relations) !== null && _removal$relations !== void 0 ? _removal$relations : []),
-              _step3;
+          var _iterator4 = _createForOfIteratorHelper((_removal$relations = removal.relations) !== null && _removal$relations !== void 0 ? _removal$relations : []),
+              _step4;
 
           try {
-            for (_iterator3.s(); !(_step3 = _iterator3.n()).done;) {
-              var _id2 = _step3.value;
+            for (_iterator4.s(); !(_step4 = _iterator4.n()).done;) {
+              var _id2 = _step4.value;
 
               var _relation = _this2.relationsMap.get(_id2);
 
@@ -110832,9 +111560,9 @@ var DiagramData_DiagramData = /*#__PURE__*/function () {
             } // Cancel if nothing to remove
 
           } catch (err) {
-            _iterator3.e(err);
+            _iterator4.e(err);
           } finally {
-            _iterator3.f();
+            _iterator4.f();
           }
 
           if (!entities.size && !relations.size) return false; // Entities to set expanded = false on
@@ -110842,12 +111570,12 @@ var DiagramData_DiagramData = /*#__PURE__*/function () {
           var entitiesToMarkAsNotExpanded = new Set(entities.values()); // Also remove connected relations
 
           if (entities.size) {
-            var _iterator4 = _createForOfIteratorHelper(_this2.relations),
-                _step4;
+            var _iterator5 = _createForOfIteratorHelper(_this2.relations),
+                _step5;
 
             try {
-              for (_iterator4.s(); !(_step4 = _iterator4.n()).done;) {
-                var relation = _step4.value;
+              for (_iterator5.s(); !(_step5 = _iterator5.n()).done;) {
+                var relation = _step5.value;
                 if (relations.has(relation.id)) continue;
                 if (!entities.has(relation.from) && !entities.has(relation.to)) continue;
                 relations.set(relation.id, relation); // Add connected entities to entitiesToMarkAsNotExpanded
@@ -110861,9 +111589,9 @@ var DiagramData_DiagramData = /*#__PURE__*/function () {
                 }
               }
             } catch (err) {
-              _iterator4.e(err);
+              _iterator5.e(err);
             } finally {
-              _iterator4.f();
+              _iterator5.f();
             }
           }
 
@@ -110877,18 +111605,18 @@ var DiagramData_DiagramData = /*#__PURE__*/function () {
           if (entities.size) _this2._removeEntities(entitiesArray);
           if (relations.size) _this2._removeRelations(relationsArray);
 
-          var _iterator5 = _createForOfIteratorHelper(entitiesToMarkAsNotExpanded),
-              _step5;
+          var _iterator6 = _createForOfIteratorHelper(entitiesToMarkAsNotExpanded),
+              _step6;
 
           try {
-            for (_iterator5.s(); !(_step5 = _iterator5.n()).done;) {
-              var _entity2 = _step5.value;
+            for (_iterator6.s(); !(_step6 = _iterator6.n()).done;) {
+              var _entity2 = _step6.value;
               revertFns.push(set(_entity2, 'expanded', false));
             }
           } catch (err) {
-            _iterator5.e(err);
+            _iterator6.e(err);
           } finally {
-            _iterator5.f();
+            _iterator6.f();
           }
 
           revertFns.push(function () {
@@ -110908,14 +111636,14 @@ var DiagramData_DiagramData = /*#__PURE__*/function () {
           var relationEdits = edit.relations && [];
           var reverters = [];
 
-          var _iterator6 = _createForOfIteratorHelper((_edit$entities = edit.entities) !== null && _edit$entities !== void 0 ? _edit$entities : []),
-              _step6;
+          var _iterator7 = _createForOfIteratorHelper((_edit$entities = edit.entities) !== null && _edit$entities !== void 0 ? _edit$entities : []),
+              _step7;
 
           try {
-            for (_iterator6.s(); !(_step6 = _iterator6.n()).done;) {
+            for (_iterator7.s(); !(_step7 = _iterator7.n()).done;) {
               var _entityEdit$data, _entityEdit$style;
 
-              var entityEdit = _step6.value;
+              var entityEdit = _step7.value;
 
               var entity = _this2.entitiesMap.get(entityEdit.id);
 
@@ -110927,19 +111655,19 @@ var DiagramData_DiagramData = /*#__PURE__*/function () {
               }));
             }
           } catch (err) {
-            _iterator6.e(err);
+            _iterator7.e(err);
           } finally {
-            _iterator6.f();
+            _iterator7.f();
           }
 
-          var _iterator7 = _createForOfIteratorHelper((_edit$relations = edit.relations) !== null && _edit$relations !== void 0 ? _edit$relations : []),
-              _step7;
+          var _iterator8 = _createForOfIteratorHelper((_edit$relations = edit.relations) !== null && _edit$relations !== void 0 ? _edit$relations : []),
+              _step8;
 
           try {
-            for (_iterator7.s(); !(_step7 = _iterator7.n()).done;) {
+            for (_iterator8.s(); !(_step8 = _iterator8.n()).done;) {
               var _relationEdit$data, _relationEdit$style;
 
-              var relationEdit = _step7.value;
+              var relationEdit = _step8.value;
 
               var relation = _this2.relationsMap.get(relationEdit.id);
 
@@ -110951,9 +111679,9 @@ var DiagramData_DiagramData = /*#__PURE__*/function () {
               }));
             }
           } catch (err) {
-            _iterator7.e(err);
+            _iterator8.e(err);
           } finally {
-            _iterator7.f();
+            _iterator8.f();
           }
 
           edit.entities = entityEdits;
@@ -110986,15 +111714,15 @@ var DiagramData_DiagramData = /*#__PURE__*/function () {
         applyFns.push(function () {
           var reverters = [];
 
-          var _iterator8 = _createForOfIteratorHelper(moveEntities),
-              _step8;
+          var _iterator9 = _createForOfIteratorHelper(moveEntities),
+              _step9;
 
           try {
-            for (_iterator8.s(); !(_step8 = _iterator8.n()).done;) {
-              var _step8$value = _step8.value,
-                  id = _step8$value.id,
-                  x = _step8$value.x,
-                  y = _step8$value.y;
+            for (_iterator9.s(); !(_step9 = _iterator9.n()).done;) {
+              var _step9$value = _step9.value,
+                  id = _step9$value.id,
+                  x = _step9$value.x,
+                  y = _step9$value.y;
 
               var entity = _this2.entitiesMap.get(id);
 
@@ -111008,9 +111736,9 @@ var DiagramData_DiagramData = /*#__PURE__*/function () {
             } // Cancel if nothing was changed
 
           } catch (err) {
-            _iterator8.e(err);
+            _iterator9.e(err);
           } finally {
-            _iterator8.f();
+            _iterator9.f();
           }
 
           if (!reverters.length) return false;
@@ -111031,21 +111759,21 @@ var DiagramData_DiagramData = /*#__PURE__*/function () {
           applied = true;
           var success = true;
 
-          var _iterator9 = _createForOfIteratorHelper(applyFns),
-              _step9;
+          var _iterator10 = _createForOfIteratorHelper(applyFns),
+              _step10;
 
           try {
-            for (_iterator9.s(); !(_step9 = _iterator9.n()).done;) {
-              var fn = _step9.value;
+            for (_iterator10.s(); !(_step10 = _iterator10.n()).done;) {
+              var fn = _step10.value;
 
               if (fn() === false) {
                 success = false;
               }
             }
           } catch (err) {
-            _iterator9.e(err);
+            _iterator10.e(err);
           } finally {
-            _iterator9.f();
+            _iterator10.f();
           }
 
           if (trackEvents) {
@@ -111076,18 +111804,18 @@ var DiagramData_DiagramData = /*#__PURE__*/function () {
 
           applied = false;
 
-          var _iterator10 = _createForOfIteratorHelper([].concat(revertFns).reverse()),
-              _step10;
+          var _iterator11 = _createForOfIteratorHelper([].concat(revertFns).reverse()),
+              _step11;
 
           try {
-            for (_iterator10.s(); !(_step10 = _iterator10.n()).done;) {
-              var fn = _step10.value;
+            for (_iterator11.s(); !(_step11 = _iterator11.n()).done;) {
+              var fn = _step11.value;
               fn();
             }
           } catch (err) {
-            _iterator10.e(err);
+            _iterator11.e(err);
           } finally {
-            _iterator10.f();
+            _iterator11.f();
           }
 
           revertFns.splice(0);
@@ -111115,18 +111843,18 @@ var DiagramData_DiagramData = /*#__PURE__*/function () {
     value: function _addEntities(entities) {
       if (!entities.length) return;
 
-      var _iterator11 = _createForOfIteratorHelper(entities),
-          _step11;
+      var _iterator12 = _createForOfIteratorHelper(entities),
+          _step12;
 
       try {
-        for (_iterator11.s(); !(_step11 = _iterator11.n()).done;) {
-          var entity = _step11.value;
+        for (_iterator12.s(); !(_step12 = _iterator12.n()).done;) {
+          var entity = _step12.value;
           this.entitiesMap.set(entity.id, entity);
         }
       } catch (err) {
-        _iterator11.e(err);
+        _iterator12.e(err);
       } finally {
-        _iterator11.f();
+        _iterator12.f();
       }
 
       this._updateEntitiesArray();
@@ -111136,18 +111864,18 @@ var DiagramData_DiagramData = /*#__PURE__*/function () {
     value: function _addRelations(relations) {
       if (!relations.length) return;
 
-      var _iterator12 = _createForOfIteratorHelper(relations),
-          _step12;
+      var _iterator13 = _createForOfIteratorHelper(relations),
+          _step13;
 
       try {
-        for (_iterator12.s(); !(_step12 = _iterator12.n()).done;) {
-          var relation = _step12.value;
+        for (_iterator13.s(); !(_step13 = _iterator13.n()).done;) {
+          var relation = _step13.value;
           this.relationsMap.set(relation.id, relation);
         }
       } catch (err) {
-        _iterator12.e(err);
+        _iterator13.e(err);
       } finally {
-        _iterator12.f();
+        _iterator13.f();
       }
 
       this._updateRelationsArray();
@@ -111157,18 +111885,18 @@ var DiagramData_DiagramData = /*#__PURE__*/function () {
     value: function _removeEntities(entities) {
       if (!entities.length) return;
 
-      var _iterator13 = _createForOfIteratorHelper(entities),
-          _step13;
+      var _iterator14 = _createForOfIteratorHelper(entities),
+          _step14;
 
       try {
-        for (_iterator13.s(); !(_step13 = _iterator13.n()).done;) {
-          var entity = _step13.value;
+        for (_iterator14.s(); !(_step14 = _iterator14.n()).done;) {
+          var entity = _step14.value;
           this.entitiesMap.delete(entity.id);
         }
       } catch (err) {
-        _iterator13.e(err);
+        _iterator14.e(err);
       } finally {
-        _iterator13.f();
+        _iterator14.f();
       }
 
       this._updateEntitiesArray();
@@ -111178,18 +111906,18 @@ var DiagramData_DiagramData = /*#__PURE__*/function () {
     value: function _removeRelations(relations) {
       if (!relations.length) return;
 
-      var _iterator14 = _createForOfIteratorHelper(relations),
-          _step14;
+      var _iterator15 = _createForOfIteratorHelper(relations),
+          _step15;
 
       try {
-        for (_iterator14.s(); !(_step14 = _iterator14.n()).done;) {
-          var relation = _step14.value;
+        for (_iterator15.s(); !(_step15 = _iterator15.n()).done;) {
+          var relation = _step15.value;
           this.relationsMap.delete(relation.id);
         }
       } catch (err) {
-        _iterator14.e(err);
+        _iterator15.e(err);
       } finally {
-        _iterator14.f();
+        _iterator15.f();
       }
 
       this._updateRelationsArray();
@@ -111215,12 +111943,12 @@ var DiagramData_DiagramData = /*#__PURE__*/function () {
 var DiagramData_mapThrowable = function mapThrowable(items, transformer) {
   var result = [];
 
-  var _iterator15 = _createForOfIteratorHelper(items),
-      _step15;
+  var _iterator16 = _createForOfIteratorHelper(items),
+      _step16;
 
   try {
-    for (_iterator15.s(); !(_step15 = _iterator15.n()).done;) {
-      var item = _step15.value;
+    for (_iterator16.s(); !(_step16 = _iterator16.n()).done;) {
+      var item = _step16.value;
 
       try {
         result.push(transformer(item));
@@ -111229,9 +111957,9 @@ var DiagramData_mapThrowable = function mapThrowable(items, transformer) {
       }
     }
   } catch (err) {
-    _iterator15.e(err);
+    _iterator16.e(err);
   } finally {
-    _iterator15.f();
+    _iterator16.f();
   }
 
   return result;
@@ -112438,6 +113166,8 @@ var exampleConfig = {
   enableEditing: true,
   // (Optional) Enable editing style fields.
   enableStyleEditing: true,
+  // (Optional) Show inactive fields in editor.
+  showInactiveEditorFields: true,
   // (Optional) Enable dragging and dropping entities.
   enableDragAndDrop: true,
   // (Optional) Enable expanding (the "Udvid" button).
@@ -113091,6 +113821,7 @@ var diagram_Diagram = /*#__PURE__*/function () {
     this.eventBus = new DiagramEventBus_DiagramEventBus();
     this.enableEditing = false;
     this.enableStyleEditing = false;
+    this.showInactiveEditorFields = false;
     this.enableDragAndDrop = false;
     this.enableExpand = false;
     this.enableSaving = false;
@@ -113142,6 +113873,10 @@ var diagram_Diagram = /*#__PURE__*/function () {
 
     if (config.enableStyleEditing) {
       this.enableStyleEditing = true;
+    }
+
+    if (config.showInactiveEditorFields) {
+      this.showInactiveEditorFields = true;
     }
 
     if (config.enableDragAndDrop) {
@@ -113599,10 +114334,16 @@ var diagram_Diagram = /*#__PURE__*/function () {
               case 9:
                 id = _context4.sent;
                 if (id) this.activeDiagram.id = id;
+                this.activeDiagram.data.setInitialChanges();
+                this.activeDiagram.settings.setInitialState();
+                _context4.next = 15;
+                return this.loadSavedDiagrams();
+
+              case 15:
                 this.hasUnsavedChanges = false;
                 this.isSaving = false;
 
-              case 13:
+              case 17:
               case "end":
                 return _context4.stop();
             }
@@ -114259,6 +115000,11 @@ var diagram_Settings = /*#__PURE__*/function () {
       })) !== null && _this$diagram$layouts !== void 0 ? _this$diagram$layouts : this.diagram.layouts[0]) !== null && _ref3 !== void 0 ? _ref3 : null;
       this.loadFromLocalStorage();
       this.saveToLocalStorage();
+      this.setInitialState();
+    }
+  }, {
+    key: "setInitialState",
+    value: function setInitialState() {
       this.initialState.activeFields = _objectSpread2({}, this.activeFields);
       this.initialState.activeFilters = _objectSpread2({}, this.activeFilters);
       this.initialState.activeLayout = this.activeLayout;

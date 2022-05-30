@@ -34,6 +34,10 @@ export default class Graph extends Vue {
     clearElements(): void;
     updateElements(): Promise<void>;
     runFilters(): void;
+    snapPos(pos: cytoscape.Position): {
+        x: number;
+        y: number;
+    };
     layout(layout?: LayoutDefinition | null, animate?: boolean): Promise<void> | undefined;
     fit(): void;
 }

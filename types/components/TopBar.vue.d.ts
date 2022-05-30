@@ -8,6 +8,7 @@ export default class TopBar extends DiagramVue {
     showLoadDropdownMenu: boolean;
     showLayoutDropdownMenu: boolean;
     showEditDropdownMenu: boolean;
+    log: (...data: any[]) => void;
     get compact(): boolean;
     get canUndo(): boolean;
     get canRedo(): boolean;

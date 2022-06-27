@@ -4,6 +4,7 @@ export default class TextField extends Vue {
     readonly name?: string;
     readonly type: string;
     readonly disabled: boolean;
+    readonly error: boolean;
     readonly autocomplete?: string;
     readonly leadingIcon?: string;
     readonly trailingIcon?: string;

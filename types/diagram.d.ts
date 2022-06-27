@@ -21,6 +21,7 @@ export default class Diagram {
     fitOnResize: boolean;
     compactWidth: number;
     dragAndDropGridSize: number;
+    hideDanglingEntitiesAfterFilter: boolean;
     enableEditing: boolean;
     enableStyleEditing: boolean;
     showInactiveEditorFields: boolean;
@@ -67,6 +68,7 @@ export interface DiagramConfig {
     fitOnResize?: boolean;
     compactWidth?: number;
     dragAndDropGridSize?: number;
+    hideDanglingEntitiesAfterFilter?: boolean;
     enableEditing?: boolean;
     enableStyleEditing?: boolean;
     showInactiveEditorFields?: boolean;
@@ -282,6 +284,9 @@ export declare class Entity {
     isParent: boolean;
     isChild: boolean;
     expanded: boolean;
+    connectedRelations: Relation[];
+    incomingRelations: Relation[];
+    outgoingRelations: Relation[];
     builtTypeStyle: EntityStyle;
     builtTypePrintStyle: EntityStyle;
     builtStyle: EntityStyle;
@@ -322,6 +327,9 @@ export declare class Relation {
     style: RelationStyle;
     isParent: boolean;
     isChild: boolean;
+    connectedEntities: Entity[];
+    fromEntity: Entity | null;
+    toEntity: Entity | null;
     builtTypeStyle: RelationStyle;
     builtTypePrintStyle: RelationStyle;
     builtStyle: RelationStyle;
@@ -350,16 +358,19 @@ export interface RelationStyle {
 export declare class FieldGroup {
     id: string;
     title: string;
+    showTitleInGraph: boolean;
     fields: Field[];
     constructor(diagram: Diagram, options: {
         id: string;
         title: string;
+        showTitleInGraph?: boolean;
         fields: (Field | FieldDefinition)[];
     });
 }
 export interface FieldGroupDefinition {
     id: string;
     title: string;
+    showTitleInGraph?: boolean;
     fields: FieldDefinition[];
 }
 export declare class Field {
@@ -374,6 +385,9 @@ export declare class Field {
     dataKey: string;
     getInitialValue?: (data: Record<string, any>) => any;
     formatter?: (value: any) => any;
+    validator?: (value: any, context: ContextItem) => boolean | {
+        error: string;
+    };
     isEntityLabel: boolean;
     isRelationLabel: boolean;
     addToLegend: boolean;
@@ -396,6 +410,9 @@ export interface FieldDefinition {
     dataKey: string;
     getInitialValue?: (data: Record<string, any>) => any;
     formatter?: (value: any) => any;
+    validator?: (value: any, context: ContextItem) => boolean | {
+        error: string;
+    };
     isEntityLabel?: boolean;
     isRelationLabel?: boolean;
     addToLegend?: boolean;
@@ -412,6 +429,7 @@ export declare class Filter {
     filter: (context: ContextItem) => any;
     filterWhen: 'active' | 'inactive';
     startActive: boolean;
+    saveToLocalStorage: boolean;
     constructor(diagram: Diagram, options: FilterDefinition);
     get active(): boolean;
     set active(active: boolean);
@@ -422,6 +440,7 @@ export interface FilterDefinition {
     filter: (context: ContextItem) => any;
     filterWhen?: 'active' | 'inactive';
     startActive?: boolean;
+    saveToLocalStorage?: boolean;
 }
 export interface LayoutDefinition {
     id: string;
@@ -463,10 +482,16 @@ export interface ContextItem {
     type: string;
     id: string;
     data: Record<string, any>;
-    isMainEntity: boolean;
     isParent: boolean;
     isChild: boolean;
     activeLayout: LayoutDefinition | null;
+    isMainEntity: boolean;
+    connectedRelations: ContextItem[];
+    incomingRelations: ContextItem[];
+    outgoingRelations: ContextItem[];
+    fromEntity: ContextItem | null;
+    toEntity: ContextItem | null;
+    connectedEntities: ContextItem[];
 }
 export declare type Arrayable<T> = T | T[];
 export * from './example';

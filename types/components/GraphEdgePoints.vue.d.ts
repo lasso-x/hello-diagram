@@ -48,8 +48,8 @@ export default class GraphEdgePoints extends Vue {
     } | null;
     get n_liness(): {
         points: NPoint[];
-        axis: import("cytoscape").PositionDimension;
-        crossAxis: import("cytoscape").PositionDimension;
+        axis: "x" | "y";
+        crossAxis: "x" | "y";
         readonly x: number;
         readonly y: number;
         readonly width: number;

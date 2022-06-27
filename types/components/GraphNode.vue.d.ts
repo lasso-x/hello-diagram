@@ -3,6 +3,10 @@ import type DiagramVm from './Diagram.vue';
 import type Diagram from '@/diagram';
 import type Graph from './Graph.vue';
 import type cytoscape from 'cytoscape';
+interface FieldGroup {
+    title?: string;
+    fields: Field[];
+}
 interface Field {
     legendColor?: string | null;
     text: string;
@@ -18,7 +22,7 @@ export default class GraphNode extends Vue {
     hidden: boolean;
     selected: boolean;
     labels: Field[];
-    fields: Field[];
+    fieldGroups: FieldGroup[];
     get entity(): import("../diagram").Entity | undefined;
     get entityStyle(): import("../diagram").EntityStyle;
     get style(): {

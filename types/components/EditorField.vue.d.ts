@@ -14,6 +14,7 @@ export default class EditorField extends Vue {
     readonly initialValueLabel?: string;
     readonly resetValue?: any;
     readonly value?: any;
+    readonly errorMessage?: string;
     finalType: 'text' | 'number' | 'radio-buttons' | 'color';
     finalOptions: EditorFieldOption[];
     get hasInitialValue(): boolean;

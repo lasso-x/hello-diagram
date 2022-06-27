@@ -1,6 +1,6 @@
 import { Vue } from 'vue-property-decorator';
 import type DiagramVm from './Diagram.vue';
-import type { default as Diagram, Entity, Relation } from '@/diagram';
+import { default as Diagram, Entity, Relation, Field } from '@/diagram';
 interface EditorFieldGroup {
     id: string;
     title: string;
@@ -13,11 +13,14 @@ interface EditorBaseField {
     dataKey?: string;
     styleKey?: string;
     editable?: boolean;
+    formatter?: (value: any) => any;
     valueBeforeChanges?: any;
     initialValue?: any;
     initialValueLabel?: string;
     resetValue?: any;
     value: any;
+    validator?: Field['validator'];
+    errorMessage?: string;
 }
 interface EditorTextField extends EditorBaseField {
     type: 'text';

@@ -21,6 +21,7 @@ interface EditorBaseField {
     value: any;
     validator?: Field['validator'];
     errorMessage?: string;
+    show: boolean;
 }
 interface EditorTextField extends EditorBaseField {
     type: 'text';
@@ -47,6 +48,7 @@ export default class Editor extends Vue {
     fieldGroups: EditorFieldGroup[];
     get label(): string;
     get description(): string | undefined;
+    get visibleFieldGroups(): EditorFieldGroup[];
     get changedFieldGroups(): {
         fields: EditorField[];
         id: string;

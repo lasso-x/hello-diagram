@@ -1,6 +1,7 @@
 import { Vue } from 'vue-property-decorator';
-import type { EntityType } from '@/diagram';
+import { ContextItem, EntityType } from '@/diagram';
 import type DiagramVm from './Diagram.vue';
+import DataCreator from './DataCreator.vue';
 import { Suggestion } from './EntitySearchBar.vue';
 export declare type EntitySelectorModel = ({
     entityType: EntityType;
@@ -13,6 +14,7 @@ export declare type EntitySelectorModel = ({
 })) | null;
 export default class EntitySelector extends Vue {
     readonly diagramVm: DiagramVm;
+    readonly dataCreator?: DataCreator;
     readonly entityTypes?: EntityType[];
     entityType: EntityType | null;
     mode: 'search' | 'custom';
@@ -26,7 +28,7 @@ export default class EntitySelector extends Vue {
         label: string;
         value: EntityType;
     }[];
-    get entityFields(): import("../diagram").Field[];
+    validate(contextItem: ContextItem): boolean;
     updateModel(): void;
     created(): void;
 }

@@ -1,9 +1,10 @@
 import { Vue } from 'vue-property-decorator';
-import { EntitySelectorModel } from './EntitySelector.vue';
+import EntitySelector, { EntitySelectorModel } from './EntitySelector.vue';
 import type DiagramVm from './Diagram.vue';
 import type { Position } from 'cytoscape';
 export default class AddEntityDialog extends Vue {
     readonly diagramVm: DiagramVm;
+    readonly entitySelector: EntitySelector;
     readonly position?: Position;
     isConfirming: boolean;
     entitySelectorModel: EntitySelectorModel;

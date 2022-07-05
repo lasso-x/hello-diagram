@@ -99673,12 +99673,12 @@ var DropdownMenuDivider_component = normalizeComponent(
 )
 
 /* harmony default export */ var components_DropdownMenuDivider = (DropdownMenuDivider_component.exports);
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"00b53798-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/ConfirmResetDialog.vue?vue&type=template&id=4a86d982&
-var ConfirmResetDialogvue_type_template_id_4a86d982_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('Dialog',{staticClass:"lassox-diagram__ConfirmAdditionDialog",attrs:{"dismissable":true,"title":"Nulstil diagrammet?","content":"Dette vil fjerne eventuelle ændringer og nulstille dine indstillinger. Vil du fortsætte?","onClose":_vm.dismiss},scopedSlots:_vm._u([{key:"actions",fn:function(){return [_c('ButtonGroup',{attrs:{"align":"right"}},[_c('Button',{attrs:{"label":"Fortryd"},on:{"click":_vm.dismiss}}),_c('Button',{attrs:{"label":"Fortsæt","type":"primary"},on:{"click":_vm.confirm}})],1)]},proxy:true}])})}
-var ConfirmResetDialogvue_type_template_id_4a86d982_staticRenderFns = []
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"00b53798-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/ConfirmResetDialog.vue?vue&type=template&id=54e74e0d&
+var ConfirmResetDialogvue_type_template_id_54e74e0d_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('Dialog',{staticClass:"lassox-diagram__ConfirmResetDialog",attrs:{"dismissable":true,"title":"Nulstil diagrammet?","content":"Dette vil fjerne eventuelle ændringer og nulstille dine indstillinger. Vil du fortsætte?","onClose":_vm.dismiss},scopedSlots:_vm._u([{key:"actions",fn:function(){return [_c('ButtonGroup',{attrs:{"align":"right"}},[_c('Button',{attrs:{"label":"Fortryd"},on:{"click":_vm.dismiss}}),_c('Button',{attrs:{"label":"Fortsæt","type":"primary"},on:{"click":_vm.confirm}})],1)]},proxy:true}])})}
+var ConfirmResetDialogvue_type_template_id_54e74e0d_staticRenderFns = []
 
 
-// CONCATENATED MODULE: ./src/components/ConfirmResetDialog.vue?vue&type=template&id=4a86d982&
+// CONCATENATED MODULE: ./src/components/ConfirmResetDialog.vue?vue&type=template&id=54e74e0d&
 
 // CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"00b53798-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/Dialog.vue?vue&type=template&id=bcc6ba4c&
 var Dialogvue_type_template_id_bcc6ba4c_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('transition',{attrs:{"appear":"","duration":{ enter: 150, leave: 75 }}},[_c('div',{class:[
@@ -99909,8 +99909,8 @@ ConfirmResetDialogvue_type_script_lang_ts_ConfirmResetDialog = __decorate([vue_c
 
 var ConfirmResetDialog_component = normalizeComponent(
   components_ConfirmResetDialogvue_type_script_lang_ts_,
-  ConfirmResetDialogvue_type_template_id_4a86d982_render,
-  ConfirmResetDialogvue_type_template_id_4a86d982_staticRenderFns,
+  ConfirmResetDialogvue_type_template_id_54e74e0d_render,
+  ConfirmResetDialogvue_type_template_id_54e74e0d_staticRenderFns,
   false,
   null,
   null,
@@ -99919,24 +99919,24 @@ var ConfirmResetDialog_component = normalizeComponent(
 )
 
 /* harmony default export */ var components_ConfirmResetDialog = (ConfirmResetDialog_component.exports);
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"00b53798-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/AddEntityDialog.vue?vue&type=template&id=898dfbac&
-var AddEntityDialogvue_type_template_id_898dfbac_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('Dialog',{staticClass:"lassox-diagram__AddEntityDialog",attrs:{"dismissable":true,"title":"Tilføj","size":"2x","onClose":_vm.close},scopedSlots:_vm._u([{key:"content",fn:function(){return [_c('EntitySelector',{on:{"change":function (model) { return _vm.entitySelectorModel = model; }}})]},proxy:true},{key:"actions",fn:function(){return [_c('ButtonGroup',{attrs:{"align":"right"}},[_c('Button',{attrs:{"label":"Fortryd"},on:{"click":_vm.close}}),_c('Button',{attrs:{"label":"Tilføj","type":"primary","disabled":!_vm.canConfirm},on:{"click":_vm.confirm}})],1)]},proxy:true}])})}
-var AddEntityDialogvue_type_template_id_898dfbac_staticRenderFns = []
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"00b53798-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/AddEntityDialog.vue?vue&type=template&id=4119e704&
+var AddEntityDialogvue_type_template_id_4119e704_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('Dialog',{staticClass:"lassox-diagram__AddEntityDialog",attrs:{"dismissable":true,"title":"Tilføj","size":"2x","onClose":_vm.close},scopedSlots:_vm._u([{key:"content",fn:function(){return [_c('EntitySelector',{ref:"entitySelector",on:{"change":function (model) { return _vm.entitySelectorModel = model; }}})]},proxy:true},{key:"actions",fn:function(){return [_c('ButtonGroup',{attrs:{"align":"right"}},[_c('Button',{attrs:{"label":"Fortryd"},on:{"click":_vm.close}}),_c('Button',{attrs:{"label":"Tilføj","type":"primary","disabled":!_vm.canConfirm},on:{"click":_vm.confirm}})],1)]},proxy:true}])})}
+var AddEntityDialogvue_type_template_id_4119e704_staticRenderFns = []
 
 
-// CONCATENATED MODULE: ./src/components/AddEntityDialog.vue?vue&type=template&id=898dfbac&
+// CONCATENATED MODULE: ./src/components/AddEntityDialog.vue?vue&type=template&id=4119e704&
 
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"00b53798-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/EntitySelector.vue?vue&type=template&id=9f9c021e&
-var EntitySelectorvue_type_template_id_9f9c021e_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('EditorFields',[_c('FieldContainer',{attrs:{"label":"Type"}},[_c('DropdownField',{attrs:{"options":_vm.entityTypeDropdownOptions},model:{value:(_vm.entityType),callback:function ($$v) {_vm.entityType=$$v},expression:"entityType"}})],1),(_vm.searchEnabled)?_c('FieldContainer',[_c('TabBar',{attrs:{"outlined":"","tabs":[
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"00b53798-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/EntitySelector.vue?vue&type=template&id=4ec1c90c&
+var EntitySelectorvue_type_template_id_4ec1c90c_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('EditorFields',[_c('FieldContainer',{attrs:{"label":"Type"}},[_c('DropdownField',{attrs:{"options":_vm.entityTypeDropdownOptions},model:{value:(_vm.entityType),callback:function ($$v) {_vm.entityType=$$v},expression:"entityType"}})],1),(_vm.searchEnabled)?_c('FieldContainer',[_c('TabBar',{attrs:{"outlined":"","tabs":[
         { id: 'search', label: 'Søg' },
-        { id: 'custom', label: 'Manuelt' } ]},model:{value:(_vm.mode),callback:function ($$v) {_vm.mode=$$v},expression:"mode"}})],1):_vm._e(),(_vm.mode === 'search')?[_c('FieldContainer',{attrs:{"label":("Søg efter " + (_vm.entityType.labels.singular.toLowerCase()))}},[_c('EntitySearchBar',{attrs:{"entityType":_vm.entityType},model:{value:(_vm.selectedSuggestion),callback:function ($$v) {_vm.selectedSuggestion=$$v},expression:"selectedSuggestion"}})],1)]:[_c('FieldContainer',[_c('DataCreator',{attrs:{"fields":_vm.entityFields,"data":_vm.entityData},on:{"change":function (newData) {
+        { id: 'custom', label: 'Manuelt' } ]},model:{value:(_vm.mode),callback:function ($$v) {_vm.mode=$$v},expression:"mode"}})],1):_vm._e(),(_vm.mode === 'search')?[_c('FieldContainer',{attrs:{"label":("Søg efter " + (_vm.entityType.labels.singular.toLowerCase()))}},[_c('EntitySearchBar',{attrs:{"entityType":_vm.entityType},model:{value:(_vm.selectedSuggestion),callback:function ($$v) {_vm.selectedSuggestion=$$v},expression:"selectedSuggestion"}})],1)]:[_c('FieldContainer',[_c('DataCreator',{ref:"dataCreator",attrs:{"type":_vm.entityType,"data":_vm.entityData},on:{"change":function (newData) {
           _vm.entityData = newData
           _vm.updateModel()
         }}})],1)]],2)}
-var EntitySelectorvue_type_template_id_9f9c021e_staticRenderFns = []
+var EntitySelectorvue_type_template_id_4ec1c90c_staticRenderFns = []
 
 
-// CONCATENATED MODULE: ./src/components/EntitySelector.vue?vue&type=template&id=9f9c021e&
+// CONCATENATED MODULE: ./src/components/EntitySelector.vue?vue&type=template&id=4ec1c90c&
 
 // CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"00b53798-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/EditorFields.vue?vue&type=template&id=708d066c&
 var EditorFieldsvue_type_template_id_708d066c_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"lassox-diagram__EditorFields"},[_vm._t("default")],2)}
@@ -102781,18 +102781,21 @@ var EditorField_component = normalizeComponent(
 )
 
 /* harmony default export */ var components_EditorField = (EditorField_component.exports);
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"00b53798-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/DataCreator.vue?vue&type=template&id=57c6ef6e&
-var DataCreatorvue_type_template_id_57c6ef6e_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return (_vm.fields.length)?_c('EditorFields',_vm._l((_vm.fieldStates),function(state){return _c('EditorField',{key:state.field.fullId,attrs:{"id":state.field.fullId,"type":state.field.type,"title":state.field.title,"editable":state.field.editable,"value":state.value},on:{"change":state.onChange}})}),1):_vm._e()}
-var DataCreatorvue_type_template_id_57c6ef6e_staticRenderFns = []
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"00b53798-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/DataCreator.vue?vue&type=template&id=e43b10f0&
+var DataCreatorvue_type_template_id_e43b10f0_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return (_vm.shownFieldStates.length)?_c('EditorFields',_vm._l((_vm.shownFieldStates),function(state){return _c('EditorField',{key:state.field.fullId,attrs:{"id":state.field.fullId,"type":state.field.type,"title":state.field.title,"editable":state.field.editable,"formatter":state.field.formatter,"value":state.value,"errorMessage":state.errorMessage},on:{"change":state.onChange}})}),1):_vm._e()}
+var DataCreatorvue_type_template_id_e43b10f0_staticRenderFns = []
 
 
-// CONCATENATED MODULE: ./src/components/DataCreator.vue?vue&type=template&id=57c6ef6e&
+// CONCATENATED MODULE: ./src/components/DataCreator.vue?vue&type=template&id=e43b10f0&
 
 // EXTERNAL MODULE: ./node_modules/lodash.set/index.js
 var lodash_set = __webpack_require__("f4c4");
 var lodash_set_default = /*#__PURE__*/__webpack_require__.n(lodash_set);
 
 // CONCATENATED MODULE: ./node_modules/babel-loader/lib!./node_modules/ts-loader??ref--14-1!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/DataCreator.vue?vue&type=script&lang=ts&
+
+
+
 
 
 
@@ -102820,7 +102823,8 @@ var DataCreatorvue_type_script_lang_ts_DataCreator = /*#__PURE__*/function (_Vue
     get: function get() {
       var _this = this;
 
-      return external_commonjs_vue_commonjs2_vue_root_Vue_default.a.observable(this.fields.map(function (field) {
+      var type = this.type;
+      return external_commonjs_vue_commonjs2_vue_root_Vue_default.a.observable(type.fields.map(function (field) {
         var value = field.getValue(_this.data);
 
         if (!field.editable && field.formatter && field.type === 'text') {
@@ -102829,7 +102833,13 @@ var DataCreatorvue_type_script_lang_ts_DataCreator = /*#__PURE__*/function (_Vue
 
         var state = {
           field: field,
+
+          get show() {
+            return field[type instanceof diagram_EntityType ? 'isEntityLabel' : 'isRelationLabel'] || !!state.errorMessage;
+          },
+
           value: value,
+          errorMessage: '',
           onChange: function onChange(value) {
             state.value = value;
             if (field.dataKey) lodash_set_default()(_this.data, field.dataKey, value);
@@ -102840,15 +102850,49 @@ var DataCreatorvue_type_script_lang_ts_DataCreator = /*#__PURE__*/function (_Vue
         return state;
       }));
     }
+  }, {
+    key: "shownFieldStates",
+    get: function get() {
+      return external_commonjs_vue_commonjs2_vue_root_Vue_default.a.observable(this.fieldStates.filter(function (state) {
+        return state.show;
+      }));
+    }
+  }, {
+    key: "validate",
+    value: function validate(contextItem) {
+      var error = false;
+
+      var _iterator = _createForOfIteratorHelper(this.fieldStates),
+          _step;
+
+      try {
+        for (_iterator.s(); !(_step = _iterator.n()).done;) {
+          var _field$field$validato, _field$field$validato2, _field$field;
+
+          var field = _step.value;
+          field.errorMessage = '';
+          var result = (_field$field$validato = (_field$field$validato2 = (_field$field = field.field).validator) === null || _field$field$validato2 === void 0 ? void 0 : _field$field$validato2.call(_field$field, field.value, contextItem)) !== null && _field$field$validato !== void 0 ? _field$field$validato : true;
+          if (result === true) continue;
+          error = true;
+          field.errorMessage = result.error;
+        }
+      } catch (err) {
+        _iterator.e(err);
+      } finally {
+        _iterator.f();
+      }
+
+      return !error;
+    }
   }]);
 
   return DataCreator;
 }(external_commonjs_vue_commonjs2_vue_root_Vue_default.a);
 
 __decorate([Prop({
-  type: Array,
+  type: Object,
   required: true
-})], DataCreatorvue_type_script_lang_ts_DataCreator.prototype, "fields", void 0);
+})], DataCreatorvue_type_script_lang_ts_DataCreator.prototype, "type", void 0);
 
 __decorate([Model('change', {
   type: Object,
@@ -102876,8 +102920,8 @@ DataCreatorvue_type_script_lang_ts_DataCreator = __decorate([vue_class_component
 
 var DataCreator_component = normalizeComponent(
   components_DataCreatorvue_type_script_lang_ts_,
-  DataCreatorvue_type_template_id_57c6ef6e_render,
-  DataCreatorvue_type_template_id_57c6ef6e_staticRenderFns,
+  DataCreatorvue_type_template_id_e43b10f0_render,
+  DataCreatorvue_type_template_id_e43b10f0_staticRenderFns,
   false,
   null,
   null,
@@ -103330,7 +103374,7 @@ var EntitySearchBarvue_type_script_lang_ts_EntitySearchBar = /*#__PURE__*/functi
           inputText = this.inputText;
       if (!entityType || !inputText) return [];
       return this.diagram.search(entityType, inputText).slice(0, 10).map(function (entity) {
-        var _entityType$searchRes = entityType.searchResultBuilder(createContextItem(entity)),
+        var _entityType$searchRes = entityType.searchResultBuilder(diagram_createContextItem(entity)),
             text = _entityType$searchRes.text,
             supertext = _entityType$searchRes.supertext,
             subtext = _entityType$searchRes.subtext;
@@ -103685,7 +103729,6 @@ var EntitySearchBar_component = normalizeComponent(
 
 
 
-
 var EntitySelectorvue_type_script_lang_ts_EntitySelector = /*#__PURE__*/function (_Vue) {
   _inherits(EntitySelector, _Vue);
 
@@ -103733,13 +103776,10 @@ var EntitySelectorvue_type_script_lang_ts_EntitySelector = /*#__PURE__*/function
       });
     }
   }, {
-    key: "entityFields",
-    get: function get() {
-      var _this$entityType$fiel, _this$entityType2;
-
-      return (_this$entityType$fiel = (_this$entityType2 = this.entityType) === null || _this$entityType2 === void 0 ? void 0 : _this$entityType2.fields.filter(function (field) {
-        return field.isEntityLabel;
-      })) !== null && _this$entityType$fiel !== void 0 ? _this$entityType$fiel : [];
+    key: "validate",
+    value: function validate(contextItem) {
+      if (this.mode !== 'custom' || !this.dataCreator) return true;
+      return this.dataCreator.validate(contextItem);
     }
   }, {
     key: "updateModel",
@@ -103823,6 +103863,8 @@ var EntitySelectorvue_type_script_lang_ts_EntitySelector = /*#__PURE__*/function
 
 __decorate([Inject()], EntitySelectorvue_type_script_lang_ts_EntitySelector.prototype, "diagramVm", void 0);
 
+__decorate([Ref()], EntitySelectorvue_type_script_lang_ts_EntitySelector.prototype, "dataCreator", void 0);
+
 __decorate([Prop(Array)], EntitySelectorvue_type_script_lang_ts_EntitySelector.prototype, "entityTypes", void 0);
 
 EntitySelectorvue_type_script_lang_ts_EntitySelector = __decorate([vue_class_component_esm({
@@ -103849,8 +103891,8 @@ EntitySelectorvue_type_script_lang_ts_EntitySelector = __decorate([vue_class_com
 
 var EntitySelector_component = normalizeComponent(
   components_EntitySelectorvue_type_script_lang_ts_,
-  EntitySelectorvue_type_template_id_9f9c021e_render,
-  EntitySelectorvue_type_template_id_9f9c021e_staticRenderFns,
+  EntitySelectorvue_type_template_id_4ec1c90c_render,
+  EntitySelectorvue_type_template_id_4ec1c90c_staticRenderFns,
   false,
   null,
   null,
@@ -104033,12 +104075,38 @@ var AddEntityDialogvue_type_script_lang_ts_AddEntityDialog = /*#__PURE__*/functi
 
               case 31:
                 if (this.position) newEntity.position = this.position;
+
+                if (this.entitySelector.validate({
+                  isEntity: true,
+                  isRelation: false,
+                  type: newEntity.type,
+                  id: newEntity.id,
+                  data: newEntity.data || {},
+                  isParent: false,
+                  isChild: false,
+                  activeLayout: this.diagram.activeDiagram.settings.activeLayout,
+                  isMainEntity: false,
+                  connectedRelations: [],
+                  incomingRelations: [],
+                  outgoingRelations: [],
+                  fromEntity: null,
+                  toEntity: null,
+                  connectedEntities: []
+                })) {
+                  _context.next = 35;
+                  break;
+                }
+
+                this.isConfirming = false;
+                return _context.abrupt("return");
+
+              case 35:
                 this.diagram.activeDiagram.data.add({
                   entities: [newEntity]
                 });
                 this.close();
 
-              case 34:
+              case 37:
               case "end":
                 return _context.stop();
             }
@@ -104058,6 +104126,8 @@ var AddEntityDialogvue_type_script_lang_ts_AddEntityDialog = /*#__PURE__*/functi
 }(external_commonjs_vue_commonjs2_vue_root_Vue_default.a);
 
 __decorate([Inject()], AddEntityDialogvue_type_script_lang_ts_AddEntityDialog.prototype, "diagramVm", void 0);
+
+__decorate([Ref()], AddEntityDialogvue_type_script_lang_ts_AddEntityDialog.prototype, "entitySelector", void 0);
 
 __decorate([Prop({
   type: Object,
@@ -104085,8 +104155,8 @@ AddEntityDialogvue_type_script_lang_ts_AddEntityDialog = __decorate([vue_class_c
 
 var AddEntityDialog_component = normalizeComponent(
   components_AddEntityDialogvue_type_script_lang_ts_,
-  AddEntityDialogvue_type_template_id_898dfbac_render,
-  AddEntityDialogvue_type_template_id_898dfbac_staticRenderFns,
+  AddEntityDialogvue_type_template_id_4119e704_render,
+  AddEntityDialogvue_type_template_id_4119e704_staticRenderFns,
   false,
   null,
   null,
@@ -106083,18 +106153,18 @@ var GraphEdgePoints_component = normalizeComponent(
 )
 
 /* harmony default export */ var components_GraphEdgePoints = (GraphEdgePoints_component.exports);
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"00b53798-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/GraphContextMenu.vue?vue&type=template&id=21db9217&
-var GraphContextMenuvue_type_template_id_21db9217_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"lassox-diagram__GraphContextMenu"},[_c('div',{ref:"positionEl",staticClass:"lassox-diagram__GraphContextMenu-position",style:({
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"00b53798-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/GraphContextMenu.vue?vue&type=template&id=64822112&
+var GraphContextMenuvue_type_template_id_64822112_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"lassox-diagram__GraphContextMenu"},[_c('div',{ref:"positionEl",staticClass:"lassox-diagram__GraphContextMenu-position",style:({
       top: ((_vm.position.y) + "px"),
       left: ((_vm.position.x) + "px"),
     })}),(_vm.show)?_c('ContextMenu',{attrs:{"position":_vm.position,"actions":_vm.actions,"close":function () {
       _vm.show = false
       _vm.$parent.$el.focus()
     }}}):_vm._e()],1)}
-var GraphContextMenuvue_type_template_id_21db9217_staticRenderFns = []
+var GraphContextMenuvue_type_template_id_64822112_staticRenderFns = []
 
 
-// CONCATENATED MODULE: ./src/components/GraphContextMenu.vue?vue&type=template&id=21db9217&
+// CONCATENATED MODULE: ./src/components/GraphContextMenu.vue?vue&type=template&id=64822112&
 
 // CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"00b53798-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/ContextMenu.vue?vue&type=template&id=164b3cd3&
 var ContextMenuvue_type_template_id_164b3cd3_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"lassox-diagram__ContextMenu"},[_c('div',{ref:"positionEl",staticClass:"lassox-diagram__GraphContextMenu-position",style:({
@@ -106345,12 +106415,12 @@ var AddRelationDropdownMenuvue_type_template_id_6bf9218d_staticRenderFns = []
 
 // CONCATENATED MODULE: ./src/components/AddRelationDropdownMenu.vue?vue&type=template&id=6bf9218d&
 
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"00b53798-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/AddRelationDialog.vue?vue&type=template&id=6c7c2b44&
-var AddRelationDialogvue_type_template_id_6c7c2b44_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('Dialog',{staticClass:"lassox-diagram__AddRelationDialog",attrs:{"dismissable":true,"title":("Tilføj " + (_vm.relationTypeLabel.toLowerCase())),"size":"2x","onClose":_vm.dismiss},scopedSlots:_vm._u([{key:"content",fn:function(){return [(_vm.relationFields.length)?[_c('DataCreator',{attrs:{"fields":_vm.relationFields},model:{value:(_vm.relationData),callback:function ($$v) {_vm.relationData=$$v},expression:"relationData"}}),_c('DropdownMenuDivider',{staticStyle:{"margin":"24px 0"}})]:_vm._e(),_c('EntitySelector',{attrs:{"entityTypes":_vm.supportedEntityTypes},on:{"change":function (model) { return _vm.entitySelectorModel = model; }}})]},proxy:true},{key:"actions",fn:function(){return [_c('ButtonGroup',{attrs:{"align":"right"}},[_c('Button',{attrs:{"label":"Fortryd"},on:{"click":_vm.dismiss}}),_c('Button',{attrs:{"label":"Tilføj","type":"primary","disabled":!_vm.canConfirm},on:{"click":_vm.confirm}})],1)]},proxy:true}])})}
-var AddRelationDialogvue_type_template_id_6c7c2b44_staticRenderFns = []
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"00b53798-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/AddRelationDialog.vue?vue&type=template&id=244a2d6c&
+var AddRelationDialogvue_type_template_id_244a2d6c_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('Dialog',{staticClass:"lassox-diagram__AddRelationDialog",attrs:{"dismissable":true,"title":("Tilføj " + (_vm.relationTypeLabel.toLowerCase())),"size":"2x","onClose":_vm.dismiss},scopedSlots:_vm._u([{key:"content",fn:function(){return [_c('DataCreator',{ref:"relationDataCreator",attrs:{"type":_vm.relationType},model:{value:(_vm.relationData),callback:function ($$v) {_vm.relationData=$$v},expression:"relationData"}}),_c('DropdownMenuDivider',{staticStyle:{"margin":"24px 0"}}),_c('EntitySelector',{ref:"entitySelector",attrs:{"entityTypes":_vm.supportedEntityTypes},on:{"change":function (model) { return _vm.entitySelectorModel = model; }}})]},proxy:true},{key:"actions",fn:function(){return [_c('ButtonGroup',{attrs:{"align":"right"}},[_c('Button',{attrs:{"label":"Fortryd"},on:{"click":_vm.dismiss}}),_c('Button',{attrs:{"label":"Tilføj","type":"primary","disabled":!_vm.canConfirm},on:{"click":_vm.confirm}})],1)]},proxy:true}])})}
+var AddRelationDialogvue_type_template_id_244a2d6c_staticRenderFns = []
 
 
-// CONCATENATED MODULE: ./src/components/AddRelationDialog.vue?vue&type=template&id=6c7c2b44&
+// CONCATENATED MODULE: ./src/components/AddRelationDialog.vue?vue&type=template&id=244a2d6c&
 
 // CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"00b53798-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/EditorFieldGroups.vue?vue&type=template&id=545a4e7c&
 var EditorFieldGroupsvue_type_template_id_545a4e7c_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"lassox-diagram__EditorFieldGroups"},[_vm._t("default")],2)}
@@ -106509,7 +106579,6 @@ var EditorFieldGroup_component = normalizeComponent(
 
 
 
-
 var AddRelationDialogvue_type_script_lang_ts_AddRelationDialog = /*#__PURE__*/function (_Vue) {
   _inherits(AddRelationDialog, _Vue);
 
@@ -106539,13 +106608,6 @@ var AddRelationDialogvue_type_script_lang_ts_AddRelationDialog = /*#__PURE__*/fu
 
       var labels = this.relationType.labels;
       return (_ref = this.asParent ? labels.singularFrom : labels.singularTo) !== null && _ref !== void 0 ? _ref : labels.singular;
-    }
-  }, {
-    key: "relationFields",
-    get: function get() {
-      return this.relationType.fields.filter(function (field) {
-        return field.isRelationLabel;
-      });
     }
   }, {
     key: "supportedEntityTypes",
@@ -106592,10 +106654,10 @@ var AddRelationDialogvue_type_script_lang_ts_AddRelationDialog = /*#__PURE__*/fu
     key: "confirm",
     value: function () {
       var _confirm = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee() {
-        var _this$onConfirm;
+        var _this2 = this,
+            _this$onConfirm;
 
-        var canConfirm, entitySelectorModel, generateId, generateData, entityId, newEntity, suggestion, _yield$this$diagram$m, entity, newRelation;
-
+        var canConfirm, entitySelectorModel, generateId, createEntityDefinitionContextItem, newEntity, entity1Context, entity2Context, suggestion, id, responseEntity, entityContexts, fromEntityContext, toEntityContext, newRelation, relationContext, relationValid, entityValid;
         return regeneratorRuntime.wrap(function _callee$(_context) {
           while (1) {
             switch (_context.prev = _context.next) {
@@ -106625,27 +106687,28 @@ var AddRelationDialogvue_type_script_lang_ts_AddRelationDialog = /*#__PURE__*/fu
                   return id;
                 };
 
-                generateData = function generateData(fields) {
-                  var data = {};
-
-                  var _iterator2 = _createForOfIteratorHelper(fields),
-                      _step2;
-
-                  try {
-                    for (_iterator2.s(); !(_step2 = _iterator2.n()).done;) {
-                      var field = _step2.value;
-                      if (field.dataKey) lodash_set_default()(data, field.dataKey, field.value);
-                    }
-                  } catch (err) {
-                    _iterator2.e(err);
-                  } finally {
-                    _iterator2.f();
-                  }
-
-                  return data;
+                createEntityDefinitionContextItem = function createEntityDefinitionContextItem(definition) {
+                  return {
+                    isEntity: true,
+                    isRelation: false,
+                    type: definition.type,
+                    id: definition.id,
+                    data: definition.data || {},
+                    isParent: false,
+                    isChild: false,
+                    activeLayout: _this2.diagram.activeDiagram.settings.activeLayout,
+                    isMainEntity: false,
+                    connectedRelations: [],
+                    incomingRelations: [],
+                    outgoingRelations: [],
+                    fromEntity: null,
+                    toEntity: null,
+                    connectedEntities: []
+                  };
                 };
 
                 newEntity = null;
+                entity1Context = diagram_createContextItem(this.entity);
 
                 if (!(entitySelectorModel.mode === 'search')) {
                   _context.next = 28;
@@ -106653,78 +106716,148 @@ var AddRelationDialogvue_type_script_lang_ts_AddRelationDialog = /*#__PURE__*/fu
                 }
 
                 suggestion = entitySelectorModel.selectedSuggestion;
-                entityId = suggestion.id;
+                id = suggestion.id;
 
+                if (!suggestion.entity) {
+                  _context.next = 15;
+                  break;
+                }
+
+                entity2Context = diagram_createContextItem(suggestion.entity);
+                _context.next = 26;
+                break;
+
+              case 15:
                 if (!suggestion.entityDefinition) {
-                  _context.next = 26;
+                  _context.next = 25;
                   break;
                 }
 
                 newEntity = lodash_clonedeep_default()(suggestion.entityDefinition);
 
                 if (!this.diagram.methods.getEntityData) {
-                  _context.next = 26;
+                  _context.next = 22;
                   break;
                 }
 
-                _context.next = 15;
+                _context.next = 20;
                 return this.diagram.methods.getEntityData({
-                  ids: [suggestion.id],
+                  ids: [id],
                   relationTypes: [],
                   parents: 0,
                   children: 0
+                }).then(function (response) {
+                  var _response$entities;
+
+                  return (_response$entities = response.entities) === null || _response$entities === void 0 ? void 0 : _response$entities.find(function (e) {
+                    return e.id === id;
+                  });
                 });
 
-              case 15:
-                _context.t1 = _yield$this$diagram$m = _context.sent.entities;
-                _context.t0 = _context.t1 === null;
+              case 20:
+                responseEntity = _context.sent;
+                if (responseEntity) newEntity = lodash_merge_default()(newEntity, responseEntity);
 
-                if (_context.t0) {
-                  _context.next = 19;
-                  break;
-                }
-
-                _context.t0 = _yield$this$diagram$m === void 0;
-
-              case 19:
-                if (!_context.t0) {
-                  _context.next = 23;
-                  break;
-                }
-
-                _context.t2 = void 0;
-                _context.next = 24;
+              case 22:
+                entity2Context = createEntityDefinitionContextItem(newEntity);
+                _context.next = 26;
                 break;
 
-              case 23:
-                _context.t2 = _yield$this$diagram$m.find(function (e) {
-                  return e.id === suggestion.id;
-                });
-
-              case 24:
-                entity = _context.t2;
-                if (entity) newEntity = lodash_merge_default()(newEntity, entity);
+              case 25:
+                throw Error('No entity or entityDefinition in entitySelectorModel.selectedSuggestion');
 
               case 26:
                 _context.next = 30;
                 break;
 
               case 28:
-                entityId = generateId('CUSTOM-ENTITY', this.diagram.activeDiagram.data.entitiesMap);
                 newEntity = {
                   type: entitySelectorModel.entityType.id,
-                  id: entityId,
+                  id: generateId('CUSTOM-ENTITY', this.diagram.activeDiagram.data.entitiesMap),
                   data: entitySelectorModel.entityData
                 };
+                entity2Context = createEntityDefinitionContextItem(newEntity);
 
               case 30:
+                entityContexts = [entity1Context, entity2Context];
+                if (this.asParent) entityContexts.reverse();
+                fromEntityContext = entityContexts[0], toEntityContext = entityContexts[1];
                 newRelation = {
                   type: this.relationType.id,
                   id: generateId('CUSTOM-RELATION', this.diagram.activeDiagram.data.relationsMap),
                   data: this.relationData,
-                  from: this.asParent ? entityId : this.entity.id,
-                  to: this.asParent ? this.entity.id : entityId
+                  from: fromEntityContext.id,
+                  to: toEntityContext.id
                 };
+                relationContext = {
+                  isEntity: false,
+                  isRelation: true,
+                  type: newRelation.type,
+                  id: newRelation.id,
+                  data: newRelation.data || {},
+                  isParent: toEntityContext.isMainEntity || toEntityContext.isParent,
+                  isChild: fromEntityContext.isMainEntity || fromEntityContext.isChild,
+                  activeLayout: this.diagram.activeDiagram.settings.activeLayout,
+                  isMainEntity: false,
+                  connectedRelations: [],
+                  incomingRelations: [],
+                  outgoingRelations: [],
+                  fromEntity: fromEntityContext,
+                  toEntity: toEntityContext,
+                  connectedEntities: [fromEntityContext, toEntityContext]
+                };
+
+                if (relationContext.isParent) {
+                  fromEntityContext.isParent = true;
+                }
+
+                fromEntityContext.connectedRelations.push(relationContext);
+                fromEntityContext.outgoingRelations.push(relationContext);
+
+                if (relationContext.isChild) {
+                  toEntityContext.isChild = true;
+                }
+
+                toEntityContext.connectedRelations.push(relationContext);
+                toEntityContext.incomingRelations.push(relationContext);
+                console.log('AddRelationDialog - relation context:', relationContext);
+
+                if (this.relationDataCreator) {
+                  _context.next = 44;
+                  break;
+                }
+
+                throw Error('this.relationDataCreator not found');
+
+              case 44:
+                relationValid = this.relationDataCreator.validate(relationContext);
+                entityValid = true;
+
+                if (!newEntity) {
+                  _context.next = 50;
+                  break;
+                }
+
+                if (this.entitySelector) {
+                  _context.next = 49;
+                  break;
+                }
+
+                throw Error('this.entitySelector not found');
+
+              case 49:
+                entityValid = this.entitySelector.validate(entity2Context);
+
+              case 50:
+                if (!(!relationValid || !entityValid)) {
+                  _context.next = 53;
+                  break;
+                }
+
+                this.isConfirming = false;
+                return _context.abrupt("return");
+
+              case 53:
                 this.diagram.activeDiagram.data.add({
                   entities: newEntity ? [newEntity] : undefined,
                   relations: [newRelation]
@@ -106732,7 +106865,7 @@ var AddRelationDialogvue_type_script_lang_ts_AddRelationDialog = /*#__PURE__*/fu
                 this.close();
                 (_this$onConfirm = this.onConfirm) === null || _this$onConfirm === void 0 ? void 0 : _this$onConfirm.call(this);
 
-              case 34:
+              case 56:
               case "end":
                 return _context.stop();
             }
@@ -106760,6 +106893,10 @@ var AddRelationDialogvue_type_script_lang_ts_AddRelationDialog = /*#__PURE__*/fu
 }(external_commonjs_vue_commonjs2_vue_root_Vue_default.a);
 
 __decorate([Inject()], AddRelationDialogvue_type_script_lang_ts_AddRelationDialog.prototype, "diagramVm", void 0);
+
+__decorate([Ref()], AddRelationDialogvue_type_script_lang_ts_AddRelationDialog.prototype, "relationDataCreator", void 0);
+
+__decorate([Ref()], AddRelationDialogvue_type_script_lang_ts_AddRelationDialog.prototype, "entitySelector", void 0);
 
 __decorate([Prop({
   type: Object,
@@ -106811,8 +106948,8 @@ AddRelationDialogvue_type_script_lang_ts_AddRelationDialog = __decorate([vue_cla
 
 var AddRelationDialog_component = normalizeComponent(
   components_AddRelationDialogvue_type_script_lang_ts_,
-  AddRelationDialogvue_type_template_id_6c7c2b44_render,
-  AddRelationDialogvue_type_template_id_6c7c2b44_staticRenderFns,
+  AddRelationDialogvue_type_template_id_244a2d6c_render,
+  AddRelationDialogvue_type_template_id_244a2d6c_staticRenderFns,
   false,
   null,
   null,
@@ -107099,7 +107236,6 @@ var AddRelationDropdownMenu_component = normalizeComponent(
 
 
 
-
 var GraphContextMenuvue_type_script_lang_ts_GraphContextMenu = /*#__PURE__*/function (_Vue) {
   _inherits(GraphContextMenu, _Vue);
 
@@ -107158,9 +107294,7 @@ var GraphContextMenuvue_type_script_lang_ts_GraphContextMenu = /*#__PURE__*/func
     get: function get() {
       var _this2 = this;
 
-      var selectedItems = this.selectedItems.map(function (item) {
-        return createContextItem(item);
-      });
+      var selectedItems = diagram_createContextItems(this.selectedItems);
       var selectedEntities = [];
       var selectedRelations = [];
 
@@ -107303,8 +107437,8 @@ var GraphContextMenuvue_type_style_index_0_lang_scss_ = __webpack_require__("66e
 
 var GraphContextMenu_component = normalizeComponent(
   components_GraphContextMenuvue_type_script_lang_ts_,
-  GraphContextMenuvue_type_template_id_21db9217_render,
-  GraphContextMenuvue_type_template_id_21db9217_staticRenderFns,
+  GraphContextMenuvue_type_template_id_64822112_render,
+  GraphContextMenuvue_type_template_id_64822112_staticRenderFns,
   false,
   null,
   null,
@@ -108565,7 +108699,7 @@ var Graphvue_type_script_lang_ts_Graph = /*#__PURE__*/function (_Vue) {
         elements.forEach(function (element) {
           // Skip elements that are already hidden
           if (element.data('hiddenByFilter')) return;
-          var context = createContextItem(element.data(element.isNode() ? 'entity' : 'relation')); // Hide if at least one filter returns false
+          var context = diagram_createContextItem(element.data(element.isNode() ? 'entity' : 'relation')); // Hide if at least one filter returns false
 
           if (filters.some(function (filter) {
             return !filter.filter(context);
@@ -109070,12 +109204,12 @@ var Customizer_component = normalizeComponent(
 )
 
 /* harmony default export */ var components_Customizer = (Customizer_component.exports);
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"00b53798-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/Editor.vue?vue&type=template&id=d1958d5a&
-var Editorvue_type_template_id_d1958d5a_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return (_vm.object)?_c('div',{staticClass:"lassox-diagram__Editor"},[_c('header',{staticClass:"lassox-diagram__Editor_header"},[_c('div',{staticClass:"lassox-diagram__Editor_header-title-bar"},[_c('div',{staticClass:"lassox-diagram__Editor_header-title-bar-title",domProps:{"textContent":_vm._s(("Rediger " + _vm.label))}}),_c('IconButton',{attrs:{"icon":"close","size":"normal"},on:{"click":function () { return _vm.object = null; }}})],1),(_vm.description)?_c('div',{staticClass:"lassox-diagram__Editor_header-description",domProps:{"textContent":_vm._s(_vm.description)}}):_vm._e(),_c('div',{staticClass:"lassox-diagram__Editor_header-actions"},[_c('ButtonGroup',[(_vm.object.isEntity)?_c('Button',{ref:"addDropdownButton",attrs:{"label":"Tilføj","trailingIcon":_vm.showAddDropdownMenu ? 'expand_less' : 'expand_more',"disabled":!_vm.object.type.supportedRelations.size},on:{"click":function () { return _vm.showAddDropdownMenu = !_vm.showAddDropdownMenu; }}}):_vm._e(),_c('Button',{attrs:{"label":"Fjern","disabled":_vm.object.isEntity && _vm.object.isMainEntity},on:{"click":_vm.remove}})],1),(_vm.object.isEntity && _vm.object.type.supportedRelations.size)?_c('AddRelationDropdownMenu',{attrs:{"entity":_vm.object,"opener":_vm.showAddDropdownMenu ? _vm.$refs.addDropdownButton.$el : null,"close":function () { return _vm.showAddDropdownMenu = false; }}}):_vm._e()],1)]),_c('div',{staticClass:"lassox-diagram__Editor_body-wrapper"},[_c('div',{staticClass:"lassox-diagram__Editor_body"},[_c('EditorFieldGroups',_vm._l((_vm.fieldGroups),function(fieldGroup){return _c('EditorFieldGroup',{key:fieldGroup.id,attrs:{"title":fieldGroup.title}},_vm._l((fieldGroup.fields),function(field){return _c('EditorField',{key:field.id,attrs:{"id":field.id,"type":field.type,"title":field.title,"editable":field.editable,"formatter":field.formatter,"options":field.options,"initialValue":field.initialValue,"initialValueLabel":field.initialValueLabel,"resetValue":field.resetValue,"errorMessage":field.errorMessage},model:{value:(field.value),callback:function ($$v) {_vm.$set(field, "value", $$v)},expression:"field.value"}})}),1)}),1)],1)]),_c('footer',{staticClass:"lassox-diagram__Editor_footer"},[_c('ButtonGroup',{attrs:{"align":"right"}},[_c('Button',{attrs:{"label":"Luk"},on:{"click":function () { return _vm.object = null; }}}),_c('Button',{attrs:{"type":"primary","label":"Gem ændringer","disabled":!_vm.hasChanges},on:{"click":_vm.saveChanges}})],1)],1)]):_vm._e()}
-var Editorvue_type_template_id_d1958d5a_staticRenderFns = []
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"00b53798-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/Editor.vue?vue&type=template&id=45c10a02&
+var Editorvue_type_template_id_45c10a02_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return (_vm.object)?_c('div',{staticClass:"lassox-diagram__Editor"},[_c('header',{staticClass:"lassox-diagram__Editor_header"},[_c('div',{staticClass:"lassox-diagram__Editor_header-title-bar"},[_c('div',{staticClass:"lassox-diagram__Editor_header-title-bar-title",domProps:{"textContent":_vm._s(("Rediger " + _vm.label))}}),_c('IconButton',{attrs:{"icon":"close","size":"normal"},on:{"click":function () { return _vm.object = null; }}})],1),(_vm.description)?_c('div',{staticClass:"lassox-diagram__Editor_header-description",domProps:{"textContent":_vm._s(_vm.description)}}):_vm._e(),_c('div',{staticClass:"lassox-diagram__Editor_header-actions"},[_c('ButtonGroup',[(_vm.object.isEntity)?_c('Button',{ref:"addDropdownButton",attrs:{"label":"Tilføj","trailingIcon":_vm.showAddDropdownMenu ? 'expand_less' : 'expand_more',"disabled":!_vm.object.type.supportedRelations.size},on:{"click":function () { return _vm.showAddDropdownMenu = !_vm.showAddDropdownMenu; }}}):_vm._e(),_c('Button',{attrs:{"label":"Fjern","disabled":_vm.object.isEntity && _vm.object.isMainEntity},on:{"click":_vm.remove}})],1),(_vm.object.isEntity && _vm.object.type.supportedRelations.size)?_c('AddRelationDropdownMenu',{attrs:{"entity":_vm.object,"opener":_vm.showAddDropdownMenu ? _vm.$refs.addDropdownButton.$el : null,"close":function () { return _vm.showAddDropdownMenu = false; }}}):_vm._e()],1)]),_c('div',{staticClass:"lassox-diagram__Editor_body-wrapper"},[_c('div',{staticClass:"lassox-diagram__Editor_body"},[_c('EditorFieldGroups',_vm._l((_vm.visibleFieldGroups),function(fieldGroup){return _c('EditorFieldGroup',{key:fieldGroup.id,attrs:{"title":fieldGroup.title}},_vm._l((fieldGroup.fields),function(field){return _c('EditorField',{key:field.id,attrs:{"id":field.id,"type":field.type,"title":field.title,"editable":field.editable,"formatter":field.formatter,"options":field.options,"initialValue":field.initialValue,"initialValueLabel":field.initialValueLabel,"resetValue":field.resetValue,"errorMessage":field.errorMessage},model:{value:(field.value),callback:function ($$v) {_vm.$set(field, "value", $$v)},expression:"field.value"}})}),1)}),1)],1)]),_c('footer',{staticClass:"lassox-diagram__Editor_footer"},[_c('ButtonGroup',{attrs:{"align":"right"}},[_c('Button',{attrs:{"label":"Luk"},on:{"click":function () { return _vm.object = null; }}}),_c('Button',{attrs:{"type":"primary","label":"Gem ændringer","disabled":!_vm.hasChanges},on:{"click":_vm.saveChanges}})],1)],1)]):_vm._e()}
+var Editorvue_type_template_id_45c10a02_staticRenderFns = []
 
 
-// CONCATENATED MODULE: ./src/components/Editor.vue?vue&type=template&id=d1958d5a&
+// CONCATENATED MODULE: ./src/components/Editor.vue?vue&type=template&id=45c10a02&
 
 // CONCATENATED MODULE: ./node_modules/babel-loader/lib!./node_modules/ts-loader??ref--14-1!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/Editor.vue?vue&type=script&lang=ts&
 
@@ -109141,6 +109275,32 @@ var Editorvue_type_script_lang_ts_Editor = /*#__PURE__*/function (_Vue) {
       return (_this$object$type$lab4 = (_this$object$type$lab5 = this.object.type.labels).editorDescription) === null || _this$object$type$lab4 === void 0 ? void 0 : _this$object$type$lab4.call(_this$object$type$lab5, this.object.data);
     }
   }, {
+    key: "visibleFieldGroups",
+    get: function get() {
+      var visibleFieldGroups = [];
+
+      var _iterator = _createForOfIteratorHelper(this.fieldGroups),
+          _step;
+
+      try {
+        for (_iterator.s(); !(_step = _iterator.n()).done;) {
+          var fieldGroup = _step.value;
+          var visibleFields = fieldGroup.fields.filter(function (field) {
+            return field.show;
+          });
+          if (visibleFields.length) visibleFieldGroups.push(_objectSpread2(_objectSpread2({}, fieldGroup), {}, {
+            fields: visibleFields
+          }));
+        }
+      } catch (err) {
+        _iterator.e(err);
+      } finally {
+        _iterator.f();
+      }
+
+      return visibleFieldGroups;
+    }
+  }, {
     key: "changedFieldGroups",
     get: function get() {
       return this.fieldGroups.map(function (fieldGroup) {
@@ -109193,24 +109353,24 @@ var Editorvue_type_script_lang_ts_Editor = /*#__PURE__*/function (_Vue) {
     value: function saveChanges() {
       if (!this.object) return;
       var id = this.object.id;
-      var contextItem = createContextItem(this.object);
+      var contextItem = diagram_createContextItem(this.object);
       contextItem.data = lodash_clonedeep_default()(contextItem.data);
       var newData = {};
       var newStyle = {};
 
-      var _iterator = _createForOfIteratorHelper(this.changedFieldGroups),
-          _step;
+      var _iterator2 = _createForOfIteratorHelper(this.changedFieldGroups),
+          _step2;
 
       try {
-        for (_iterator.s(); !(_step = _iterator.n()).done;) {
-          var fieldGroup = _step.value;
+        for (_iterator2.s(); !(_step2 = _iterator2.n()).done;) {
+          var fieldGroup = _step2.value;
 
-          var _iterator3 = _createForOfIteratorHelper(fieldGroup.fields),
-              _step3;
+          var _iterator4 = _createForOfIteratorHelper(fieldGroup.fields),
+              _step4;
 
           try {
-            for (_iterator3.s(); !(_step3 = _iterator3.n()).done;) {
-              var field = _step3.value;
+            for (_iterator4.s(); !(_step4 = _iterator4.n()).done;) {
+              var field = _step4.value;
               field.errorMessage = '';
 
               if (field.dataKey) {
@@ -109222,40 +109382,6 @@ var Editorvue_type_script_lang_ts_Editor = /*#__PURE__*/function (_Vue) {
               }
             }
           } catch (err) {
-            _iterator3.e(err);
-          } finally {
-            _iterator3.f();
-          }
-        }
-      } catch (err) {
-        _iterator.e(err);
-      } finally {
-        _iterator.f();
-      }
-
-      var error = false;
-
-      var _iterator2 = _createForOfIteratorHelper(this.fieldGroups),
-          _step2;
-
-      try {
-        for (_iterator2.s(); !(_step2 = _iterator2.n()).done;) {
-          var _fieldGroup = _step2.value;
-
-          var _iterator4 = _createForOfIteratorHelper(_fieldGroup.fields),
-              _step4;
-
-          try {
-            for (_iterator4.s(); !(_step4 = _iterator4.n()).done;) {
-              var _field$validator, _field$validator2;
-
-              var _field = _step4.value;
-              var result = (_field$validator = (_field$validator2 = _field.validator) === null || _field$validator2 === void 0 ? void 0 : _field$validator2.call(_field, _field.value, contextItem)) !== null && _field$validator !== void 0 ? _field$validator : true;
-              if (result === true) continue;
-              error = true;
-              _field.errorMessage = result === false ? 'Ugyldig værdi' : result.error;
-            }
-          } catch (err) {
             _iterator4.e(err);
           } finally {
             _iterator4.f();
@@ -109265,6 +109391,40 @@ var Editorvue_type_script_lang_ts_Editor = /*#__PURE__*/function (_Vue) {
         _iterator2.e(err);
       } finally {
         _iterator2.f();
+      }
+
+      var error = false;
+
+      var _iterator3 = _createForOfIteratorHelper(this.fieldGroups),
+          _step3;
+
+      try {
+        for (_iterator3.s(); !(_step3 = _iterator3.n()).done;) {
+          var _fieldGroup = _step3.value;
+
+          var _iterator5 = _createForOfIteratorHelper(_fieldGroup.fields),
+              _step5;
+
+          try {
+            for (_iterator5.s(); !(_step5 = _iterator5.n()).done;) {
+              var _field$validator, _field$validator2;
+
+              var _field = _step5.value;
+              var result = (_field$validator = (_field$validator2 = _field.validator) === null || _field$validator2 === void 0 ? void 0 : _field$validator2.call(_field, _field.value, contextItem)) !== null && _field$validator !== void 0 ? _field$validator : true;
+              if (result === true) continue;
+              error = true;
+              _field.errorMessage = result.error;
+            }
+          } catch (err) {
+            _iterator5.e(err);
+          } finally {
+            _iterator5.f();
+          }
+        }
+      } catch (err) {
+        _iterator3.e(err);
+      } finally {
+        _iterator3.f();
       }
 
       if (error) return;
@@ -109292,6 +109452,8 @@ var Editorvue_type_script_lang_ts_Editor = /*#__PURE__*/function (_Vue) {
   }, {
     key: "onObjectChanged",
     value: function onObjectChanged(object) {
+      var _this3 = this;
+
       if (!object) return;
 
       var createField = function createField(options) {
@@ -109309,7 +109471,8 @@ var Editorvue_type_script_lang_ts_Editor = /*#__PURE__*/function (_Vue) {
           value: options.value,
           resetValue: options.resetValue,
           validator: options.validator,
-          errorMessage: ''
+          errorMessage: '',
+          show: true
         };
       };
 
@@ -109357,40 +109520,41 @@ var Editorvue_type_script_lang_ts_Editor = /*#__PURE__*/function (_Vue) {
 
       var fieldGroups = [];
 
-      var _iterator5 = _createForOfIteratorHelper(object.fieldGroups),
-          _step5;
+      var _iterator6 = _createForOfIteratorHelper(object.fieldGroups),
+          _step6;
 
       try {
-        for (_iterator5.s(); !(_step5 = _iterator5.n()).done;) {
-          var _fieldGroup2 = _step5.value;
+        for (_iterator6.s(); !(_step6 = _iterator6.n()).done;) {
+          var _fieldGroup2 = _step6.value;
           var fields = [];
 
-          var _iterator7 = _createForOfIteratorHelper(_fieldGroup2.fields),
-              _step7;
+          var _iterator8 = _createForOfIteratorHelper(_fieldGroup2.fields),
+              _step8;
 
           try {
-            for (_iterator7.s(); !(_step7 = _iterator7.n()).done;) {
-              var _field3 = _step7.value;
-              if (!_field3.active && !this.diagram.showInactiveEditorFields) continue;
+            var _loop = function _loop() {
+              var field = _step8.value;
+              var showInactiveEditorFields = _this3.diagram.showInactiveEditorFields;
               var baseField = {
-                id: _field3.fullId,
-                title: _field3.title,
-                dataKey: _field3.dataKey,
-                editable: _field3.editable,
-                formatter: _field3.formatter,
-                value: _field3.getValue(object.data),
-                initialValue: _field3.getValue(object.initialState.data),
-                validator: _field3.validator
+                id: field.fullId,
+                title: field.title,
+                dataKey: field.dataKey,
+                editable: field.editable,
+                formatter: field.formatter,
+                value: field.getValue(object.data),
+                initialValue: field.getValue(object.initialState.data),
+                validator: field.validator,
+                show: true
               };
 
-              if (!_field3.editable && _field3.formatter && _field3.type === 'text') {
-                baseField.value = _field3.formatter(baseField.value);
-                baseField.initialValue = _field3.formatter(baseField.initialValue);
+              if (!field.editable && field.formatter && field.type === 'text') {
+                baseField.value = field.formatter(baseField.value);
+                baseField.initialValue = field.formatter(baseField.initialValue);
               }
 
               var newField = void 0;
 
-              switch (_field3.type) {
+              switch (field.type) {
                 case 'text':
                   {
                     var _baseField$value, _baseField$initialVal;
@@ -109410,12 +109574,22 @@ var Editorvue_type_script_lang_ts_Editor = /*#__PURE__*/function (_Vue) {
                   }
               }
 
+              newField = _objectSpread2(_objectSpread2({}, newField), {}, {
+                get show() {
+                  return field.active || !!newField.errorMessage || showInactiveEditorFields;
+                }
+
+              });
               fields.push(newField);
+            };
+
+            for (_iterator8.s(); !(_step8 = _iterator8.n()).done;) {
+              _loop();
             }
           } catch (err) {
-            _iterator7.e(err);
+            _iterator8.e(err);
           } finally {
-            _iterator7.f();
+            _iterator8.f();
           }
 
           if (!fields.length) continue;
@@ -109426,9 +109600,9 @@ var Editorvue_type_script_lang_ts_Editor = /*#__PURE__*/function (_Vue) {
           });
         }
       } catch (err) {
-        _iterator5.e(err);
+        _iterator6.e(err);
       } finally {
-        _iterator5.f();
+        _iterator6.f();
       }
 
       function getStyleValues(object, prop) {
@@ -109519,18 +109693,18 @@ var Editorvue_type_script_lang_ts_Editor = /*#__PURE__*/function (_Vue) {
       for (var _i2 = 0, _fieldGroups = fieldGroups; _i2 < _fieldGroups.length; _i2++) {
         var fieldGroup = _fieldGroups[_i2];
 
-        var _iterator6 = _createForOfIteratorHelper(fieldGroup.fields),
-            _step6;
+        var _iterator7 = _createForOfIteratorHelper(fieldGroup.fields),
+            _step7;
 
         try {
-          for (_iterator6.s(); !(_step6 = _iterator6.n()).done;) {
-            var _field2 = _step6.value;
+          for (_iterator7.s(); !(_step7 = _iterator7.n()).done;) {
+            var _field2 = _step7.value;
             _field2.valueBeforeChanges = _field2.value;
           }
         } catch (err) {
-          _iterator6.e(err);
+          _iterator7.e(err);
         } finally {
-          _iterator6.f();
+          _iterator7.f();
         }
       }
 
@@ -109584,8 +109758,8 @@ var Editorvue_type_style_index_0_lang_scss_ = __webpack_require__("58d3");
 
 var Editor_component = normalizeComponent(
   components_Editorvue_type_script_lang_ts_,
-  Editorvue_type_template_id_d1958d5a_render,
-  Editorvue_type_template_id_d1958d5a_staticRenderFns,
+  Editorvue_type_template_id_45c10a02_render,
+  Editorvue_type_template_id_45c10a02_staticRenderFns,
   false,
   null,
   null,
@@ -109668,18 +109842,18 @@ var GraphLegend_component = normalizeComponent(
 )
 
 /* harmony default export */ var components_GraphLegend = (GraphLegend_component.exports);
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"00b53798-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/GraphPrint.vue?vue&type=template&id=aada846c&
-var GraphPrintvue_type_template_id_aada846c_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"lassox-diagram__GraphPrint",style:({
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"00b53798-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/GraphPrint.vue?vue&type=template&id=5f15128f&
+var GraphPrintvue_type_template_id_5f15128f_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"lassox-diagram__GraphPrint",style:({
     width: ((_vm.contentSize.width) + "mm"),
     height: ((_vm.contentSize.height) + "mm"),
   })},[(_vm.printing)?_c('div',{ref:"printContentEl",staticClass:"lassox-diagram__GraphPrint-print-content",style:({
       width: ((_vm.contentSize.width) + "mm"),
       height: ((_vm.contentSize.height) + "mm"),
     })},[_c('div',{staticClass:"lassox-diagram__GraphPrint-print-content-title",domProps:{"textContent":_vm._s(_vm.title)}}),_c('Graph',{attrs:{"printMode":""},on:{"readyToPrint":_vm.onReadyToPrint}}),_c('GraphLegend')],1):_vm._e()])}
-var GraphPrintvue_type_template_id_aada846c_staticRenderFns = []
+var GraphPrintvue_type_template_id_5f15128f_staticRenderFns = []
 
 
-// CONCATENATED MODULE: ./src/components/GraphPrint.vue?vue&type=template&id=aada846c&
+// CONCATENATED MODULE: ./src/components/GraphPrint.vue?vue&type=template&id=5f15128f&
 
 // EXTERNAL MODULE: ./node_modules/core-js/modules/es.string.pad-start.js
 var es_string_pad_start = __webpack_require__("4d90");
@@ -109847,7 +110021,7 @@ var GraphPrintvue_type_script_lang_ts_GraphPrint = /*#__PURE__*/function (_Vue) 
               case 8:
                 date = new Date();
                 context = {
-                  mainEntity: createContextItem(data.mainEntity),
+                  mainEntity: diagram_createContextItem(data.mainEntity),
                   hasDataChanges: [].concat(toConsumableArray_toConsumableArray(data.initialData.changes), toConsumableArray_toConsumableArray(data.changes.map(function (c) {
                     return c.change;
                   }))).some(function (change) {
@@ -109866,7 +110040,7 @@ var GraphPrintvue_type_script_lang_ts_GraphPrint = /*#__PURE__*/function (_Vue) 
                 pages = 1;
 
                 if (this.fitToPaper) {
-                  _context.next = 27;
+                  _context.next = 30;
                   break;
                 }
 
@@ -109884,7 +110058,7 @@ var GraphPrintvue_type_script_lang_ts_GraphPrint = /*#__PURE__*/function (_Vue) 
                 }
 
                 if (!(pages > 1)) {
-                  _context.next = 27;
+                  _context.next = 30;
                   break;
                 }
 
@@ -109896,21 +110070,26 @@ var GraphPrintvue_type_script_lang_ts_GraphPrint = /*#__PURE__*/function (_Vue) 
                 return graph.promiseOn('render');
 
               case 25:
-                _context.next = 27;
+                graph.fit();
+                _context.next = 28;
+                return graph.promiseOn('render');
+
+              case 28:
+                _context.next = 30;
                 return nextFrame();
 
-              case 27:
-                _context.next = 29;
+              case 30:
+                _context.next = 32;
                 return html2canvas_default()(this.printContentEl, {
                   logging: false,
                   scale: 1
                 });
 
-              case 29:
+              case 32:
                 canvas = _context.sent;
 
                 if (!(this.mode === 'print')) {
-                  _context.next = 59;
+                  _context.next = 62;
                   break;
                 }
 
@@ -109929,10 +110108,10 @@ var GraphPrintvue_type_script_lang_ts_GraphPrint = /*#__PURE__*/function (_Vue) 
                 });
                 iFrameEl.onload = resolveLoad;
                 document.body.appendChild(iFrameEl);
-                _context.next = 44;
+                _context.next = 47;
                 return loadPromise;
 
-              case 44:
+              case 47:
                 iFrameWindow = iFrameEl.contentWindow;
 
                 cleanupPrint = function cleanupPrint() {
@@ -109941,13 +110120,13 @@ var GraphPrintvue_type_script_lang_ts_GraphPrint = /*#__PURE__*/function (_Vue) 
                 };
 
                 if (iFrameWindow) {
-                  _context.next = 48;
+                  _context.next = 51;
                   break;
                 }
 
                 return _context.abrupt("return", cleanupPrint());
 
-              case 48:
+              case 51:
                 orientation = this.orientation;
                 if (this.rotate) orientation = orientation === 'portrait' ? 'landscape' : 'portrait';
                 iFrameWindow.document.head.innerHTML = ['<style>', '@page {', "  size: ".concat(this.size, " ").concat(orientation, ";"), "  margin: ".concat(this.includeMargin ? 10 : 0, "mm;"), '}', 'html, body {', '  padding: 0;', '  margin: 0;', '  overflow: hidden;', '}', 'html {', "  width: 100%;", "  height: ".concat(pages * 100, "%;"), '}', 'body {', '  width: 100%;', '  height: 100%;', '}', '</style>'].join('\n');
@@ -109970,38 +110149,38 @@ var GraphPrintvue_type_script_lang_ts_GraphPrint = /*#__PURE__*/function (_Vue) 
                 iFrameWindow.print();
                 return _context.abrupt("return");
 
-              case 59:
-                _context.next = 61;
+              case 62:
+                _context.next = 64;
                 return new Promise(function (resolve) {
                   return canvas.toBlob(resolve, 'image/png');
                 });
 
-              case 61:
+              case 64:
                 blob = _context.sent;
 
                 if (blob) {
-                  _context.next = 65;
+                  _context.next = 68;
                   break;
                 }
 
                 console.error('Something went wrong when trying to get canvas blob');
                 return _context.abrupt("return", cleanup());
 
-              case 65:
+              case 68:
                 if (!(this.mode === 'pdf')) {
-                  _context.next = 71;
+                  _context.next = 74;
                   break;
                 }
 
                 if (this.diagram.methods.convertPngToPdf) {
-                  _context.next = 68;
+                  _context.next = 71;
                   break;
                 }
 
                 return _context.abrupt("return", cleanup());
 
-              case 68:
-                _context.next = 70;
+              case 71:
+                _context.next = 73;
                 return this.diagram.methods.convertPngToPdf({
                   blob: blob,
                   title: this.title,
@@ -110010,16 +110189,16 @@ var GraphPrintvue_type_script_lang_ts_GraphPrint = /*#__PURE__*/function (_Vue) 
                   orientation: this.orientation
                 });
 
-              case 70:
+              case 73:
                 blob = _context.sent;
 
-              case 71:
+              case 74:
                 cleanup({
                   filename: "".concat(filename, ".").concat(this.mode === 'pdf' ? 'pdf' : 'png'),
                   blob: blob
                 });
 
-              case 72:
+              case 75:
               case "end":
                 return _context.stop();
             }
@@ -110065,8 +110244,8 @@ var GraphPrintvue_type_style_index_0_lang_scss_ = __webpack_require__("f645");
 
 var GraphPrint_component = normalizeComponent(
   components_GraphPrintvue_type_script_lang_ts_,
-  GraphPrintvue_type_template_id_aada846c_render,
-  GraphPrintvue_type_template_id_aada846c_staticRenderFns,
+  GraphPrintvue_type_template_id_5f15128f_render,
+  GraphPrintvue_type_template_id_5f15128f_staticRenderFns,
   false,
   null,
   null,
@@ -114987,7 +115166,7 @@ var diagram_Entity = /*#__PURE__*/function () {
     value: function buildStyle() {
       var _this$type$styleBuild, _this$type$styleBuild2, _this$type, _this$type$printStyle, _this$type$printStyle2, _this$type$printStyle3, _this$type2;
 
-      var context = createContextItem(this);
+      var context = diagram_createContextItem(this);
       this.builtTypeStyle = Object(lodash["merge"])({}, this.type.style, (_this$type$styleBuild = (_this$type$styleBuild2 = (_this$type = this.type).styleBuilder) === null || _this$type$styleBuild2 === void 0 ? void 0 : _this$type$styleBuild2.call(_this$type, context)) !== null && _this$type$styleBuild !== void 0 ? _this$type$styleBuild : {});
       this.builtTypePrintStyle = Object(lodash["merge"])({}, this.builtTypeStyle, (_this$type$printStyle = this.type.printStyle) !== null && _this$type$printStyle !== void 0 ? _this$type$printStyle : {}, (_this$type$printStyle2 = (_this$type$printStyle3 = (_this$type2 = this.type).printStyleBuilder) === null || _this$type$printStyle3 === void 0 ? void 0 : _this$type$printStyle3.call(_this$type2, context)) !== null && _this$type$printStyle2 !== void 0 ? _this$type$printStyle2 : {});
       this.builtStyle = Object(lodash["merge"])({}, this.builtTypeStyle, this.style);
@@ -115037,7 +115216,7 @@ var diagram_Relation = /*#__PURE__*/function () {
     value: function buildStyle() {
       var _this$type$styleBuild3, _this$type$styleBuild4, _this$type3, _this$type$printStyle4, _this$type$printStyle5, _this$type$printStyle6, _this$type4;
 
-      var context = createContextItem(this);
+      var context = diagram_createContextItem(this);
       this.builtTypeStyle = Object(lodash["merge"])({}, this.type.style, (_this$type$styleBuild3 = (_this$type$styleBuild4 = (_this$type3 = this.type).styleBuilder) === null || _this$type$styleBuild4 === void 0 ? void 0 : _this$type$styleBuild4.call(_this$type3, context)) !== null && _this$type$styleBuild3 !== void 0 ? _this$type$styleBuild3 : {});
       this.builtTypePrintStyle = Object(lodash["merge"])({}, this.builtTypeStyle, (_this$type$printStyle4 = this.type.printStyle) !== null && _this$type$printStyle4 !== void 0 ? _this$type$printStyle4 : {}, (_this$type$printStyle5 = (_this$type$printStyle6 = (_this$type4 = this.type).printStyleBuilder) === null || _this$type$printStyle6 === void 0 ? void 0 : _this$type$printStyle6.call(_this$type4, context)) !== null && _this$type$printStyle5 !== void 0 ? _this$type$printStyle5 : {});
       this.builtStyle = Object(lodash["merge"])({}, this.builtTypeStyle, this.style);
@@ -115077,7 +115256,16 @@ var diagram_Field = /*#__PURE__*/function () {
     this.dataKey = options.dataKey;
     this.getInitialValue = options.getInitialValue;
     this.formatter = options.formatter;
-    this.validator = options.validator;
+
+    this.validator = options.validator && function (value, context) {
+      var _options$validator, _options$validator2;
+
+      var result = (_options$validator = (_options$validator2 = options.validator) === null || _options$validator2 === void 0 ? void 0 : _options$validator2.call(options, value, context)) !== null && _options$validator !== void 0 ? _options$validator : true;
+      return result ? result === true ? true : result : {
+        error: 'Ugyldig værdi'
+      };
+    };
+
     this.isEntityLabel = (_options$isEntityLabe = options.isEntityLabel) !== null && _options$isEntityLabe !== void 0 ? _options$isEntityLabe : false;
     this.isRelationLabel = (_options$isRelationLa = options.isRelationLabel) !== null && _options$isRelationLa !== void 0 ? _options$isRelationLa : false;
     this.addToLegend = (_options$addToLegend = options.addToLegend) !== null && _options$addToLegend !== void 0 ? _options$addToLegend : false;
@@ -115331,8 +115519,79 @@ var diagram_Settings = /*#__PURE__*/function () {
 
   return Settings;
 }();
+var diagram_createContextItems = function createContextItems(items) {
+  var map = new Map();
+
+  var createContextItem = function createContextItem(item) {
+    var contextItem = map.get(item.id);
+    if (contextItem) return contextItem;
+    contextItem = {
+      isEntity: item.isEntity,
+      isRelation: item.isRelation,
+      type: item.type.id,
+      id: item.id,
+      data: item.data,
+      isParent: item.isParent,
+      isChild: item.isChild,
+      activeLayout: item.diagram.activeDiagram.settings.activeLayout,
+      isMainEntity: false,
+      connectedRelations: [],
+      incomingRelations: [],
+      outgoingRelations: [],
+      fromEntity: null,
+      toEntity: null,
+      connectedEntities: []
+    };
+
+    if (item.isEntity) {
+      contextItem.isMainEntity = item.isMainEntity;
+    }
+
+    map.set(item.id, contextItem);
+    return contextItem;
+  };
+
+  var contextItems = items.map(function (item) {
+    return createContextItem(item);
+  });
+
+  var _iterator17 = _createForOfIteratorHelper(items),
+      _step17;
+
+  try {
+    for (_iterator17.s(); !(_step17 = _iterator17.n()).done;) {
+      var item = _step17.value;
+      if (!item.isRelation) continue;
+      var contextRelation = map.get(item.id);
+      if (!contextRelation) continue;
+      var contextFromEntity = map.get(item.from);
+
+      if (contextFromEntity) {
+        contextRelation.fromEntity = contextFromEntity;
+        contextRelation.connectedEntities.push(contextFromEntity);
+        contextFromEntity.connectedRelations.push(contextRelation);
+        contextFromEntity.outgoingRelations.push(contextRelation);
+      }
+
+      var contextToEntity = map.get(item.to);
+
+      if (contextToEntity) {
+        contextRelation.toEntity = contextToEntity;
+        contextRelation.connectedEntities.push(contextToEntity);
+        contextToEntity.connectedRelations.push(contextRelation);
+        contextToEntity.incomingRelations.push(contextRelation);
+      }
+    }
+  } catch (err) {
+    _iterator17.e(err);
+  } finally {
+    _iterator17.f();
+  }
+
+  return contextItems;
+};
 var contextItemCache = null;
-var createContextItem = function createContextItem(item) {
+var diagram_createContextItem = function createContextItem(item) {
   var isInitial = !contextItemCache;
   var cache = contextItemCache;
 

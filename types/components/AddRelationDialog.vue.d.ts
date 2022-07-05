@@ -1,9 +1,12 @@
 import { Vue } from 'vue-property-decorator';
-import { EntitySelectorModel } from './EntitySelector.vue';
+import DataCreator from './DataCreator.vue';
+import EntitySelector, { EntitySelectorModel } from './EntitySelector.vue';
 import type DiagramVm from './Diagram.vue';
-import type { Entity, EntityType, RelationType } from '@/diagram';
+import { Entity, EntityType, RelationType } from '@/diagram';
 export default class AddRelationDialog extends Vue {
     readonly diagramVm: DiagramVm;
+    readonly relationDataCreator?: DataCreator;
+    readonly entitySelector?: EntitySelector;
     readonly relationType: RelationType;
     readonly entity: Entity;
     readonly asParent: boolean;
@@ -14,7 +17,6 @@ export default class AddRelationDialog extends Vue {
     entitySelectorModel: EntitySelectorModel;
     get diagram(): import("../diagram").default;
     get relationTypeLabel(): string;
-    get relationFields(): import("../diagram").Field[];
     get supportedEntityTypes(): EntityType[];
     get canConfirm(): boolean;
     close(): void;

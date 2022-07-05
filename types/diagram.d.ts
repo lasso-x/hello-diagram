@@ -385,7 +385,7 @@ export declare class Field {
     dataKey: string;
     getInitialValue?: (data: Record<string, any>) => any;
     formatter?: (value: any) => any;
-    validator?: (value: any, context: ContextItem) => boolean | {
+    validator?: (value: any, context: ContextItem) => true | {
         error: string;
     };
     isEntityLabel: boolean;
@@ -475,6 +475,7 @@ export declare class Settings {
     loadFromLocalStorage(): void;
     saveToLocalStorage(): void;
 }
+export declare const createContextItems: (items: (Entity | Relation)[]) => ContextItem[];
 export declare const createContextItem: (item: Entity | Relation) => ContextItem;
 export interface ContextItem {
     isEntity: boolean;

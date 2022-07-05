@@ -1,11 +1,21 @@
 import { Vue } from 'vue-property-decorator';
-import type { Field } from '@/diagram';
+import { ContextItem, EntityType, RelationType } from '@/diagram';
 export default class DataCreator extends Vue {
-    readonly fields: Field[];
+    readonly type: EntityType | RelationType;
     readonly data: Record<string, any>;
     get fieldStates(): {
-        field: Field;
+        field: import("../diagram").Field;
+        readonly show: boolean;
         value: any;
+        errorMessage: string;
         onChange: (value: any) => void;
     }[];
+    get shownFieldStates(): {
+        field: import("../diagram").Field;
+        readonly show: boolean;
+        value: any;
+        errorMessage: string;
+        onChange: (value: any) => void;
+    }[];
+    validate(contextItem: ContextItem): boolean;
 }

@@ -12,6 +12,7 @@ export default interface SavedDiagram {
         activeFields?: string[];
         activeFilters?: string[];
         activeLayout?: string;
+        enableTaxi?: boolean;
     };
 }
 export declare const createSavedDiagram: (diagram: Diagram) => SavedDiagram;

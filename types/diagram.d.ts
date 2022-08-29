@@ -26,9 +26,17 @@ export default class Diagram {
     enableStyleEditing: boolean;
     showInactiveEditorFields: boolean;
     enableDragAndDrop: boolean;
+    enableTaxiEditing: boolean;
     enableExpand: boolean;
     enableSaving: boolean;
     enableSharing: boolean;
+    printSettings: {
+        orientation?: 'portrait' | 'landscape';
+        size?: 'A5' | 'A4' | 'A3';
+        fitToPaper?: boolean;
+        includeMargin?: boolean;
+        hideLogo?: boolean;
+    };
     saveSettingsToLocalStorage: boolean;
     isLoading: boolean;
     loadSavedDiagramsPromise: Promise<SavedDiagram[]> | null;
@@ -73,9 +81,17 @@ export interface DiagramConfig {
     enableStyleEditing?: boolean;
     showInactiveEditorFields?: boolean;
     enableDragAndDrop?: boolean;
+    enableTaxiEditing?: boolean;
     enableExpand?: boolean;
     enableSaving?: boolean;
     enableSharing?: boolean;
+    printSettings?: {
+        orientation?: 'portrait' | 'landscape';
+        size?: 'A5' | 'A4' | 'A3';
+        fitToPaper?: boolean;
+        includeMargin?: boolean;
+        hideLogo?: boolean;
+    };
     saveSettingsToLocalStorage?: boolean;
 }
 export interface DiagramConfigMethods {
@@ -322,9 +338,10 @@ export declare class Relation {
     id: string;
     from: string;
     to: string;
-    initialState: Pick<Relation, 'data' | 'style'>;
+    initialState: Pick<Relation, 'data' | 'style' | 'customTaxi'>;
     data: Record<string, any>;
     style: RelationStyle;
+    customTaxi: CustomTaxi | null;
     isParent: boolean;
     isChild: boolean;
     connectedEntities: Entity[];
@@ -345,6 +362,7 @@ export interface RelationDefinition {
     to: string;
     data?: Record<string, any>;
     style?: RelationStyle;
+    customTaxi?: CustomTaxi | null;
 }
 export interface RelationStyle {
     taxi?: boolean;
@@ -447,6 +465,8 @@ export interface LayoutDefinition {
     name: string;
     default?: boolean;
     type?: 'breadthfirst' | 'dagre';
+    taxi?: boolean;
+    enableTaxiToggle?: boolean;
     inverted?: boolean;
     spacingFactor?: number;
     animate?: boolean;
@@ -464,16 +484,19 @@ export interface LayoutDefinition {
 }
 export declare class Settings {
     diagram: Diagram;
-    initialState: Pick<Settings, 'activeFields' | 'activeFilters' | 'activeLayout'>;
+    initialState: Pick<Settings, 'activeFields' | 'activeFilters' | 'activeLayout' | 'enableTaxi'>;
     activeFields: Record<string, boolean | undefined>;
     activeFilters: Record<string, boolean | undefined>;
     activeLayout: LayoutDefinition | null;
+    enableTaxi: boolean;
     constructor(diagram: Diagram);
     init(): void;
     setInitialState(): void;
     reset(): void;
     loadFromLocalStorage(): void;
     saveToLocalStorage(): void;
+    setActiveLayout(layout: LayoutDefinition | null): void;
+    setEnableTaxi(enableTaxi?: boolean): void;
 }
 export declare const createContextItems: (items: (Entity | Relation)[]) => ContextItem[];
 export declare const createContextItem: (item: Entity | Relation) => ContextItem;
@@ -495,4 +518,21 @@ export interface ContextItem {
     connectedEntities: ContextItem[];
 }
 export declare type Arrayable<T> = T | T[];
+export declare type Side = 'top' | 'bottom' | 'left' | 'right';
+export declare type Axis = 'x' | 'y';
+export interface CustomTaxi {
+    from: CustomTaxiEndpoint;
+    to: CustomTaxiEndpoint;
+    segmentPoints: CustomTaxiSegmentPoint[];
+}
+export interface CustomTaxiEndpoint {
+    side: Side;
+    x: number;
+    y: number;
+}
+export interface CustomTaxiSegmentPoint {
+    x: number;
+    y: number;
+    temp?: boolean;
+}
 export * from './example';

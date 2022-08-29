@@ -12,6 +12,7 @@ export default class TopBar extends DiagramVue {
     get compact(): boolean;
     get canUndo(): boolean;
     get canRedo(): boolean;
+    get showTaxiToggle(): boolean;
     save(overwrite?: boolean): Promise<void>;
     expand(): Promise<void>;
     undo(): void;

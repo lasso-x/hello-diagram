@@ -1,6 +1,6 @@
 import { Vue } from 'vue-property-decorator';
 import type DiagramVm from './Diagram.vue';
-import type Diagram from '@/diagram';
+import type { default as Diagram, Relation } from '@/diagram';
 import type Graph from './Graph.vue';
 import type cytoscape from 'cytoscape';
 export default class GraphEdge extends Vue {
@@ -11,12 +11,16 @@ export default class GraphEdge extends Vue {
     edge?: cytoscape.EdgeSingular;
     fromNode?: cytoscape.NodeSingular;
     toNode?: cytoscape.NodeSingular;
-    position: cytoscape.Position;
+    sourceNodePosition: cytoscape.Position;
+    targetNodePosition: cytoscape.Position;
+    sourceEndpointPosition: cytoscape.Position;
+    targetEndpointPosition: cytoscape.Position;
+    labelPosition: cytoscape.Position;
     customPath: any;
+    customTaxi: any;
     hidden: boolean;
     selected: boolean;
-    positioning: boolean;
-    get relation(): import("../diagram").Relation | undefined;
+    get relation(): Relation | undefined;
     get style(): {
         zIndex: string;
         transform: string;
@@ -24,9 +28,14 @@ export default class GraphEdge extends Vue {
         color: string;
     };
     get labels(): string[];
-    created(): void;
+    mounted(): void;
     beforeDestroy(): void;
-    updatePosition(): void;
-    onPosition(): void;
     onData(): void;
+    onNodePosition(): void;
+    fixCustomTaxi(): void;
+    buildCustomTaxi(): void;
+    updateNodePositions(): void;
+    onCustomTaxiChange(): void;
+    updateEndpointPositions(): void;
+    updateLabelPosition(): void;
 }

@@ -9,8 +9,9 @@ export default class PrintDialog extends Vue {
     includeMargin: boolean;
     printing: boolean;
     get diagram(): import("../diagram").default;
+    get hasFields(): boolean;
     get title(): "Udskriv" | "Gem som PDF" | "Gem som billede";
-    get description(): "" | "Din computers udskriftsindstillinger skal være de samme som de nedenfor valgte." | "Gem diagrammet til din computer som PDF." | "Gem diagrammet til din computer i .png format.";
+    get description(): "" | "Din computers udskriftsindstillinger skal være de samme som de nedenfor valgte." | "Udskriv diagrammet via din browser." | "Gem diagrammet til din computer som PDF." | "Gem diagrammet til din computer i .png format.";
     get buttonLabel(): "Udskriv" | "Udskriver..." | "Gem" | "Gemmer...";
     created(): void;
     beforeDestroy(): void;

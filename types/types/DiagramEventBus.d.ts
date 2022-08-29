@@ -19,6 +19,8 @@ export declare type DiagramEvent = ({
 } | {
     name: 'graph.fit';
 } | {
+    name: 'graph.spreadTaxiEdges';
+} | {
     name: 'editor.open';
     target: Entity | Relation;
 } | {

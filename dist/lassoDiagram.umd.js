@@ -35004,48 +35004,6 @@ module.exports = values;
 
 /***/ }),
 
-/***/ "4057":
-/***/ (function(module, exports, __webpack_require__) {
-
-var $ = __webpack_require__("23e7");
-
-// eslint-disable-next-line es/no-math-hypot -- required for testing
-var $hypot = Math.hypot;
-var abs = Math.abs;
-var sqrt = Math.sqrt;
-
-// Chrome 77 bug
-// https://bugs.chromium.org/p/v8/issues/detail?id=9546
-var BUGGY = !!$hypot && $hypot(Infinity, NaN) !== Infinity;
-
-// `Math.hypot` method
-// https://tc39.es/ecma262/#sec-math.hypot
-$({ target: 'Math', stat: true, forced: BUGGY }, {
-  // eslint-disable-next-line no-unused-vars -- required for `.length`
-  hypot: function hypot(value1, value2) {
-    var sum = 0;
-    var i = 0;
-    var aLen = arguments.length;
-    var larg = 0;
-    var arg, div;
-    while (i < aLen) {
-      arg = abs(arguments[i++]);
-      if (larg < arg) {
-        div = larg / arg;
-        sum = sum * div * div + 1;
-        larg = arg;
-      } else if (arg > 0) {
-        div = arg / larg;
-        sum += div * div;
-      } else sum += arg;
-    }
-    return larg === Infinity ? Infinity : larg * sqrt(sum);
-  }
-});
-
-
-/***/ }),
-
 /***/ "408c":
 /***/ (function(module, exports, __webpack_require__) {
 
@@ -35072,6 +35030,4927 @@ var now = function() {
 };
 
 module.exports = now;
+
+
+/***/ }),
+
+/***/ "4128":
+/***/ (function(module, exports, __webpack_require__) {
+
+var __WEBPACK_AMD_DEFINE_RESULT__;;(function (globalScope) {
+  'use strict';
+
+
+  /*!
+   *  decimal.js v10.4.0
+   *  An arbitrary-precision Decimal type for JavaScript.
+   *  https://github.com/MikeMcl/decimal.js
+   *  Copyright (c) 2022 Michael Mclaughlin <M8ch88l@gmail.com>
+   *  MIT Licence
+   */
+
+
+  // -----------------------------------  EDITABLE DEFAULTS  ------------------------------------ //
+
+
+    // The maximum exponent magnitude.
+    // The limit on the value of `toExpNeg`, `toExpPos`, `minE` and `maxE`.
+  var EXP_LIMIT = 9e15,                      // 0 to 9e15
+
+    // The limit on the value of `precision`, and on the value of the first argument to
+    // `toDecimalPlaces`, `toExponential`, `toFixed`, `toPrecision` and `toSignificantDigits`.
+    MAX_DIGITS = 1e9,                        // 0 to 1e9
+
+    // Base conversion alphabet.
+    NUMERALS = '0123456789abcdef',
+
+    // The natural logarithm of 10 (1025 digits).
+    LN10 = '2.3025850929940456840179914546843642076011014886287729760333279009675726096773524802359972050895982983419677840422862486334095254650828067566662873690987816894829072083255546808437998948262331985283935053089653777326288461633662222876982198867465436674744042432743651550489343149393914796194044002221051017141748003688084012647080685567743216228355220114804663715659121373450747856947683463616792101806445070648000277502684916746550586856935673420670581136429224554405758925724208241314695689016758940256776311356919292033376587141660230105703089634572075440370847469940168269282808481184289314848524948644871927809676271275775397027668605952496716674183485704422507197965004714951050492214776567636938662976979522110718264549734772662425709429322582798502585509785265383207606726317164309505995087807523710333101197857547331541421808427543863591778117054309827482385045648019095610299291824318237525357709750539565187697510374970888692180205189339507238539205144634197265287286965110862571492198849978748873771345686209167058',
+
+    // Pi (1025 digits).
+    PI = '3.1415926535897932384626433832795028841971693993751058209749445923078164062862089986280348253421170679821480865132823066470938446095505822317253594081284811174502841027019385211055596446229489549303819644288109756659334461284756482337867831652712019091456485669234603486104543266482133936072602491412737245870066063155881748815209209628292540917153643678925903600113305305488204665213841469519415116094330572703657595919530921861173819326117931051185480744623799627495673518857527248912279381830119491298336733624406566430860213949463952247371907021798609437027705392171762931767523846748184676694051320005681271452635608277857713427577896091736371787214684409012249534301465495853710507922796892589235420199561121290219608640344181598136297747713099605187072113499999983729780499510597317328160963185950244594553469083026425223082533446850352619311881710100031378387528865875332083814206171776691473035982534904287554687311595628638823537875937519577818577805321712268066130019278766111959092164201989380952572010654858632789',
+
+
+    // The initial configuration properties of the Decimal constructor.
+    DEFAULTS = {
+
+      // These values must be integers within the stated ranges (inclusive).
+      // Most of these values can be changed at run-time using the `Decimal.config` method.
+
+      // The maximum number of significant digits of the result of a calculation or base conversion.
+      // E.g. `Decimal.config({ precision: 20 });`
+      precision: 20,                         // 1 to MAX_DIGITS
+
+      // The rounding mode used when rounding to `precision`.
+      //
+      // ROUND_UP         0 Away from zero.
+      // ROUND_DOWN       1 Towards zero.
+      // ROUND_CEIL       2 Towards +Infinity.
+      // ROUND_FLOOR      3 Towards -Infinity.
+      // ROUND_HALF_UP    4 Towards nearest neighbour. If equidistant, up.
+      // ROUND_HALF_DOWN  5 Towards nearest neighbour. If equidistant, down.
+      // ROUND_HALF_EVEN  6 Towards nearest neighbour. If equidistant, towards even neighbour.
+      // ROUND_HALF_CEIL  7 Towards nearest neighbour. If equidistant, towards +Infinity.
+      // ROUND_HALF_FLOOR 8 Towards nearest neighbour. If equidistant, towards -Infinity.
+      //
+      // E.g.
+      // `Decimal.rounding = 4;`
+      // `Decimal.rounding = Decimal.ROUND_HALF_UP;`
+      rounding: 4,                           // 0 to 8
+
+      // The modulo mode used when calculating the modulus: a mod n.
+      // The quotient (q = a / n) is calculated according to the corresponding rounding mode.
+      // The remainder (r) is calculated as: r = a - n * q.
+      //
+      // UP         0 The remainder is positive if the dividend is negative, else is negative.
+      // DOWN       1 The remainder has the same sign as the dividend (JavaScript %).
+      // FLOOR      3 The remainder has the same sign as the divisor (Python %).
+      // HALF_EVEN  6 The IEEE 754 remainder function.
+      // EUCLID     9 Euclidian division. q = sign(n) * floor(a / abs(n)). Always positive.
+      //
+      // Truncated division (1), floored division (3), the IEEE 754 remainder (6), and Euclidian
+      // division (9) are commonly used for the modulus operation. The other rounding modes can also
+      // be used, but they may not give useful results.
+      modulo: 1,                             // 0 to 9
+
+      // The exponent value at and beneath which `toString` returns exponential notation.
+      // JavaScript numbers: -7
+      toExpNeg: -7,                          // 0 to -EXP_LIMIT
+
+      // The exponent value at and above which `toString` returns exponential notation.
+      // JavaScript numbers: 21
+      toExpPos:  21,                         // 0 to EXP_LIMIT
+
+      // The minimum exponent value, beneath which underflow to zero occurs.
+      // JavaScript numbers: -324  (5e-324)
+      minE: -EXP_LIMIT,                      // -1 to -EXP_LIMIT
+
+      // The maximum exponent value, above which overflow to Infinity occurs.
+      // JavaScript numbers: 308  (1.7976931348623157e+308)
+      maxE: EXP_LIMIT,                       // 1 to EXP_LIMIT
+
+      // Whether to use cryptographically-secure random number generation, if available.
+      crypto: false                          // true/false
+    },
+
+
+  // ----------------------------------- END OF EDITABLE DEFAULTS ------------------------------- //
+
+
+    Decimal, inexact, noConflict, quadrant,
+    external = true,
+
+    decimalError = '[DecimalError] ',
+    invalidArgument = decimalError + 'Invalid argument: ',
+    precisionLimitExceeded = decimalError + 'Precision limit exceeded',
+    cryptoUnavailable = decimalError + 'crypto unavailable',
+    tag = '[object Decimal]',
+
+    mathfloor = Math.floor,
+    mathpow = Math.pow,
+
+    isBinary = /^0b([01]+(\.[01]*)?|\.[01]+)(p[+-]?\d+)?$/i,
+    isHex = /^0x([0-9a-f]+(\.[0-9a-f]*)?|\.[0-9a-f]+)(p[+-]?\d+)?$/i,
+    isOctal = /^0o([0-7]+(\.[0-7]*)?|\.[0-7]+)(p[+-]?\d+)?$/i,
+    isDecimal = /^(\d+(\.\d*)?|\.\d+)(e[+-]?\d+)?$/i,
+
+    BASE = 1e7,
+    LOG_BASE = 7,
+    MAX_SAFE_INTEGER = 9007199254740991,
+
+    LN10_PRECISION = LN10.length - 1,
+    PI_PRECISION = PI.length - 1,
+
+    // Decimal.prototype object
+    P = { toStringTag: tag };
+
+
+  // Decimal prototype methods
+
+
+  /*
+   *  absoluteValue             abs
+   *  ceil
+   *  clampedTo                 clamp
+   *  comparedTo                cmp
+   *  cosine                    cos
+   *  cubeRoot                  cbrt
+   *  decimalPlaces             dp
+   *  dividedBy                 div
+   *  dividedToIntegerBy        divToInt
+   *  equals                    eq
+   *  floor
+   *  greaterThan               gt
+   *  greaterThanOrEqualTo      gte
+   *  hyperbolicCosine          cosh
+   *  hyperbolicSine            sinh
+   *  hyperbolicTangent         tanh
+   *  inverseCosine             acos
+   *  inverseHyperbolicCosine   acosh
+   *  inverseHyperbolicSine     asinh
+   *  inverseHyperbolicTangent  atanh
+   *  inverseSine               asin
+   *  inverseTangent            atan
+   *  isFinite
+   *  isInteger                 isInt
+   *  isNaN
+   *  isNegative                isNeg
+   *  isPositive                isPos
+   *  isZero
+   *  lessThan                  lt
+   *  lessThanOrEqualTo         lte
+   *  logarithm                 log
+   *  [maximum]                 [max]
+   *  [minimum]                 [min]
+   *  minus                     sub
+   *  modulo                    mod
+   *  naturalExponential        exp
+   *  naturalLogarithm          ln
+   *  negated                   neg
+   *  plus                      add
+   *  precision                 sd
+   *  round
+   *  sine                      sin
+   *  squareRoot                sqrt
+   *  tangent                   tan
+   *  times                     mul
+   *  toBinary
+   *  toDecimalPlaces           toDP
+   *  toExponential
+   *  toFixed
+   *  toFraction
+   *  toHexadecimal             toHex
+   *  toNearest
+   *  toNumber
+   *  toOctal
+   *  toPower                   pow
+   *  toPrecision
+   *  toSignificantDigits       toSD
+   *  toString
+   *  truncated                 trunc
+   *  valueOf                   toJSON
+   */
+
+
+  /*
+   * Return a new Decimal whose value is the absolute value of this Decimal.
+   *
+   */
+  P.absoluteValue = P.abs = function () {
+    var x = new this.constructor(this);
+    if (x.s < 0) x.s = 1;
+    return finalise(x);
+  };
+
+
+  /*
+   * Return a new Decimal whose value is the value of this Decimal rounded to a whole number in the
+   * direction of positive Infinity.
+   *
+   */
+  P.ceil = function () {
+    return finalise(new this.constructor(this), this.e + 1, 2);
+  };
+
+
+  /*
+   * Return a new Decimal whose value is the value of this Decimal clamped to the range
+   * delineated by `min` and `max`.
+   *
+   * min {number|string|Decimal}
+   * max {number|string|Decimal}
+   *
+   */
+  P.clampedTo = P.clamp = function (min, max) {
+    var k,
+      x = this,
+      Ctor = x.constructor;
+    min = new Ctor(min);
+    max = new Ctor(max);
+    if (!min.s || !max.s) return new Ctor(NaN);
+    if (min.gt(max)) throw Error(invalidArgument + max);
+    k = x.cmp(min);
+    return k < 0 ? min : x.cmp(max) > 0 ? max : new Ctor(x);
+  };
+
+
+  /*
+   * Return
+   *   1    if the value of this Decimal is greater than the value of `y`,
+   *  -1    if the value of this Decimal is less than the value of `y`,
+   *   0    if they have the same value,
+   *   NaN  if the value of either Decimal is NaN.
+   *
+   */
+  P.comparedTo = P.cmp = function (y) {
+    var i, j, xdL, ydL,
+      x = this,
+      xd = x.d,
+      yd = (y = new x.constructor(y)).d,
+      xs = x.s,
+      ys = y.s;
+
+    // Either NaN or ±Infinity?
+    if (!xd || !yd) {
+      return !xs || !ys ? NaN : xs !== ys ? xs : xd === yd ? 0 : !xd ^ xs < 0 ? 1 : -1;
+    }
+
+    // Either zero?
+    if (!xd[0] || !yd[0]) return xd[0] ? xs : yd[0] ? -ys : 0;
+
+    // Signs differ?
+    if (xs !== ys) return xs;
+
+    // Compare exponents.
+    if (x.e !== y.e) return x.e > y.e ^ xs < 0 ? 1 : -1;
+
+    xdL = xd.length;
+    ydL = yd.length;
+
+    // Compare digit by digit.
+    for (i = 0, j = xdL < ydL ? xdL : ydL; i < j; ++i) {
+      if (xd[i] !== yd[i]) return xd[i] > yd[i] ^ xs < 0 ? 1 : -1;
+    }
+
+    // Compare lengths.
+    return xdL === ydL ? 0 : xdL > ydL ^ xs < 0 ? 1 : -1;
+  };
+
+
+  /*
+   * Return a new Decimal whose value is the cosine of the value in radians of this Decimal.
+   *
+   * Domain: [-Infinity, Infinity]
+   * Range: [-1, 1]
+   *
+   * cos(0)         = 1
+   * cos(-0)        = 1
+   * cos(Infinity)  = NaN
+   * cos(-Infinity) = NaN
+   * cos(NaN)       = NaN
+   *
+   */
+  P.cosine = P.cos = function () {
+    var pr, rm,
+      x = this,
+      Ctor = x.constructor;
+
+    if (!x.d) return new Ctor(NaN);
+
+    // cos(0) = cos(-0) = 1
+    if (!x.d[0]) return new Ctor(1);
+
+    pr = Ctor.precision;
+    rm = Ctor.rounding;
+    Ctor.precision = pr + Math.max(x.e, x.sd()) + LOG_BASE;
+    Ctor.rounding = 1;
+
+    x = cosine(Ctor, toLessThanHalfPi(Ctor, x));
+
+    Ctor.precision = pr;
+    Ctor.rounding = rm;
+
+    return finalise(quadrant == 2 || quadrant == 3 ? x.neg() : x, pr, rm, true);
+  };
+
+
+  /*
+   *
+   * Return a new Decimal whose value is the cube root of the value of this Decimal, rounded to
+   * `precision` significant digits using rounding mode `rounding`.
+   *
+   *  cbrt(0)  =  0
+   *  cbrt(-0) = -0
+   *  cbrt(1)  =  1
+   *  cbrt(-1) = -1
+   *  cbrt(N)  =  N
+   *  cbrt(-I) = -I
+   *  cbrt(I)  =  I
+   *
+   * Math.cbrt(x) = (x < 0 ? -Math.pow(-x, 1/3) : Math.pow(x, 1/3))
+   *
+   */
+  P.cubeRoot = P.cbrt = function () {
+    var e, m, n, r, rep, s, sd, t, t3, t3plusx,
+      x = this,
+      Ctor = x.constructor;
+
+    if (!x.isFinite() || x.isZero()) return new Ctor(x);
+    external = false;
+
+    // Initial estimate.
+    s = x.s * mathpow(x.s * x, 1 / 3);
+
+     // Math.cbrt underflow/overflow?
+     // Pass x to Math.pow as integer, then adjust the exponent of the result.
+    if (!s || Math.abs(s) == 1 / 0) {
+      n = digitsToString(x.d);
+      e = x.e;
+
+      // Adjust n exponent so it is a multiple of 3 away from x exponent.
+      if (s = (e - n.length + 1) % 3) n += (s == 1 || s == -2 ? '0' : '00');
+      s = mathpow(n, 1 / 3);
+
+      // Rarely, e may be one less than the result exponent value.
+      e = mathfloor((e + 1) / 3) - (e % 3 == (e < 0 ? -1 : 2));
+
+      if (s == 1 / 0) {
+        n = '5e' + e;
+      } else {
+        n = s.toExponential();
+        n = n.slice(0, n.indexOf('e') + 1) + e;
+      }
+
+      r = new Ctor(n);
+      r.s = x.s;
+    } else {
+      r = new Ctor(s.toString());
+    }
+
+    sd = (e = Ctor.precision) + 3;
+
+    // Halley's method.
+    // TODO? Compare Newton's method.
+    for (;;) {
+      t = r;
+      t3 = t.times(t).times(t);
+      t3plusx = t3.plus(x);
+      r = divide(t3plusx.plus(x).times(t), t3plusx.plus(t3), sd + 2, 1);
+
+      // TODO? Replace with for-loop and checkRoundingDigits.
+      if (digitsToString(t.d).slice(0, sd) === (n = digitsToString(r.d)).slice(0, sd)) {
+        n = n.slice(sd - 3, sd + 1);
+
+        // The 4th rounding digit may be in error by -1 so if the 4 rounding digits are 9999 or 4999
+        // , i.e. approaching a rounding boundary, continue the iteration.
+        if (n == '9999' || !rep && n == '4999') {
+
+          // On the first iteration only, check to see if rounding up gives the exact result as the
+          // nines may infinitely repeat.
+          if (!rep) {
+            finalise(t, e + 1, 0);
+
+            if (t.times(t).times(t).eq(x)) {
+              r = t;
+              break;
+            }
+          }
+
+          sd += 4;
+          rep = 1;
+        } else {
+
+          // If the rounding digits are null, 0{0,4} or 50{0,3}, check for an exact result.
+          // If not, then there are further digits and m will be truthy.
+          if (!+n || !+n.slice(1) && n.charAt(0) == '5') {
+
+            // Truncate to the first rounding digit.
+            finalise(r, e + 1, 1);
+            m = !r.times(r).times(r).eq(x);
+          }
+
+          break;
+        }
+      }
+    }
+
+    external = true;
+
+    return finalise(r, e, Ctor.rounding, m);
+  };
+
+
+  /*
+   * Return the number of decimal places of the value of this Decimal.
+   *
+   */
+  P.decimalPlaces = P.dp = function () {
+    var w,
+      d = this.d,
+      n = NaN;
+
+    if (d) {
+      w = d.length - 1;
+      n = (w - mathfloor(this.e / LOG_BASE)) * LOG_BASE;
+
+      // Subtract the number of trailing zeros of the last word.
+      w = d[w];
+      if (w) for (; w % 10 == 0; w /= 10) n--;
+      if (n < 0) n = 0;
+    }
+
+    return n;
+  };
+
+
+  /*
+   *  n / 0 = I
+   *  n / N = N
+   *  n / I = 0
+   *  0 / n = 0
+   *  0 / 0 = N
+   *  0 / N = N
+   *  0 / I = 0
+   *  N / n = N
+   *  N / 0 = N
+   *  N / N = N
+   *  N / I = N
+   *  I / n = I
+   *  I / 0 = I
+   *  I / N = N
+   *  I / I = N
+   *
+   * Return a new Decimal whose value is the value of this Decimal divided by `y`, rounded to
+   * `precision` significant digits using rounding mode `rounding`.
+   *
+   */
+  P.dividedBy = P.div = function (y) {
+    return divide(this, new this.constructor(y));
+  };
+
+
+  /*
+   * Return a new Decimal whose value is the integer part of dividing the value of this Decimal
+   * by the value of `y`, rounded to `precision` significant digits using rounding mode `rounding`.
+   *
+   */
+  P.dividedToIntegerBy = P.divToInt = function (y) {
+    var x = this,
+      Ctor = x.constructor;
+    return finalise(divide(x, new Ctor(y), 0, 1, 1), Ctor.precision, Ctor.rounding);
+  };
+
+
+  /*
+   * Return true if the value of this Decimal is equal to the value of `y`, otherwise return false.
+   *
+   */
+  P.equals = P.eq = function (y) {
+    return this.cmp(y) === 0;
+  };
+
+
+  /*
+   * Return a new Decimal whose value is the value of this Decimal rounded to a whole number in the
+   * direction of negative Infinity.
+   *
+   */
+  P.floor = function () {
+    return finalise(new this.constructor(this), this.e + 1, 3);
+  };
+
+
+  /*
+   * Return true if the value of this Decimal is greater than the value of `y`, otherwise return
+   * false.
+   *
+   */
+  P.greaterThan = P.gt = function (y) {
+    return this.cmp(y) > 0;
+  };
+
+
+  /*
+   * Return true if the value of this Decimal is greater than or equal to the value of `y`,
+   * otherwise return false.
+   *
+   */
+  P.greaterThanOrEqualTo = P.gte = function (y) {
+    var k = this.cmp(y);
+    return k == 1 || k === 0;
+  };
+
+
+  /*
+   * Return a new Decimal whose value is the hyperbolic cosine of the value in radians of this
+   * Decimal.
+   *
+   * Domain: [-Infinity, Infinity]
+   * Range: [1, Infinity]
+   *
+   * cosh(x) = 1 + x^2/2! + x^4/4! + x^6/6! + ...
+   *
+   * cosh(0)         = 1
+   * cosh(-0)        = 1
+   * cosh(Infinity)  = Infinity
+   * cosh(-Infinity) = Infinity
+   * cosh(NaN)       = NaN
+   *
+   *  x        time taken (ms)   result
+   * 1000      9                 9.8503555700852349694e+433
+   * 10000     25                4.4034091128314607936e+4342
+   * 100000    171               1.4033316802130615897e+43429
+   * 1000000   3817              1.5166076984010437725e+434294
+   * 10000000  abandoned after 2 minute wait
+   *
+   * TODO? Compare performance of cosh(x) = 0.5 * (exp(x) + exp(-x))
+   *
+   */
+  P.hyperbolicCosine = P.cosh = function () {
+    var k, n, pr, rm, len,
+      x = this,
+      Ctor = x.constructor,
+      one = new Ctor(1);
+
+    if (!x.isFinite()) return new Ctor(x.s ? 1 / 0 : NaN);
+    if (x.isZero()) return one;
+
+    pr = Ctor.precision;
+    rm = Ctor.rounding;
+    Ctor.precision = pr + Math.max(x.e, x.sd()) + 4;
+    Ctor.rounding = 1;
+    len = x.d.length;
+
+    // Argument reduction: cos(4x) = 1 - 8cos^2(x) + 8cos^4(x) + 1
+    // i.e. cos(x) = 1 - cos^2(x/4)(8 - 8cos^2(x/4))
+
+    // Estimate the optimum number of times to use the argument reduction.
+    // TODO? Estimation reused from cosine() and may not be optimal here.
+    if (len < 32) {
+      k = Math.ceil(len / 3);
+      n = (1 / tinyPow(4, k)).toString();
+    } else {
+      k = 16;
+      n = '2.3283064365386962890625e-10';
+    }
+
+    x = taylorSeries(Ctor, 1, x.times(n), new Ctor(1), true);
+
+    // Reverse argument reduction
+    var cosh2_x,
+      i = k,
+      d8 = new Ctor(8);
+    for (; i--;) {
+      cosh2_x = x.times(x);
+      x = one.minus(cosh2_x.times(d8.minus(cosh2_x.times(d8))));
+    }
+
+    return finalise(x, Ctor.precision = pr, Ctor.rounding = rm, true);
+  };
+
+
+  /*
+   * Return a new Decimal whose value is the hyperbolic sine of the value in radians of this
+   * Decimal.
+   *
+   * Domain: [-Infinity, Infinity]
+   * Range: [-Infinity, Infinity]
+   *
+   * sinh(x) = x + x^3/3! + x^5/5! + x^7/7! + ...
+   *
+   * sinh(0)         = 0
+   * sinh(-0)        = -0
+   * sinh(Infinity)  = Infinity
+   * sinh(-Infinity) = -Infinity
+   * sinh(NaN)       = NaN
+   *
+   * x        time taken (ms)
+   * 10       2 ms
+   * 100      5 ms
+   * 1000     14 ms
+   * 10000    82 ms
+   * 100000   886 ms            1.4033316802130615897e+43429
+   * 200000   2613 ms
+   * 300000   5407 ms
+   * 400000   8824 ms
+   * 500000   13026 ms          8.7080643612718084129e+217146
+   * 1000000  48543 ms
+   *
+   * TODO? Compare performance of sinh(x) = 0.5 * (exp(x) - exp(-x))
+   *
+   */
+  P.hyperbolicSine = P.sinh = function () {
+    var k, pr, rm, len,
+      x = this,
+      Ctor = x.constructor;
+
+    if (!x.isFinite() || x.isZero()) return new Ctor(x);
+
+    pr = Ctor.precision;
+    rm = Ctor.rounding;
+    Ctor.precision = pr + Math.max(x.e, x.sd()) + 4;
+    Ctor.rounding = 1;
+    len = x.d.length;
+
+    if (len < 3) {
+      x = taylorSeries(Ctor, 2, x, x, true);
+    } else {
+
+      // Alternative argument reduction: sinh(3x) = sinh(x)(3 + 4sinh^2(x))
+      // i.e. sinh(x) = sinh(x/3)(3 + 4sinh^2(x/3))
+      // 3 multiplications and 1 addition
+
+      // Argument reduction: sinh(5x) = sinh(x)(5 + sinh^2(x)(20 + 16sinh^2(x)))
+      // i.e. sinh(x) = sinh(x/5)(5 + sinh^2(x/5)(20 + 16sinh^2(x/5)))
+      // 4 multiplications and 2 additions
+
+      // Estimate the optimum number of times to use the argument reduction.
+      k = 1.4 * Math.sqrt(len);
+      k = k > 16 ? 16 : k | 0;
+
+      x = x.times(1 / tinyPow(5, k));
+      x = taylorSeries(Ctor, 2, x, x, true);
+
+      // Reverse argument reduction
+      var sinh2_x,
+        d5 = new Ctor(5),
+        d16 = new Ctor(16),
+        d20 = new Ctor(20);
+      for (; k--;) {
+        sinh2_x = x.times(x);
+        x = x.times(d5.plus(sinh2_x.times(d16.times(sinh2_x).plus(d20))));
+      }
+    }
+
+    Ctor.precision = pr;
+    Ctor.rounding = rm;
+
+    return finalise(x, pr, rm, true);
+  };
+
+
+  /*
+   * Return a new Decimal whose value is the hyperbolic tangent of the value in radians of this
+   * Decimal.
+   *
+   * Domain: [-Infinity, Infinity]
+   * Range: [-1, 1]
+   *
+   * tanh(x) = sinh(x) / cosh(x)
+   *
+   * tanh(0)         = 0
+   * tanh(-0)        = -0
+   * tanh(Infinity)  = 1
+   * tanh(-Infinity) = -1
+   * tanh(NaN)       = NaN
+   *
+   */
+  P.hyperbolicTangent = P.tanh = function () {
+    var pr, rm,
+      x = this,
+      Ctor = x.constructor;
+
+    if (!x.isFinite()) return new Ctor(x.s);
+    if (x.isZero()) return new Ctor(x);
+
+    pr = Ctor.precision;
+    rm = Ctor.rounding;
+    Ctor.precision = pr + 7;
+    Ctor.rounding = 1;
+
+    return divide(x.sinh(), x.cosh(), Ctor.precision = pr, Ctor.rounding = rm);
+  };
+
+
+  /*
+   * Return a new Decimal whose value is the arccosine (inverse cosine) in radians of the value of
+   * this Decimal.
+   *
+   * Domain: [-1, 1]
+   * Range: [0, pi]
+   *
+   * acos(x) = pi/2 - asin(x)
+   *
+   * acos(0)       = pi/2
+   * acos(-0)      = pi/2
+   * acos(1)       = 0
+   * acos(-1)      = pi
+   * acos(1/2)     = pi/3
+   * acos(-1/2)    = 2*pi/3
+   * acos(|x| > 1) = NaN
+   * acos(NaN)     = NaN
+   *
+   */
+  P.inverseCosine = P.acos = function () {
+    var halfPi,
+      x = this,
+      Ctor = x.constructor,
+      k = x.abs().cmp(1),
+      pr = Ctor.precision,
+      rm = Ctor.rounding;
+
+    if (k !== -1) {
+      return k === 0
+        // |x| is 1
+        ? x.isNeg() ? getPi(Ctor, pr, rm) : new Ctor(0)
+        // |x| > 1 or x is NaN
+        : new Ctor(NaN);
+    }
+
+    if (x.isZero()) return getPi(Ctor, pr + 4, rm).times(0.5);
+
+    // TODO? Special case acos(0.5) = pi/3 and acos(-0.5) = 2*pi/3
+
+    Ctor.precision = pr + 6;
+    Ctor.rounding = 1;
+
+    x = x.asin();
+    halfPi = getPi(Ctor, pr + 4, rm).times(0.5);
+
+    Ctor.precision = pr;
+    Ctor.rounding = rm;
+
+    return halfPi.minus(x);
+  };
+
+
+  /*
+   * Return a new Decimal whose value is the inverse of the hyperbolic cosine in radians of the
+   * value of this Decimal.
+   *
+   * Domain: [1, Infinity]
+   * Range: [0, Infinity]
+   *
+   * acosh(x) = ln(x + sqrt(x^2 - 1))
+   *
+   * acosh(x < 1)     = NaN
+   * acosh(NaN)       = NaN
+   * acosh(Infinity)  = Infinity
+   * acosh(-Infinity) = NaN
+   * acosh(0)         = NaN
+   * acosh(-0)        = NaN
+   * acosh(1)         = 0
+   * acosh(-1)        = NaN
+   *
+   */
+  P.inverseHyperbolicCosine = P.acosh = function () {
+    var pr, rm,
+      x = this,
+      Ctor = x.constructor;
+
+    if (x.lte(1)) return new Ctor(x.eq(1) ? 0 : NaN);
+    if (!x.isFinite()) return new Ctor(x);
+
+    pr = Ctor.precision;
+    rm = Ctor.rounding;
+    Ctor.precision = pr + Math.max(Math.abs(x.e), x.sd()) + 4;
+    Ctor.rounding = 1;
+    external = false;
+
+    x = x.times(x).minus(1).sqrt().plus(x);
+
+    external = true;
+    Ctor.precision = pr;
+    Ctor.rounding = rm;
+
+    return x.ln();
+  };
+
+
+  /*
+   * Return a new Decimal whose value is the inverse of the hyperbolic sine in radians of the value
+   * of this Decimal.
+   *
+   * Domain: [-Infinity, Infinity]
+   * Range: [-Infinity, Infinity]
+   *
+   * asinh(x) = ln(x + sqrt(x^2 + 1))
+   *
+   * asinh(NaN)       = NaN
+   * asinh(Infinity)  = Infinity
+   * asinh(-Infinity) = -Infinity
+   * asinh(0)         = 0
+   * asinh(-0)        = -0
+   *
+   */
+  P.inverseHyperbolicSine = P.asinh = function () {
+    var pr, rm,
+      x = this,
+      Ctor = x.constructor;
+
+    if (!x.isFinite() || x.isZero()) return new Ctor(x);
+
+    pr = Ctor.precision;
+    rm = Ctor.rounding;
+    Ctor.precision = pr + 2 * Math.max(Math.abs(x.e), x.sd()) + 6;
+    Ctor.rounding = 1;
+    external = false;
+
+    x = x.times(x).plus(1).sqrt().plus(x);
+
+    external = true;
+    Ctor.precision = pr;
+    Ctor.rounding = rm;
+
+    return x.ln();
+  };
+
+
+  /*
+   * Return a new Decimal whose value is the inverse of the hyperbolic tangent in radians of the
+   * value of this Decimal.
+   *
+   * Domain: [-1, 1]
+   * Range: [-Infinity, Infinity]
+   *
+   * atanh(x) = 0.5 * ln((1 + x) / (1 - x))
+   *
+   * atanh(|x| > 1)   = NaN
+   * atanh(NaN)       = NaN
+   * atanh(Infinity)  = NaN
+   * atanh(-Infinity) = NaN
+   * atanh(0)         = 0
+   * atanh(-0)        = -0
+   * atanh(1)         = Infinity
+   * atanh(-1)        = -Infinity
+   *
+   */
+  P.inverseHyperbolicTangent = P.atanh = function () {
+    var pr, rm, wpr, xsd,
+      x = this,
+      Ctor = x.constructor;
+
+    if (!x.isFinite()) return new Ctor(NaN);
+    if (x.e >= 0) return new Ctor(x.abs().eq(1) ? x.s / 0 : x.isZero() ? x : NaN);
+
+    pr = Ctor.precision;
+    rm = Ctor.rounding;
+    xsd = x.sd();
+
+    if (Math.max(xsd, pr) < 2 * -x.e - 1) return finalise(new Ctor(x), pr, rm, true);
+
+    Ctor.precision = wpr = xsd - x.e;
+
+    x = divide(x.plus(1), new Ctor(1).minus(x), wpr + pr, 1);
+
+    Ctor.precision = pr + 4;
+    Ctor.rounding = 1;
+
+    x = x.ln();
+
+    Ctor.precision = pr;
+    Ctor.rounding = rm;
+
+    return x.times(0.5);
+  };
+
+
+  /*
+   * Return a new Decimal whose value is the arcsine (inverse sine) in radians of the value of this
+   * Decimal.
+   *
+   * Domain: [-Infinity, Infinity]
+   * Range: [-pi/2, pi/2]
+   *
+   * asin(x) = 2*atan(x/(1 + sqrt(1 - x^2)))
+   *
+   * asin(0)       = 0
+   * asin(-0)      = -0
+   * asin(1/2)     = pi/6
+   * asin(-1/2)    = -pi/6
+   * asin(1)       = pi/2
+   * asin(-1)      = -pi/2
+   * asin(|x| > 1) = NaN
+   * asin(NaN)     = NaN
+   *
+   * TODO? Compare performance of Taylor series.
+   *
+   */
+  P.inverseSine = P.asin = function () {
+    var halfPi, k,
+      pr, rm,
+      x = this,
+      Ctor = x.constructor;
+
+    if (x.isZero()) return new Ctor(x);
+
+    k = x.abs().cmp(1);
+    pr = Ctor.precision;
+    rm = Ctor.rounding;
+
+    if (k !== -1) {
+
+      // |x| is 1
+      if (k === 0) {
+        halfPi = getPi(Ctor, pr + 4, rm).times(0.5);
+        halfPi.s = x.s;
+        return halfPi;
+      }
+
+      // |x| > 1 or x is NaN
+      return new Ctor(NaN);
+    }
+
+    // TODO? Special case asin(1/2) = pi/6 and asin(-1/2) = -pi/6
+
+    Ctor.precision = pr + 6;
+    Ctor.rounding = 1;
+
+    x = x.div(new Ctor(1).minus(x.times(x)).sqrt().plus(1)).atan();
+
+    Ctor.precision = pr;
+    Ctor.rounding = rm;
+
+    return x.times(2);
+  };
+
+
+  /*
+   * Return a new Decimal whose value is the arctangent (inverse tangent) in radians of the value
+   * of this Decimal.
+   *
+   * Domain: [-Infinity, Infinity]
+   * Range: [-pi/2, pi/2]
+   *
+   * atan(x) = x - x^3/3 + x^5/5 - x^7/7 + ...
+   *
+   * atan(0)         = 0
+   * atan(-0)        = -0
+   * atan(1)         = pi/4
+   * atan(-1)        = -pi/4
+   * atan(Infinity)  = pi/2
+   * atan(-Infinity) = -pi/2
+   * atan(NaN)       = NaN
+   *
+   */
+  P.inverseTangent = P.atan = function () {
+    var i, j, k, n, px, t, r, wpr, x2,
+      x = this,
+      Ctor = x.constructor,
+      pr = Ctor.precision,
+      rm = Ctor.rounding;
+
+    if (!x.isFinite()) {
+      if (!x.s) return new Ctor(NaN);
+      if (pr + 4 <= PI_PRECISION) {
+        r = getPi(Ctor, pr + 4, rm).times(0.5);
+        r.s = x.s;
+        return r;
+      }
+    } else if (x.isZero()) {
+      return new Ctor(x);
+    } else if (x.abs().eq(1) && pr + 4 <= PI_PRECISION) {
+      r = getPi(Ctor, pr + 4, rm).times(0.25);
+      r.s = x.s;
+      return r;
+    }
+
+    Ctor.precision = wpr = pr + 10;
+    Ctor.rounding = 1;
+
+    // TODO? if (x >= 1 && pr <= PI_PRECISION) atan(x) = halfPi * x.s - atan(1 / x);
+
+    // Argument reduction
+    // Ensure |x| < 0.42
+    // atan(x) = 2 * atan(x / (1 + sqrt(1 + x^2)))
+
+    k = Math.min(28, wpr / LOG_BASE + 2 | 0);
+
+    for (i = k; i; --i) x = x.div(x.times(x).plus(1).sqrt().plus(1));
+
+    external = false;
+
+    j = Math.ceil(wpr / LOG_BASE);
+    n = 1;
+    x2 = x.times(x);
+    r = new Ctor(x);
+    px = x;
+
+    // atan(x) = x - x^3/3 + x^5/5 - x^7/7 + ...
+    for (; i !== -1;) {
+      px = px.times(x2);
+      t = r.minus(px.div(n += 2));
+
+      px = px.times(x2);
+      r = t.plus(px.div(n += 2));
+
+      if (r.d[j] !== void 0) for (i = j; r.d[i] === t.d[i] && i--;);
+    }
+
+    if (k) r = r.times(2 << (k - 1));
+
+    external = true;
+
+    return finalise(r, Ctor.precision = pr, Ctor.rounding = rm, true);
+  };
+
+
+  /*
+   * Return true if the value of this Decimal is a finite number, otherwise return false.
+   *
+   */
+  P.isFinite = function () {
+    return !!this.d;
+  };
+
+
+  /*
+   * Return true if the value of this Decimal is an integer, otherwise return false.
+   *
+   */
+  P.isInteger = P.isInt = function () {
+    return !!this.d && mathfloor(this.e / LOG_BASE) > this.d.length - 2;
+  };
+
+
+  /*
+   * Return true if the value of this Decimal is NaN, otherwise return false.
+   *
+   */
+  P.isNaN = function () {
+    return !this.s;
+  };
+
+
+  /*
+   * Return true if the value of this Decimal is negative, otherwise return false.
+   *
+   */
+  P.isNegative = P.isNeg = function () {
+    return this.s < 0;
+  };
+
+
+  /*
+   * Return true if the value of this Decimal is positive, otherwise return false.
+   *
+   */
+  P.isPositive = P.isPos = function () {
+    return this.s > 0;
+  };
+
+
+  /*
+   * Return true if the value of this Decimal is 0 or -0, otherwise return false.
+   *
+   */
+  P.isZero = function () {
+    return !!this.d && this.d[0] === 0;
+  };
+
+
+  /*
+   * Return true if the value of this Decimal is less than `y`, otherwise return false.
+   *
+   */
+  P.lessThan = P.lt = function (y) {
+    return this.cmp(y) < 0;
+  };
+
+
+  /*
+   * Return true if the value of this Decimal is less than or equal to `y`, otherwise return false.
+   *
+   */
+  P.lessThanOrEqualTo = P.lte = function (y) {
+    return this.cmp(y) < 1;
+  };
+
+
+  /*
+   * Return the logarithm of the value of this Decimal to the specified base, rounded to `precision`
+   * significant digits using rounding mode `rounding`.
+   *
+   * If no base is specified, return log[10](arg).
+   *
+   * log[base](arg) = ln(arg) / ln(base)
+   *
+   * The result will always be correctly rounded if the base of the log is 10, and 'almost always'
+   * otherwise:
+   *
+   * Depending on the rounding mode, the result may be incorrectly rounded if the first fifteen
+   * rounding digits are [49]99999999999999 or [50]00000000000000. In that case, the maximum error
+   * between the result and the correctly rounded result will be one ulp (unit in the last place).
+   *
+   * log[-b](a)       = NaN
+   * log[0](a)        = NaN
+   * log[1](a)        = NaN
+   * log[NaN](a)      = NaN
+   * log[Infinity](a) = NaN
+   * log[b](0)        = -Infinity
+   * log[b](-0)       = -Infinity
+   * log[b](-a)       = NaN
+   * log[b](1)        = 0
+   * log[b](Infinity) = Infinity
+   * log[b](NaN)      = NaN
+   *
+   * [base] {number|string|Decimal} The base of the logarithm.
+   *
+   */
+  P.logarithm = P.log = function (base) {
+    var isBase10, d, denominator, k, inf, num, sd, r,
+      arg = this,
+      Ctor = arg.constructor,
+      pr = Ctor.precision,
+      rm = Ctor.rounding,
+      guard = 5;
+
+    // Default base is 10.
+    if (base == null) {
+      base = new Ctor(10);
+      isBase10 = true;
+    } else {
+      base = new Ctor(base);
+      d = base.d;
+
+      // Return NaN if base is negative, or non-finite, or is 0 or 1.
+      if (base.s < 0 || !d || !d[0] || base.eq(1)) return new Ctor(NaN);
+
+      isBase10 = base.eq(10);
+    }
+
+    d = arg.d;
+
+    // Is arg negative, non-finite, 0 or 1?
+    if (arg.s < 0 || !d || !d[0] || arg.eq(1)) {
+      return new Ctor(d && !d[0] ? -1 / 0 : arg.s != 1 ? NaN : d ? 0 : 1 / 0);
+    }
+
+    // The result will have a non-terminating decimal expansion if base is 10 and arg is not an
+    // integer power of 10.
+    if (isBase10) {
+      if (d.length > 1) {
+        inf = true;
+      } else {
+        for (k = d[0]; k % 10 === 0;) k /= 10;
+        inf = k !== 1;
+      }
+    }
+
+    external = false;
+    sd = pr + guard;
+    num = naturalLogarithm(arg, sd);
+    denominator = isBase10 ? getLn10(Ctor, sd + 10) : naturalLogarithm(base, sd);
+
+    // The result will have 5 rounding digits.
+    r = divide(num, denominator, sd, 1);
+
+    // If at a rounding boundary, i.e. the result's rounding digits are [49]9999 or [50]0000,
+    // calculate 10 further digits.
+    //
+    // If the result is known to have an infinite decimal expansion, repeat this until it is clear
+    // that the result is above or below the boundary. Otherwise, if after calculating the 10
+    // further digits, the last 14 are nines, round up and assume the result is exact.
+    // Also assume the result is exact if the last 14 are zero.
+    //
+    // Example of a result that will be incorrectly rounded:
+    // log[1048576](4503599627370502) = 2.60000000000000009610279511444746...
+    // The above result correctly rounded using ROUND_CEIL to 1 decimal place should be 2.7, but it
+    // will be given as 2.6 as there are 15 zeros immediately after the requested decimal place, so
+    // the exact result would be assumed to be 2.6, which rounded using ROUND_CEIL to 1 decimal
+    // place is still 2.6.
+    if (checkRoundingDigits(r.d, k = pr, rm)) {
+
+      do {
+        sd += 10;
+        num = naturalLogarithm(arg, sd);
+        denominator = isBase10 ? getLn10(Ctor, sd + 10) : naturalLogarithm(base, sd);
+        r = divide(num, denominator, sd, 1);
+
+        if (!inf) {
+
+          // Check for 14 nines from the 2nd rounding digit, as the first may be 4.
+          if (+digitsToString(r.d).slice(k + 1, k + 15) + 1 == 1e14) {
+            r = finalise(r, pr + 1, 0);
+          }
+
+          break;
+        }
+      } while (checkRoundingDigits(r.d, k += 10, rm));
+    }
+
+    external = true;
+
+    return finalise(r, pr, rm);
+  };
+
+
+  /*
+   * Return a new Decimal whose value is the maximum of the arguments and the value of this Decimal.
+   *
+   * arguments {number|string|Decimal}
+   *
+  P.max = function () {
+    Array.prototype.push.call(arguments, this);
+    return maxOrMin(this.constructor, arguments, 'lt');
+  };
+   */
+
+
+  /*
+   * Return a new Decimal whose value is the minimum of the arguments and the value of this Decimal.
+   *
+   * arguments {number|string|Decimal}
+   *
+  P.min = function () {
+    Array.prototype.push.call(arguments, this);
+    return maxOrMin(this.constructor, arguments, 'gt');
+  };
+   */
+
+
+  /*
+   *  n - 0 = n
+   *  n - N = N
+   *  n - I = -I
+   *  0 - n = -n
+   *  0 - 0 = 0
+   *  0 - N = N
+   *  0 - I = -I
+   *  N - n = N
+   *  N - 0 = N
+   *  N - N = N
+   *  N - I = N
+   *  I - n = I
+   *  I - 0 = I
+   *  I - N = N
+   *  I - I = N
+   *
+   * Return a new Decimal whose value is the value of this Decimal minus `y`, rounded to `precision`
+   * significant digits using rounding mode `rounding`.
+   *
+   */
+  P.minus = P.sub = function (y) {
+    var d, e, i, j, k, len, pr, rm, xd, xe, xLTy, yd,
+      x = this,
+      Ctor = x.constructor;
+
+    y = new Ctor(y);
+
+    // If either is not finite...
+    if (!x.d || !y.d) {
+
+      // Return NaN if either is NaN.
+      if (!x.s || !y.s) y = new Ctor(NaN);
+
+      // Return y negated if x is finite and y is ±Infinity.
+      else if (x.d) y.s = -y.s;
+
+      // Return x if y is finite and x is ±Infinity.
+      // Return x if both are ±Infinity with different signs.
+      // Return NaN if both are ±Infinity with the same sign.
+      else y = new Ctor(y.d || x.s !== y.s ? x : NaN);
+
+      return y;
+    }
+
+    // If signs differ...
+    if (x.s != y.s) {
+      y.s = -y.s;
+      return x.plus(y);
+    }
+
+    xd = x.d;
+    yd = y.d;
+    pr = Ctor.precision;
+    rm = Ctor.rounding;
+
+    // If either is zero...
+    if (!xd[0] || !yd[0]) {
+
+      // Return y negated if x is zero and y is non-zero.
+      if (yd[0]) y.s = -y.s;
+
+      // Return x if y is zero and x is non-zero.
+      else if (xd[0]) y = new Ctor(x);
+
+      // Return zero if both are zero.
+      // From IEEE 754 (2008) 6.3: 0 - 0 = -0 - -0 = -0 when rounding to -Infinity.
+      else return new Ctor(rm === 3 ? -0 : 0);
+
+      return external ? finalise(y, pr, rm) : y;
+    }
+
+    // x and y are finite, non-zero numbers with the same sign.
+
+    // Calculate base 1e7 exponents.
+    e = mathfloor(y.e / LOG_BASE);
+    xe = mathfloor(x.e / LOG_BASE);
+
+    xd = xd.slice();
+    k = xe - e;
+
+    // If base 1e7 exponents differ...
+    if (k) {
+      xLTy = k < 0;
+
+      if (xLTy) {
+        d = xd;
+        k = -k;
+        len = yd.length;
+      } else {
+        d = yd;
+        e = xe;
+        len = xd.length;
+      }
+
+      // Numbers with massively different exponents would result in a very high number of
+      // zeros needing to be prepended, but this can be avoided while still ensuring correct
+      // rounding by limiting the number of zeros to `Math.ceil(pr / LOG_BASE) + 2`.
+      i = Math.max(Math.ceil(pr / LOG_BASE), len) + 2;
+
+      if (k > i) {
+        k = i;
+        d.length = 1;
+      }
+
+      // Prepend zeros to equalise exponents.
+      d.reverse();
+      for (i = k; i--;) d.push(0);
+      d.reverse();
+
+    // Base 1e7 exponents equal.
+    } else {
+
+      // Check digits to determine which is the bigger number.
+
+      i = xd.length;
+      len = yd.length;
+      xLTy = i < len;
+      if (xLTy) len = i;
+
+      for (i = 0; i < len; i++) {
+        if (xd[i] != yd[i]) {
+          xLTy = xd[i] < yd[i];
+          break;
+        }
+      }
+
+      k = 0;
+    }
+
+    if (xLTy) {
+      d = xd;
+      xd = yd;
+      yd = d;
+      y.s = -y.s;
+    }
+
+    len = xd.length;
+
+    // Append zeros to `xd` if shorter.
+    // Don't add zeros to `yd` if shorter as subtraction only needs to start at `yd` length.
+    for (i = yd.length - len; i > 0; --i) xd[len++] = 0;
+
+    // Subtract yd from xd.
+    for (i = yd.length; i > k;) {
+
+      if (xd[--i] < yd[i]) {
+        for (j = i; j && xd[--j] === 0;) xd[j] = BASE - 1;
+        --xd[j];
+        xd[i] += BASE;
+      }
+
+      xd[i] -= yd[i];
+    }
+
+    // Remove trailing zeros.
+    for (; xd[--len] === 0;) xd.pop();
+
+    // Remove leading zeros and adjust exponent accordingly.
+    for (; xd[0] === 0; xd.shift()) --e;
+
+    // Zero?
+    if (!xd[0]) return new Ctor(rm === 3 ? -0 : 0);
+
+    y.d = xd;
+    y.e = getBase10Exponent(xd, e);
+
+    return external ? finalise(y, pr, rm) : y;
+  };
+
+
+  /*
+   *   n % 0 =  N
+   *   n % N =  N
+   *   n % I =  n
+   *   0 % n =  0
+   *  -0 % n = -0
+   *   0 % 0 =  N
+   *   0 % N =  N
+   *   0 % I =  0
+   *   N % n =  N
+   *   N % 0 =  N
+   *   N % N =  N
+   *   N % I =  N
+   *   I % n =  N
+   *   I % 0 =  N
+   *   I % N =  N
+   *   I % I =  N
+   *
+   * Return a new Decimal whose value is the value of this Decimal modulo `y`, rounded to
+   * `precision` significant digits using rounding mode `rounding`.
+   *
+   * The result depends on the modulo mode.
+   *
+   */
+  P.modulo = P.mod = function (y) {
+    var q,
+      x = this,
+      Ctor = x.constructor;
+
+    y = new Ctor(y);
+
+    // Return NaN if x is ±Infinity or NaN, or y is NaN or ±0.
+    if (!x.d || !y.s || y.d && !y.d[0]) return new Ctor(NaN);
+
+    // Return x if y is ±Infinity or x is ±0.
+    if (!y.d || x.d && !x.d[0]) {
+      return finalise(new Ctor(x), Ctor.precision, Ctor.rounding);
+    }
+
+    // Prevent rounding of intermediate calculations.
+    external = false;
+
+    if (Ctor.modulo == 9) {
+
+      // Euclidian division: q = sign(y) * floor(x / abs(y))
+      // result = x - q * y    where  0 <= result < abs(y)
+      q = divide(x, y.abs(), 0, 3, 1);
+      q.s *= y.s;
+    } else {
+      q = divide(x, y, 0, Ctor.modulo, 1);
+    }
+
+    q = q.times(y);
+
+    external = true;
+
+    return x.minus(q);
+  };
+
+
+  /*
+   * Return a new Decimal whose value is the natural exponential of the value of this Decimal,
+   * i.e. the base e raised to the power the value of this Decimal, rounded to `precision`
+   * significant digits using rounding mode `rounding`.
+   *
+   */
+  P.naturalExponential = P.exp = function () {
+    return naturalExponential(this);
+  };
+
+
+  /*
+   * Return a new Decimal whose value is the natural logarithm of the value of this Decimal,
+   * rounded to `precision` significant digits using rounding mode `rounding`.
+   *
+   */
+  P.naturalLogarithm = P.ln = function () {
+    return naturalLogarithm(this);
+  };
+
+
+  /*
+   * Return a new Decimal whose value is the value of this Decimal negated, i.e. as if multiplied by
+   * -1.
+   *
+   */
+  P.negated = P.neg = function () {
+    var x = new this.constructor(this);
+    x.s = -x.s;
+    return finalise(x);
+  };
+
+
+  /*
+   *  n + 0 = n
+   *  n + N = N
+   *  n + I = I
+   *  0 + n = n
+   *  0 + 0 = 0
+   *  0 + N = N
+   *  0 + I = I
+   *  N + n = N
+   *  N + 0 = N
+   *  N + N = N
+   *  N + I = N
+   *  I + n = I
+   *  I + 0 = I
+   *  I + N = N
+   *  I + I = I
+   *
+   * Return a new Decimal whose value is the value of this Decimal plus `y`, rounded to `precision`
+   * significant digits using rounding mode `rounding`.
+   *
+   */
+  P.plus = P.add = function (y) {
+    var carry, d, e, i, k, len, pr, rm, xd, yd,
+      x = this,
+      Ctor = x.constructor;
+
+    y = new Ctor(y);
+
+    // If either is not finite...
+    if (!x.d || !y.d) {
+
+      // Return NaN if either is NaN.
+      if (!x.s || !y.s) y = new Ctor(NaN);
+
+      // Return x if y is finite and x is ±Infinity.
+      // Return x if both are ±Infinity with the same sign.
+      // Return NaN if both are ±Infinity with different signs.
+      // Return y if x is finite and y is ±Infinity.
+      else if (!x.d) y = new Ctor(y.d || x.s === y.s ? x : NaN);
+
+      return y;
+    }
+
+     // If signs differ...
+    if (x.s != y.s) {
+      y.s = -y.s;
+      return x.minus(y);
+    }
+
+    xd = x.d;
+    yd = y.d;
+    pr = Ctor.precision;
+    rm = Ctor.rounding;
+
+    // If either is zero...
+    if (!xd[0] || !yd[0]) {
+
+      // Return x if y is zero.
+      // Return y if y is non-zero.
+      if (!yd[0]) y = new Ctor(x);
+
+      return external ? finalise(y, pr, rm) : y;
+    }
+
+    // x and y are finite, non-zero numbers with the same sign.
+
+    // Calculate base 1e7 exponents.
+    k = mathfloor(x.e / LOG_BASE);
+    e = mathfloor(y.e / LOG_BASE);
+
+    xd = xd.slice();
+    i = k - e;
+
+    // If base 1e7 exponents differ...
+    if (i) {
+
+      if (i < 0) {
+        d = xd;
+        i = -i;
+        len = yd.length;
+      } else {
+        d = yd;
+        e = k;
+        len = xd.length;
+      }
+
+      // Limit number of zeros prepended to max(ceil(pr / LOG_BASE), len) + 1.
+      k = Math.ceil(pr / LOG_BASE);
+      len = k > len ? k + 1 : len + 1;
+
+      if (i > len) {
+        i = len;
+        d.length = 1;
+      }
+
+      // Prepend zeros to equalise exponents. Note: Faster to use reverse then do unshifts.
+      d.reverse();
+      for (; i--;) d.push(0);
+      d.reverse();
+    }
+
+    len = xd.length;
+    i = yd.length;
+
+    // If yd is longer than xd, swap xd and yd so xd points to the longer array.
+    if (len - i < 0) {
+      i = len;
+      d = yd;
+      yd = xd;
+      xd = d;
+    }
+
+    // Only start adding at yd.length - 1 as the further digits of xd can be left as they are.
+    for (carry = 0; i;) {
+      carry = (xd[--i] = xd[i] + yd[i] + carry) / BASE | 0;
+      xd[i] %= BASE;
+    }
+
+    if (carry) {
+      xd.unshift(carry);
+      ++e;
+    }
+
+    // Remove trailing zeros.
+    // No need to check for zero, as +x + +y != 0 && -x + -y != 0
+    for (len = xd.length; xd[--len] == 0;) xd.pop();
+
+    y.d = xd;
+    y.e = getBase10Exponent(xd, e);
+
+    return external ? finalise(y, pr, rm) : y;
+  };
+
+
+  /*
+   * Return the number of significant digits of the value of this Decimal.
+   *
+   * [z] {boolean|number} Whether to count integer-part trailing zeros: true, false, 1 or 0.
+   *
+   */
+  P.precision = P.sd = function (z) {
+    var k,
+      x = this;
+
+    if (z !== void 0 && z !== !!z && z !== 1 && z !== 0) throw Error(invalidArgument + z);
+
+    if (x.d) {
+      k = getPrecision(x.d);
+      if (z && x.e + 1 > k) k = x.e + 1;
+    } else {
+      k = NaN;
+    }
+
+    return k;
+  };
+
+
+  /*
+   * Return a new Decimal whose value is the value of this Decimal rounded to a whole number using
+   * rounding mode `rounding`.
+   *
+   */
+  P.round = function () {
+    var x = this,
+      Ctor = x.constructor;
+
+    return finalise(new Ctor(x), x.e + 1, Ctor.rounding);
+  };
+
+
+  /*
+   * Return a new Decimal whose value is the sine of the value in radians of this Decimal.
+   *
+   * Domain: [-Infinity, Infinity]
+   * Range: [-1, 1]
+   *
+   * sin(x) = x - x^3/3! + x^5/5! - ...
+   *
+   * sin(0)         = 0
+   * sin(-0)        = -0
+   * sin(Infinity)  = NaN
+   * sin(-Infinity) = NaN
+   * sin(NaN)       = NaN
+   *
+   */
+  P.sine = P.sin = function () {
+    var pr, rm,
+      x = this,
+      Ctor = x.constructor;
+
+    if (!x.isFinite()) return new Ctor(NaN);
+    if (x.isZero()) return new Ctor(x);
+
+    pr = Ctor.precision;
+    rm = Ctor.rounding;
+    Ctor.precision = pr + Math.max(x.e, x.sd()) + LOG_BASE;
+    Ctor.rounding = 1;
+
+    x = sine(Ctor, toLessThanHalfPi(Ctor, x));
+
+    Ctor.precision = pr;
+    Ctor.rounding = rm;
+
+    return finalise(quadrant > 2 ? x.neg() : x, pr, rm, true);
+  };
+
+
+  /*
+   * Return a new Decimal whose value is the square root of this Decimal, rounded to `precision`
+   * significant digits using rounding mode `rounding`.
+   *
+   *  sqrt(-n) =  N
+   *  sqrt(N)  =  N
+   *  sqrt(-I) =  N
+   *  sqrt(I)  =  I
+   *  sqrt(0)  =  0
+   *  sqrt(-0) = -0
+   *
+   */
+  P.squareRoot = P.sqrt = function () {
+    var m, n, sd, r, rep, t,
+      x = this,
+      d = x.d,
+      e = x.e,
+      s = x.s,
+      Ctor = x.constructor;
+
+    // Negative/NaN/Infinity/zero?
+    if (s !== 1 || !d || !d[0]) {
+      return new Ctor(!s || s < 0 && (!d || d[0]) ? NaN : d ? x : 1 / 0);
+    }
+
+    external = false;
+
+    // Initial estimate.
+    s = Math.sqrt(+x);
+
+    // Math.sqrt underflow/overflow?
+    // Pass x to Math.sqrt as integer, then adjust the exponent of the result.
+    if (s == 0 || s == 1 / 0) {
+      n = digitsToString(d);
+
+      if ((n.length + e) % 2 == 0) n += '0';
+      s = Math.sqrt(n);
+      e = mathfloor((e + 1) / 2) - (e < 0 || e % 2);
+
+      if (s == 1 / 0) {
+        n = '5e' + e;
+      } else {
+        n = s.toExponential();
+        n = n.slice(0, n.indexOf('e') + 1) + e;
+      }
+
+      r = new Ctor(n);
+    } else {
+      r = new Ctor(s.toString());
+    }
+
+    sd = (e = Ctor.precision) + 3;
+
+    // Newton-Raphson iteration.
+    for (;;) {
+      t = r;
+      r = t.plus(divide(x, t, sd + 2, 1)).times(0.5);
+
+      // TODO? Replace with for-loop and checkRoundingDigits.
+      if (digitsToString(t.d).slice(0, sd) === (n = digitsToString(r.d)).slice(0, sd)) {
+        n = n.slice(sd - 3, sd + 1);
+
+        // The 4th rounding digit may be in error by -1 so if the 4 rounding digits are 9999 or
+        // 4999, i.e. approaching a rounding boundary, continue the iteration.
+        if (n == '9999' || !rep && n == '4999') {
+
+          // On the first iteration only, check to see if rounding up gives the exact result as the
+          // nines may infinitely repeat.
+          if (!rep) {
+            finalise(t, e + 1, 0);
+
+            if (t.times(t).eq(x)) {
+              r = t;
+              break;
+            }
+          }
+
+          sd += 4;
+          rep = 1;
+        } else {
+
+          // If the rounding digits are null, 0{0,4} or 50{0,3}, check for an exact result.
+          // If not, then there are further digits and m will be truthy.
+          if (!+n || !+n.slice(1) && n.charAt(0) == '5') {
+
+            // Truncate to the first rounding digit.
+            finalise(r, e + 1, 1);
+            m = !r.times(r).eq(x);
+          }
+
+          break;
+        }
+      }
+    }
+
+    external = true;
+
+    return finalise(r, e, Ctor.rounding, m);
+  };
+
+
+  /*
+   * Return a new Decimal whose value is the tangent of the value in radians of this Decimal.
+   *
+   * Domain: [-Infinity, Infinity]
+   * Range: [-Infinity, Infinity]
+   *
+   * tan(0)         = 0
+   * tan(-0)        = -0
+   * tan(Infinity)  = NaN
+   * tan(-Infinity) = NaN
+   * tan(NaN)       = NaN
+   *
+   */
+  P.tangent = P.tan = function () {
+    var pr, rm,
+      x = this,
+      Ctor = x.constructor;
+
+    if (!x.isFinite()) return new Ctor(NaN);
+    if (x.isZero()) return new Ctor(x);
+
+    pr = Ctor.precision;
+    rm = Ctor.rounding;
+    Ctor.precision = pr + 10;
+    Ctor.rounding = 1;
+
+    x = x.sin();
+    x.s = 1;
+    x = divide(x, new Ctor(1).minus(x.times(x)).sqrt(), pr + 10, 0);
+
+    Ctor.precision = pr;
+    Ctor.rounding = rm;
+
+    return finalise(quadrant == 2 || quadrant == 4 ? x.neg() : x, pr, rm, true);
+  };
+
+
+  /*
+   *  n * 0 = 0
+   *  n * N = N
+   *  n * I = I
+   *  0 * n = 0
+   *  0 * 0 = 0
+   *  0 * N = N
+   *  0 * I = N
+   *  N * n = N
+   *  N * 0 = N
+   *  N * N = N
+   *  N * I = N
+   *  I * n = I
+   *  I * 0 = N
+   *  I * N = N
+   *  I * I = I
+   *
+   * Return a new Decimal whose value is this Decimal times `y`, rounded to `precision` significant
+   * digits using rounding mode `rounding`.
+   *
+   */
+  P.times = P.mul = function (y) {
+    var carry, e, i, k, r, rL, t, xdL, ydL,
+      x = this,
+      Ctor = x.constructor,
+      xd = x.d,
+      yd = (y = new Ctor(y)).d;
+
+    y.s *= x.s;
+
+     // If either is NaN, ±Infinity or ±0...
+    if (!xd || !xd[0] || !yd || !yd[0]) {
+
+      return new Ctor(!y.s || xd && !xd[0] && !yd || yd && !yd[0] && !xd
+
+        // Return NaN if either is NaN.
+        // Return NaN if x is ±0 and y is ±Infinity, or y is ±0 and x is ±Infinity.
+        ? NaN
+
+        // Return ±Infinity if either is ±Infinity.
+        // Return ±0 if either is ±0.
+        : !xd || !yd ? y.s / 0 : y.s * 0);
+    }
+
+    e = mathfloor(x.e / LOG_BASE) + mathfloor(y.e / LOG_BASE);
+    xdL = xd.length;
+    ydL = yd.length;
+
+    // Ensure xd points to the longer array.
+    if (xdL < ydL) {
+      r = xd;
+      xd = yd;
+      yd = r;
+      rL = xdL;
+      xdL = ydL;
+      ydL = rL;
+    }
+
+    // Initialise the result array with zeros.
+    r = [];
+    rL = xdL + ydL;
+    for (i = rL; i--;) r.push(0);
+
+    // Multiply!
+    for (i = ydL; --i >= 0;) {
+      carry = 0;
+      for (k = xdL + i; k > i;) {
+        t = r[k] + yd[i] * xd[k - i - 1] + carry;
+        r[k--] = t % BASE | 0;
+        carry = t / BASE | 0;
+      }
+
+      r[k] = (r[k] + carry) % BASE | 0;
+    }
+
+    // Remove trailing zeros.
+    for (; !r[--rL];) r.pop();
+
+    if (carry) ++e;
+    else r.shift();
+
+    y.d = r;
+    y.e = getBase10Exponent(r, e);
+
+    return external ? finalise(y, Ctor.precision, Ctor.rounding) : y;
+  };
+
+
+  /*
+   * Return a string representing the value of this Decimal in base 2, round to `sd` significant
+   * digits using rounding mode `rm`.
+   *
+   * If the optional `sd` argument is present then return binary exponential notation.
+   *
+   * [sd] {number} Significant digits. Integer, 1 to MAX_DIGITS inclusive.
+   * [rm] {number} Rounding mode. Integer, 0 to 8 inclusive.
+   *
+   */
+  P.toBinary = function (sd, rm) {
+    return toStringBinary(this, 2, sd, rm);
+  };
+
+
+  /*
+   * Return a new Decimal whose value is the value of this Decimal rounded to a maximum of `dp`
+   * decimal places using rounding mode `rm` or `rounding` if `rm` is omitted.
+   *
+   * If `dp` is omitted, return a new Decimal whose value is the value of this Decimal.
+   *
+   * [dp] {number} Decimal places. Integer, 0 to MAX_DIGITS inclusive.
+   * [rm] {number} Rounding mode. Integer, 0 to 8 inclusive.
+   *
+   */
+  P.toDecimalPlaces = P.toDP = function (dp, rm) {
+    var x = this,
+      Ctor = x.constructor;
+
+    x = new Ctor(x);
+    if (dp === void 0) return x;
+
+    checkInt32(dp, 0, MAX_DIGITS);
+
+    if (rm === void 0) rm = Ctor.rounding;
+    else checkInt32(rm, 0, 8);
+
+    return finalise(x, dp + x.e + 1, rm);
+  };
+
+
+  /*
+   * Return a string representing the value of this Decimal in exponential notation rounded to
+   * `dp` fixed decimal places using rounding mode `rounding`.
+   *
+   * [dp] {number} Decimal places. Integer, 0 to MAX_DIGITS inclusive.
+   * [rm] {number} Rounding mode. Integer, 0 to 8 inclusive.
+   *
+   */
+  P.toExponential = function (dp, rm) {
+    var str,
+      x = this,
+      Ctor = x.constructor;
+
+    if (dp === void 0) {
+      str = finiteToString(x, true);
+    } else {
+      checkInt32(dp, 0, MAX_DIGITS);
+
+      if (rm === void 0) rm = Ctor.rounding;
+      else checkInt32(rm, 0, 8);
+
+      x = finalise(new Ctor(x), dp + 1, rm);
+      str = finiteToString(x, true, dp + 1);
+    }
+
+    return x.isNeg() && !x.isZero() ? '-' + str : str;
+  };
+
+
+  /*
+   * Return a string representing the value of this Decimal in normal (fixed-point) notation to
+   * `dp` fixed decimal places and rounded using rounding mode `rm` or `rounding` if `rm` is
+   * omitted.
+   *
+   * As with JavaScript numbers, (-0).toFixed(0) is '0', but e.g. (-0.00001).toFixed(0) is '-0'.
+   *
+   * [dp] {number} Decimal places. Integer, 0 to MAX_DIGITS inclusive.
+   * [rm] {number} Rounding mode. Integer, 0 to 8 inclusive.
+   *
+   * (-0).toFixed(0) is '0', but (-0.1).toFixed(0) is '-0'.
+   * (-0).toFixed(1) is '0.0', but (-0.01).toFixed(1) is '-0.0'.
+   * (-0).toFixed(3) is '0.000'.
+   * (-0.5).toFixed(0) is '-0'.
+   *
+   */
+  P.toFixed = function (dp, rm) {
+    var str, y,
+      x = this,
+      Ctor = x.constructor;
+
+    if (dp === void 0) {
+      str = finiteToString(x);
+    } else {
+      checkInt32(dp, 0, MAX_DIGITS);
+
+      if (rm === void 0) rm = Ctor.rounding;
+      else checkInt32(rm, 0, 8);
+
+      y = finalise(new Ctor(x), dp + x.e + 1, rm);
+      str = finiteToString(y, false, dp + y.e + 1);
+    }
+
+    // To determine whether to add the minus sign look at the value before it was rounded,
+    // i.e. look at `x` rather than `y`.
+    return x.isNeg() && !x.isZero() ? '-' + str : str;
+  };
+
+
+  /*
+   * Return an array representing the value of this Decimal as a simple fraction with an integer
+   * numerator and an integer denominator.
+   *
+   * The denominator will be a positive non-zero value less than or equal to the specified maximum
+   * denominator. If a maximum denominator is not specified, the denominator will be the lowest
+   * value necessary to represent the number exactly.
+   *
+   * [maxD] {number|string|Decimal} Maximum denominator. Integer >= 1 and < Infinity.
+   *
+   */
+  P.toFraction = function (maxD) {
+    var d, d0, d1, d2, e, k, n, n0, n1, pr, q, r,
+      x = this,
+      xd = x.d,
+      Ctor = x.constructor;
+
+    if (!xd) return new Ctor(x);
+
+    n1 = d0 = new Ctor(1);
+    d1 = n0 = new Ctor(0);
+
+    d = new Ctor(d1);
+    e = d.e = getPrecision(xd) - x.e - 1;
+    k = e % LOG_BASE;
+    d.d[0] = mathpow(10, k < 0 ? LOG_BASE + k : k);
+
+    if (maxD == null) {
+
+      // d is 10**e, the minimum max-denominator needed.
+      maxD = e > 0 ? d : n1;
+    } else {
+      n = new Ctor(maxD);
+      if (!n.isInt() || n.lt(n1)) throw Error(invalidArgument + n);
+      maxD = n.gt(d) ? (e > 0 ? d : n1) : n;
+    }
+
+    external = false;
+    n = new Ctor(digitsToString(xd));
+    pr = Ctor.precision;
+    Ctor.precision = e = xd.length * LOG_BASE * 2;
+
+    for (;;)  {
+      q = divide(n, d, 0, 1, 1);
+      d2 = d0.plus(q.times(d1));
+      if (d2.cmp(maxD) == 1) break;
+      d0 = d1;
+      d1 = d2;
+      d2 = n1;
+      n1 = n0.plus(q.times(d2));
+      n0 = d2;
+      d2 = d;
+      d = n.minus(q.times(d2));
+      n = d2;
+    }
+
+    d2 = divide(maxD.minus(d0), d1, 0, 1, 1);
+    n0 = n0.plus(d2.times(n1));
+    d0 = d0.plus(d2.times(d1));
+    n0.s = n1.s = x.s;
+
+    // Determine which fraction is closer to x, n0/d0 or n1/d1?
+    r = divide(n1, d1, e, 1).minus(x).abs().cmp(divide(n0, d0, e, 1).minus(x).abs()) < 1
+        ? [n1, d1] : [n0, d0];
+
+    Ctor.precision = pr;
+    external = true;
+
+    return r;
+  };
+
+
+  /*
+   * Return a string representing the value of this Decimal in base 16, round to `sd` significant
+   * digits using rounding mode `rm`.
+   *
+   * If the optional `sd` argument is present then return binary exponential notation.
+   *
+   * [sd] {number} Significant digits. Integer, 1 to MAX_DIGITS inclusive.
+   * [rm] {number} Rounding mode. Integer, 0 to 8 inclusive.
+   *
+   */
+  P.toHexadecimal = P.toHex = function (sd, rm) {
+    return toStringBinary(this, 16, sd, rm);
+  };
+
+
+  /*
+   * Returns a new Decimal whose value is the nearest multiple of `y` in the direction of rounding
+   * mode `rm`, or `Decimal.rounding` if `rm` is omitted, to the value of this Decimal.
+   *
+   * The return value will always have the same sign as this Decimal, unless either this Decimal
+   * or `y` is NaN, in which case the return value will be also be NaN.
+   *
+   * The return value is not affected by the value of `precision`.
+   *
+   * y {number|string|Decimal} The magnitude to round to a multiple of.
+   * [rm] {number} Rounding mode. Integer, 0 to 8 inclusive.
+   *
+   * 'toNearest() rounding mode not an integer: {rm}'
+   * 'toNearest() rounding mode out of range: {rm}'
+   *
+   */
+  P.toNearest = function (y, rm) {
+    var x = this,
+      Ctor = x.constructor;
+
+    x = new Ctor(x);
+
+    if (y == null) {
+
+      // If x is not finite, return x.
+      if (!x.d) return x;
+
+      y = new Ctor(1);
+      rm = Ctor.rounding;
+    } else {
+      y = new Ctor(y);
+      if (rm === void 0) {
+        rm = Ctor.rounding;
+      } else {
+        checkInt32(rm, 0, 8);
+      }
+
+      // If x is not finite, return x if y is not NaN, else NaN.
+      if (!x.d) return y.s ? x : y;
+
+      // If y is not finite, return Infinity with the sign of x if y is Infinity, else NaN.
+      if (!y.d) {
+        if (y.s) y.s = x.s;
+        return y;
+      }
+    }
+
+    // If y is not zero, calculate the nearest multiple of y to x.
+    if (y.d[0]) {
+      external = false;
+      x = divide(x, y, 0, rm, 1).times(y);
+      external = true;
+      finalise(x);
+
+    // If y is zero, return zero with the sign of x.
+    } else {
+      y.s = x.s;
+      x = y;
+    }
+
+    return x;
+  };
+
+
+  /*
+   * Return the value of this Decimal converted to a number primitive.
+   * Zero keeps its sign.
+   *
+   */
+  P.toNumber = function () {
+    return +this;
+  };
+
+
+  /*
+   * Return a string representing the value of this Decimal in base 8, round to `sd` significant
+   * digits using rounding mode `rm`.
+   *
+   * If the optional `sd` argument is present then return binary exponential notation.
+   *
+   * [sd] {number} Significant digits. Integer, 1 to MAX_DIGITS inclusive.
+   * [rm] {number} Rounding mode. Integer, 0 to 8 inclusive.
+   *
+   */
+  P.toOctal = function (sd, rm) {
+    return toStringBinary(this, 8, sd, rm);
+  };
+
+
+  /*
+   * Return a new Decimal whose value is the value of this Decimal raised to the power `y`, rounded
+   * to `precision` significant digits using rounding mode `rounding`.
+   *
+   * ECMAScript compliant.
+   *
+   *   pow(x, NaN)                           = NaN
+   *   pow(x, ±0)                            = 1
+
+   *   pow(NaN, non-zero)                    = NaN
+   *   pow(abs(x) > 1, +Infinity)            = +Infinity
+   *   pow(abs(x) > 1, -Infinity)            = +0
+   *   pow(abs(x) == 1, ±Infinity)           = NaN
+   *   pow(abs(x) < 1, +Infinity)            = +0
+   *   pow(abs(x) < 1, -Infinity)            = +Infinity
+   *   pow(+Infinity, y > 0)                 = +Infinity
+   *   pow(+Infinity, y < 0)                 = +0
+   *   pow(-Infinity, odd integer > 0)       = -Infinity
+   *   pow(-Infinity, even integer > 0)      = +Infinity
+   *   pow(-Infinity, odd integer < 0)       = -0
+   *   pow(-Infinity, even integer < 0)      = +0
+   *   pow(+0, y > 0)                        = +0
+   *   pow(+0, y < 0)                        = +Infinity
+   *   pow(-0, odd integer > 0)              = -0
+   *   pow(-0, even integer > 0)             = +0
+   *   pow(-0, odd integer < 0)              = -Infinity
+   *   pow(-0, even integer < 0)             = +Infinity
+   *   pow(finite x < 0, finite non-integer) = NaN
+   *
+   * For non-integer or very large exponents pow(x, y) is calculated using
+   *
+   *   x^y = exp(y*ln(x))
+   *
+   * Assuming the first 15 rounding digits are each equally likely to be any digit 0-9, the
+   * probability of an incorrectly rounded result
+   * P([49]9{14} | [50]0{14}) = 2 * 0.2 * 10^-14 = 4e-15 = 1/2.5e+14
+   * i.e. 1 in 250,000,000,000,000
+   *
+   * If a result is incorrectly rounded the maximum error will be 1 ulp (unit in last place).
+   *
+   * y {number|string|Decimal} The power to which to raise this Decimal.
+   *
+   */
+  P.toPower = P.pow = function (y) {
+    var e, k, pr, r, rm, s,
+      x = this,
+      Ctor = x.constructor,
+      yn = +(y = new Ctor(y));
+
+    // Either ±Infinity, NaN or ±0?
+    if (!x.d || !y.d || !x.d[0] || !y.d[0]) return new Ctor(mathpow(+x, yn));
+
+    x = new Ctor(x);
+
+    if (x.eq(1)) return x;
+
+    pr = Ctor.precision;
+    rm = Ctor.rounding;
+
+    if (y.eq(1)) return finalise(x, pr, rm);
+
+    // y exponent
+    e = mathfloor(y.e / LOG_BASE);
+
+    // If y is a small integer use the 'exponentiation by squaring' algorithm.
+    if (e >= y.d.length - 1 && (k = yn < 0 ? -yn : yn) <= MAX_SAFE_INTEGER) {
+      r = intPow(Ctor, x, k, pr);
+      return y.s < 0 ? new Ctor(1).div(r) : finalise(r, pr, rm);
+    }
+
+    s = x.s;
+
+    // if x is negative
+    if (s < 0) {
+
+      // if y is not an integer
+      if (e < y.d.length - 1) return new Ctor(NaN);
+
+      // Result is positive if x is negative and the last digit of integer y is even.
+      if ((y.d[e] & 1) == 0) s = 1;
+
+      // if x.eq(-1)
+      if (x.e == 0 && x.d[0] == 1 && x.d.length == 1) {
+        x.s = s;
+        return x;
+      }
+    }
+
+    // Estimate result exponent.
+    // x^y = 10^e,  where e = y * log10(x)
+    // log10(x) = log10(x_significand) + x_exponent
+    // log10(x_significand) = ln(x_significand) / ln(10)
+    k = mathpow(+x, yn);
+    e = k == 0 || !isFinite(k)
+      ? mathfloor(yn * (Math.log('0.' + digitsToString(x.d)) / Math.LN10 + x.e + 1))
+      : new Ctor(k + '').e;
+
+    // Exponent estimate may be incorrect e.g. x: 0.999999999999999999, y: 2.29, e: 0, r.e: -1.
+
+    // Overflow/underflow?
+    if (e > Ctor.maxE + 1 || e < Ctor.minE - 1) return new Ctor(e > 0 ? s / 0 : 0);
+
+    external = false;
+    Ctor.rounding = x.s = 1;
+
+    // Estimate the extra guard digits needed to ensure five correct rounding digits from
+    // naturalLogarithm(x). Example of failure without these extra digits (precision: 10):
+    // new Decimal(2.32456).pow('2087987436534566.46411')
+    // should be 1.162377823e+764914905173815, but is 1.162355823e+764914905173815
+    k = Math.min(12, (e + '').length);
+
+    // r = x^y = exp(y*ln(x))
+    r = naturalExponential(y.times(naturalLogarithm(x, pr + k)), pr);
+
+    // r may be Infinity, e.g. (0.9999999999999999).pow(-1e+40)
+    if (r.d) {
+
+      // Truncate to the required precision plus five rounding digits.
+      r = finalise(r, pr + 5, 1);
+
+      // If the rounding digits are [49]9999 or [50]0000 increase the precision by 10 and recalculate
+      // the result.
+      if (checkRoundingDigits(r.d, pr, rm)) {
+        e = pr + 10;
+
+        // Truncate to the increased precision plus five rounding digits.
+        r = finalise(naturalExponential(y.times(naturalLogarithm(x, e + k)), e), e + 5, 1);
+
+        // Check for 14 nines from the 2nd rounding digit (the first rounding digit may be 4 or 9).
+        if (+digitsToString(r.d).slice(pr + 1, pr + 15) + 1 == 1e14) {
+          r = finalise(r, pr + 1, 0);
+        }
+      }
+    }
+
+    r.s = s;
+    external = true;
+    Ctor.rounding = rm;
+
+    return finalise(r, pr, rm);
+  };
+
+
+  /*
+   * Return a string representing the value of this Decimal rounded to `sd` significant digits
+   * using rounding mode `rounding`.
+   *
+   * Return exponential notation if `sd` is less than the number of digits necessary to represent
+   * the integer part of the value in normal notation.
+   *
+   * [sd] {number} Significant digits. Integer, 1 to MAX_DIGITS inclusive.
+   * [rm] {number} Rounding mode. Integer, 0 to 8 inclusive.
+   *
+   */
+  P.toPrecision = function (sd, rm) {
+    var str,
+      x = this,
+      Ctor = x.constructor;
+
+    if (sd === void 0) {
+      str = finiteToString(x, x.e <= Ctor.toExpNeg || x.e >= Ctor.toExpPos);
+    } else {
+      checkInt32(sd, 1, MAX_DIGITS);
+
+      if (rm === void 0) rm = Ctor.rounding;
+      else checkInt32(rm, 0, 8);
+
+      x = finalise(new Ctor(x), sd, rm);
+      str = finiteToString(x, sd <= x.e || x.e <= Ctor.toExpNeg, sd);
+    }
+
+    return x.isNeg() && !x.isZero() ? '-' + str : str;
+  };
+
+
+  /*
+   * Return a new Decimal whose value is the value of this Decimal rounded to a maximum of `sd`
+   * significant digits using rounding mode `rm`, or to `precision` and `rounding` respectively if
+   * omitted.
+   *
+   * [sd] {number} Significant digits. Integer, 1 to MAX_DIGITS inclusive.
+   * [rm] {number} Rounding mode. Integer, 0 to 8 inclusive.
+   *
+   * 'toSD() digits out of range: {sd}'
+   * 'toSD() digits not an integer: {sd}'
+   * 'toSD() rounding mode not an integer: {rm}'
+   * 'toSD() rounding mode out of range: {rm}'
+   *
+   */
+  P.toSignificantDigits = P.toSD = function (sd, rm) {
+    var x = this,
+      Ctor = x.constructor;
+
+    if (sd === void 0) {
+      sd = Ctor.precision;
+      rm = Ctor.rounding;
+    } else {
+      checkInt32(sd, 1, MAX_DIGITS);
+
+      if (rm === void 0) rm = Ctor.rounding;
+      else checkInt32(rm, 0, 8);
+    }
+
+    return finalise(new Ctor(x), sd, rm);
+  };
+
+
+  /*
+   * Return a string representing the value of this Decimal.
+   *
+   * Return exponential notation if this Decimal has a positive exponent equal to or greater than
+   * `toExpPos`, or a negative exponent equal to or less than `toExpNeg`.
+   *
+   */
+  P.toString = function () {
+    var x = this,
+      Ctor = x.constructor,
+      str = finiteToString(x, x.e <= Ctor.toExpNeg || x.e >= Ctor.toExpPos);
+
+    return x.isNeg() && !x.isZero() ? '-' + str : str;
+  };
+
+
+  /*
+   * Return a new Decimal whose value is the value of this Decimal truncated to a whole number.
+   *
+   */
+  P.truncated = P.trunc = function () {
+    return finalise(new this.constructor(this), this.e + 1, 1);
+  };
+
+
+  /*
+   * Return a string representing the value of this Decimal.
+   * Unlike `toString`, negative zero will include the minus sign.
+   *
+   */
+  P.valueOf = P.toJSON = function () {
+    var x = this,
+      Ctor = x.constructor,
+      str = finiteToString(x, x.e <= Ctor.toExpNeg || x.e >= Ctor.toExpPos);
+
+    return x.isNeg() ? '-' + str : str;
+  };
+
+
+  // Helper functions for Decimal.prototype (P) and/or Decimal methods, and their callers.
+
+
+  /*
+   *  digitsToString           P.cubeRoot, P.logarithm, P.squareRoot, P.toFraction, P.toPower,
+   *                           finiteToString, naturalExponential, naturalLogarithm
+   *  checkInt32               P.toDecimalPlaces, P.toExponential, P.toFixed, P.toNearest,
+   *                           P.toPrecision, P.toSignificantDigits, toStringBinary, random
+   *  checkRoundingDigits      P.logarithm, P.toPower, naturalExponential, naturalLogarithm
+   *  convertBase              toStringBinary, parseOther
+   *  cos                      P.cos
+   *  divide                   P.atanh, P.cubeRoot, P.dividedBy, P.dividedToIntegerBy,
+   *                           P.logarithm, P.modulo, P.squareRoot, P.tan, P.tanh, P.toFraction,
+   *                           P.toNearest, toStringBinary, naturalExponential, naturalLogarithm,
+   *                           taylorSeries, atan2, parseOther
+   *  finalise                 P.absoluteValue, P.atan, P.atanh, P.ceil, P.cos, P.cosh,
+   *                           P.cubeRoot, P.dividedToIntegerBy, P.floor, P.logarithm, P.minus,
+   *                           P.modulo, P.negated, P.plus, P.round, P.sin, P.sinh, P.squareRoot,
+   *                           P.tan, P.times, P.toDecimalPlaces, P.toExponential, P.toFixed,
+   *                           P.toNearest, P.toPower, P.toPrecision, P.toSignificantDigits,
+   *                           P.truncated, divide, getLn10, getPi, naturalExponential,
+   *                           naturalLogarithm, ceil, floor, round, trunc
+   *  finiteToString           P.toExponential, P.toFixed, P.toPrecision, P.toString, P.valueOf,
+   *                           toStringBinary
+   *  getBase10Exponent        P.minus, P.plus, P.times, parseOther
+   *  getLn10                  P.logarithm, naturalLogarithm
+   *  getPi                    P.acos, P.asin, P.atan, toLessThanHalfPi, atan2
+   *  getPrecision             P.precision, P.toFraction
+   *  getZeroString            digitsToString, finiteToString
+   *  intPow                   P.toPower, parseOther
+   *  isOdd                    toLessThanHalfPi
+   *  maxOrMin                 max, min
+   *  naturalExponential       P.naturalExponential, P.toPower
+   *  naturalLogarithm         P.acosh, P.asinh, P.atanh, P.logarithm, P.naturalLogarithm,
+   *                           P.toPower, naturalExponential
+   *  nonFiniteToString        finiteToString, toStringBinary
+   *  parseDecimal             Decimal
+   *  parseOther               Decimal
+   *  sin                      P.sin
+   *  taylorSeries             P.cosh, P.sinh, cos, sin
+   *  toLessThanHalfPi         P.cos, P.sin
+   *  toStringBinary           P.toBinary, P.toHexadecimal, P.toOctal
+   *  truncate                 intPow
+   *
+   *  Throws:                  P.logarithm, P.precision, P.toFraction, checkInt32, getLn10, getPi,
+   *                           naturalLogarithm, config, parseOther, random, Decimal
+   */
+
+
+  function digitsToString(d) {
+    var i, k, ws,
+      indexOfLastWord = d.length - 1,
+      str = '',
+      w = d[0];
+
+    if (indexOfLastWord > 0) {
+      str += w;
+      for (i = 1; i < indexOfLastWord; i++) {
+        ws = d[i] + '';
+        k = LOG_BASE - ws.length;
+        if (k) str += getZeroString(k);
+        str += ws;
+      }
+
+      w = d[i];
+      ws = w + '';
+      k = LOG_BASE - ws.length;
+      if (k) str += getZeroString(k);
+    } else if (w === 0) {
+      return '0';
+    }
+
+    // Remove trailing zeros of last w.
+    for (; w % 10 === 0;) w /= 10;
+
+    return str + w;
+  }
+
+
+  function checkInt32(i, min, max) {
+    if (i !== ~~i || i < min || i > max) {
+      throw Error(invalidArgument + i);
+    }
+  }
+
+
+  /*
+   * Check 5 rounding digits if `repeating` is null, 4 otherwise.
+   * `repeating == null` if caller is `log` or `pow`,
+   * `repeating != null` if caller is `naturalLogarithm` or `naturalExponential`.
+   */
+  function checkRoundingDigits(d, i, rm, repeating) {
+    var di, k, r, rd;
+
+    // Get the length of the first word of the array d.
+    for (k = d[0]; k >= 10; k /= 10) --i;
+
+    // Is the rounding digit in the first word of d?
+    if (--i < 0) {
+      i += LOG_BASE;
+      di = 0;
+    } else {
+      di = Math.ceil((i + 1) / LOG_BASE);
+      i %= LOG_BASE;
+    }
+
+    // i is the index (0 - 6) of the rounding digit.
+    // E.g. if within the word 3487563 the first rounding digit is 5,
+    // then i = 4, k = 1000, rd = 3487563 % 1000 = 563
+    k = mathpow(10, LOG_BASE - i);
+    rd = d[di] % k | 0;
+
+    if (repeating == null) {
+      if (i < 3) {
+        if (i == 0) rd = rd / 100 | 0;
+        else if (i == 1) rd = rd / 10 | 0;
+        r = rm < 4 && rd == 99999 || rm > 3 && rd == 49999 || rd == 50000 || rd == 0;
+      } else {
+        r = (rm < 4 && rd + 1 == k || rm > 3 && rd + 1 == k / 2) &&
+          (d[di + 1] / k / 100 | 0) == mathpow(10, i - 2) - 1 ||
+            (rd == k / 2 || rd == 0) && (d[di + 1] / k / 100 | 0) == 0;
+      }
+    } else {
+      if (i < 4) {
+        if (i == 0) rd = rd / 1000 | 0;
+        else if (i == 1) rd = rd / 100 | 0;
+        else if (i == 2) rd = rd / 10 | 0;
+        r = (repeating || rm < 4) && rd == 9999 || !repeating && rm > 3 && rd == 4999;
+      } else {
+        r = ((repeating || rm < 4) && rd + 1 == k ||
+        (!repeating && rm > 3) && rd + 1 == k / 2) &&
+          (d[di + 1] / k / 1000 | 0) == mathpow(10, i - 3) - 1;
+      }
+    }
+
+    return r;
+  }
+
+
+  // Convert string of `baseIn` to an array of numbers of `baseOut`.
+  // Eg. convertBase('255', 10, 16) returns [15, 15].
+  // Eg. convertBase('ff', 16, 10) returns [2, 5, 5].
+  function convertBase(str, baseIn, baseOut) {
+    var j,
+      arr = [0],
+      arrL,
+      i = 0,
+      strL = str.length;
+
+    for (; i < strL;) {
+      for (arrL = arr.length; arrL--;) arr[arrL] *= baseIn;
+      arr[0] += NUMERALS.indexOf(str.charAt(i++));
+      for (j = 0; j < arr.length; j++) {
+        if (arr[j] > baseOut - 1) {
+          if (arr[j + 1] === void 0) arr[j + 1] = 0;
+          arr[j + 1] += arr[j] / baseOut | 0;
+          arr[j] %= baseOut;
+        }
+      }
+    }
+
+    return arr.reverse();
+  }
+
+
+  /*
+   * cos(x) = 1 - x^2/2! + x^4/4! - ...
+   * |x| < pi/2
+   *
+   */
+  function cosine(Ctor, x) {
+    var k, len, y;
+
+    if (x.isZero()) return x;
+
+    // Argument reduction: cos(4x) = 8*(cos^4(x) - cos^2(x)) + 1
+    // i.e. cos(x) = 8*(cos^4(x/4) - cos^2(x/4)) + 1
+
+    // Estimate the optimum number of times to use the argument reduction.
+    len = x.d.length;
+    if (len < 32) {
+      k = Math.ceil(len / 3);
+      y = (1 / tinyPow(4, k)).toString();
+    } else {
+      k = 16;
+      y = '2.3283064365386962890625e-10';
+    }
+
+    Ctor.precision += k;
+
+    x = taylorSeries(Ctor, 1, x.times(y), new Ctor(1));
+
+    // Reverse argument reduction
+    for (var i = k; i--;) {
+      var cos2x = x.times(x);
+      x = cos2x.times(cos2x).minus(cos2x).times(8).plus(1);
+    }
+
+    Ctor.precision -= k;
+
+    return x;
+  }
+
+
+  /*
+   * Perform division in the specified base.
+   */
+  var divide = (function () {
+
+    // Assumes non-zero x and k, and hence non-zero result.
+    function multiplyInteger(x, k, base) {
+      var temp,
+        carry = 0,
+        i = x.length;
+
+      for (x = x.slice(); i--;) {
+        temp = x[i] * k + carry;
+        x[i] = temp % base | 0;
+        carry = temp / base | 0;
+      }
+
+      if (carry) x.unshift(carry);
+
+      return x;
+    }
+
+    function compare(a, b, aL, bL) {
+      var i, r;
+
+      if (aL != bL) {
+        r = aL > bL ? 1 : -1;
+      } else {
+        for (i = r = 0; i < aL; i++) {
+          if (a[i] != b[i]) {
+            r = a[i] > b[i] ? 1 : -1;
+            break;
+          }
+        }
+      }
+
+      return r;
+    }
+
+    function subtract(a, b, aL, base) {
+      var i = 0;
+
+      // Subtract b from a.
+      for (; aL--;) {
+        a[aL] -= i;
+        i = a[aL] < b[aL] ? 1 : 0;
+        a[aL] = i * base + a[aL] - b[aL];
+      }
+
+      // Remove leading zeros.
+      for (; !a[0] && a.length > 1;) a.shift();
+    }
+
+    return function (x, y, pr, rm, dp, base) {
+      var cmp, e, i, k, logBase, more, prod, prodL, q, qd, rem, remL, rem0, sd, t, xi, xL, yd0,
+        yL, yz,
+        Ctor = x.constructor,
+        sign = x.s == y.s ? 1 : -1,
+        xd = x.d,
+        yd = y.d;
+
+      // Either NaN, Infinity or 0?
+      if (!xd || !xd[0] || !yd || !yd[0]) {
+
+        return new Ctor(// Return NaN if either NaN, or both Infinity or 0.
+          !x.s || !y.s || (xd ? yd && xd[0] == yd[0] : !yd) ? NaN :
+
+          // Return ±0 if x is 0 or y is ±Infinity, or return ±Infinity as y is 0.
+          xd && xd[0] == 0 || !yd ? sign * 0 : sign / 0);
+      }
+
+      if (base) {
+        logBase = 1;
+        e = x.e - y.e;
+      } else {
+        base = BASE;
+        logBase = LOG_BASE;
+        e = mathfloor(x.e / logBase) - mathfloor(y.e / logBase);
+      }
+
+      yL = yd.length;
+      xL = xd.length;
+      q = new Ctor(sign);
+      qd = q.d = [];
+
+      // Result exponent may be one less than e.
+      // The digit array of a Decimal from toStringBinary may have trailing zeros.
+      for (i = 0; yd[i] == (xd[i] || 0); i++);
+
+      if (yd[i] > (xd[i] || 0)) e--;
+
+      if (pr == null) {
+        sd = pr = Ctor.precision;
+        rm = Ctor.rounding;
+      } else if (dp) {
+        sd = pr + (x.e - y.e) + 1;
+      } else {
+        sd = pr;
+      }
+
+      if (sd < 0) {
+        qd.push(1);
+        more = true;
+      } else {
+
+        // Convert precision in number of base 10 digits to base 1e7 digits.
+        sd = sd / logBase + 2 | 0;
+        i = 0;
+
+        // divisor < 1e7
+        if (yL == 1) {
+          k = 0;
+          yd = yd[0];
+          sd++;
+
+          // k is the carry.
+          for (; (i < xL || k) && sd--; i++) {
+            t = k * base + (xd[i] || 0);
+            qd[i] = t / yd | 0;
+            k = t % yd | 0;
+          }
+
+          more = k || i < xL;
+
+        // divisor >= 1e7
+        } else {
+
+          // Normalise xd and yd so highest order digit of yd is >= base/2
+          k = base / (yd[0] + 1) | 0;
+
+          if (k > 1) {
+            yd = multiplyInteger(yd, k, base);
+            xd = multiplyInteger(xd, k, base);
+            yL = yd.length;
+            xL = xd.length;
+          }
+
+          xi = yL;
+          rem = xd.slice(0, yL);
+          remL = rem.length;
+
+          // Add zeros to make remainder as long as divisor.
+          for (; remL < yL;) rem[remL++] = 0;
+
+          yz = yd.slice();
+          yz.unshift(0);
+          yd0 = yd[0];
+
+          if (yd[1] >= base / 2) ++yd0;
+
+          do {
+            k = 0;
+
+            // Compare divisor and remainder.
+            cmp = compare(yd, rem, yL, remL);
+
+            // If divisor < remainder.
+            if (cmp < 0) {
+
+              // Calculate trial digit, k.
+              rem0 = rem[0];
+              if (yL != remL) rem0 = rem0 * base + (rem[1] || 0);
+
+              // k will be how many times the divisor goes into the current remainder.
+              k = rem0 / yd0 | 0;
+
+              //  Algorithm:
+              //  1. product = divisor * trial digit (k)
+              //  2. if product > remainder: product -= divisor, k--
+              //  3. remainder -= product
+              //  4. if product was < remainder at 2:
+              //    5. compare new remainder and divisor
+              //    6. If remainder > divisor: remainder -= divisor, k++
+
+              if (k > 1) {
+                if (k >= base) k = base - 1;
+
+                // product = divisor * trial digit.
+                prod = multiplyInteger(yd, k, base);
+                prodL = prod.length;
+                remL = rem.length;
+
+                // Compare product and remainder.
+                cmp = compare(prod, rem, prodL, remL);
+
+                // product > remainder.
+                if (cmp == 1) {
+                  k--;
+
+                  // Subtract divisor from product.
+                  subtract(prod, yL < prodL ? yz : yd, prodL, base);
+                }
+              } else {
+
+                // cmp is -1.
+                // If k is 0, there is no need to compare yd and rem again below, so change cmp to 1
+                // to avoid it. If k is 1 there is a need to compare yd and rem again below.
+                if (k == 0) cmp = k = 1;
+                prod = yd.slice();
+              }
+
+              prodL = prod.length;
+              if (prodL < remL) prod.unshift(0);
+
+              // Subtract product from remainder.
+              subtract(rem, prod, remL, base);
+
+              // If product was < previous remainder.
+              if (cmp == -1) {
+                remL = rem.length;
+
+                // Compare divisor and new remainder.
+                cmp = compare(yd, rem, yL, remL);
+
+                // If divisor < new remainder, subtract divisor from remainder.
+                if (cmp < 1) {
+                  k++;
+
+                  // Subtract divisor from remainder.
+                  subtract(rem, yL < remL ? yz : yd, remL, base);
+                }
+              }
+
+              remL = rem.length;
+            } else if (cmp === 0) {
+              k++;
+              rem = [0];
+            }    // if cmp === 1, k will be 0
+
+            // Add the next digit, k, to the result array.
+            qd[i++] = k;
+
+            // Update the remainder.
+            if (cmp && rem[0]) {
+              rem[remL++] = xd[xi] || 0;
+            } else {
+              rem = [xd[xi]];
+              remL = 1;
+            }
+
+          } while ((xi++ < xL || rem[0] !== void 0) && sd--);
+
+          more = rem[0] !== void 0;
+        }
+
+        // Leading zero?
+        if (!qd[0]) qd.shift();
+      }
+
+      // logBase is 1 when divide is being used for base conversion.
+      if (logBase == 1) {
+        q.e = e;
+        inexact = more;
+      } else {
+
+        // To calculate q.e, first get the number of digits of qd[0].
+        for (i = 1, k = qd[0]; k >= 10; k /= 10) i++;
+        q.e = i + e * logBase - 1;
+
+        finalise(q, dp ? pr + q.e + 1 : pr, rm, more);
+      }
+
+      return q;
+    };
+  })();
+
+
+  /*
+   * Round `x` to `sd` significant digits using rounding mode `rm`.
+   * Check for over/under-flow.
+   */
+   function finalise(x, sd, rm, isTruncated) {
+    var digits, i, j, k, rd, roundUp, w, xd, xdi,
+      Ctor = x.constructor;
+
+    // Don't round if sd is null or undefined.
+    out: if (sd != null) {
+      xd = x.d;
+
+      // Infinity/NaN.
+      if (!xd) return x;
+
+      // rd: the rounding digit, i.e. the digit after the digit that may be rounded up.
+      // w: the word of xd containing rd, a base 1e7 number.
+      // xdi: the index of w within xd.
+      // digits: the number of digits of w.
+      // i: what would be the index of rd within w if all the numbers were 7 digits long (i.e. if
+      // they had leading zeros)
+      // j: if > 0, the actual index of rd within w (if < 0, rd is a leading zero).
+
+      // Get the length of the first word of the digits array xd.
+      for (digits = 1, k = xd[0]; k >= 10; k /= 10) digits++;
+      i = sd - digits;
+
+      // Is the rounding digit in the first word of xd?
+      if (i < 0) {
+        i += LOG_BASE;
+        j = sd;
+        w = xd[xdi = 0];
+
+        // Get the rounding digit at index j of w.
+        rd = w / mathpow(10, digits - j - 1) % 10 | 0;
+      } else {
+        xdi = Math.ceil((i + 1) / LOG_BASE);
+        k = xd.length;
+        if (xdi >= k) {
+          if (isTruncated) {
+
+            // Needed by `naturalExponential`, `naturalLogarithm` and `squareRoot`.
+            for (; k++ <= xdi;) xd.push(0);
+            w = rd = 0;
+            digits = 1;
+            i %= LOG_BASE;
+            j = i - LOG_BASE + 1;
+          } else {
+            break out;
+          }
+        } else {
+          w = k = xd[xdi];
+
+          // Get the number of digits of w.
+          for (digits = 1; k >= 10; k /= 10) digits++;
+
+          // Get the index of rd within w.
+          i %= LOG_BASE;
+
+          // Get the index of rd within w, adjusted for leading zeros.
+          // The number of leading zeros of w is given by LOG_BASE - digits.
+          j = i - LOG_BASE + digits;
+
+          // Get the rounding digit at index j of w.
+          rd = j < 0 ? 0 : w / mathpow(10, digits - j - 1) % 10 | 0;
+        }
+      }
+
+      // Are there any non-zero digits after the rounding digit?
+      isTruncated = isTruncated || sd < 0 ||
+        xd[xdi + 1] !== void 0 || (j < 0 ? w : w % mathpow(10, digits - j - 1));
+
+      // The expression `w % mathpow(10, digits - j - 1)` returns all the digits of w to the right
+      // of the digit at (left-to-right) index j, e.g. if w is 908714 and j is 2, the expression
+      // will give 714.
+
+      roundUp = rm < 4
+        ? (rd || isTruncated) && (rm == 0 || rm == (x.s < 0 ? 3 : 2))
+        : rd > 5 || rd == 5 && (rm == 4 || isTruncated || rm == 6 &&
+
+          // Check whether the digit to the left of the rounding digit is odd.
+          ((i > 0 ? j > 0 ? w / mathpow(10, digits - j) : 0 : xd[xdi - 1]) % 10) & 1 ||
+            rm == (x.s < 0 ? 8 : 7));
+
+      if (sd < 1 || !xd[0]) {
+        xd.length = 0;
+        if (roundUp) {
+
+          // Convert sd to decimal places.
+          sd -= x.e + 1;
+
+          // 1, 0.1, 0.01, 0.001, 0.0001 etc.
+          xd[0] = mathpow(10, (LOG_BASE - sd % LOG_BASE) % LOG_BASE);
+          x.e = -sd || 0;
+        } else {
+
+          // Zero.
+          xd[0] = x.e = 0;
+        }
+
+        return x;
+      }
+
+      // Remove excess digits.
+      if (i == 0) {
+        xd.length = xdi;
+        k = 1;
+        xdi--;
+      } else {
+        xd.length = xdi + 1;
+        k = mathpow(10, LOG_BASE - i);
+
+        // E.g. 56700 becomes 56000 if 7 is the rounding digit.
+        // j > 0 means i > number of leading zeros of w.
+        xd[xdi] = j > 0 ? (w / mathpow(10, digits - j) % mathpow(10, j) | 0) * k : 0;
+      }
+
+      if (roundUp) {
+        for (;;) {
+
+          // Is the digit to be rounded up in the first word of xd?
+          if (xdi == 0) {
+
+            // i will be the length of xd[0] before k is added.
+            for (i = 1, j = xd[0]; j >= 10; j /= 10) i++;
+            j = xd[0] += k;
+            for (k = 1; j >= 10; j /= 10) k++;
+
+            // if i != k the length has increased.
+            if (i != k) {
+              x.e++;
+              if (xd[0] == BASE) xd[0] = 1;
+            }
+
+            break;
+          } else {
+            xd[xdi] += k;
+            if (xd[xdi] != BASE) break;
+            xd[xdi--] = 0;
+            k = 1;
+          }
+        }
+      }
+
+      // Remove trailing zeros.
+      for (i = xd.length; xd[--i] === 0;) xd.pop();
+    }
+
+    if (external) {
+
+      // Overflow?
+      if (x.e > Ctor.maxE) {
+
+        // Infinity.
+        x.d = null;
+        x.e = NaN;
+
+      // Underflow?
+      } else if (x.e < Ctor.minE) {
+
+        // Zero.
+        x.e = 0;
+        x.d = [0];
+        // Ctor.underflow = true;
+      } // else Ctor.underflow = false;
+    }
+
+    return x;
+  }
+
+
+  function finiteToString(x, isExp, sd) {
+    if (!x.isFinite()) return nonFiniteToString(x);
+    var k,
+      e = x.e,
+      str = digitsToString(x.d),
+      len = str.length;
+
+    if (isExp) {
+      if (sd && (k = sd - len) > 0) {
+        str = str.charAt(0) + '.' + str.slice(1) + getZeroString(k);
+      } else if (len > 1) {
+        str = str.charAt(0) + '.' + str.slice(1);
+      }
+
+      str = str + (x.e < 0 ? 'e' : 'e+') + x.e;
+    } else if (e < 0) {
+      str = '0.' + getZeroString(-e - 1) + str;
+      if (sd && (k = sd - len) > 0) str += getZeroString(k);
+    } else if (e >= len) {
+      str += getZeroString(e + 1 - len);
+      if (sd && (k = sd - e - 1) > 0) str = str + '.' + getZeroString(k);
+    } else {
+      if ((k = e + 1) < len) str = str.slice(0, k) + '.' + str.slice(k);
+      if (sd && (k = sd - len) > 0) {
+        if (e + 1 === len) str += '.';
+        str += getZeroString(k);
+      }
+    }
+
+    return str;
+  }
+
+
+  // Calculate the base 10 exponent from the base 1e7 exponent.
+  function getBase10Exponent(digits, e) {
+    var w = digits[0];
+
+    // Add the number of digits of the first word of the digits array.
+    for ( e *= LOG_BASE; w >= 10; w /= 10) e++;
+    return e;
+  }
+
+
+  function getLn10(Ctor, sd, pr) {
+    if (sd > LN10_PRECISION) {
+
+      // Reset global state in case the exception is caught.
+      external = true;
+      if (pr) Ctor.precision = pr;
+      throw Error(precisionLimitExceeded);
+    }
+    return finalise(new Ctor(LN10), sd, 1, true);
+  }
+
+
+  function getPi(Ctor, sd, rm) {
+    if (sd > PI_PRECISION) throw Error(precisionLimitExceeded);
+    return finalise(new Ctor(PI), sd, rm, true);
+  }
+
+
+  function getPrecision(digits) {
+    var w = digits.length - 1,
+      len = w * LOG_BASE + 1;
+
+    w = digits[w];
+
+    // If non-zero...
+    if (w) {
+
+      // Subtract the number of trailing zeros of the last word.
+      for (; w % 10 == 0; w /= 10) len--;
+
+      // Add the number of digits of the first word.
+      for (w = digits[0]; w >= 10; w /= 10) len++;
+    }
+
+    return len;
+  }
+
+
+  function getZeroString(k) {
+    var zs = '';
+    for (; k--;) zs += '0';
+    return zs;
+  }
+
+
+  /*
+   * Return a new Decimal whose value is the value of Decimal `x` to the power `n`, where `n` is an
+   * integer of type number.
+   *
+   * Implements 'exponentiation by squaring'. Called by `pow` and `parseOther`.
+   *
+   */
+  function intPow(Ctor, x, n, pr) {
+    var isTruncated,
+      r = new Ctor(1),
+
+      // Max n of 9007199254740991 takes 53 loop iterations.
+      // Maximum digits array length; leaves [28, 34] guard digits.
+      k = Math.ceil(pr / LOG_BASE + 4);
+
+    external = false;
+
+    for (;;) {
+      if (n % 2) {
+        r = r.times(x);
+        if (truncate(r.d, k)) isTruncated = true;
+      }
+
+      n = mathfloor(n / 2);
+      if (n === 0) {
+
+        // To ensure correct rounding when r.d is truncated, increment the last word if it is zero.
+        n = r.d.length - 1;
+        if (isTruncated && r.d[n] === 0) ++r.d[n];
+        break;
+      }
+
+      x = x.times(x);
+      truncate(x.d, k);
+    }
+
+    external = true;
+
+    return r;
+  }
+
+
+  function isOdd(n) {
+    return n.d[n.d.length - 1] & 1;
+  }
+
+
+  /*
+   * Handle `max` and `min`. `ltgt` is 'lt' or 'gt'.
+   */
+  function maxOrMin(Ctor, args, ltgt) {
+    var y,
+      x = new Ctor(args[0]),
+      i = 0;
+
+    for (; ++i < args.length;) {
+      y = new Ctor(args[i]);
+      if (!y.s) {
+        x = y;
+        break;
+      } else if (x[ltgt](y)) {
+        x = y;
+      }
+    }
+
+    return x;
+  }
+
+
+  /*
+   * Return a new Decimal whose value is the natural exponential of `x` rounded to `sd` significant
+   * digits.
+   *
+   * Taylor/Maclaurin series.
+   *
+   * exp(x) = x^0/0! + x^1/1! + x^2/2! + x^3/3! + ...
+   *
+   * Argument reduction:
+   *   Repeat x = x / 32, k += 5, until |x| < 0.1
+   *   exp(x) = exp(x / 2^k)^(2^k)
+   *
+   * Previously, the argument was initially reduced by
+   * exp(x) = exp(r) * 10^k  where r = x - k * ln10, k = floor(x / ln10)
+   * to first put r in the range [0, ln10], before dividing by 32 until |x| < 0.1, but this was
+   * found to be slower than just dividing repeatedly by 32 as above.
+   *
+   * Max integer argument: exp('20723265836946413') = 6.3e+9000000000000000
+   * Min integer argument: exp('-20723265836946411') = 1.2e-9000000000000000
+   * (Math object integer min/max: Math.exp(709) = 8.2e+307, Math.exp(-745) = 5e-324)
+   *
+   *  exp(Infinity)  = Infinity
+   *  exp(-Infinity) = 0
+   *  exp(NaN)       = NaN
+   *  exp(±0)        = 1
+   *
+   *  exp(x) is non-terminating for any finite, non-zero x.
+   *
+   *  The result will always be correctly rounded.
+   *
+   */
+  function naturalExponential(x, sd) {
+    var denominator, guard, j, pow, sum, t, wpr,
+      rep = 0,
+      i = 0,
+      k = 0,
+      Ctor = x.constructor,
+      rm = Ctor.rounding,
+      pr = Ctor.precision;
+
+    // 0/NaN/Infinity?
+    if (!x.d || !x.d[0] || x.e > 17) {
+
+      return new Ctor(x.d
+        ? !x.d[0] ? 1 : x.s < 0 ? 0 : 1 / 0
+        : x.s ? x.s < 0 ? 0 : x : 0 / 0);
+    }
+
+    if (sd == null) {
+      external = false;
+      wpr = pr;
+    } else {
+      wpr = sd;
+    }
+
+    t = new Ctor(0.03125);
+
+    // while abs(x) >= 0.1
+    while (x.e > -2) {
+
+      // x = x / 2^5
+      x = x.times(t);
+      k += 5;
+    }
+
+    // Use 2 * log10(2^k) + 5 (empirically derived) to estimate the increase in precision
+    // necessary to ensure the first 4 rounding digits are correct.
+    guard = Math.log(mathpow(2, k)) / Math.LN10 * 2 + 5 | 0;
+    wpr += guard;
+    denominator = pow = sum = new Ctor(1);
+    Ctor.precision = wpr;
+
+    for (;;) {
+      pow = finalise(pow.times(x), wpr, 1);
+      denominator = denominator.times(++i);
+      t = sum.plus(divide(pow, denominator, wpr, 1));
+
+      if (digitsToString(t.d).slice(0, wpr) === digitsToString(sum.d).slice(0, wpr)) {
+        j = k;
+        while (j--) sum = finalise(sum.times(sum), wpr, 1);
+
+        // Check to see if the first 4 rounding digits are [49]999.
+        // If so, repeat the summation with a higher precision, otherwise
+        // e.g. with precision: 18, rounding: 1
+        // exp(18.404272462595034083567793919843761) = 98372560.1229999999 (should be 98372560.123)
+        // `wpr - guard` is the index of first rounding digit.
+        if (sd == null) {
+
+          if (rep < 3 && checkRoundingDigits(sum.d, wpr - guard, rm, rep)) {
+            Ctor.precision = wpr += 10;
+            denominator = pow = t = new Ctor(1);
+            i = 0;
+            rep++;
+          } else {
+            return finalise(sum, Ctor.precision = pr, rm, external = true);
+          }
+        } else {
+          Ctor.precision = pr;
+          return sum;
+        }
+      }
+
+      sum = t;
+    }
+  }
+
+
+  /*
+   * Return a new Decimal whose value is the natural logarithm of `x` rounded to `sd` significant
+   * digits.
+   *
+   *  ln(-n)        = NaN
+   *  ln(0)         = -Infinity
+   *  ln(-0)        = -Infinity
+   *  ln(1)         = 0
+   *  ln(Infinity)  = Infinity
+   *  ln(-Infinity) = NaN
+   *  ln(NaN)       = NaN
+   *
+   *  ln(n) (n != 1) is non-terminating.
+   *
+   */
+  function naturalLogarithm(y, sd) {
+    var c, c0, denominator, e, numerator, rep, sum, t, wpr, x1, x2,
+      n = 1,
+      guard = 10,
+      x = y,
+      xd = x.d,
+      Ctor = x.constructor,
+      rm = Ctor.rounding,
+      pr = Ctor.precision;
+
+    // Is x negative or Infinity, NaN, 0 or 1?
+    if (x.s < 0 || !xd || !xd[0] || !x.e && xd[0] == 1 && xd.length == 1) {
+      return new Ctor(xd && !xd[0] ? -1 / 0 : x.s != 1 ? NaN : xd ? 0 : x);
+    }
+
+    if (sd == null) {
+      external = false;
+      wpr = pr;
+    } else {
+      wpr = sd;
+    }
+
+    Ctor.precision = wpr += guard;
+    c = digitsToString(xd);
+    c0 = c.charAt(0);
+
+    if (Math.abs(e = x.e) < 1.5e15) {
+
+      // Argument reduction.
+      // The series converges faster the closer the argument is to 1, so using
+      // ln(a^b) = b * ln(a),   ln(a) = ln(a^b) / b
+      // multiply the argument by itself until the leading digits of the significand are 7, 8, 9,
+      // 10, 11, 12 or 13, recording the number of multiplications so the sum of the series can
+      // later be divided by this number, then separate out the power of 10 using
+      // ln(a*10^b) = ln(a) + b*ln(10).
+
+      // max n is 21 (gives 0.9, 1.0 or 1.1) (9e15 / 21 = 4.2e14).
+      //while (c0 < 9 && c0 != 1 || c0 == 1 && c.charAt(1) > 1) {
+      // max n is 6 (gives 0.7 - 1.3)
+      while (c0 < 7 && c0 != 1 || c0 == 1 && c.charAt(1) > 3) {
+        x = x.times(y);
+        c = digitsToString(x.d);
+        c0 = c.charAt(0);
+        n++;
+      }
+
+      e = x.e;
+
+      if (c0 > 1) {
+        x = new Ctor('0.' + c);
+        e++;
+      } else {
+        x = new Ctor(c0 + '.' + c.slice(1));
+      }
+    } else {
+
+      // The argument reduction method above may result in overflow if the argument y is a massive
+      // number with exponent >= 1500000000000000 (9e15 / 6 = 1.5e15), so instead recall this
+      // function using ln(x*10^e) = ln(x) + e*ln(10).
+      t = getLn10(Ctor, wpr + 2, pr).times(e + '');
+      x = naturalLogarithm(new Ctor(c0 + '.' + c.slice(1)), wpr - guard).plus(t);
+      Ctor.precision = pr;
+
+      return sd == null ? finalise(x, pr, rm, external = true) : x;
+    }
+
+    // x1 is x reduced to a value near 1.
+    x1 = x;
+
+    // Taylor series.
+    // ln(y) = ln((1 + x)/(1 - x)) = 2(x + x^3/3 + x^5/5 + x^7/7 + ...)
+    // where x = (y - 1)/(y + 1)    (|x| < 1)
+    sum = numerator = x = divide(x.minus(1), x.plus(1), wpr, 1);
+    x2 = finalise(x.times(x), wpr, 1);
+    denominator = 3;
+
+    for (;;) {
+      numerator = finalise(numerator.times(x2), wpr, 1);
+      t = sum.plus(divide(numerator, new Ctor(denominator), wpr, 1));
+
+      if (digitsToString(t.d).slice(0, wpr) === digitsToString(sum.d).slice(0, wpr)) {
+        sum = sum.times(2);
+
+        // Reverse the argument reduction. Check that e is not 0 because, besides preventing an
+        // unnecessary calculation, -0 + 0 = +0 and to ensure correct rounding -0 needs to stay -0.
+        if (e !== 0) sum = sum.plus(getLn10(Ctor, wpr + 2, pr).times(e + ''));
+        sum = divide(sum, new Ctor(n), wpr, 1);
+
+        // Is rm > 3 and the first 4 rounding digits 4999, or rm < 4 (or the summation has
+        // been repeated previously) and the first 4 rounding digits 9999?
+        // If so, restart the summation with a higher precision, otherwise
+        // e.g. with precision: 12, rounding: 1
+        // ln(135520028.6126091714265381533) = 18.7246299999 when it should be 18.72463.
+        // `wpr - guard` is the index of first rounding digit.
+        if (sd == null) {
+          if (checkRoundingDigits(sum.d, wpr - guard, rm, rep)) {
+            Ctor.precision = wpr += guard;
+            t = numerator = x = divide(x1.minus(1), x1.plus(1), wpr, 1);
+            x2 = finalise(x.times(x), wpr, 1);
+            denominator = rep = 1;
+          } else {
+            return finalise(sum, Ctor.precision = pr, rm, external = true);
+          }
+        } else {
+          Ctor.precision = pr;
+          return sum;
+        }
+      }
+
+      sum = t;
+      denominator += 2;
+    }
+  }
+
+
+  // ±Infinity, NaN.
+  function nonFiniteToString(x) {
+    // Unsigned.
+    return String(x.s * x.s / 0);
+  }
+
+
+  /*
+   * Parse the value of a new Decimal `x` from string `str`.
+   */
+  function parseDecimal(x, str) {
+    var e, i, len;
+
+    // Decimal point?
+    if ((e = str.indexOf('.')) > -1) str = str.replace('.', '');
+
+    // Exponential form?
+    if ((i = str.search(/e/i)) > 0) {
+
+      // Determine exponent.
+      if (e < 0) e = i;
+      e += +str.slice(i + 1);
+      str = str.substring(0, i);
+    } else if (e < 0) {
+
+      // Integer.
+      e = str.length;
+    }
+
+    // Determine leading zeros.
+    for (i = 0; str.charCodeAt(i) === 48; i++);
+
+    // Determine trailing zeros.
+    for (len = str.length; str.charCodeAt(len - 1) === 48; --len);
+    str = str.slice(i, len);
+
+    if (str) {
+      len -= i;
+      x.e = e = e - i - 1;
+      x.d = [];
+
+      // Transform base
+
+      // e is the base 10 exponent.
+      // i is where to slice str to get the first word of the digits array.
+      i = (e + 1) % LOG_BASE;
+      if (e < 0) i += LOG_BASE;
+
+      if (i < len) {
+        if (i) x.d.push(+str.slice(0, i));
+        for (len -= LOG_BASE; i < len;) x.d.push(+str.slice(i, i += LOG_BASE));
+        str = str.slice(i);
+        i = LOG_BASE - str.length;
+      } else {
+        i -= len;
+      }
+
+      for (; i--;) str += '0';
+      x.d.push(+str);
+
+      if (external) {
+
+        // Overflow?
+        if (x.e > x.constructor.maxE) {
+
+          // Infinity.
+          x.d = null;
+          x.e = NaN;
+
+        // Underflow?
+        } else if (x.e < x.constructor.minE) {
+
+          // Zero.
+          x.e = 0;
+          x.d = [0];
+          // x.constructor.underflow = true;
+        } // else x.constructor.underflow = false;
+      }
+    } else {
+
+      // Zero.
+      x.e = 0;
+      x.d = [0];
+    }
+
+    return x;
+  }
+
+
+  /*
+   * Parse the value of a new Decimal `x` from a string `str`, which is not a decimal value.
+   */
+  function parseOther(x, str) {
+    var base, Ctor, divisor, i, isFloat, len, p, xd, xe;
+
+    if (str.indexOf('_') > -1) {
+      str = str.replace(/(\d)_(?=\d)/g, '$1');
+      if (isDecimal.test(str)) return parseDecimal(x, str);
+    } else if (str === 'Infinity' || str === 'NaN') {
+      if (!+str) x.s = NaN;
+      x.e = NaN;
+      x.d = null;
+      return x;
+    }
+
+    if (isHex.test(str))  {
+      base = 16;
+      str = str.toLowerCase();
+    } else if (isBinary.test(str))  {
+      base = 2;
+    } else if (isOctal.test(str))  {
+      base = 8;
+    } else {
+      throw Error(invalidArgument + str);
+    }
+
+    // Is there a binary exponent part?
+    i = str.search(/p/i);
+
+    if (i > 0) {
+      p = +str.slice(i + 1);
+      str = str.substring(2, i);
+    } else {
+      str = str.slice(2);
+    }
+
+    // Convert `str` as an integer then divide the result by `base` raised to a power such that the
+    // fraction part will be restored.
+    i = str.indexOf('.');
+    isFloat = i >= 0;
+    Ctor = x.constructor;
+
+    if (isFloat) {
+      str = str.replace('.', '');
+      len = str.length;
+      i = len - i;
+
+      // log[10](16) = 1.2041... , log[10](88) = 1.9444....
+      divisor = intPow(Ctor, new Ctor(base), i, i * 2);
+    }
+
+    xd = convertBase(str, base, BASE);
+    xe = xd.length - 1;
+
+    // Remove trailing zeros.
+    for (i = xe; xd[i] === 0; --i) xd.pop();
+    if (i < 0) return new Ctor(x.s * 0);
+    x.e = getBase10Exponent(xd, xe);
+    x.d = xd;
+    external = false;
+
+    // At what precision to perform the division to ensure exact conversion?
+    // maxDecimalIntegerPartDigitCount = ceil(log[10](b) * otherBaseIntegerPartDigitCount)
+    // log[10](2) = 0.30103, log[10](8) = 0.90309, log[10](16) = 1.20412
+    // E.g. ceil(1.2 * 3) = 4, so up to 4 decimal digits are needed to represent 3 hex int digits.
+    // maxDecimalFractionPartDigitCount = {Hex:4|Oct:3|Bin:1} * otherBaseFractionPartDigitCount
+    // Therefore using 4 * the number of digits of str will always be enough.
+    if (isFloat) x = divide(x, divisor, len * 4);
+
+    // Multiply by the binary exponent part if present.
+    if (p) x = x.times(Math.abs(p) < 54 ? mathpow(2, p) : Decimal.pow(2, p));
+    external = true;
+
+    return x;
+  }
+
+
+  /*
+   * sin(x) = x - x^3/3! + x^5/5! - ...
+   * |x| < pi/2
+   *
+   */
+  function sine(Ctor, x) {
+    var k,
+      len = x.d.length;
+
+    if (len < 3) {
+      return x.isZero() ? x : taylorSeries(Ctor, 2, x, x);
+    }
+
+    // Argument reduction: sin(5x) = 16*sin^5(x) - 20*sin^3(x) + 5*sin(x)
+    // i.e. sin(x) = 16*sin^5(x/5) - 20*sin^3(x/5) + 5*sin(x/5)
+    // and  sin(x) = sin(x/5)(5 + sin^2(x/5)(16sin^2(x/5) - 20))
+
+    // Estimate the optimum number of times to use the argument reduction.
+    k = 1.4 * Math.sqrt(len);
+    k = k > 16 ? 16 : k | 0;
+
+    x = x.times(1 / tinyPow(5, k));
+    x = taylorSeries(Ctor, 2, x, x);
+
+    // Reverse argument reduction
+    var sin2_x,
+      d5 = new Ctor(5),
+      d16 = new Ctor(16),
+      d20 = new Ctor(20);
+    for (; k--;) {
+      sin2_x = x.times(x);
+      x = x.times(d5.plus(sin2_x.times(d16.times(sin2_x).minus(d20))));
+    }
+
+    return x;
+  }
+
+
+  // Calculate Taylor series for `cos`, `cosh`, `sin` and `sinh`.
+  function taylorSeries(Ctor, n, x, y, isHyperbolic) {
+    var j, t, u, x2,
+      i = 1,
+      pr = Ctor.precision,
+      k = Math.ceil(pr / LOG_BASE);
+
+    external = false;
+    x2 = x.times(x);
+    u = new Ctor(y);
+
+    for (;;) {
+      t = divide(u.times(x2), new Ctor(n++ * n++), pr, 1);
+      u = isHyperbolic ? y.plus(t) : y.minus(t);
+      y = divide(t.times(x2), new Ctor(n++ * n++), pr, 1);
+      t = u.plus(y);
+
+      if (t.d[k] !== void 0) {
+        for (j = k; t.d[j] === u.d[j] && j--;);
+        if (j == -1) break;
+      }
+
+      j = u;
+      u = y;
+      y = t;
+      t = j;
+      i++;
+    }
+
+    external = true;
+    t.d.length = k + 1;
+
+    return t;
+  }
+
+
+  // Exponent e must be positive and non-zero.
+  function tinyPow(b, e) {
+    var n = b;
+    while (--e) n *= b;
+    return n;
+  }
+
+
+  // Return the absolute value of `x` reduced to less than or equal to half pi.
+  function toLessThanHalfPi(Ctor, x) {
+    var t,
+      isNeg = x.s < 0,
+      pi = getPi(Ctor, Ctor.precision, 1),
+      halfPi = pi.times(0.5);
+
+    x = x.abs();
+
+    if (x.lte(halfPi)) {
+      quadrant = isNeg ? 4 : 1;
+      return x;
+    }
+
+    t = x.divToInt(pi);
+
+    if (t.isZero()) {
+      quadrant = isNeg ? 3 : 2;
+    } else {
+      x = x.minus(t.times(pi));
+
+      // 0 <= x < pi
+      if (x.lte(halfPi)) {
+        quadrant = isOdd(t) ? (isNeg ? 2 : 3) : (isNeg ? 4 : 1);
+        return x;
+      }
+
+      quadrant = isOdd(t) ? (isNeg ? 1 : 4) : (isNeg ? 3 : 2);
+    }
+
+    return x.minus(pi).abs();
+  }
+
+
+  /*
+   * Return the value of Decimal `x` as a string in base `baseOut`.
+   *
+   * If the optional `sd` argument is present include a binary exponent suffix.
+   */
+  function toStringBinary(x, baseOut, sd, rm) {
+    var base, e, i, k, len, roundUp, str, xd, y,
+      Ctor = x.constructor,
+      isExp = sd !== void 0;
+
+    if (isExp) {
+      checkInt32(sd, 1, MAX_DIGITS);
+      if (rm === void 0) rm = Ctor.rounding;
+      else checkInt32(rm, 0, 8);
+    } else {
+      sd = Ctor.precision;
+      rm = Ctor.rounding;
+    }
+
+    if (!x.isFinite()) {
+      str = nonFiniteToString(x);
+    } else {
+      str = finiteToString(x);
+      i = str.indexOf('.');
+
+      // Use exponential notation according to `toExpPos` and `toExpNeg`? No, but if required:
+      // maxBinaryExponent = floor((decimalExponent + 1) * log[2](10))
+      // minBinaryExponent = floor(decimalExponent * log[2](10))
+      // log[2](10) = 3.321928094887362347870319429489390175864
+
+      if (isExp) {
+        base = 2;
+        if (baseOut == 16) {
+          sd = sd * 4 - 3;
+        } else if (baseOut == 8) {
+          sd = sd * 3 - 2;
+        }
+      } else {
+        base = baseOut;
+      }
+
+      // Convert the number as an integer then divide the result by its base raised to a power such
+      // that the fraction part will be restored.
+
+      // Non-integer.
+      if (i >= 0) {
+        str = str.replace('.', '');
+        y = new Ctor(1);
+        y.e = str.length - i;
+        y.d = convertBase(finiteToString(y), 10, base);
+        y.e = y.d.length;
+      }
+
+      xd = convertBase(str, 10, base);
+      e = len = xd.length;
+
+      // Remove trailing zeros.
+      for (; xd[--len] == 0;) xd.pop();
+
+      if (!xd[0]) {
+        str = isExp ? '0p+0' : '0';
+      } else {
+        if (i < 0) {
+          e--;
+        } else {
+          x = new Ctor(x);
+          x.d = xd;
+          x.e = e;
+          x = divide(x, y, sd, rm, 0, base);
+          xd = x.d;
+          e = x.e;
+          roundUp = inexact;
+        }
+
+        // The rounding digit, i.e. the digit after the digit that may be rounded up.
+        i = xd[sd];
+        k = base / 2;
+        roundUp = roundUp || xd[sd + 1] !== void 0;
+
+        roundUp = rm < 4
+          ? (i !== void 0 || roundUp) && (rm === 0 || rm === (x.s < 0 ? 3 : 2))
+          : i > k || i === k && (rm === 4 || roundUp || rm === 6 && xd[sd - 1] & 1 ||
+            rm === (x.s < 0 ? 8 : 7));
+
+        xd.length = sd;
+
+        if (roundUp) {
+
+          // Rounding up may mean the previous digit has to be rounded up and so on.
+          for (; ++xd[--sd] > base - 1;) {
+            xd[sd] = 0;
+            if (!sd) {
+              ++e;
+              xd.unshift(1);
+            }
+          }
+        }
+
+        // Determine trailing zeros.
+        for (len = xd.length; !xd[len - 1]; --len);
+
+        // E.g. [4, 11, 15] becomes 4bf.
+        for (i = 0, str = ''; i < len; i++) str += NUMERALS.charAt(xd[i]);
+
+        // Add binary exponent suffix?
+        if (isExp) {
+          if (len > 1) {
+            if (baseOut == 16 || baseOut == 8) {
+              i = baseOut == 16 ? 4 : 3;
+              for (--len; len % i; len++) str += '0';
+              xd = convertBase(str, base, baseOut);
+              for (len = xd.length; !xd[len - 1]; --len);
+
+              // xd[0] will always be be 1
+              for (i = 1, str = '1.'; i < len; i++) str += NUMERALS.charAt(xd[i]);
+            } else {
+              str = str.charAt(0) + '.' + str.slice(1);
+            }
+          }
+
+          str =  str + (e < 0 ? 'p' : 'p+') + e;
+        } else if (e < 0) {
+          for (; ++e;) str = '0' + str;
+          str = '0.' + str;
+        } else {
+          if (++e > len) for (e -= len; e-- ;) str += '0';
+          else if (e < len) str = str.slice(0, e) + '.' + str.slice(e);
+        }
+      }
+
+      str = (baseOut == 16 ? '0x' : baseOut == 2 ? '0b' : baseOut == 8 ? '0o' : '') + str;
+    }
+
+    return x.s < 0 ? '-' + str : str;
+  }
+
+
+  // Does not strip trailing zeros.
+  function truncate(arr, len) {
+    if (arr.length > len) {
+      arr.length = len;
+      return true;
+    }
+  }
+
+
+  // Decimal methods
+
+
+  /*
+   *  abs
+   *  acos
+   *  acosh
+   *  add
+   *  asin
+   *  asinh
+   *  atan
+   *  atanh
+   *  atan2
+   *  cbrt
+   *  ceil
+   *  clamp
+   *  clone
+   *  config
+   *  cos
+   *  cosh
+   *  div
+   *  exp
+   *  floor
+   *  hypot
+   *  ln
+   *  log
+   *  log2
+   *  log10
+   *  max
+   *  min
+   *  mod
+   *  mul
+   *  pow
+   *  random
+   *  round
+   *  set
+   *  sign
+   *  sin
+   *  sinh
+   *  sqrt
+   *  sub
+   *  sum
+   *  tan
+   *  tanh
+   *  trunc
+   */
+
+
+  /*
+   * Return a new Decimal whose value is the absolute value of `x`.
+   *
+   * x {number|string|Decimal}
+   *
+   */
+  function abs(x) {
+    return new this(x).abs();
+  }
+
+
+  /*
+   * Return a new Decimal whose value is the arccosine in radians of `x`.
+   *
+   * x {number|string|Decimal}
+   *
+   */
+  function acos(x) {
+    return new this(x).acos();
+  }
+
+
+  /*
+   * Return a new Decimal whose value is the inverse of the hyperbolic cosine of `x`, rounded to
+   * `precision` significant digits using rounding mode `rounding`.
+   *
+   * x {number|string|Decimal} A value in radians.
+   *
+   */
+  function acosh(x) {
+    return new this(x).acosh();
+  }
+
+
+  /*
+   * Return a new Decimal whose value is the sum of `x` and `y`, rounded to `precision` significant
+   * digits using rounding mode `rounding`.
+   *
+   * x {number|string|Decimal}
+   * y {number|string|Decimal}
+   *
+   */
+  function add(x, y) {
+    return new this(x).plus(y);
+  }
+
+
+  /*
+   * Return a new Decimal whose value is the arcsine in radians of `x`, rounded to `precision`
+   * significant digits using rounding mode `rounding`.
+   *
+   * x {number|string|Decimal}
+   *
+   */
+  function asin(x) {
+    return new this(x).asin();
+  }
+
+
+  /*
+   * Return a new Decimal whose value is the inverse of the hyperbolic sine of `x`, rounded to
+   * `precision` significant digits using rounding mode `rounding`.
+   *
+   * x {number|string|Decimal} A value in radians.
+   *
+   */
+  function asinh(x) {
+    return new this(x).asinh();
+  }
+
+
+  /*
+   * Return a new Decimal whose value is the arctangent in radians of `x`, rounded to `precision`
+   * significant digits using rounding mode `rounding`.
+   *
+   * x {number|string|Decimal}
+   *
+   */
+  function atan(x) {
+    return new this(x).atan();
+  }
+
+
+  /*
+   * Return a new Decimal whose value is the inverse of the hyperbolic tangent of `x`, rounded to
+   * `precision` significant digits using rounding mode `rounding`.
+   *
+   * x {number|string|Decimal} A value in radians.
+   *
+   */
+  function atanh(x) {
+    return new this(x).atanh();
+  }
+
+
+  /*
+   * Return a new Decimal whose value is the arctangent in radians of `y/x` in the range -pi to pi
+   * (inclusive), rounded to `precision` significant digits using rounding mode `rounding`.
+   *
+   * Domain: [-Infinity, Infinity]
+   * Range: [-pi, pi]
+   *
+   * y {number|string|Decimal} The y-coordinate.
+   * x {number|string|Decimal} The x-coordinate.
+   *
+   * atan2(±0, -0)               = ±pi
+   * atan2(±0, +0)               = ±0
+   * atan2(±0, -x)               = ±pi for x > 0
+   * atan2(±0, x)                = ±0 for x > 0
+   * atan2(-y, ±0)               = -pi/2 for y > 0
+   * atan2(y, ±0)                = pi/2 for y > 0
+   * atan2(±y, -Infinity)        = ±pi for finite y > 0
+   * atan2(±y, +Infinity)        = ±0 for finite y > 0
+   * atan2(±Infinity, x)         = ±pi/2 for finite x
+   * atan2(±Infinity, -Infinity) = ±3*pi/4
+   * atan2(±Infinity, +Infinity) = ±pi/4
+   * atan2(NaN, x) = NaN
+   * atan2(y, NaN) = NaN
+   *
+   */
+  function atan2(y, x) {
+    y = new this(y);
+    x = new this(x);
+    var r,
+      pr = this.precision,
+      rm = this.rounding,
+      wpr = pr + 4;
+
+    // Either NaN
+    if (!y.s || !x.s) {
+      r = new this(NaN);
+
+    // Both ±Infinity
+    } else if (!y.d && !x.d) {
+      r = getPi(this, wpr, 1).times(x.s > 0 ? 0.25 : 0.75);
+      r.s = y.s;
+
+    // x is ±Infinity or y is ±0
+    } else if (!x.d || y.isZero()) {
+      r = x.s < 0 ? getPi(this, pr, rm) : new this(0);
+      r.s = y.s;
+
+    // y is ±Infinity or x is ±0
+    } else if (!y.d || x.isZero()) {
+      r = getPi(this, wpr, 1).times(0.5);
+      r.s = y.s;
+
+    // Both non-zero and finite
+    } else if (x.s < 0) {
+      this.precision = wpr;
+      this.rounding = 1;
+      r = this.atan(divide(y, x, wpr, 1));
+      x = getPi(this, wpr, 1);
+      this.precision = pr;
+      this.rounding = rm;
+      r = y.s < 0 ? r.minus(x) : r.plus(x);
+    } else {
+      r = this.atan(divide(y, x, wpr, 1));
+    }
+
+    return r;
+  }
+
+
+  /*
+   * Return a new Decimal whose value is the cube root of `x`, rounded to `precision` significant
+   * digits using rounding mode `rounding`.
+   *
+   * x {number|string|Decimal}
+   *
+   */
+  function cbrt(x) {
+    return new this(x).cbrt();
+  }
+
+
+  /*
+   * Return a new Decimal whose value is `x` rounded to an integer using `ROUND_CEIL`.
+   *
+   * x {number|string|Decimal}
+   *
+   */
+  function ceil(x) {
+    return finalise(x = new this(x), x.e + 1, 2);
+  }
+
+
+  /*
+   * Return a new Decimal whose value is `x` clamped to the range delineated by `min` and `max`.
+   *
+   * x {number|string|Decimal}
+   * min {number|string|Decimal}
+   * max {number|string|Decimal}
+   *
+   */
+  function clamp(x, min, max) {
+    return new this(x).clamp(min, max);
+  }
+
+
+  /*
+   * Configure global settings for a Decimal constructor.
+   *
+   * `obj` is an object with one or more of the following properties,
+   *
+   *   precision  {number}
+   *   rounding   {number}
+   *   toExpNeg   {number}
+   *   toExpPos   {number}
+   *   maxE       {number}
+   *   minE       {number}
+   *   modulo     {number}
+   *   crypto     {boolean|number}
+   *   defaults   {true}
+   *
+   * E.g. Decimal.config({ precision: 20, rounding: 4 })
+   *
+   */
+  function config(obj) {
+    if (!obj || typeof obj !== 'object') throw Error(decimalError + 'Object expected');
+    var i, p, v,
+      useDefaults = obj.defaults === true,
+      ps = [
+        'precision', 1, MAX_DIGITS,
+        'rounding', 0, 8,
+        'toExpNeg', -EXP_LIMIT, 0,
+        'toExpPos', 0, EXP_LIMIT,
+        'maxE', 0, EXP_LIMIT,
+        'minE', -EXP_LIMIT, 0,
+        'modulo', 0, 9
+      ];
+
+    for (i = 0; i < ps.length; i += 3) {
+      if (p = ps[i], useDefaults) this[p] = DEFAULTS[p];
+      if ((v = obj[p]) !== void 0) {
+        if (mathfloor(v) === v && v >= ps[i + 1] && v <= ps[i + 2]) this[p] = v;
+        else throw Error(invalidArgument + p + ': ' + v);
+      }
+    }
+
+    if (p = 'crypto', useDefaults) this[p] = DEFAULTS[p];
+    if ((v = obj[p]) !== void 0) {
+      if (v === true || v === false || v === 0 || v === 1) {
+        if (v) {
+          if (typeof crypto != 'undefined' && crypto &&
+            (crypto.getRandomValues || crypto.randomBytes)) {
+            this[p] = true;
+          } else {
+            throw Error(cryptoUnavailable);
+          }
+        } else {
+          this[p] = false;
+        }
+      } else {
+        throw Error(invalidArgument + p + ': ' + v);
+      }
+    }
+
+    return this;
+  }
+
+
+  /*
+   * Return a new Decimal whose value is the cosine of `x`, rounded to `precision` significant
+   * digits using rounding mode `rounding`.
+   *
+   * x {number|string|Decimal} A value in radians.
+   *
+   */
+  function cos(x) {
+    return new this(x).cos();
+  }
+
+
+  /*
+   * Return a new Decimal whose value is the hyperbolic cosine of `x`, rounded to precision
+   * significant digits using rounding mode `rounding`.
+   *
+   * x {number|string|Decimal} A value in radians.
+   *
+   */
+  function cosh(x) {
+    return new this(x).cosh();
+  }
+
+
+  /*
+   * Create and return a Decimal constructor with the same configuration properties as this Decimal
+   * constructor.
+   *
+   */
+  function clone(obj) {
+    var i, p, ps;
+
+    /*
+     * The Decimal constructor and exported function.
+     * Return a new Decimal instance.
+     *
+     * v {number|string|Decimal} A numeric value.
+     *
+     */
+    function Decimal(v) {
+      var e, i, t,
+        x = this;
+
+      // Decimal called without new.
+      if (!(x instanceof Decimal)) return new Decimal(v);
+
+      // Retain a reference to this Decimal constructor, and shadow Decimal.prototype.constructor
+      // which points to Object.
+      x.constructor = Decimal;
+
+      // Duplicate.
+      if (isDecimalInstance(v)) {
+        x.s = v.s;
+
+        if (external) {
+          if (!v.d || v.e > Decimal.maxE) {
+
+            // Infinity.
+            x.e = NaN;
+            x.d = null;
+          } else if (v.e < Decimal.minE) {
+
+            // Zero.
+            x.e = 0;
+            x.d = [0];
+          } else {
+            x.e = v.e;
+            x.d = v.d.slice();
+          }
+        } else {
+          x.e = v.e;
+          x.d = v.d ? v.d.slice() : v.d;
+        }
+
+        return;
+      }
+
+      t = typeof v;
+
+      if (t === 'number') {
+        if (v === 0) {
+          x.s = 1 / v < 0 ? -1 : 1;
+          x.e = 0;
+          x.d = [0];
+          return;
+        }
+
+        if (v < 0) {
+          v = -v;
+          x.s = -1;
+        } else {
+          x.s = 1;
+        }
+
+        // Fast path for small integers.
+        if (v === ~~v && v < 1e7) {
+          for (e = 0, i = v; i >= 10; i /= 10) e++;
+
+          if (external) {
+            if (e > Decimal.maxE) {
+              x.e = NaN;
+              x.d = null;
+            } else if (e < Decimal.minE) {
+              x.e = 0;
+              x.d = [0];
+            } else {
+              x.e = e;
+              x.d = [v];
+            }
+          } else {
+            x.e = e;
+            x.d = [v];
+          }
+
+          return;
+
+        // Infinity, NaN.
+        } else if (v * 0 !== 0) {
+          if (!v) x.s = NaN;
+          x.e = NaN;
+          x.d = null;
+          return;
+        }
+
+        return parseDecimal(x, v.toString());
+
+      } else if (t !== 'string') {
+        throw Error(invalidArgument + v);
+      }
+
+      // Minus sign?
+      if ((i = v.charCodeAt(0)) === 45) {
+        v = v.slice(1);
+        x.s = -1;
+      } else {
+        // Plus sign?
+        if (i === 43) v = v.slice(1);
+        x.s = 1;
+      }
+
+      return isDecimal.test(v) ? parseDecimal(x, v) : parseOther(x, v);
+    }
+
+    Decimal.prototype = P;
+
+    Decimal.ROUND_UP = 0;
+    Decimal.ROUND_DOWN = 1;
+    Decimal.ROUND_CEIL = 2;
+    Decimal.ROUND_FLOOR = 3;
+    Decimal.ROUND_HALF_UP = 4;
+    Decimal.ROUND_HALF_DOWN = 5;
+    Decimal.ROUND_HALF_EVEN = 6;
+    Decimal.ROUND_HALF_CEIL = 7;
+    Decimal.ROUND_HALF_FLOOR = 8;
+    Decimal.EUCLID = 9;
+
+    Decimal.config = Decimal.set = config;
+    Decimal.clone = clone;
+    Decimal.isDecimal = isDecimalInstance;
+
+    Decimal.abs = abs;
+    Decimal.acos = acos;
+    Decimal.acosh = acosh;        // ES6
+    Decimal.add = add;
+    Decimal.asin = asin;
+    Decimal.asinh = asinh;        // ES6
+    Decimal.atan = atan;
+    Decimal.atanh = atanh;        // ES6
+    Decimal.atan2 = atan2;
+    Decimal.cbrt = cbrt;          // ES6
+    Decimal.ceil = ceil;
+    Decimal.clamp = clamp;
+    Decimal.cos = cos;
+    Decimal.cosh = cosh;          // ES6
+    Decimal.div = div;
+    Decimal.exp = exp;
+    Decimal.floor = floor;
+    Decimal.hypot = hypot;        // ES6
+    Decimal.ln = ln;
+    Decimal.log = log;
+    Decimal.log10 = log10;        // ES6
+    Decimal.log2 = log2;          // ES6
+    Decimal.max = max;
+    Decimal.min = min;
+    Decimal.mod = mod;
+    Decimal.mul = mul;
+    Decimal.pow = pow;
+    Decimal.random = random;
+    Decimal.round = round;
+    Decimal.sign = sign;          // ES6
+    Decimal.sin = sin;
+    Decimal.sinh = sinh;          // ES6
+    Decimal.sqrt = sqrt;
+    Decimal.sub = sub;
+    Decimal.sum = sum;
+    Decimal.tan = tan;
+    Decimal.tanh = tanh;          // ES6
+    Decimal.trunc = trunc;        // ES6
+
+    if (obj === void 0) obj = {};
+    if (obj) {
+      if (obj.defaults !== true) {
+        ps = ['precision', 'rounding', 'toExpNeg', 'toExpPos', 'maxE', 'minE', 'modulo', 'crypto'];
+        for (i = 0; i < ps.length;) if (!obj.hasOwnProperty(p = ps[i++])) obj[p] = this[p];
+      }
+    }
+
+    Decimal.config(obj);
+
+    return Decimal;
+  }
+
+
+  /*
+   * Return a new Decimal whose value is `x` divided by `y`, rounded to `precision` significant
+   * digits using rounding mode `rounding`.
+   *
+   * x {number|string|Decimal}
+   * y {number|string|Decimal}
+   *
+   */
+  function div(x, y) {
+    return new this(x).div(y);
+  }
+
+
+  /*
+   * Return a new Decimal whose value is the natural exponential of `x`, rounded to `precision`
+   * significant digits using rounding mode `rounding`.
+   *
+   * x {number|string|Decimal} The power to which to raise the base of the natural log.
+   *
+   */
+  function exp(x) {
+    return new this(x).exp();
+  }
+
+
+  /*
+   * Return a new Decimal whose value is `x` round to an integer using `ROUND_FLOOR`.
+   *
+   * x {number|string|Decimal}
+   *
+   */
+  function floor(x) {
+    return finalise(x = new this(x), x.e + 1, 3);
+  }
+
+
+  /*
+   * Return a new Decimal whose value is the square root of the sum of the squares of the arguments,
+   * rounded to `precision` significant digits using rounding mode `rounding`.
+   *
+   * hypot(a, b, ...) = sqrt(a^2 + b^2 + ...)
+   *
+   * arguments {number|string|Decimal}
+   *
+   */
+  function hypot() {
+    var i, n,
+      t = new this(0);
+
+    external = false;
+
+    for (i = 0; i < arguments.length;) {
+      n = new this(arguments[i++]);
+      if (!n.d) {
+        if (n.s) {
+          external = true;
+          return new this(1 / 0);
+        }
+        t = n;
+      } else if (t.d) {
+        t = t.plus(n.times(n));
+      }
+    }
+
+    external = true;
+
+    return t.sqrt();
+  }
+
+
+  /*
+   * Return true if object is a Decimal instance (where Decimal is any Decimal constructor),
+   * otherwise return false.
+   *
+   */
+  function isDecimalInstance(obj) {
+    return obj instanceof Decimal || obj && obj.toStringTag === tag || false;
+  }
+
+
+  /*
+   * Return a new Decimal whose value is the natural logarithm of `x`, rounded to `precision`
+   * significant digits using rounding mode `rounding`.
+   *
+   * x {number|string|Decimal}
+   *
+   */
+  function ln(x) {
+    return new this(x).ln();
+  }
+
+
+  /*
+   * Return a new Decimal whose value is the log of `x` to the base `y`, or to base 10 if no base
+   * is specified, rounded to `precision` significant digits using rounding mode `rounding`.
+   *
+   * log[y](x)
+   *
+   * x {number|string|Decimal} The argument of the logarithm.
+   * y {number|string|Decimal} The base of the logarithm.
+   *
+   */
+  function log(x, y) {
+    return new this(x).log(y);
+  }
+
+
+  /*
+   * Return a new Decimal whose value is the base 2 logarithm of `x`, rounded to `precision`
+   * significant digits using rounding mode `rounding`.
+   *
+   * x {number|string|Decimal}
+   *
+   */
+  function log2(x) {
+    return new this(x).log(2);
+  }
+
+
+  /*
+   * Return a new Decimal whose value is the base 10 logarithm of `x`, rounded to `precision`
+   * significant digits using rounding mode `rounding`.
+   *
+   * x {number|string|Decimal}
+   *
+   */
+  function log10(x) {
+    return new this(x).log(10);
+  }
+
+
+  /*
+   * Return a new Decimal whose value is the maximum of the arguments.
+   *
+   * arguments {number|string|Decimal}
+   *
+   */
+  function max() {
+    return maxOrMin(this, arguments, 'lt');
+  }
+
+
+  /*
+   * Return a new Decimal whose value is the minimum of the arguments.
+   *
+   * arguments {number|string|Decimal}
+   *
+   */
+  function min() {
+    return maxOrMin(this, arguments, 'gt');
+  }
+
+
+  /*
+   * Return a new Decimal whose value is `x` modulo `y`, rounded to `precision` significant digits
+   * using rounding mode `rounding`.
+   *
+   * x {number|string|Decimal}
+   * y {number|string|Decimal}
+   *
+   */
+  function mod(x, y) {
+    return new this(x).mod(y);
+  }
+
+
+  /*
+   * Return a new Decimal whose value is `x` multiplied by `y`, rounded to `precision` significant
+   * digits using rounding mode `rounding`.
+   *
+   * x {number|string|Decimal}
+   * y {number|string|Decimal}
+   *
+   */
+  function mul(x, y) {
+    return new this(x).mul(y);
+  }
+
+
+  /*
+   * Return a new Decimal whose value is `x` raised to the power `y`, rounded to precision
+   * significant digits using rounding mode `rounding`.
+   *
+   * x {number|string|Decimal} The base.
+   * y {number|string|Decimal} The exponent.
+   *
+   */
+  function pow(x, y) {
+    return new this(x).pow(y);
+  }
+
+
+  /*
+   * Returns a new Decimal with a random value equal to or greater than 0 and less than 1, and with
+   * `sd`, or `Decimal.precision` if `sd` is omitted, significant digits (or less if trailing zeros
+   * are produced).
+   *
+   * [sd] {number} Significant digits. Integer, 0 to MAX_DIGITS inclusive.
+   *
+   */
+  function random(sd) {
+    var d, e, k, n,
+      i = 0,
+      r = new this(1),
+      rd = [];
+
+    if (sd === void 0) sd = this.precision;
+    else checkInt32(sd, 1, MAX_DIGITS);
+
+    k = Math.ceil(sd / LOG_BASE);
+
+    if (!this.crypto) {
+      for (; i < k;) rd[i++] = Math.random() * 1e7 | 0;
+
+    // Browsers supporting crypto.getRandomValues.
+    } else if (crypto.getRandomValues) {
+      d = crypto.getRandomValues(new Uint32Array(k));
+
+      for (; i < k;) {
+        n = d[i];
+
+        // 0 <= n < 4294967296
+        // Probability n >= 4.29e9, is 4967296 / 4294967296 = 0.00116 (1 in 865).
+        if (n >= 4.29e9) {
+          d[i] = crypto.getRandomValues(new Uint32Array(1))[0];
+        } else {
+
+          // 0 <= n <= 4289999999
+          // 0 <= (n % 1e7) <= 9999999
+          rd[i++] = n % 1e7;
+        }
+      }
+
+    // Node.js supporting crypto.randomBytes.
+    } else if (crypto.randomBytes) {
+
+      // buffer
+      d = crypto.randomBytes(k *= 4);
+
+      for (; i < k;) {
+
+        // 0 <= n < 2147483648
+        n = d[i] + (d[i + 1] << 8) + (d[i + 2] << 16) + ((d[i + 3] & 0x7f) << 24);
+
+        // Probability n >= 2.14e9, is 7483648 / 2147483648 = 0.0035 (1 in 286).
+        if (n >= 2.14e9) {
+          crypto.randomBytes(4).copy(d, i);
+        } else {
+
+          // 0 <= n <= 2139999999
+          // 0 <= (n % 1e7) <= 9999999
+          rd.push(n % 1e7);
+          i += 4;
+        }
+      }
+
+      i = k / 4;
+    } else {
+      throw Error(cryptoUnavailable);
+    }
+
+    k = rd[--i];
+    sd %= LOG_BASE;
+
+    // Convert trailing digits to zeros according to sd.
+    if (k && sd) {
+      n = mathpow(10, LOG_BASE - sd);
+      rd[i] = (k / n | 0) * n;
+    }
+
+    // Remove trailing words which are zero.
+    for (; rd[i] === 0; i--) rd.pop();
+
+    // Zero?
+    if (i < 0) {
+      e = 0;
+      rd = [0];
+    } else {
+      e = -1;
+
+      // Remove leading words which are zero and adjust exponent accordingly.
+      for (; rd[0] === 0; e -= LOG_BASE) rd.shift();
+
+      // Count the digits of the first word of rd to determine leading zeros.
+      for (k = 1, n = rd[0]; n >= 10; n /= 10) k++;
+
+      // Adjust the exponent for leading zeros of the first word of rd.
+      if (k < LOG_BASE) e -= LOG_BASE - k;
+    }
+
+    r.e = e;
+    r.d = rd;
+
+    return r;
+  }
+
+
+  /*
+   * Return a new Decimal whose value is `x` rounded to an integer using rounding mode `rounding`.
+   *
+   * To emulate `Math.round`, set rounding to 7 (ROUND_HALF_CEIL).
+   *
+   * x {number|string|Decimal}
+   *
+   */
+  function round(x) {
+    return finalise(x = new this(x), x.e + 1, this.rounding);
+  }
+
+
+  /*
+   * Return
+   *   1    if x > 0,
+   *  -1    if x < 0,
+   *   0    if x is 0,
+   *  -0    if x is -0,
+   *   NaN  otherwise
+   *
+   * x {number|string|Decimal}
+   *
+   */
+  function sign(x) {
+    x = new this(x);
+    return x.d ? (x.d[0] ? x.s : 0 * x.s) : x.s || NaN;
+  }
+
+
+  /*
+   * Return a new Decimal whose value is the sine of `x`, rounded to `precision` significant digits
+   * using rounding mode `rounding`.
+   *
+   * x {number|string|Decimal} A value in radians.
+   *
+   */
+  function sin(x) {
+    return new this(x).sin();
+  }
+
+
+  /*
+   * Return a new Decimal whose value is the hyperbolic sine of `x`, rounded to `precision`
+   * significant digits using rounding mode `rounding`.
+   *
+   * x {number|string|Decimal} A value in radians.
+   *
+   */
+  function sinh(x) {
+    return new this(x).sinh();
+  }
+
+
+  /*
+   * Return a new Decimal whose value is the square root of `x`, rounded to `precision` significant
+   * digits using rounding mode `rounding`.
+   *
+   * x {number|string|Decimal}
+   *
+   */
+  function sqrt(x) {
+    return new this(x).sqrt();
+  }
+
+
+  /*
+   * Return a new Decimal whose value is `x` minus `y`, rounded to `precision` significant digits
+   * using rounding mode `rounding`.
+   *
+   * x {number|string|Decimal}
+   * y {number|string|Decimal}
+   *
+   */
+  function sub(x, y) {
+    return new this(x).sub(y);
+  }
+
+
+  /*
+   * Return a new Decimal whose value is the sum of the arguments, rounded to `precision`
+   * significant digits using rounding mode `rounding`.
+   *
+   * Only the result is rounded, not the intermediate calculations.
+   *
+   * arguments {number|string|Decimal}
+   *
+   */
+  function sum() {
+    var i = 0,
+      args = arguments,
+      x = new this(args[i]);
+
+    external = false;
+    for (; x.s && ++i < args.length;) x = x.plus(args[i]);
+    external = true;
+
+    return finalise(x, this.precision, this.rounding);
+  }
+
+
+  /*
+   * Return a new Decimal whose value is the tangent of `x`, rounded to `precision` significant
+   * digits using rounding mode `rounding`.
+   *
+   * x {number|string|Decimal} A value in radians.
+   *
+   */
+  function tan(x) {
+    return new this(x).tan();
+  }
+
+
+  /*
+   * Return a new Decimal whose value is the hyperbolic tangent of `x`, rounded to `precision`
+   * significant digits using rounding mode `rounding`.
+   *
+   * x {number|string|Decimal} A value in radians.
+   *
+   */
+  function tanh(x) {
+    return new this(x).tanh();
+  }
+
+
+  /*
+   * Return a new Decimal whose value is `x` truncated to an integer.
+   *
+   * x {number|string|Decimal}
+   *
+   */
+  function trunc(x) {
+    return finalise(x = new this(x), x.e + 1, 1);
+  }
+
+
+  // Create and configure initial Decimal constructor.
+  Decimal = clone(DEFAULTS);
+  Decimal.prototype.constructor = Decimal;
+  Decimal['default'] = Decimal.Decimal = Decimal;
+
+  // Create the internal constants from their string values.
+  LN10 = new Decimal(LN10);
+  PI = new Decimal(PI);
+
+
+  // Export.
+
+
+  // AMD.
+  if (true) {
+    !(__WEBPACK_AMD_DEFINE_RESULT__ = (function () {
+      return Decimal;
+    }).call(exports, __webpack_require__, exports, module),
+				__WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
+
+  // Node and other environments that support module.exports.
+  } else {}
+})(this);
 
 
 /***/ }),
@@ -96743,7 +101622,7 @@ function ownKeys(object, enumerableOnly) {
   return keys;
 }
 
-function _objectSpread2(target) {
+function objectSpread2_objectSpread2(target) {
   for (var i = 1; i < arguments.length; i++) {
     var source = arguments[i] != null ? arguments[i] : {};
 
@@ -96883,8 +101762,8 @@ var es_array_concat = __webpack_require__("99af");
 var external_commonjs_vue_commonjs2_vue_root_Vue_ = __webpack_require__("8bbf");
 var external_commonjs_vue_commonjs2_vue_root_Vue_default = /*#__PURE__*/__webpack_require__.n(external_commonjs_vue_commonjs2_vue_root_Vue_);
 
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"00b53798-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/Diagram.vue?vue&type=template&id=2daaf2e6&
-var Diagramvue_type_template_id_2daaf2e6_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{class:[
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"08613af9-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/Diagram.vue?vue&type=template&id=7d79cfe5&
+var Diagramvue_type_template_id_7d79cfe5_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{class:[
     'lassox-diagram__Diagram',
     _vm.compact && 'lassox-diagram__Diagram--compact' ],attrs:{"tabindex":"-1"},on:{"keydown":_vm.onKeyDown}},[_c('div',{staticClass:"lassox-diagram__Diagram-loading-screen",style:({
       opacity: _vm.diagram.isLoading ? '1' : '0',
@@ -96893,7 +101772,7 @@ var Diagramvue_type_template_id_2daaf2e6_render = function () {var _vm=this;var 
 var staticRenderFns = []
 
 
-// CONCATENATED MODULE: ./src/components/Diagram.vue?vue&type=template&id=2daaf2e6&
+// CONCATENATED MODULE: ./src/components/Diagram.vue?vue&type=template&id=7d79cfe5&
 
 // CONCATENATED MODULE: ./node_modules/@babel/runtime/helpers/esm/setPrototypeOf.js
 function _setPrototypeOf(o, p) {
@@ -97922,7 +102801,7 @@ function Watch(path, options) {
 
 
 
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"00b53798-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/LoadingSpinner.vue?vue&type=template&id=e3203f24&
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"08613af9-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/LoadingSpinner.vue?vue&type=template&id=e3203f24&
 var LoadingSpinnervue_type_template_id_e3203f24_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"lassox-diagram__LoadingSpinner",style:({
     width: (_vm.finalSize + "px"),
     height: (_vm.finalSize + "px"),
@@ -98214,8 +103093,8 @@ var component = normalizeComponent(
 )
 
 /* harmony default export */ var components_LoadingSpinner = (component.exports);
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"00b53798-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/TopBar.vue?vue&type=template&id=9d95f1ac&
-var TopBarvue_type_template_id_9d95f1ac_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"lassox-diagram__TopBar"},[_c('ButtonGroup',[(!_vm.compact)?[_c('Button',{attrs:{"type":"primary","label":"Udskriv"},on:{"click":function () { return _vm.diagramVm.showPrintDialog('print'); }}}),_c('Button',{ref:"saveAsDropdownButton",attrs:{"label":"Gem som","trailingIcon":_vm.showSaveAsDropdownMenu ? 'expand_less' : 'expand_more'},on:{"click":function () { return _vm.showSaveAsDropdownMenu = !_vm.showSaveAsDropdownMenu; }}}),(_vm.diagram.methods.getSavedDiagrams)?_c('Button',{attrs:{"label":"Indlæs"},on:{"click":function () { return _vm.diagramVm.showLoadDialog(); }}}):_vm._e()]:_vm._e()],2),_c('div',{staticStyle:{"width":"16px","flex-shrink":"0"}}),(!_vm.compact && _vm.diagram.enableSaving)?[_c('div',{staticClass:"lassox-diagram__TopBar_active-diagram"},[(_vm.diagram.activeDiagram.id)?[(_vm.diagram.activeDiagram.title)?_c('div',{staticClass:"lassox-diagram__TopBar_active-diagram-name",domProps:{"textContent":_vm._s(_vm.diagram.activeDiagram.title)}}):_vm._e(),(_vm.diagram.activeDiagram.title && _vm.diagram.enableSharing)?_c('div',{staticStyle:{"width":"12px","flex-shrink":"0"}}):_vm._e(),(_vm.diagram.enableSharing)?_c('IconButton',{directives:[{name:"tooltip",rawName:"v-tooltip",value:(_vm.diagram.activeDiagram.shared ? 'Diagrammet er privat og deles ikke' : 'Diagrammet er delt med din organisation'),expression:"diagram.activeDiagram.shared ? 'Diagrammet er privat og deles ikke' : 'Diagrammet er delt med din organisation'"}],staticClass:"lassox-diagram__TopBar_active-diagram-shared-icon",attrs:{"icon":_vm.diagram.activeDiagram.shared ? 'lock_open' : 'lock'}}):_vm._e(),((_vm.diagram.activeDiagram.title || _vm.diagram.enableSharing) && _vm.diagram.hasUnsavedChanges)?_c('div',{staticStyle:{"width":"12px","flex-shrink":"0"}}):_vm._e()]:_vm._e(),(_vm.diagram.hasUnsavedChanges)?_c('div',{staticClass:"lassox-diagram__TopBar_active-diagram-unsaved-changes"},[(_vm.diagram.activeDiagram.id && (_vm.diagram.activeDiagram.title || _vm.diagram.enableSharing))?_c('div',{staticStyle:{"margin-right":"12px"}},[_vm._v("—")]):_vm._e(),(_vm.diagram.isSaving)?_c('div',{domProps:{"textContent":_vm._s('Gemmer...')}}):_c('a',{attrs:{"href":"#"},domProps:{"textContent":_vm._s('Gem ændringer')},on:{"click":function($event){$event.preventDefault();return (function () {
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"08613af9-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/TopBar.vue?vue&type=template&id=2ff35d35&
+var TopBarvue_type_template_id_2ff35d35_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"lassox-diagram__TopBar"},[_c('ButtonGroup',[(!_vm.compact)?[_c('Button',{attrs:{"type":"primary","label":"Udskriv"},on:{"click":function () { return _vm.diagramVm.showPrintDialog('print'); }}}),_c('Button',{ref:"saveAsDropdownButton",attrs:{"label":"Gem som","trailingIcon":_vm.showSaveAsDropdownMenu ? 'expand_less' : 'expand_more'},on:{"click":function () { return _vm.showSaveAsDropdownMenu = !_vm.showSaveAsDropdownMenu; }}}),(_vm.diagram.methods.getSavedDiagrams)?_c('Button',{attrs:{"label":"Indlæs"},on:{"click":function () { return _vm.diagramVm.showLoadDialog(); }}}):_vm._e()]:_vm._e()],2),_c('div',{staticStyle:{"width":"16px","flex-shrink":"0"}}),(!_vm.compact && _vm.diagram.enableSaving)?[_c('div',{staticClass:"lassox-diagram__TopBar_active-diagram"},[(_vm.diagram.activeDiagram.id)?[(_vm.diagram.activeDiagram.title)?_c('div',{staticClass:"lassox-diagram__TopBar_active-diagram-name",domProps:{"textContent":_vm._s(_vm.diagram.activeDiagram.title)}}):_vm._e(),(_vm.diagram.activeDiagram.title && _vm.diagram.enableSharing)?_c('div',{staticStyle:{"width":"12px","flex-shrink":"0"}}):_vm._e(),(_vm.diagram.enableSharing)?_c('IconButton',{directives:[{name:"tooltip",rawName:"v-tooltip",value:(_vm.diagram.activeDiagram.shared ? 'Diagrammet er privat og deles ikke' : 'Diagrammet er delt med din organisation'),expression:"diagram.activeDiagram.shared ? 'Diagrammet er privat og deles ikke' : 'Diagrammet er delt med din organisation'"}],staticClass:"lassox-diagram__TopBar_active-diagram-shared-icon",attrs:{"icon":_vm.diagram.activeDiagram.shared ? 'lock_open' : 'lock'}}):_vm._e(),((_vm.diagram.activeDiagram.title || _vm.diagram.enableSharing) && _vm.diagram.hasUnsavedChanges)?_c('div',{staticStyle:{"width":"12px","flex-shrink":"0"}}):_vm._e()]:_vm._e(),(_vm.diagram.hasUnsavedChanges)?_c('div',{staticClass:"lassox-diagram__TopBar_active-diagram-unsaved-changes"},[(_vm.diagram.activeDiagram.id && (_vm.diagram.activeDiagram.title || _vm.diagram.enableSharing))?_c('div',{staticStyle:{"margin-right":"12px"}},[_vm._v("—")]):_vm._e(),(_vm.diagram.isSaving)?_c('div',{domProps:{"textContent":_vm._s('Gemmer...')}}):_c('a',{attrs:{"href":"#"},domProps:{"textContent":_vm._s('Gem ændringer')},on:{"click":function($event){$event.preventDefault();return (function () {
             _vm.save()
             // if (diagram.activeDiagram.id) save()
             // else showSaveDialog()
@@ -98226,11 +103105,15 @@ var TopBarvue_type_template_id_9d95f1ac_render = function () {var _vm=this;var _
       }}}):_vm._e()],1),_c('DropdownMenu',{attrs:{"opener":_vm.showSaveAsDropdownMenu ? _vm.$refs.saveAsDropdownButton.$el : null,"close":function () { return _vm.showSaveAsDropdownMenu = false; }}},[(_vm.diagram.activeDiagram.id && _vm.diagram.enableSaving)?[_c('DropdownMenuItem',{attrs:{"label":"Nyt diagram"},on:{"click":function () {
           _vm.save(false)
           // showSaveDialog()
-        }}}),_c('DropdownMenuDivider')]:_vm._e(),(_vm.diagram.methods.convertPngToPdf)?_c('DropdownMenuItem',{attrs:{"label":"PDF"},on:{"click":function () { return _vm.diagramVm.showPrintDialog('pdf'); }}}):_vm._e(),_c('DropdownMenuItem',{attrs:{"label":"Billede"},on:{"click":function () { return _vm.diagramVm.showPrintDialog('png'); }}})],2),(_vm.diagram.layouts.length)?_c('DropdownMenu',{attrs:{"opener":_vm.showLayoutDropdownMenu ? _vm.$refs.layoutDropdownButton.$el : null,"close":function () { return _vm.showLayoutDropdownMenu = false; }}},_vm._l((_vm.diagram.layouts),function(layout){return _c('DropdownMenuItem',{key:layout.id,attrs:{"label":layout.name,"icon":layout == _vm.diagram.activeDiagram.settings.activeLayout ? 'check' : ' '},on:{"click":function () { return _vm.diagram.eventBus.emit({ name: 'graph.layout', layout: layout }); }}})}),1):_vm._e(),_c('DropdownMenu',{attrs:{"opener":_vm.showEditDropdownMenu ? _vm.$refs.editDropdownButton.$el : null,"close":function () { return _vm.showEditDropdownMenu = false; }}},[(_vm.diagram.enableEditing)?[_c('DropdownMenuItem',{attrs:{"label":"Tilføj","icon":"add"},on:{"click":_vm.showAddDialog}}),_c('DropdownMenuDivider')]:_vm._e(),_c('DropdownMenuItem',{attrs:{"label":"Fortryd","icon":"undo","disabled":!_vm.canUndo},on:{"click":_vm.undo}}),_c('DropdownMenuItem',{attrs:{"label":"Annuller fortryd","icon":"redo","disabled":!_vm.canRedo},on:{"click":_vm.redo}}),_c('DropdownMenuItem',{attrs:{"label":"Nulstil","icon":"replay","disabled":!_vm.canUndo},on:{"click":_vm.reset}})],2)],2)}
-var TopBarvue_type_template_id_9d95f1ac_staticRenderFns = []
+        }}}),_c('DropdownMenuDivider')]:_vm._e(),(_vm.diagram.methods.convertPngToPdf)?_c('DropdownMenuItem',{attrs:{"label":"PDF"},on:{"click":function () { return _vm.diagramVm.showPrintDialog('pdf'); }}}):_vm._e(),_c('DropdownMenuItem',{attrs:{"label":"Billede"},on:{"click":function () { return _vm.diagramVm.showPrintDialog('png'); }}})],2),(_vm.diagram.layouts.length)?_c('DropdownMenu',{attrs:{"opener":_vm.showLayoutDropdownMenu ? _vm.$refs.layoutDropdownButton.$el : null,"close":function () { return _vm.showLayoutDropdownMenu = false; }}},[_vm._l((_vm.diagram.layouts),function(layout){return _c('DropdownMenuItem',{key:layout.id,attrs:{"label":layout.name,"icon":layout == _vm.diagram.activeDiagram.settings.activeLayout ? 'check' : ' '},on:{"click":function () { return _vm.diagram.eventBus.emit({ name: 'graph.layout', layout: layout }); }}})}),(_vm.showTaxiToggle)?[_c('DropdownMenuDivider'),_c('DropdownMenuItem',{attrs:{"label":"Knækpile","icon":_vm.diagram.activeDiagram.settings.enableTaxi ? 'check' : ' ',"disabled":!_vm.diagram.activeDiagram.settings.activeLayout.enableTaxiToggle},on:{"click":function () {
+          _vm.diagram.activeDiagram.settings.enableTaxi = !_vm.diagram.activeDiagram.settings.enableTaxi
+          _vm.diagram.eventBus.emit({ name: 'dataUpdated' })
+          _vm.diagram.eventBus.emit({ name: 'graph.spreadTaxiEdges' })
+        }}})]:_vm._e()],2):_vm._e(),_c('DropdownMenu',{attrs:{"opener":_vm.showEditDropdownMenu ? _vm.$refs.editDropdownButton.$el : null,"close":function () { return _vm.showEditDropdownMenu = false; }}},[(_vm.diagram.enableEditing)?[_c('DropdownMenuItem',{attrs:{"label":"Tilføj","icon":"add"},on:{"click":_vm.showAddDialog}}),_c('DropdownMenuDivider')]:_vm._e(),_c('DropdownMenuItem',{attrs:{"label":"Fortryd","icon":"undo","disabled":!_vm.canUndo},on:{"click":_vm.undo}}),_c('DropdownMenuItem',{attrs:{"label":"Annuller fortryd","icon":"redo","disabled":!_vm.canRedo},on:{"click":_vm.redo}}),_c('DropdownMenuItem',{attrs:{"label":"Nulstil","icon":"replay","disabled":!_vm.canUndo},on:{"click":_vm.reset}})],2)],2)}
+var TopBarvue_type_template_id_2ff35d35_staticRenderFns = []
 
 
-// CONCATENATED MODULE: ./src/components/TopBar.vue?vue&type=template&id=9d95f1ac&
+// CONCATENATED MODULE: ./src/components/TopBar.vue?vue&type=template&id=2ff35d35&
 
 // CONCATENATED MODULE: ./node_modules/@babel/runtime/helpers/esm/typeof.js
 
@@ -98397,7 +103280,7 @@ var directive = {
     var root = (_vnode$context = vnode.context) === null || _vnode$context === void 0 ? void 0 : _vnode$context.$root;
     if (!root) return;
 
-    var tooltip = _objectSpread2(_objectSpread2({}, tooltip_parseBindingValue(binding.value)), {}, {
+    var tooltip = objectSpread2_objectSpread2(objectSpread2_objectSpread2({}, tooltip_parseBindingValue(binding.value)), {}, {
       el: el
     });
 
@@ -98432,7 +103315,7 @@ var DiagramVue = external_commonjs_vue_commonjs2_vue_root_Vue_default.a.extend({
   }
 });
 /* harmony default export */ var src_DiagramVue = (DiagramVue);
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"00b53798-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/ButtonGroup.vue?vue&type=template&id=10ce107b&
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"08613af9-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/ButtonGroup.vue?vue&type=template&id=10ce107b&
 var ButtonGroupvue_type_template_id_10ce107b_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{class:[
     'lassox-diagram__ButtonGroup',
     ("lassox-diagram__ButtonGroup--align-" + _vm.align) ]},[_vm._t("default")],2)}
@@ -98495,7 +103378,7 @@ var ButtonGroup_component = normalizeComponent(
 )
 
 /* harmony default export */ var components_ButtonGroup = (ButtonGroup_component.exports);
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"00b53798-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/Button.vue?vue&type=template&id=4b2ecc88&
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"08613af9-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/Button.vue?vue&type=template&id=4b2ecc88&
 var Buttonvue_type_template_id_4b2ecc88_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('BaseButton',_vm._g(_vm._b({class:[
     'lassox-diagram__Button',
     ("lassox-diagram__Button--type-" + _vm.type),
@@ -98508,17 +103391,17 @@ var Buttonvue_type_template_id_4b2ecc88_staticRenderFns = []
 
 // CONCATENATED MODULE: ./src/components/Button.vue?vue&type=template&id=4b2ecc88&
 
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"00b53798-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/BaseButton.vue?vue&type=template&id=0bd36dc0&
-var BaseButtonvue_type_template_id_0bd36dc0_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('button',_vm._g({class:[
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"08613af9-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/BaseButton.vue?vue&type=template&id=3c4b1efd&
+var BaseButtonvue_type_template_id_3c4b1efd_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('button',_vm._g({class:[
     'lassox-diagram__BaseButton',
     _vm.disabled && 'lassox-diagram__BaseButton--disabled' ],attrs:{"disabled":_vm.disabled}},Object.assign({}, _vm.$listeners,
     {click: function (e) { return !_vm.disabled && _vm.$emit('click', e); }})),[_vm._t("default"),(_vm.finalLeadingIcon)?_c('Icon',{staticClass:"lassox-diagram__BaseButton_leading-icon",style:({ color: _vm.finalLeadingIconColor }),attrs:{"icon":_vm.finalLeadingIcon}}):_vm._e(),(_vm.label)?_c('div',{staticClass:"lassox-diagram__BaseButton_label",domProps:{"textContent":_vm._s(_vm.label)}}):_vm._e(),(_vm.finalTrailingIcon)?_c('Icon',{staticClass:"lassox-diagram__BaseButton_trailing-icon",style:({ color: _vm.finalTrailingIconColor }),attrs:{"icon":_vm.finalTrailingIcon}}):_vm._e(),_c('div',{staticClass:"lassox-diagram__BaseButton_outline"}),_c('div',{staticClass:"lassox-diagram__BaseButton_overlay"})],2)}
-var BaseButtonvue_type_template_id_0bd36dc0_staticRenderFns = []
+var BaseButtonvue_type_template_id_3c4b1efd_staticRenderFns = []
 
 
-// CONCATENATED MODULE: ./src/components/BaseButton.vue?vue&type=template&id=0bd36dc0&
+// CONCATENATED MODULE: ./src/components/BaseButton.vue?vue&type=template&id=3c4b1efd&
 
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"00b53798-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/Icon.vue?vue&type=template&id=6045477e&
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"08613af9-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/Icon.vue?vue&type=template&id=6045477e&
 var Iconvue_type_template_id_6045477e_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{class:[
     'lassox-diagram__Icon',
     _vm.light && 'lassox-diagram__Icon--light' ],style:({ fontSize: (_vm.size + "px") })},[(_vm.icon && _vm.icon != ' ')?_c('span',{staticClass:"material-icons-outlined",domProps:{"textContent":_vm._s(_vm.icon)}}):_vm._e()])}
@@ -98700,8 +103583,8 @@ var BaseButtonvue_type_style_index_0_lang_scss_ = __webpack_require__("55ae");
 
 var BaseButton_component = normalizeComponent(
   components_BaseButtonvue_type_script_lang_ts_,
-  BaseButtonvue_type_template_id_0bd36dc0_render,
-  BaseButtonvue_type_template_id_0bd36dc0_staticRenderFns,
+  BaseButtonvue_type_template_id_3c4b1efd_render,
+  BaseButtonvue_type_template_id_3c4b1efd_staticRenderFns,
   false,
   null,
   null,
@@ -98799,7 +103682,7 @@ var Button_component = normalizeComponent(
 )
 
 /* harmony default export */ var components_Button = (Button_component.exports);
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"00b53798-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/IconButton.vue?vue&type=template&id=c011a904&
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"08613af9-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/IconButton.vue?vue&type=template&id=c011a904&
 var IconButtonvue_type_template_id_c011a904_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{class:[
     'lassox-diagram__IconButton',
     _vm.light && 'lassox-diagram__IconButton--light' ],style:({
@@ -98929,7 +103812,7 @@ var IconButton_component = normalizeComponent(
 )
 
 /* harmony default export */ var components_IconButton = (IconButton_component.exports);
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"00b53798-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/DropdownMenu.vue?vue&type=template&id=a53a988e&
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"08613af9-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/DropdownMenu.vue?vue&type=template&id=a53a988e&
 var DropdownMenuvue_type_template_id_a53a988e_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"lassox-diagram__DropdownMenu"},[_c('div',{ref:"boundsEl",staticClass:"lassox-diagram__DropdownMenu_bounds"}),_c('div',{ref:"dropdownMenuEl",staticClass:"lassox-diagram__DropdownMenu_dropdown-menu",style:(_vm.dropdownMenuStyle),attrs:{"tabindex":"-1"}},[_vm._t("default")],2)])}
 var DropdownMenuvue_type_template_id_a53a988e_staticRenderFns = []
 
@@ -99066,7 +103949,7 @@ function watch_rect_unwatchRect(element, callback) {
     stop();
   }
 }
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"00b53798-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/DropdownMenuItem.vue?vue&type=template&id=6c174384&
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"08613af9-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/DropdownMenuItem.vue?vue&type=template&id=6c174384&
 var DropdownMenuItemvue_type_template_id_6c174384_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('BaseButton',_vm._g({staticClass:"lassox-diagram__DropdownMenuItem",attrs:{"icon":_vm.icon,"iconColor":_vm.iconColor,"label":_vm.label,"trailingIcon":_vm.trailingIcon,"trailingIconColor":_vm.trailingIconColor,"disabled":_vm.disabled,"tabindex":"0"}},Object.assign({}, _vm.$listeners,
     {click: _vm.onClick,
     mouseover: _vm.onMouseOver,
@@ -99617,7 +104500,7 @@ var DropdownMenu_component = normalizeComponent(
 )
 
 /* harmony default export */ var components_DropdownMenu = (DropdownMenu_component.exports);
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"00b53798-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/DropdownMenuDivider.vue?vue&type=template&id=17d44d15&
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"08613af9-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/DropdownMenuDivider.vue?vue&type=template&id=17d44d15&
 var DropdownMenuDividervue_type_template_id_17d44d15_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"lassox-diagram__DropdownMenuDivider"})}
 var DropdownMenuDividervue_type_template_id_17d44d15_staticRenderFns = []
 
@@ -99673,14 +104556,14 @@ var DropdownMenuDivider_component = normalizeComponent(
 )
 
 /* harmony default export */ var components_DropdownMenuDivider = (DropdownMenuDivider_component.exports);
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"00b53798-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/ConfirmResetDialog.vue?vue&type=template&id=54e74e0d&
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"08613af9-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/ConfirmResetDialog.vue?vue&type=template&id=54e74e0d&
 var ConfirmResetDialogvue_type_template_id_54e74e0d_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('Dialog',{staticClass:"lassox-diagram__ConfirmResetDialog",attrs:{"dismissable":true,"title":"Nulstil diagrammet?","content":"Dette vil fjerne eventuelle ændringer og nulstille dine indstillinger. Vil du fortsætte?","onClose":_vm.dismiss},scopedSlots:_vm._u([{key:"actions",fn:function(){return [_c('ButtonGroup',{attrs:{"align":"right"}},[_c('Button',{attrs:{"label":"Fortryd"},on:{"click":_vm.dismiss}}),_c('Button',{attrs:{"label":"Fortsæt","type":"primary"},on:{"click":_vm.confirm}})],1)]},proxy:true}])})}
 var ConfirmResetDialogvue_type_template_id_54e74e0d_staticRenderFns = []
 
 
 // CONCATENATED MODULE: ./src/components/ConfirmResetDialog.vue?vue&type=template&id=54e74e0d&
 
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"00b53798-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/Dialog.vue?vue&type=template&id=bcc6ba4c&
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"08613af9-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/Dialog.vue?vue&type=template&id=bcc6ba4c&
 var Dialogvue_type_template_id_bcc6ba4c_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('transition',{attrs:{"appear":"","duration":{ enter: 150, leave: 75 }}},[_c('div',{class:[
       'lassox-diagram__Dialog',
       _vm.scrollable && 'lassox-diagram__Dialog--scrollable' ]},[_c('div',{staticClass:"lassox-diagram__Dialog-backdrop",on:{"click":function () { return _vm.dismissable && _vm.close(); }}}),_c('div',{staticClass:"lassox-diagram__Dialog-box",style:({ maxWidth: (_vm.maxWidth + "px") }),attrs:{"tabindex":"-1"}},[(_vm.title || _vm.dismissable || _vm.$slots['header'] || _vm.$slots['title'])?_c('div',{staticClass:"lassox-diagram__Dialog-header"},[_vm._t("header",function(){return [(_vm.title)?_c('div',{staticClass:"lassox-diagram__Dialog-title"},[_vm._t("title",function(){return [(_vm.title)?_c('div',{domProps:{"textContent":_vm._s(_vm.title)}}):_vm._e()]},null,_vm.slotProps)],2):_vm._e(),(_vm.dismissable)?_c('IconButton',{staticClass:"lassox-diagram__Dialog-close-button",attrs:{"icon":"close","size":"normal"},on:{"click":_vm.close}}):_vm._e()]},null,_vm.slotProps)],2):_vm._e(),(_vm.content || _vm.$slots['content'])?_c('div',{ref:"contentEl",staticClass:"lassox-diagram__Dialog-content"},[_c('div',{ref:"contentInnerEl",staticClass:"lassox-diagram__Dialog-content-inner"},[_vm._t("content",function(){return [(_vm.content)?_c('div',{domProps:{"textContent":_vm._s(_vm.content)}}):_vm._e()]},null,_vm.slotProps)],2)]):_vm._e(),(_vm.$slots['actions'])?_c('div',{staticClass:"lassox-diagram__Dialog-actions"},[_vm._t("actions",null,null,_vm.slotProps)],2):_vm._e()])])])}
@@ -99919,14 +104802,14 @@ var ConfirmResetDialog_component = normalizeComponent(
 )
 
 /* harmony default export */ var components_ConfirmResetDialog = (ConfirmResetDialog_component.exports);
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"00b53798-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/AddEntityDialog.vue?vue&type=template&id=4119e704&
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"08613af9-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/AddEntityDialog.vue?vue&type=template&id=4119e704&
 var AddEntityDialogvue_type_template_id_4119e704_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('Dialog',{staticClass:"lassox-diagram__AddEntityDialog",attrs:{"dismissable":true,"title":"Tilføj","size":"2x","onClose":_vm.close},scopedSlots:_vm._u([{key:"content",fn:function(){return [_c('EntitySelector',{ref:"entitySelector",on:{"change":function (model) { return _vm.entitySelectorModel = model; }}})]},proxy:true},{key:"actions",fn:function(){return [_c('ButtonGroup',{attrs:{"align":"right"}},[_c('Button',{attrs:{"label":"Fortryd"},on:{"click":_vm.close}}),_c('Button',{attrs:{"label":"Tilføj","type":"primary","disabled":!_vm.canConfirm},on:{"click":_vm.confirm}})],1)]},proxy:true}])})}
 var AddEntityDialogvue_type_template_id_4119e704_staticRenderFns = []
 
 
 // CONCATENATED MODULE: ./src/components/AddEntityDialog.vue?vue&type=template&id=4119e704&
 
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"00b53798-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/EntitySelector.vue?vue&type=template&id=4ec1c90c&
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"08613af9-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/EntitySelector.vue?vue&type=template&id=4ec1c90c&
 var EntitySelectorvue_type_template_id_4ec1c90c_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('EditorFields',[_c('FieldContainer',{attrs:{"label":"Type"}},[_c('DropdownField',{attrs:{"options":_vm.entityTypeDropdownOptions},model:{value:(_vm.entityType),callback:function ($$v) {_vm.entityType=$$v},expression:"entityType"}})],1),(_vm.searchEnabled)?_c('FieldContainer',[_c('TabBar',{attrs:{"outlined":"","tabs":[
         { id: 'search', label: 'Søg' },
         { id: 'custom', label: 'Manuelt' } ]},model:{value:(_vm.mode),callback:function ($$v) {_vm.mode=$$v},expression:"mode"}})],1):_vm._e(),(_vm.mode === 'search')?[_c('FieldContainer',{attrs:{"label":("Søg efter " + (_vm.entityType.labels.singular.toLowerCase()))}},[_c('EntitySearchBar',{attrs:{"entityType":_vm.entityType},model:{value:(_vm.selectedSuggestion),callback:function ($$v) {_vm.selectedSuggestion=$$v},expression:"selectedSuggestion"}})],1)]:[_c('FieldContainer',[_c('DataCreator',{ref:"dataCreator",attrs:{"type":_vm.entityType,"data":_vm.entityData},on:{"change":function (newData) {
@@ -99938,7 +104821,7 @@ var EntitySelectorvue_type_template_id_4ec1c90c_staticRenderFns = []
 
 // CONCATENATED MODULE: ./src/components/EntitySelector.vue?vue&type=template&id=4ec1c90c&
 
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"00b53798-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/EditorFields.vue?vue&type=template&id=708d066c&
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"08613af9-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/EditorFields.vue?vue&type=template&id=708d066c&
 var EditorFieldsvue_type_template_id_708d066c_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"lassox-diagram__EditorFields"},[_vm._t("default")],2)}
 var EditorFieldsvue_type_template_id_708d066c_staticRenderFns = []
 
@@ -99994,7 +104877,7 @@ var EditorFields_component = normalizeComponent(
 )
 
 /* harmony default export */ var components_EditorFields = (EditorFields_component.exports);
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"00b53798-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/EditorField.vue?vue&type=template&id=30cc6373&
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"08613af9-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/EditorField.vue?vue&type=template&id=30cc6373&
 var EditorFieldvue_type_template_id_30cc6373_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('FieldContainer',{staticClass:"lassox-diagram__EditorField",attrs:{"disabled":!_vm.editable,"label":_vm.title,"error":!!_vm.errorMessage},scopedSlots:_vm._u([(_vm.errorMessage || _vm.helperText || _vm.showChangedFrom || _vm.showReset)?{key:"helper-text",fn:function(){return [(_vm.errorMessage || _vm.helperText)?_c('div',{domProps:{"textContent":_vm._s(_vm.errorMessage || _vm.helperText)}}):_vm._e(),_c('div',[(_vm.showChangedFrom)?[[_vm._v("Ændret")],(_vm.initialValueLabel)?[_vm._v(" fra '"+_vm._s(_vm.initialValueLabel)+"'")]:_vm._e()]:_vm._e(),(_vm.showReset)?[(_vm.showChangedFrom)?[_vm._v(". ")]:_vm._e(),_c('a',{staticClass:"lassox-diagram__EditorField_reset-button",attrs:{"href":"#"},domProps:{"textContent":_vm._s('Nulstil')},on:{"click":function($event){$event.preventDefault();return (function () { return _vm.$emit('change', _vm.resetValue); }).apply(null, arguments)}}})]:_vm._e()],2)]},proxy:true}:null],null,true)},[[(_vm.finalType === 'text')?_c('TextField',{attrs:{"autocomplete":"off","name":_vm.id,"disabled":!_vm.editable,"error":!!_vm.errorMessage,"value":_vm.value !== undefined ? _vm.value : ''},on:{"input":function (e) { return _vm.$emit('change', e.target.value); }}}):(_vm.finalType === 'number')?_c('TextField',{attrs:{"autocomplete":"off","name":_vm.id,"type":"number","disabled":!_vm.editable,"error":!!_vm.errorMessage,"value":_vm.value !== undefined ? _vm.value : ''},on:{"keydown":function (e) {
         if (e.key == '.' || e.key == ',') { e.preventDefault() }
       },"input":function (e) {
@@ -100018,7 +104901,7 @@ var EditorFieldvue_type_template_id_30cc6373_staticRenderFns = []
 
 // CONCATENATED MODULE: ./src/components/EditorField.vue?vue&type=template&id=30cc6373&
 
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"00b53798-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/FieldContainer.vue?vue&type=template&id=2798324c&
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"08613af9-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/FieldContainer.vue?vue&type=template&id=2798324c&
 var FieldContainervue_type_template_id_2798324c_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{class:[
     'lassox-diagram__FieldContainer',
     _vm.disabled && 'lassox-diagram__FieldContainer--disabled',
@@ -100088,7 +104971,7 @@ var FieldContainer_component = normalizeComponent(
 )
 
 /* harmony default export */ var components_FieldContainer = (FieldContainer_component.exports);
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"00b53798-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/TextField.vue?vue&type=template&id=c3ceccb6&
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"08613af9-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/TextField.vue?vue&type=template&id=c3ceccb6&
 var TextFieldvue_type_template_id_c3ceccb6_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{class:[
     'lassox-diagram__TextField',
     _vm.disabled ? 'lassox-diagram__TextField--is-disabled' : '',
@@ -100209,7 +105092,7 @@ var TextField_component = normalizeComponent(
 )
 
 /* harmony default export */ var components_TextField = (TextField_component.exports);
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"00b53798-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/RadioField.vue?vue&type=template&id=94bd4d38&
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"08613af9-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/RadioField.vue?vue&type=template&id=94bd4d38&
 var RadioFieldvue_type_template_id_94bd4d38_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{class:[
     'lassox-diagram__RadioField',
     _vm.disabled ? 'lassox-diagram__RadioField--disabled' : '' ]},_vm._l((_vm.finalOptions),function(option,i){return _c('label',{key:i,class:[
@@ -100320,7 +105203,7 @@ var RadioField_component = normalizeComponent(
 )
 
 /* harmony default export */ var components_RadioField = (RadioField_component.exports);
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"00b53798-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/ColorField.vue?vue&type=template&id=63e8cb32&
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"08613af9-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/ColorField.vue?vue&type=template&id=63e8cb32&
 var ColorFieldvue_type_template_id_63e8cb32_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"lassox-diagram__ColorField"},[_c('DropdownButton',{staticClass:"lassox-diagram__ColorField-dropdown-button",scopedSlots:_vm._u([{key:"default",fn:function(ref){
 var onClick = ref.onClick;
 return [_c('BaseButton',{staticClass:"lassox-diagram__ColorField-button",attrs:{"disabled":_vm.disabled},on:{"click":onClick}},[_c('div',{staticClass:"lassox-diagram__ColorField-button-color",style:({ backgroundColor: _vm.color.rgbaString })}),_c('div',{staticClass:"lassox-diagram__ColorField-button-hex"},[_vm._v(_vm._s(_vm.color.hexString))])])]}},{key:"dropdown-menu",fn:function(ref){
@@ -100331,7 +105214,7 @@ var ColorFieldvue_type_template_id_63e8cb32_staticRenderFns = []
 
 // CONCATENATED MODULE: ./src/components/ColorField.vue?vue&type=template&id=63e8cb32&
 
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"00b53798-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/DropdownButton.vue?vue&type=template&id=0fec1618&
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"08613af9-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/DropdownButton.vue?vue&type=template&id=0fec1618&
 var DropdownButtonvue_type_template_id_0fec1618_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"lassox-diagram__DropdownButton"},[_vm._t("default",null,null,{ isOpen: _vm.isOpen, onClick: _vm.onClick, close: _vm.close }),_c('DropdownMenu',{attrs:{"opener":_vm.buttonEl,"close":_vm.close}},[_vm._t("dropdown-menu",null,null,{ isOpen: _vm.isOpen, onClick: _vm.onClick, close: _vm.close })],2)],2)}
 var DropdownButtonvue_type_template_id_0fec1618_staticRenderFns = []
 
@@ -100423,7 +105306,7 @@ var DropdownButton_component = normalizeComponent(
 )
 
 /* harmony default export */ var components_DropdownButton = (DropdownButton_component.exports);
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"00b53798-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/ColorPicker.vue?vue&type=template&id=b77e58b8&
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"08613af9-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/ColorPicker.vue?vue&type=template&id=b77e58b8&
 var ColorPickervue_type_template_id_b77e58b8_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"lassox-diagram__ColorPicker"},[_c('div',{ref:"iroEl",staticClass:"lassox-diagram__ColorPicker-iro"}),_c('div',{staticClass:"lassox-diagram__ColorPicker-input"},[_c('BaseButton',{staticClass:"lassox-diagram__ColorPicker-input-type-button",attrs:{"label":_vm.inputType},on:{"click":_vm.switchInputType}}),_c('div',{staticClass:"lassox-diagram__ColorPicker-input-fields"},_vm._l((_vm.inputFields),function(field){return _c('div',{key:field.name,staticClass:"lassox-diagram__ColorPicker-input-field"},[_c('TextField',{staticClass:"lassox-diagram__ColorPicker-input-field-input",attrs:{"name":field.name,"type":"text","autocomplete":"off","value":field.value},on:{"focus":function($event){_vm.inputFocused = true},"blur":function($event){_vm.inputFocused = false},"input":function (event) {
             var ref = event.target;
             var value = ref.value;
@@ -102781,7 +107664,7 @@ var EditorField_component = normalizeComponent(
 )
 
 /* harmony default export */ var components_EditorField = (EditorField_component.exports);
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"00b53798-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/DataCreator.vue?vue&type=template&id=e43b10f0&
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"08613af9-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/DataCreator.vue?vue&type=template&id=e43b10f0&
 var DataCreatorvue_type_template_id_e43b10f0_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return (_vm.shownFieldStates.length)?_c('EditorFields',_vm._l((_vm.shownFieldStates),function(state){return _c('EditorField',{key:state.field.fullId,attrs:{"id":state.field.fullId,"type":state.field.type,"title":state.field.title,"editable":state.field.editable,"formatter":state.field.formatter,"value":state.value,"errorMessage":state.errorMessage},on:{"change":state.onChange}})}),1):_vm._e()}
 var DataCreatorvue_type_template_id_e43b10f0_staticRenderFns = []
 
@@ -102930,7 +107813,7 @@ var DataCreator_component = normalizeComponent(
 )
 
 /* harmony default export */ var components_DataCreator = (DataCreator_component.exports);
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"00b53798-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/TabBar.vue?vue&type=template&id=24300bb9&
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"08613af9-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/TabBar.vue?vue&type=template&id=24300bb9&
 var TabBarvue_type_template_id_24300bb9_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{class:[
     'lassox-diagram__TabBar',
     _vm.outlined && 'lassox-diagram__TabBar--outlined' ]},[_c('div',{staticClass:"lassox-diagram__TabBar_outline"}),_c('div',{staticClass:"lassox-diagram__TabBar_tabs-wrapper"},_vm._l((_vm.tabs),function(tab){return _c('BaseButton',{key:tab.id,class:[
@@ -103033,7 +107916,7 @@ var TabBar_component = normalizeComponent(
 )
 
 /* harmony default export */ var components_TabBar = (TabBar_component.exports);
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"00b53798-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/DropdownField.vue?vue&type=template&id=4a7753e3&
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"08613af9-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/DropdownField.vue?vue&type=template&id=4a7753e3&
 var DropdownFieldvue_type_template_id_4a7753e3_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"lassox-diagram__DropdownField"},[_c('Button',{ref:"dropdownButton",staticClass:"lassox-diagram__DropdownField-button",attrs:{"label":_vm.selectedOption && _vm.selectedOption.label || '',"trailingIcon":_vm.showDropdownMenu ? 'expand_less' : 'expand_more'},on:{"click":function () { return _vm.showDropdownMenu = !_vm.showDropdownMenu; }}}),_c('DropdownMenu',{attrs:{"opener":_vm.showDropdownMenu ? _vm.$refs.dropdownButton.$el : null,"close":function () { return _vm.showDropdownMenu = false; }}},_vm._l((_vm.options),function(option){return _c('DropdownMenuItem',{key:option.id,attrs:{"icon":option.value === _vm.value ? 'check' : ' ',"label":option.label},on:{"click":function () { return _vm.$emit('change', option.value); }}})}),1)],1)}
 var DropdownFieldvue_type_template_id_4a7753e3_staticRenderFns = []
 
@@ -103122,7 +108005,7 @@ var DropdownField_component = normalizeComponent(
 )
 
 /* harmony default export */ var components_DropdownField = (DropdownField_component.exports);
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"00b53798-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/EntitySearchBar.vue?vue&type=template&id=08a0cab1&
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"08613af9-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/EntitySearchBar.vue?vue&type=template&id=08a0cab1&
 var EntitySearchBarvue_type_template_id_08a0cab1_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"lassox-diagram__EntitySearchBar"},[_c('TextField',{ref:"textField",attrs:{"autocomplete":"off","leadingIcon":"search","trailingIcon":_vm.inputText ? 'cancel' : null,"onClickTrailingIcon":function () { return _vm.selectSuggestion(null); },"value":_vm.inputText,"tabindex":"-1"},on:{"mousedown":function () {
       if (_vm.inputText) { _vm.showSuggestions = true }
     },"keydown":_vm.onInputKeyDown,"input":function (event) { return _vm.inputText = event.target.value; }},nativeOn:{"focusin":function($event){return (function () { return _vm.inputFocused = true; }).apply(null, arguments)},"focusout":function($event){return (function () { return _vm.inputFocused = false; }).apply(null, arguments)}}}),_c('div',{ref:"suggestionsEl",staticClass:"lassox-diagram__EntitySearchBar_suggestions",style:([
@@ -104165,7 +109048,7 @@ var AddEntityDialog_component = normalizeComponent(
 )
 
 /* harmony default export */ var components_AddEntityDialog = (AddEntityDialog_component.exports);
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"00b53798-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/ConfirmAdditionDialog.vue?vue&type=template&id=2541932e&
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"08613af9-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/ConfirmAdditionDialog.vue?vue&type=template&id=2541932e&
 var ConfirmAdditionDialogvue_type_template_id_2541932e_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('Dialog',{staticClass:"lassox-diagram__ConfirmAdditionDialog",attrs:{"size":"2x","dismissable":true,"title":"Bekræft ændringer","content":_vm.content,"onClose":_vm.dismiss},scopedSlots:_vm._u([{key:"actions",fn:function(){return [_c('CheckBoxField',{attrs:{"label":"Layout"},model:{value:(_vm.runLayout),callback:function ($$v) {_vm.runLayout=$$v},expression:"runLayout"}}),_c('div',{style:({
         width: '16px',
         flexGrow: '0',
@@ -104177,7 +109060,7 @@ var ConfirmAdditionDialogvue_type_template_id_2541932e_staticRenderFns = []
 
 // CONCATENATED MODULE: ./src/components/ConfirmAdditionDialog.vue?vue&type=template&id=2541932e&
 
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"00b53798-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/CheckBoxField.vue?vue&type=template&id=0ad7bef3&
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"08613af9-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/CheckBoxField.vue?vue&type=template&id=0ad7bef3&
 var CheckBoxFieldvue_type_template_id_0ad7bef3_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{class:[
     'lassox-diagram__CheckBoxField',
     _vm.disabled ? 'lassox-diagram__CheckBoxField--disabled' : '' ]},[_c('label',{class:[
@@ -104443,7 +109326,7 @@ var ConfirmAdditionDialog_component = normalizeComponent(
 )
 
 /* harmony default export */ var components_ConfirmAdditionDialog = (ConfirmAdditionDialog_component.exports);
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"00b53798-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/EditDiagramDialog.vue?vue&type=template&id=f600b44e&
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"08613af9-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/EditDiagramDialog.vue?vue&type=template&id=f600b44e&
 var EditDiagramDialogvue_type_template_id_f600b44e_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('Dialog',{staticClass:"lassox-diagram__EditDiagramDialog",attrs:{"dismissable":"","title":_vm.title || 'Rediger diagram',"size":"3x","onClose":_vm.close},scopedSlots:_vm._u([{key:"content",fn:function(){return [_c('div',{staticClass:"lassox-diagram__EditDiagramDialog-loading-overlay",style:({
         opacity: _vm.loading ? '1' : '0',
         pointerEvents: _vm.loading ? '' : 'none',
@@ -104574,7 +109457,7 @@ var EditDiagramDialog_component = normalizeComponent(
 )
 
 /* harmony default export */ var components_EditDiagramDialog = (EditDiagramDialog_component.exports);
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"00b53798-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/SaveDialog.vue?vue&type=template&id=62e29097&
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"08613af9-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/SaveDialog.vue?vue&type=template&id=62e29097&
 var SaveDialogvue_type_template_id_62e29097_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('EditDiagramDialog',{attrs:{"title":"Gem diagram","save":_vm.save},on:{"close":_vm.close}})}
 var SaveDialogvue_type_template_id_62e29097_staticRenderFns = []
 
@@ -104708,6 +109591,13 @@ var TopBarvue_type_script_lang_ts_TopBar = /*#__PURE__*/function (_DiagramVue) {
       return this.diagram.activeDiagram.data.canRedo;
     }
   }, {
+    key: "showTaxiToggle",
+    get: function get() {
+      return this.diagram.layouts.some(function (layout) {
+        return layout.enableTaxiToggle;
+      });
+    }
+  }, {
     key: "save",
     value: function () {
       var _save = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee() {
@@ -104725,21 +109615,32 @@ var TopBarvue_type_script_lang_ts_TopBar = /*#__PURE__*/function (_DiagramVue) {
                   duration: 0,
                   showLoadingSpinner: true
                 });
-                _context.next = 4;
+                _context.prev = 2;
+                _context.next = 5;
                 return this.diagram.save(overwrite);
 
-              case 4:
+              case 5:
                 closeLoadingToast();
                 this.diagramVm.showToast({
                   content: 'Diagrammet blev gemt, og du kan nu redigere videre på det.'
                 });
+                _context.next = 13;
+                break;
 
-              case 6:
+              case 9:
+                _context.prev = 9;
+                _context.t0 = _context["catch"](2);
+                closeLoadingToast();
+                this.diagramVm.showToast({
+                  content: 'Noget gik galt.'
+                });
+
+              case 13:
               case "end":
                 return _context.stop();
             }
           }
-        }, _callee, this);
+        }, _callee, this, [[2, 9]]);
       }));
 
       function save() {
@@ -104930,8 +109831,8 @@ var TopBarvue_type_style_index_0_lang_scss_ = __webpack_require__("d4bd");
 
 var TopBar_component = normalizeComponent(
   components_TopBarvue_type_script_lang_ts_,
-  TopBarvue_type_template_id_9d95f1ac_render,
-  TopBarvue_type_template_id_9d95f1ac_staticRenderFns,
+  TopBarvue_type_template_id_2ff35d35_render,
+  TopBarvue_type_template_id_2ff35d35_staticRenderFns,
   false,
   null,
   null,
@@ -104940,14 +109841,14 @@ var TopBar_component = normalizeComponent(
 )
 
 /* harmony default export */ var components_TopBar = (TopBar_component.exports);
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"00b53798-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/Graph.vue?vue&type=template&id=6456fe9b&
-var Graphvue_type_template_id_6456fe9b_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{class:[
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"08613af9-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/Graph.vue?vue&type=template&id=23f66e9c&
+var Graphvue_type_template_id_23f66e9c_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{class:[
     'lassox-diagram__Graph',
-    _vm.elementHovered && 'lassox-diagram__Graph--has-hovered-element' ],attrs:{"tabindex":_vm.printMode ? '' : '-1'},on:{"keydown":_vm.onKeyDown,"contextmenu":function($event){$event.preventDefault();return (function () {}).apply(null, arguments)}}},[_c('div',{ref:"graphContainerEl",staticClass:"lassox-diagram__Graph-container",staticStyle:{"width":"100%","height":"100%"},on:{"mousedown":_vm.redirectCytoscapeBlur,"touchstart":_vm.redirectCytoscapeBlur}},[_c('div',{ref:"graphNodesEl",staticClass:"lassox-diagram__Graph-nodes"},[_vm._l((_vm.relations),function(relation){return _c('GraphEdge',{key:relation.id,attrs:{"id":relation.id}})}),_vm._l((_vm.entities),function(entity){return _c('GraphNode',{key:entity.id,attrs:{"id":entity.id}})})],2)]),(!_vm.printMode)?_c('GraphContextMenu'):_vm._e()],1)}
-var Graphvue_type_template_id_6456fe9b_staticRenderFns = []
+    _vm.elementHovered && 'lassox-diagram__Graph--has-hovered-element' ],attrs:{"tabindex":_vm.printMode ? '' : '-1'},on:{"keydown":_vm.onKeyDown,"contextmenu":function($event){$event.preventDefault();return (function () {}).apply(null, arguments)}}},[_c('div',{ref:"graphContainerEl",staticClass:"lassox-diagram__Graph-container",staticStyle:{"width":"100%","height":"100%"},on:{"mousedown":_vm.redirectCytoscapeBlur,"touchstart":_vm.redirectCytoscapeBlur}},[_c('div',{ref:"graphNodesEl",staticClass:"lassox-diagram__Graph-nodes"},[_vm._l((_vm.relations),function(relation){return _c('GraphEdge',{key:relation.id,attrs:{"id":relation.id}})}),_vm._l((_vm.entities),function(entity){return _c('GraphNode',{key:entity.id,attrs:{"id":entity.id}})}),(_vm.diagram.enableTaxiEditing && _vm.graphReady)?_c('GraphEdgePoints'):_vm._e()],2)]),(!_vm.printMode)?_c('GraphContextMenu'):_vm._e()],1)}
+var Graphvue_type_template_id_23f66e9c_staticRenderFns = []
 
 
-// CONCATENATED MODULE: ./src/components/Graph.vue?vue&type=template&id=6456fe9b&
+// CONCATENATED MODULE: ./src/components/Graph.vue?vue&type=template&id=23f66e9c&
 
 // EXTERNAL MODULE: ./node_modules/core-js/modules/es.array.sort.js
 var es_array_sort = __webpack_require__("4e82");
@@ -104967,17 +109868,17 @@ var cytoscape_js_panzoom = __webpack_require__("df13");
 var cytoscape_dagre = __webpack_require__("b17d");
 var cytoscape_dagre_default = /*#__PURE__*/__webpack_require__.n(cytoscape_dagre);
 
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"00b53798-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/GraphNode.vue?vue&type=template&id=6e37c1f4&
-var GraphNodevue_type_template_id_6e37c1f4_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"lassox-diagram__GraphNode",style:(_vm.style)},[(_vm.labels.length)?_c('div',{staticClass:"lassox-diagram__GraphNode-labels-wrapper",style:(_vm.labelsStyle)},[(_vm.entity.type.icon)?_c('Icon',{attrs:{"icon":_vm.entity.type.icon}}):_vm._e(),_c('div',{staticClass:"lassox-diagram__GraphNode-labels"},_vm._l((_vm.labels),function(field,i){return _c('div',{key:i,staticClass:"lassox-diagram__GraphNode-field"},[(field.legendColor)?_c('div',{staticClass:"lassox-diagram__GraphNode-field-legend-color",style:({ backgroundColor: field.legendColor })}):_vm._e(),_c('div',{staticClass:"lassox-diagram__GraphNode-field-value",domProps:{"textContent":_vm._s(field.text)}})])}),0)],1):_vm._e(),(_vm.fieldGroups.length)?_c('div',{staticClass:"lassox-diagram__GraphNode-fields",style:(_vm.fieldsStyle)},_vm._l((_vm.fieldGroups),function(fieldGroup,i){return _c('div',{key:i,class:[
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"08613af9-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/GraphNode.vue?vue&type=template&id=256b31ce&
+var GraphNodevue_type_template_id_256b31ce_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"lassox-diagram__GraphNode",style:(_vm.style)},[(_vm.labels.length)?_c('div',{staticClass:"lassox-diagram__GraphNode-labels-wrapper",style:(_vm.labelsStyle)},[(_vm.entity.type.icon)?_c('Icon',{attrs:{"icon":_vm.entity.type.icon}}):_vm._e(),_c('div',{staticClass:"lassox-diagram__GraphNode-labels"},_vm._l((_vm.labels),function(field,i){return _c('div',{key:i,staticClass:"lassox-diagram__GraphNode-field"},[(field.legendColor)?_c('div',{staticClass:"lassox-diagram__GraphNode-field-legend-color",style:({ backgroundColor: field.legendColor })}):_vm._e(),_c('div',{staticClass:"lassox-diagram__GraphNode-field-value",domProps:{"textContent":_vm._s(field.text)}})])}),0)],1):_vm._e(),(_vm.fieldGroups.length)?_c('div',{staticClass:"lassox-diagram__GraphNode-fields",style:(_vm.fieldsStyle)},_vm._l((_vm.fieldGroups),function(fieldGroup,i){return _c('div',{key:i,class:[
         'lassox-diagram__GraphNode-field-group',
         fieldGroup.title && 'lassox-diagram__GraphNode-field-group--has-title' ],style:({
         borderStyle: _vm.fieldsStyle.borderStyle,
         borderColor: _vm.fieldsStyle.borderColor,
       })},[(fieldGroup.title)?_c('div',{staticClass:"lassox-diagram__GraphNode-field-group-title",domProps:{"textContent":_vm._s(fieldGroup.title)}}):_vm._e(),_vm._l((fieldGroup.fields),function(field,i){return _c('div',{key:i,staticClass:"lassox-diagram__GraphNode-field"},[(field.legendColor)?_c('div',{staticClass:"lassox-diagram__GraphNode-field-legend-color",style:({ backgroundColor: field.legendColor })}):_vm._e(),_c('div',{staticClass:"lassox-diagram__GraphNode-field-value",domProps:{"textContent":_vm._s(field.text)}})])})],2)}),0):_vm._e()])}
-var GraphNodevue_type_template_id_6e37c1f4_staticRenderFns = []
+var GraphNodevue_type_template_id_256b31ce_staticRenderFns = []
 
 
-// CONCATENATED MODULE: ./src/components/GraphNode.vue?vue&type=template&id=6e37c1f4&
+// CONCATENATED MODULE: ./src/components/GraphNode.vue?vue&type=template&id=256b31ce&
 
 // CONCATENATED MODULE: ./src/util/color.ts
 
@@ -105275,8 +110176,8 @@ var GraphNodevue_type_style_index_0_lang_scss_ = __webpack_require__("ff1d");
 
 var GraphNode_component = normalizeComponent(
   components_GraphNodevue_type_script_lang_ts_,
-  GraphNodevue_type_template_id_6e37c1f4_render,
-  GraphNodevue_type_template_id_6e37c1f4_staticRenderFns,
+  GraphNodevue_type_template_id_256b31ce_render,
+  GraphNodevue_type_template_id_256b31ce_staticRenderFns,
   false,
   null,
   null,
@@ -105285,12 +110186,12 @@ var GraphNode_component = normalizeComponent(
 )
 
 /* harmony default export */ var components_GraphNode = (GraphNode_component.exports);
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"00b53798-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/GraphEdge.vue?vue&type=template&id=268e1cf1&
-var GraphEdgevue_type_template_id_268e1cf1_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"lassox-diagram__GraphEdge",style:(_vm.style)},_vm._l((_vm.labels),function(label,i){return _c('div',{key:i,staticClass:"lassox-diagram__GraphEdge-label",domProps:{"textContent":_vm._s(label)}})}),0)}
-var GraphEdgevue_type_template_id_268e1cf1_staticRenderFns = []
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"08613af9-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/GraphEdge.vue?vue&type=template&id=66b9548a&
+var GraphEdgevue_type_template_id_66b9548a_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"lassox-diagram__GraphEdge",style:(_vm.style)},_vm._l((_vm.labels),function(label,i){return _c('div',{key:i,staticClass:"lassox-diagram__GraphEdge-label",domProps:{"textContent":_vm._s(label)}})}),0)}
+var GraphEdgevue_type_template_id_66b9548a_staticRenderFns = []
 
 
-// CONCATENATED MODULE: ./src/components/GraphEdge.vue?vue&type=template&id=268e1cf1&
+// CONCATENATED MODULE: ./src/components/GraphEdge.vue?vue&type=template&id=66b9548a&
 
 // CONCATENATED MODULE: ./node_modules/babel-loader/lib!./node_modules/ts-loader??ref--14-1!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/GraphEdge.vue?vue&type=script&lang=ts&
 
@@ -105301,6 +110202,36 @@ var GraphEdgevue_type_template_id_268e1cf1_staticRenderFns = []
 
 
 
+
+
+
+
+
+function getDistance(a, b) {
+  var x = b.x - a.x;
+  var y = b.y - a.y;
+  return Math.sqrt(x * x + y * y);
+}
+
+function getRadAngle(a, b) {
+  return Math.atan2(b.y - a.y, b.x - a.x);
+}
+
+function getDistWeight(source, target, point) {
+  var lineAngle = getRadAngle(source, target);
+  var pointAngle = getRadAngle(source, point);
+  var angleDiff = pointAngle - lineAngle;
+  var lineLength = getDistance(source, target);
+  var pointDistance = getDistance(source, point);
+  var distMult = Math.sin(angleDiff);
+  var distance = pointDistance * distMult;
+  var weightMult = Math.cos(angleDiff);
+  var weight = pointDistance * weightMult / lineLength;
+  return {
+    distance: distance,
+    weight: weight
+  };
+}
 
 var GraphEdgevue_type_script_lang_ts_GraphEdge = /*#__PURE__*/function (_Vue) {
   _inherits(GraphEdge, _Vue);
@@ -105316,14 +110247,30 @@ var GraphEdgevue_type_script_lang_ts_GraphEdge = /*#__PURE__*/function (_Vue) {
     _this.edge = undefined;
     _this.fromNode = undefined;
     _this.toNode = undefined;
-    _this.position = {
+    _this.sourceNodePosition = {
+      x: 0,
+      y: 0
+    };
+    _this.targetNodePosition = {
+      x: 0,
+      y: 0
+    };
+    _this.sourceEndpointPosition = {
+      x: 0,
+      y: 0
+    };
+    _this.targetEndpointPosition = {
+      x: 0,
+      y: 0
+    };
+    _this.labelPosition = {
       x: 0,
       y: 0
     };
     _this.customPath = null;
+    _this.customTaxi = null;
     _this.hidden = false;
     _this.selected = false;
-    _this.positioning = false;
     return _this;
   }
 
@@ -105335,10 +110282,10 @@ var GraphEdgevue_type_script_lang_ts_GraphEdge = /*#__PURE__*/function (_Vue) {
   }, {
     key: "style",
     get: function get() {
-      var position = this.position;
+      var labelPosition = this.labelPosition;
       return {
         zIndex: this.selected ? '1' : '',
-        transform: "translate(-50%, -50%) translate(100vw, 100vh) translate(".concat(position.x, "px, ").concat(position.y, "px)"),
+        transform: "translate(-50%, -50%) translate(100vw, 100vh) translate(".concat(labelPosition.x, "px, ").concat(labelPosition.y, "px)"),
         visibility: this.hidden || !this.labels.length ? 'hidden' : '',
         color: this.selected ? '#cd4b3d' : 'rgba(0, 0, 0, 0.68)'
       };
@@ -105383,86 +110330,318 @@ var GraphEdgevue_type_script_lang_ts_GraphEdge = /*#__PURE__*/function (_Vue) {
       return labels;
     }
   }, {
-    key: "created",
-    value: function created() {
-      var _this$graphVm$_graph,
-          _this2 = this;
+    key: "mounted",
+    value: function mounted() {
+      var _this2 = this;
 
-      (_this$graphVm$_graph = this.graphVm._graph) === null || _this$graphVm$_graph === void 0 ? void 0 : _this$graphVm$_graph.on('resize', this.onPosition);
+      // this.graphVm._graph?.on('resize', this.onPosition)
       this.$watch(function () {
         return _this2.relation;
       }, function () {
         var _this2$fromNode, _this2$toNode, _this2$edge, _this2$graphVm$_graph, _this2$graphVm$_graph2, _this2$graphVm$_graph3, _this2$fromNode2, _this2$toNode2, _this2$edge2;
 
-        (_this2$fromNode = _this2.fromNode) === null || _this2$fromNode === void 0 ? void 0 : _this2$fromNode.off('position bounds', _this2.onPosition);
-        (_this2$toNode = _this2.toNode) === null || _this2$toNode === void 0 ? void 0 : _this2$toNode.off('position bounds', _this2.onPosition);
-        (_this2$edge = _this2.edge) === null || _this2$edge === void 0 ? void 0 : _this2$edge.off('data', _this2.onData);
+        (_this2$fromNode = _this2.fromNode) === null || _this2$fromNode === void 0 ? void 0 : _this2$fromNode.off('position bounds', _this2.onNodePosition);
+        (_this2$toNode = _this2.toNode) === null || _this2$toNode === void 0 ? void 0 : _this2$toNode.off('position bounds', _this2.onNodePosition);
+        (_this2$edge = _this2.edge) === null || _this2$edge === void 0 ? void 0 : _this2$edge.off('data style', _this2.onData);
         _this2.edge = (_this2$graphVm$_graph = _this2.graphVm._graph) === null || _this2$graphVm$_graph === void 0 ? void 0 : _this2$graphVm$_graph.edges().$id(_this2.id);
         _this2.fromNode = _this2.relation && ((_this2$graphVm$_graph2 = _this2.graphVm._graph) === null || _this2$graphVm$_graph2 === void 0 ? void 0 : _this2$graphVm$_graph2.nodes().$id(_this2.relation.from));
         _this2.toNode = _this2.relation && ((_this2$graphVm$_graph3 = _this2.graphVm._graph) === null || _this2$graphVm$_graph3 === void 0 ? void 0 : _this2$graphVm$_graph3.nodes().$id(_this2.relation.to));
 
-        _this2.onPosition();
+        _this2.onNodePosition();
 
-        (_this2$fromNode2 = _this2.fromNode) === null || _this2$fromNode2 === void 0 ? void 0 : _this2$fromNode2.on('position bounds', _this2.onPosition);
-        (_this2$toNode2 = _this2.toNode) === null || _this2$toNode2 === void 0 ? void 0 : _this2$toNode2.on('position bounds', _this2.onPosition);
+        (_this2$fromNode2 = _this2.fromNode) === null || _this2$fromNode2 === void 0 ? void 0 : _this2$fromNode2.on('position bounds', _this2.onNodePosition);
+        (_this2$toNode2 = _this2.toNode) === null || _this2$toNode2 === void 0 ? void 0 : _this2$toNode2.on('position bounds', _this2.onNodePosition);
 
         _this2.onData();
 
-        (_this2$edge2 = _this2.edge) === null || _this2$edge2 === void 0 ? void 0 : _this2$edge2.on('data', _this2.onData);
+        (_this2$edge2 = _this2.edge) === null || _this2$edge2 === void 0 ? void 0 : _this2$edge2.on('data style', _this2.onData);
       }, {
         immediate: true
       });
-      this.$watch(function () {
-        return _this2.customPath;
-      }, this.onPosition);
+      requestAnimationFrame(function () {
+        _this2.$watch(function () {
+          return [_this2.customPath, _this2.customTaxi];
+        }, _this2.onCustomTaxiChange, {
+          immediate: true
+        }); // this.$watch(
+        //   () => [
+        //     this.sourceNodePosition.x,
+        //     this.sourceNodePosition.y,
+        //     this.targetNodePosition.x,
+        //     this.targetNodePosition.y,
+        //   ],
+        //   this.updateEndpointPositions,
+        //   { immediate: true },
+        // )
+        // this.$watch(
+        //   () => [
+        //     this.sourceEndpointPosition.x,
+        //     this.sourceEndpointPosition.y,
+        //     this.targetEndpointPosition.x,
+        //     this.targetEndpointPosition.y,
+        //   ],
+        //   this.updateLabelPosition,
+        //   { immediate: true },
+        // )
+
+      });
     }
   }, {
     key: "beforeDestroy",
     value: function beforeDestroy() {
-      var _this$graphVm$_graph2;
+      var _this$fromNode, _this$toNode, _this$edge;
 
-      (_this$graphVm$_graph2 = this.graphVm._graph) === null || _this$graphVm$_graph2 === void 0 ? void 0 : _this$graphVm$_graph2.off('resize', this.onPosition);
-    }
-  }, {
-    key: "updatePosition",
-    value: function updatePosition() {
-      try {
-        var _this$edge$midpoint, _this$edge;
-
-        var _ref = (_this$edge$midpoint = (_this$edge = this.edge) === null || _this$edge === void 0 ? void 0 : _this$edge.midpoint()) !== null && _this$edge$midpoint !== void 0 ? _this$edge$midpoint : {
-          x: 0,
-          y: 0
-        },
-            x = _ref.x,
-            y = _ref.y;
-
-        this.position.x = x;
-        this.position.y = y;
-      } catch (_unused) {// ...
-      }
-    }
-  }, {
-    key: "onPosition",
-    value: function onPosition() {
-      var _this3 = this;
-
-      // if (this.positioning) return
-      // this.positioning = true
-      this.updatePosition();
-      requestAnimationFrame(function () {
-        _this3.updatePosition(); // this.positioning = false
-
-      });
+      // this.graphVm._graph?.off('resize', this.onPosition)
+      (_this$fromNode = this.fromNode) === null || _this$fromNode === void 0 ? void 0 : _this$fromNode.off('position bounds', this.onNodePosition);
+      (_this$toNode = this.toNode) === null || _this$toNode === void 0 ? void 0 : _this$toNode.off('position bounds', this.onNodePosition);
+      (_this$edge = this.edge) === null || _this$edge === void 0 ? void 0 : _this$edge.off('data style', this.onData);
     }
   }, {
     key: "onData",
     value: function onData() {
-      var _this$edge2, _data$customPath;
+      var _this$edge2, _data$customPath, _data$customTaxi;
 
+      var oldCustomTaxi = this.customTaxi;
       var data = (_this$edge2 = this.edge) === null || _this$edge2 === void 0 ? void 0 : _this$edge2.data();
+      var relation = data.relation;
       this.customPath = (_data$customPath = data.customPath) !== null && _data$customPath !== void 0 ? _data$customPath : null;
+      this.customTaxi = relation.builtStyle.taxi ? (_data$customTaxi = data.customTaxi) !== null && _data$customTaxi !== void 0 ? _data$customTaxi : null : null;
       this.hidden = !!(data.hidden || data.hiddenByFilter);
       this.selected = !this.graphVm.printMode && !!data.selected;
+      if (this.customTaxi !== oldCustomTaxi) this.buildCustomTaxi();
+    }
+  }, {
+    key: "onNodePosition",
+    value: function onNodePosition() {
+      if (!this.edge) return;
+      this.updateNodePositions();
+      this.updateEndpointPositions();
+      this.updateLabelPosition();
+      this.fixCustomTaxi();
+      this.buildCustomTaxi();
+    }
+  }, {
+    key: "fixCustomTaxi",
+    value: function fixCustomTaxi() {
+      var _cloneDeep;
+
+      var edge = this.edge;
+      if (!edge) return;
+      var customTaxi = (_cloneDeep = lodash_clonedeep_default()(edge.data('customTaxi'))) !== null && _cloneDeep !== void 0 ? _cloneDeep : null;
+      if (!customTaxi) return;
+      var from = customTaxi.from,
+          to = customTaxi.to,
+          segmentPoints = customTaxi.segmentPoints;
+
+      var getRect = function getRect(node) {
+        var _node$position = node.position(),
+            x = _node$position.x,
+            y = _node$position.y;
+
+        var width = node.width();
+        var height = node.height();
+        return {
+          width: width,
+          height: height,
+          x: {
+            left: x - width / 2,
+            center: x,
+            right: x + width / 2
+          },
+          y: {
+            top: y - height / 2,
+            center: y,
+            bottom: y + height / 2
+          }
+        };
+      };
+
+      var getEndpoint = function getEndpoint(type) {
+        var rect = getRect(edge[type]());
+        var _customTaxi = customTaxi[type === 'source' ? 'from' : 'to'],
+            x = _customTaxi.x,
+            y = _customTaxi.y;
+        return {
+          x: rect.x.center + rect.width * x,
+          y: rect.y.center + rect.height * y
+        };
+      };
+
+      var changed = false;
+
+      for (var _i = 0, _arr = [[from.side, getEndpoint('source'), segmentPoints[0]], [to.side, getEndpoint('target'), segmentPoints[segmentPoints.length - 1]]]; _i < _arr.length; _i++) {
+        var _arr$_i = _slicedToArray(_arr[_i], 3),
+            side = _arr$_i[0],
+            endpoint = _arr$_i[1],
+            point = _arr$_i[2];
+
+        var axis = side === 'left' || side === 'right' ? 'x' : 'y';
+        var crossAxis = axis === 'x' ? 'y' : 'x';
+
+        if (point[crossAxis] !== endpoint[crossAxis]) {
+          changed = true;
+          point[crossAxis] = endpoint[crossAxis];
+        }
+      }
+
+      if (changed) edge.data('customTaxi', customTaxi);
+    }
+  }, {
+    key: "buildCustomTaxi",
+    value: function buildCustomTaxi() {
+      var edge = this.edge;
+      if (!edge) return;
+      var customTaxi = edge.data('customTaxi');
+      var relation = edge.data('relation');
+
+      if (!customTaxi || !relation.builtStyle.taxi) {
+        edge.data('builtCustomTaxi', null);
+        return;
+      }
+
+      var getEndpoint = function getEndpoint(type) {
+        var node = edge[type]();
+        var nodePos = node.position();
+        var customTaxiEndpoint = customTaxi[type === 'source' ? 'from' : 'to'];
+        return {
+          side: customTaxiEndpoint.side,
+          axis: customTaxiEndpoint.side === 'left' || customTaxiEndpoint.side === 'right' ? 'x' : 'y',
+          x: nodePos.x + node.width() * customTaxiEndpoint.x,
+          y: nodePos.y + node.height() * customTaxiEndpoint.y
+        };
+      };
+
+      var sourceEndpoint = getEndpoint('source');
+      var targetEndpoint = getEndpoint('target');
+      var segmentPoints = customTaxi.segmentPoints;
+
+      var _loop = function _loop() {
+        var type = _arr2[_i2];
+        var endpoint = type === 'source' ? sourceEndpoint : targetEndpoint;
+        if (type === 'target') segmentPoints.reverse();
+        var doneFiltering = false;
+        segmentPoints = segmentPoints.filter(function (point) {
+          if (doneFiltering) return true;
+          if (point.x === endpoint.x && point.y === endpoint.y) return false;
+          doneFiltering = true;
+          return true;
+        });
+        if (type === 'target') segmentPoints.reverse();
+      };
+
+      for (var _i2 = 0, _arr2 = ['source', 'target']; _i2 < _arr2.length; _i2++) {
+        _loop();
+      }
+
+      if (!segmentPoints.length) {
+        var sourceAxis = sourceEndpoint.axis;
+        segmentPoints = sourceEndpoint.axis === targetEndpoint.axis ? [_defineProperty({
+          x: sourceEndpoint.x,
+          y: sourceEndpoint.y
+        }, sourceAxis, (sourceEndpoint[sourceAxis] + targetEndpoint[sourceAxis]) / 2), _defineProperty({
+          x: targetEndpoint.x,
+          y: targetEndpoint.y
+        }, sourceAxis, (sourceEndpoint[sourceAxis] + targetEndpoint[sourceAxis]) / 2)] : [_defineProperty({
+          x: sourceEndpoint.x,
+          y: sourceEndpoint.y
+        }, sourceAxis, targetEndpoint[sourceAxis])];
+      }
+
+      var distances = [];
+      var weights = [];
+
+      var _iterator3 = _createForOfIteratorHelper(segmentPoints),
+          _step3;
+
+      try {
+        for (_iterator3.s(); !(_step3 = _iterator3.n()).done;) {
+          var point = _step3.value;
+
+          var _getDistWeight = getDistWeight(edge.source().position(), edge.target().position(), point),
+              distance = _getDistWeight.distance,
+              weight = _getDistWeight.weight;
+
+          distances.push(distance);
+          weights.push(weight);
+        }
+      } catch (err) {
+        _iterator3.e(err);
+      } finally {
+        _iterator3.f();
+      }
+
+      edge.data('builtCustomTaxi', {
+        sourceEndpoint: "".concat(customTaxi.from.x * 100, "% ").concat(customTaxi.from.y * 100, "%"),
+        targetEndpoint: "".concat(customTaxi.to.x * 100, "% ").concat(customTaxi.to.y * 100, "%"),
+        segmentDistances: distances,
+        segmentWeights: weights
+      });
+    }
+  }, {
+    key: "updateNodePositions",
+    value: function updateNodePositions() {
+      if (this.fromNode) {
+        var _this$fromNode$positi = this.fromNode.position(),
+            x = _this$fromNode$positi.x,
+            y = _this$fromNode$positi.y;
+
+        this.sourceNodePosition.x = x;
+        this.sourceNodePosition.y = y;
+      }
+
+      if (this.toNode) {
+        var _this$toNode$position = this.toNode.position(),
+            _x = _this$toNode$position.x,
+            _y = _this$toNode$position.y;
+
+        this.targetNodePosition.x = _x;
+        this.targetNodePosition.y = _y;
+      }
+    }
+  }, {
+    key: "onCustomTaxiChange",
+    value: function onCustomTaxiChange() {
+      var _this3 = this;
+
+      requestAnimationFrame(function () {
+        _this3.updateEndpointPositions();
+
+        _this3.updateLabelPosition();
+      });
+    }
+  }, {
+    key: "updateEndpointPositions",
+    value: function updateEndpointPositions() {
+      if (!this.edge) return;
+
+      var _this$edge$sourceEndp = this.edge.sourceEndpoint(),
+          sourceX = _this$edge$sourceEndp.x,
+          sourceY = _this$edge$sourceEndp.y;
+
+      this.sourceEndpointPosition.x = sourceX;
+      this.sourceEndpointPosition.y = sourceY;
+
+      var _this$edge$targetEndp = this.edge.targetEndpoint(),
+          targetX = _this$edge$targetEndp.x,
+          targetY = _this$edge$targetEndp.y;
+
+      this.targetEndpointPosition.x = targetX;
+      this.targetEndpointPosition.y = targetY;
+    }
+  }, {
+    key: "updateLabelPosition",
+    value: function updateLabelPosition() {
+      if (!this.edge) return;
+
+      try {
+        var _this$edge$midpoint = this.edge.midpoint(),
+            x = _this$edge$midpoint.x,
+            y = _this$edge$midpoint.y;
+
+        this.labelPosition.x = x;
+        this.labelPosition.y = y;
+      } catch (_unused) {// ...
+      }
     }
   }]);
 
@@ -105498,8 +110677,8 @@ var GraphEdgevue_type_style_index_0_lang_scss_ = __webpack_require__("6a22");
 
 var GraphEdge_component = normalizeComponent(
   components_GraphEdgevue_type_script_lang_ts_,
-  GraphEdgevue_type_template_id_268e1cf1_render,
-  GraphEdgevue_type_template_id_268e1cf1_staticRenderFns,
+  GraphEdgevue_type_template_id_66b9548a_render,
+  GraphEdgevue_type_template_id_66b9548a_staticRenderFns,
   false,
   null,
   null,
@@ -105508,35 +110687,64 @@ var GraphEdge_component = normalizeComponent(
 )
 
 /* harmony default export */ var components_GraphEdge = (GraphEdge_component.exports);
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"00b53798-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/GraphEdgePoints.vue?vue&type=template&id=6d804a39&
-var GraphEdgePointsvue_type_template_id_6d804a39_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"lassox-diagram__GraphEdgePoints"},[_vm._l((_vm.n_liness),function(line,i){return _c('div',{key:("line-" + i),staticClass:"lassox-diagram__GraphEdgePoints-line",style:({
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"08613af9-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/GraphEdgePoints.vue?vue&type=template&id=2bbd555d&
+var GraphEdgePointsvue_type_template_id_2bbd555d_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"lassox-diagram__GraphEdgePoints"},[_vm._l((_vm.n_lines),function(line,i){return _c('div',{key:("line-" + i),staticClass:"lassox-diagram__GraphEdgePoints-line",style:({
       width: ((line.width) + "px"),
+      height: (_vm.lineHeight + "px"),
+      padding: (_vm.linePadding + "px 0"),
       transformOrigin: 'center left',
       transform: ("\n        translateY(-50%)\n        translate(100vw, 100vh)\n        translate(" + (line.x) + "px, " + (line.y) + "px)\n        rotate(" + (line.rotation) + "deg)\n      "),
-    }),on:{"mousedown":function($event){$event.stopPropagation();$event.preventDefault();return (function (e) {
+    }),on:{"mousedown":function (e) {
+      var _obj;
+
+      if (e.button !== 0) { return }
+
+      e.preventDefault()
+      e.stopPropagation()
+
       var pos = _vm.mousePosToModelPos(e.clientX, e.clientY)
-
-      var offset = { x: 0, y: 0 }
-
-      offset[line.crossAxis] = line
 
       _vm.n_dragging = {
         lines: [ line ],
-        // offset:
+        offset: ( _obj = {
+          x: 0,
+          y: 0
+        }, _obj[line.crossAxis] = line.crossAxisValue - pos[line.crossAxis], _obj ),
+        moved: false,
       }
-    }).apply(null, arguments)},"mouseup":function($event){$event.stopPropagation();$event.preventDefault();return (function () {}).apply(null, arguments)},"click":function($event){$event.stopPropagation();$event.preventDefault();return (function () {
-      line.crossAxisValue += Math.random() * 200 - 100
-      // line.line.length += Math.random() * 100 - 50
-    }).apply(null, arguments)}}})}),_vm._l((_vm.n_points),function(point,i){return _c('div',{key:("point-" + i),staticClass:"lassox-diagram__GraphEdgePoints-point",style:({
-      transform: ("\n        translate(-50%, -50%)\n        translate(100vw, 100vh)\n        translate(" + (point.x) + "px, " + (point.y) + "px)\n      ")
-    })})})],2)}
-var GraphEdgePointsvue_type_template_id_6d804a39_staticRenderFns = []
+    },"dblclick":function (e) { return _vm.onLineDblClick(i, e); }}})}),_vm._l((_vm.n_points),function(point,i){return _c('div',{key:("point-" + i),staticClass:"lassox-diagram__GraphEdgePoints-point",style:({
+      width: (_vm.pointSize + "px"),
+      height: (_vm.pointSize + "px"),
+      padding: (_vm.pointPadding + "px"),
+      transform: ("\n        translate(-50%, -50%)\n        translate(100vw, 100vh)\n        translate(" + (point.x) + "px, " + (point.y) + "px)\n      "),
+    }),on:{"mousedown":function (e) {
+      if (e.button !== 0) { return }
+
+      e.preventDefault()
+      e.stopPropagation()
+
+      var lines = _vm.n_lines.slice(Math.max(i - 1, 0), i + 1)
+
+      var pos = _vm.mousePosToModelPos(e.clientX, e.clientY)
+
+      _vm.n_dragging = {
+        lines: lines,
+        offset: {
+          x: point.x - pos.x,
+          y: point.y - pos.y,
+        },
+        endpointMode: lines.length === 1,
+        moved: false,
+      }
+    },"dblclick":function (e) { return _vm.onPointDblClick(i, e); }}})})],2)}
+var GraphEdgePointsvue_type_template_id_2bbd555d_staticRenderFns = []
 
 
-// CONCATENATED MODULE: ./src/components/GraphEdgePoints.vue?vue&type=template&id=6d804a39&
+// CONCATENATED MODULE: ./src/components/GraphEdgePoints.vue?vue&type=template&id=2bbd555d&
 
-// EXTERNAL MODULE: ./node_modules/core-js/modules/es.math.hypot.js
-var es_math_hypot = __webpack_require__("4057");
+// EXTERNAL MODULE: ./node_modules/decimal.js/decimal.js
+var decimal = __webpack_require__("4128");
+var decimal_default = /*#__PURE__*/__webpack_require__.n(decimal);
 
 // CONCATENATED MODULE: ./node_modules/babel-loader/lib!./node_modules/ts-loader??ref--14-1!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/GraphEdgePoints.vue?vue&type=script&lang=ts&
 
@@ -105556,13 +110764,8 @@ var es_math_hypot = __webpack_require__("4057");
 
 
 
-
-var getDistance = function getDistance(a, b) {
-  return Math.hypot(b.x - a.x, b.y - a.y);
-};
-
-var getAngle = function getAngle(a, b) {
-  return Math.atan2(b.y - a.y, b.x - a.x);
+var GraphEdgePointsvue_type_script_lang_ts_snapNumber = function snapNumber(number, gridSize) {
+  return gridSize ? new decimal_default.a(number).dividedBy(gridSize).round().times(gridSize).toNumber() : number;
 };
 
 var GraphEdgePointsvue_type_script_lang_ts_clamp = function clamp(number, min, max) {
@@ -105573,6 +110776,54 @@ var GraphEdgePointsvue_type_script_lang_ts_clamp = function clamp(number, min, m
 
 var getCrossAxis = function getCrossAxis(axis) {
   return axis === 'x' ? 'y' : 'x';
+};
+
+var getRectAxisBounds = function getRectAxisBounds(axis, rect) {
+  return axis === 'x' ? {
+    min: rect.x.left,
+    max: rect.x.right
+  } : {
+    min: rect.y.top,
+    max: rect.y.bottom
+  };
+};
+
+var getRectPositionSide = function getRectPositionSide(rect, position) {
+  if (position.y === rect.y.top) return 'top';
+  if (position.y === rect.y.bottom) return 'bottom';
+  if (position.x === rect.x.left) return 'left';
+  if (position.x === rect.x.right) return 'right';
+  return 'top';
+};
+
+var getSideAxis = function getSideAxis(side) {
+  return side === 'left' || side === 'right' ? 'x' : 'y';
+};
+
+var GraphEdgePointsvue_type_script_lang_ts_createCustomTaxiEndpoint = function createCustomTaxiEndpoint(endpoint, rect) {
+  var side = endpoint.side,
+      axis = endpoint.axis;
+  var crossAxis = getCrossAxis(endpoint.axis);
+  var result = {
+    side: side,
+    x: 0,
+    y: 0
+  };
+  result[axis] = side === 'top' || side === 'left' ? -0.5 : 0.5;
+  var crossAxisValue = endpoint[crossAxis];
+  var crossAxisMin;
+  var crossAxisMax;
+
+  if (crossAxis === 'x') {
+    crossAxisMin = rect.x.left;
+    crossAxisMax = rect.x.right;
+  } else {
+    crossAxisMin = rect.y.top;
+    crossAxisMax = rect.y.bottom;
+  }
+
+  result[crossAxis] = new decimal_default.a(crossAxisValue).minus(crossAxisMin).dividedBy(new decimal_default.a(crossAxisMax).minus(crossAxisMin)).minus('0.5').toNumber();
+  return result;
 };
 
 var cyUtil = {
@@ -105633,13 +110884,11 @@ var GraphEdgePointsvue_type_script_lang_ts_GraphEdgePoints = /*#__PURE__*/functi
     _this = _super.apply(this, arguments);
     _this.log = console.log;
     _this._edge = null;
+    _this.lineThickness = 0;
     _this.n_sourceEndpoint = null;
     _this.n_targetEndpoint = null;
     _this.n_points = [];
-    _this.n_lines = [];
     _this.n_dragging = null;
-    _this.points = [];
-    _this.dragging = null;
     _this.onDestroy = null;
     return _this;
   }
@@ -105651,22 +110900,86 @@ var GraphEdgePointsvue_type_script_lang_ts_GraphEdgePoints = /*#__PURE__*/functi
       return this.graphVm._graph;
     }
   }, {
-    key: "n_liness",
+    key: "n_lines",
     get: function get() {
-      var _this$n_sourceEndpoin,
-          _this2 = this;
+      var _this2 = this;
 
+      var vm = this;
+      var sourceEndpoint = this.n_sourceEndpoint,
+          targetEndpoint = this.n_targetEndpoint;
+      if (!sourceEndpoint || !targetEndpoint) return [];
       var axes = ['x', 'y'];
-      if (((_this$n_sourceEndpoin = this.n_sourceEndpoint) === null || _this$n_sourceEndpoin === void 0 ? void 0 : _this$n_sourceEndpoin.axis) === 'y') axes.reverse();
-      return this.n_points.slice(0, -1).map(function (point1, i) {
+      if (sourceEndpoint.axis === 'y') axes.reverse();
+      var lastI = this.n_points.length - 2;
+      var lines = this.n_points.slice(0, -1).map(function (point1, i) {
+        var _this2$_edge;
+
         var point2 = _this2.n_points[i + 1];
         var axis = axes[0],
             crossAxis = axes[1];
         axes.reverse();
+        var isFirst = !i;
+        var isLast = i === lastI;
+        var endpointName = !i ? 'source' : i === lastI ? 'target' : null;
+        var endpointNode = endpointName && ((_this2$_edge = _this2._edge) === null || _this2$_edge === void 0 ? void 0 : _this2$_edge[endpointName]());
+        var crossAxisBounds = null;
+
+        if (endpointNode) {
+          var rect = cyUtil.node.getRect(endpointNode);
+          crossAxisBounds = getRectAxisBounds(crossAxis, rect);
+        }
+
+        if (!isFirst && !isLast) {
+          var connectedToSource = i === 1;
+          var connectedToTarget = i === lastI - 1;
+
+          if (connectedToSource || connectedToTarget) {
+            crossAxisBounds = {
+              min: null,
+              max: null
+            };
+
+            for (var _i = 0, _arr = [connectedToSource && sourceEndpoint, connectedToTarget && targetEndpoint]; _i < _arr.length; _i++) {
+              var endpoint = _arr[_i];
+              if (!endpoint) continue;
+              var side = endpoint.side;
+              var boundsKey = side === 'top' || side === 'left' ? 'max' : 'min';
+              var spacing = GraphEdgePointsvue_type_script_lang_ts_snapNumber(32, vm.diagram.dragAndDropGridSize);
+              if (boundsKey === 'max') spacing *= -1;
+              var oldValue = crossAxisBounds[boundsKey];
+              var value = endpoint[crossAxis] + spacing;
+
+              if (oldValue === null) {
+                crossAxisBounds[boundsKey] = value;
+              } else {
+                if (boundsKey === 'min') crossAxisBounds[boundsKey] = Math.max(value, oldValue);else crossAxisBounds[boundsKey] = Math.min(value, oldValue);
+              }
+            }
+
+            if (crossAxisBounds.min !== null && crossAxisBounds.max !== null && crossAxisBounds.min > crossAxisBounds.max) {
+              crossAxisBounds = null;
+            }
+          } // const connectedEndpoint = i === 1 ? sourceEndpoint : i === lastI - 1 ? targetEndpoint : null
+          // if (connectedEndpoint) {
+          //   const { side } = connectedEndpoint
+          //   const boundsKey = (side === 'top' || side === 'left') ? 'max' : 'min'
+          //   let spacing = snapNumber(32, vm.diagram.dragAndDropGridSize)
+          //   if (boundsKey === 'max') spacing *= -1
+          //   crossAxisBounds = {
+          //     min: null,
+          //     max: null,
+          //     [boundsKey]: connectedEndpoint[crossAxis] + spacing,
+          //   }
+          // }
+
+        }
+
         return {
           points: [point1, point2],
           axis: axis,
           crossAxis: crossAxis,
+          isFirst: isFirst,
+          isLast: isLast,
 
           get x() {
             return point1.x;
@@ -105705,8 +111018,13 @@ var GraphEdgePointsvue_type_script_lang_ts_GraphEdgePoints = /*#__PURE__*/functi
           },
 
           set crossAxisValue(value) {
+            if (crossAxisBounds) value = GraphEdgePointsvue_type_script_lang_ts_clamp(value, crossAxisBounds.min, crossAxisBounds.max);
             point1[crossAxis] = value;
             point2[crossAxis] = value;
+          },
+
+          set crossAxisValueSnapped(value) {
+            this.crossAxisValue = GraphEdgePointsvue_type_script_lang_ts_snapNumber(value, vm.diagram.dragAndDropGridSize);
           },
 
           get length() {
@@ -105719,72 +111037,269 @@ var GraphEdgePointsvue_type_script_lang_ts_GraphEdgePoints = /*#__PURE__*/functi
 
         };
       });
-    }
-  }, {
-    key: "n_tLines",
-    get: function get() {
-      console.log('n_tLines');
-      return this.n_lines.map(function (line) {
-        return {
-          line: line,
-
-          get x() {
-            return line.x;
-          },
-
-          get y() {
-            return line.y;
-          },
-
-          get width() {
-            return Math.abs(line.length);
-          },
-
-          get rotation() {
-            return (line.axis === 'x' ? 0 : 90) + (line.length < 0 ? 180 : 0);
-          }
-
-        };
-      });
-    }
-  }, {
-    key: "lines",
-    get: function get() {
-      if (!this.points.length) return [];
-      var lines = [];
-
-      var _iterator = _createForOfIteratorHelper(this.points.entries()),
-          _step;
-
-      try {
-        for (_iterator.s(); !(_step = _iterator.n()).done;) {
-          var _step$value = _slicedToArray(_step.value, 2),
-              i = _step$value[0],
-              point = _step$value[1];
-
-          if (!i) continue;
-          var prevPoint = this.points[i - 1];
-          lines.push({
-            position: prevPoint,
-            length: getDistance(prevPoint, point),
-            rotation: getAngle(prevPoint, point) * 180 / Math.PI
-          });
-        }
-      } catch (err) {
-        _iterator.e(err);
-      } finally {
-        _iterator.f();
-      }
-
       return lines;
+    }
+  }, {
+    key: "lineHeight",
+    get: function get() {
+      return Math.max(this.lineThickness, 20);
+    }
+  }, {
+    key: "linePadding",
+    get: function get() {
+      return (this.lineHeight - this.lineThickness) / 2;
+    }
+  }, {
+    key: "pointSizeInner",
+    get: function get() {
+      return this.lineThickness + 12;
+    }
+  }, {
+    key: "pointSize",
+    get: function get() {
+      return Math.max(this.lineHeight, this.pointSizeInner);
+    }
+  }, {
+    key: "pointPadding",
+    get: function get() {
+      return (this.pointSize - this.pointSizeInner) / 2;
     }
   }, {
     key: "mounted",
     value: function mounted() {
+      var _this3 = this;
+
       var graph = this.graphVm._graph;
       if (!graph) return;
-      graph.on('add remove select unselect', 'edge', this.updateEdge);
-      this.updateEdge();
+      graph.on('add remove select unselect', this.updateEdge);
+      this.updateEdge(); // Dragging
+
+      {
+        var _cleanup3 = null;
+        this.$watch(function () {
+          return _this3.n_dragging;
+        }, function (dragging) {
+          var _cleanup;
+
+          (_cleanup = _cleanup3) === null || _cleanup === void 0 ? void 0 : _cleanup();
+          if (!dragging) return;
+          var dragTempLineI = null;
+
+          var onMouseMove = function onMouseMove(event) {
+            if (!_this3._edge) return;
+            dragging.moved = true;
+
+            var mousePos = _this3.mousePosToModelPos(event.clientX, event.clientY);
+
+            mousePos.x += dragging.offset.x;
+            mousePos.y += dragging.offset.y;
+
+            var _iterator = _createForOfIteratorHelper(dragging.lines),
+                _step;
+
+            try {
+              for (_iterator.s(); !(_step = _iterator.n()).done;) {
+                var line = _step.value;
+                var crossAxis = line.crossAxis;
+                line.crossAxisValueSnapped = mousePos[crossAxis];
+              }
+            } catch (err) {
+              _iterator.e(err);
+            } finally {
+              _iterator.f();
+            }
+
+            if (dragTempLineI !== null) {
+              var tempLine = _this3.n_lines[dragTempLineI];
+              tempLine.crossAxisValueSnapped = mousePos[tempLine.crossAxis];
+            } // Functionality for dragging endpoints to other sides
+
+
+            if (dragging.endpointMode) (function () {
+              var _objectSpread2;
+
+              var _dragging$lines = _slicedToArray(dragging.lines, 1),
+                  line = _dragging$lines[0];
+
+              var endpointName = line.isFirst ? 'source' : line.isLast ? 'target' : null;
+              if (!endpointName) return;
+
+              var endpoint = _this3["n_".concat(endpointName, "Endpoint")];
+
+              if (!endpoint) return;
+              var rect = cyUtil.node.getRect(_this3._edge[endpointName]());
+              var relativeX = mousePos.x < rect.x.left ? 'left' : mousePos.x > rect.x.right ? 'right' : 'inside';
+              var relativeY = mousePos.y < rect.y.top ? 'top' : mousePos.y > rect.y.bottom ? 'bottom' : 'inside';
+              var side = relativeX === 'inside' && relativeY !== 'inside' ? relativeY : relativeY === 'inside' && relativeX !== 'inside' ? relativeX : null;
+
+              var getSidePos = function getSidePos(side) {
+                return side === 'top' ? rect.y.top : side === 'bottom' ? rect.y.bottom : side === 'left' ? rect.x.left : rect.x.right;
+              };
+
+              if (!side) {
+                if (relativeX === 'inside' && relativeY === 'inside') {
+                  var _closest;
+
+                  // Cursor is inside the node, pick the closest side.
+                  var closest = null;
+
+                  for (var _i2 = 0, _arr2 = ['top', 'bottom', 'left', 'right']; _i2 < _arr2.length; _i2++) {
+                    var sideName = _arr2[_i2];
+
+                    var _axis = getSideAxis(sideName);
+
+                    var distance = Math.abs(getSidePos(sideName) - mousePos[_axis]);
+                    if (!closest || distance < closest.distance || distance === closest.distance && sideName === endpoint.side) closest = {
+                      sideName: sideName,
+                      distance: distance
+                    };
+                  }
+
+                  if (closest) side = (_closest = closest) === null || _closest === void 0 ? void 0 : _closest.sideName;
+                } else if (relativeX !== 'inside' && relativeY !== 'inside') {
+                  var xDistance = Math.abs(getSidePos(relativeX) - mousePos.x);
+                  var yDistance = Math.abs(getSidePos(relativeY) - mousePos.y);
+                  side = xDistance > yDistance ? relativeX : yDistance > xDistance ? relativeY : null;
+                }
+              }
+
+              if (!side || side === endpoint.side) return;
+              var axis = getSideAxis(side);
+              var crossAxis = getCrossAxis(axis);
+              var newAxisValue = getSidePos(side);
+              var oldEndpointPos = {
+                x: endpoint.x,
+                y: endpoint.y
+              };
+
+              var newEndpoint = objectSpread2_objectSpread2(objectSpread2_objectSpread2({}, oldEndpointPos), {}, (_objectSpread2 = {}, _defineProperty(_objectSpread2, axis, newAxisValue), _defineProperty(_objectSpread2, crossAxis, mousePos[crossAxis]), _defineProperty(_objectSpread2, "side", side), _defineProperty(_objectSpread2, "axis", axis), _objectSpread2));
+
+              var gridSize = _this3.diagram.dragAndDropGridSize;
+              var crossAxisBounds = getRectAxisBounds(crossAxis, rect);
+              newEndpoint[crossAxis] = GraphEdgePointsvue_type_script_lang_ts_clamp(GraphEdgePointsvue_type_script_lang_ts_snapNumber(newEndpoint[crossAxis], gridSize), crossAxisBounds.min, crossAxisBounds.max);
+
+              var newPoints = toConsumableArray_toConsumableArray(_this3.n_points);
+
+              newPoints.splice(endpointName === 'source' ? 0 : -1, 1, newEndpoint); // {
+              //   newPoints = newPoints.filter(point => !point.temp)
+              //   const newTempPoints: NPoint[] = []
+              //   if (axis === endpoint.axis) {
+              //     // Add 2 temp points.
+              //     const p1 = {
+              //       x: newEndpoint.x,
+              //       y: newEndpoint.y,
+              //       [axis]: getSpacedSidePos(side),
+              //       temp: true,
+              //     }
+              //     let closestSide: Side
+              //     if (axis === 'x') {
+              //       const topDist = Math.abs(getSidePos('top') - newEndpoint.y)
+              //       const bottomDist = Math.abs(getSidePos('bottom') - newEndpoint.y)
+              //       closestSide = topDist < bottomDist ? 'top' : 'bottom'
+              //     } else {
+              //       const leftDist = Math.abs(getSidePos('left') - newEndpoint.x)
+              //       const rightDist = Math.abs(getSidePos('right') - newEndpoint.x)
+              //       closestSide = leftDist < rightDist ? 'left' : 'right'
+              //     }
+              //     const p2 = {
+              //       ...p1,
+              //       [crossAxis]: getSpacedSidePos(closestSide),
+              //     }
+              //     newTempPoints.push(p1, p2)
+              //     // Align the axis of the next point with the new temp point to avoid disconnected lines.
+              //     const nextPoint = endpointName === 'source'
+              //       ? newPoints[1]
+              //       : newPoints[newPoints.length - 2]
+              //     nextPoint[crossAxis] = p2[crossAxis]
+              //   } else {
+              //     // Add 1 temp point.
+              //     const newTempPoint = {
+              //       x: newEndpoint.x,
+              //       y: newEndpoint.y,
+              //       [axis]: getSpacedSidePos(side),
+              //       temp: true,
+              //     }
+              //     newTempPoints.push(newTempPoint)
+              //     // Align the axis of the next point with the new temp point to avoid disconnected lines.
+              //     const nextPoint = endpointName === 'source'
+              //       ? newPoints[1]
+              //       : newPoints[newPoints.length - 2]
+              //     nextPoint[axis] = newTempPoint[axis]
+              //   }
+              //   if (endpointName === 'target') newTempPoints.reverse()
+              //   newPoints.splice(endpointName === 'source' ? 1 : -1, 0, ...newTempPoints)
+              // }
+              // When switching axis we need either one less or one more point.
+
+              if (axis !== endpoint.axis) {
+                var _oldTempPoint;
+
+                var tempPointI = endpointName === 'source' ? 1 : newPoints.length - 2;
+                var oldTempPoint = newPoints.length > 3 ? newPoints[tempPointI] : null;
+                if (!((_oldTempPoint = oldTempPoint) !== null && _oldTempPoint !== void 0 && _oldTempPoint.temp)) oldTempPoint = null; // If there's an old temp point...
+
+                if (oldTempPoint) {
+                  // Delete it.
+                  newPoints.splice(tempPointI, 1); // Align the crossAxis of the next point with the new endpoint to avoid disconnected lines.
+
+                  var nextPoint = endpointName === 'source' ? newPoints[tempPointI] : newPoints[tempPointI - 1];
+                  nextPoint[crossAxis] = newEndpoint[crossAxis];
+                  dragTempLineI = null;
+                } else {
+                  var _newPoints$splice;
+
+                  var insertI = tempPointI;
+                  if (endpointName === 'target') insertI++;
+                  var axisValue = GraphEdgePointsvue_type_script_lang_ts_snapNumber(mousePos[axis], gridSize); // Otherwise, create one.
+
+                  newPoints.splice(insertI, 0, (_newPoints$splice = {
+                    x: newEndpoint.x,
+                    y: newEndpoint.y
+                  }, _defineProperty(_newPoints$splice, axis, axisValue), _defineProperty(_newPoints$splice, "temp", true), _newPoints$splice));
+
+                  var _nextPoint = endpointName === 'source' ? newPoints[tempPointI + 1] : newPoints[tempPointI];
+
+                  _nextPoint[axis] = axisValue;
+                  dragTempLineI = insertI;
+                }
+              }
+
+              _this3["n_".concat(endpointName, "Endpoint")] = newEndpoint;
+              _this3.n_points = newPoints;
+              dragging.lines = [_this3.n_lines[endpointName === 'source' ? 0 : _this3.n_lines.length - 1]];
+              {
+                var connectedLine = _this3.n_lines[endpointName === 'source' ? 1 : _this3.n_lines.length - 2];
+                connectedLine.crossAxisValueSnapped = connectedLine.crossAxisValue;
+              }
+            })();
+
+            _this3.updateCustomTaxi(false);
+          };
+
+          var onMouseUp = function onMouseUp(event) {
+            var _cleanup2;
+
+            // event?.preventDefault()
+            // event?.stopPropagation()
+            (_cleanup2 = _cleanup3) === null || _cleanup2 === void 0 ? void 0 : _cleanup2();
+
+            if (_this3.n_dragging) {
+              var moved = _this3.n_dragging.moved;
+              _this3.n_dragging = null;
+              if (moved) _this3.updateCustomTaxi(true);
+            }
+          };
+
+          window.addEventListener('mousemove', onMouseMove);
+          window.addEventListener('mouseup', onMouseUp);
+
+          _cleanup3 = function cleanup() {
+            window.removeEventListener('mousemove', onMouseMove);
+            window.removeEventListener('mouseup', onMouseUp);
+            _cleanup3 = null;
+          };
+        });
+      }
     }
   }, {
     key: "beforeDestroy",
@@ -105799,13 +111314,17 @@ var GraphEdgePointsvue_type_script_lang_ts_GraphEdgePoints = /*#__PURE__*/functi
     value: function setEdge(edge) {
       var oldEdge = this._edge;
       if (edge === oldEdge) return;
-      this._edge = edge; // const { graph } = this
-      // if (oldEdge) {
-      //   // unbind
-      // }
-      // if (edge) {
-      //   // bind
-      // }
+      this._edge = edge;
+      this.n_dragging = null;
+
+      if (oldEdge) {
+        oldEdge.off('data style', this.onEdgeData);
+      }
+
+      if (edge) {
+        this.onEdgeData();
+        edge.on('data style', this.onEdgeData);
+      }
 
       this.updatePoints();
     }
@@ -105813,44 +111332,70 @@ var GraphEdgePointsvue_type_script_lang_ts_GraphEdgePoints = /*#__PURE__*/functi
     key: "updateEdge",
     value: function updateEdge() {
       var graph = this.graph;
-      var selectedEdges = graph.edges(':selected');
-      this.setEdge(selectedEdges.length === 1 ? selectedEdges[0] : null);
+      var selectedElements = graph.elements(':selected');
+      var edge = null;
+
+      if (selectedElements.length === 1) {
+        var element = selectedElements[0];
+
+        if (element.isEdge() && element.is(':simple')) {
+          edge = element;
+        }
+      }
+
+      this.setEdge(edge);
+    }
+  }, {
+    key: "onEdgeData",
+    value: function onEdgeData() {
+      var _relation$builtStyle$,
+          _this4 = this;
+
+      var edge = this._edge;
+      if (!edge) return;
+      var relation = edge.data('relation');
+      this.lineThickness = (_relation$builtStyle$ = relation.builtStyle.lineWidth) !== null && _relation$builtStyle$ !== void 0 ? _relation$builtStyle$ : 0;
+      if (!this.n_dragging) requestAnimationFrame(function () {
+        if (!_this4.n_dragging) _this4.updatePoints();
+      });
     }
   }, {
     key: "updatePoints",
     value: function updatePoints() {
       var edge = this._edge;
+      var relation = edge === null || edge === void 0 ? void 0 : edge.data('relation');
 
-      if (!edge) {
+      if (!edge || !(relation !== null && relation !== void 0 && relation.builtStyle.taxi)) {
         this.n_sourceEndpoint = null;
         this.n_targetEndpoint = null;
         this.n_points = [];
-        this.n_lines = [];
         return;
-      } // TODO : Handle existing customTaxi points
+      }
 
-
-      var getRectPositionSide = function getRectPositionSide(rect, position) {
-        if (position.y === rect.y.top) return 'top';
-        if (position.y === rect.y.bottom) return 'bottom';
-        if (position.x === rect.x.left) return 'left';
-        if (position.x === rect.x.right) return 'right';
-        return 'top';
-      };
-
-      var getSideAxis = function getSideAxis(side) {
-        return side === 'left' || side === 'right' ? 'x' : 'y';
-      };
+      var customTaxi = edge.data('customTaxi');
 
       var getEndpoint = function getEndpoint(type) {
         var nodeRect = cyUtil.node.getRect(edge[type]());
-        var endpointPosition = edge["".concat(type, "Endpoint")]();
-        var side = getRectPositionSide(nodeRect, endpointPosition);
+        var side;
+        var position;
+
+        if (customTaxi) {
+          var customTaxiEndpoint = customTaxi[type === 'source' ? 'from' : 'to'];
+          side = customTaxiEndpoint.side;
+          position = {
+            x: new decimal_default.a(nodeRect.x.center).plus(new decimal_default.a(nodeRect.width).times(customTaxiEndpoint.x)).toNumber(),
+            y: new decimal_default.a(nodeRect.y.center).plus(new decimal_default.a(nodeRect.height).times(customTaxiEndpoint.y)).toNumber()
+          };
+        } else {
+          position = edge["".concat(type, "Endpoint")]();
+          side = getRectPositionSide(nodeRect, position);
+        }
+
         return {
           side: side,
           axis: getSideAxis(side),
-          x: endpointPosition.x,
-          y: endpointPosition.y
+          x: position.x,
+          y: position.y
         };
       };
 
@@ -105859,10 +111404,14 @@ var GraphEdgePointsvue_type_script_lang_ts_GraphEdgePoints = /*#__PURE__*/functi
       var minLines = sourceEndpoint.axis === targetEndpoint.axis ? 3 : 2;
       var minPoints = minLines + 1;
       var points = [];
-      var segmentPoints = edge.segmentPoints();
+      var segmentPoints = customTaxi ? customTaxi.segmentPoints : edge.segmentPoints().map(function (point) {
+        return objectSpread2_objectSpread2(objectSpread2_objectSpread2({}, point), {}, {
+          temp: true
+        });
+      });
 
       if (segmentPoints.length >= minPoints - 2) {
-        var _prevPoint = sourceEndpoint;
+        var prevPoint = sourceEndpoint;
         var prevAxis = getCrossAxis(sourceEndpoint.axis);
 
         var _iterator2 = _createForOfIteratorHelper(segmentPoints),
@@ -105871,22 +111420,11 @@ var GraphEdgePointsvue_type_script_lang_ts_GraphEdgePoints = /*#__PURE__*/functi
         try {
           for (_iterator2.s(); !(_step2 = _iterator2.n()).done;) {
             var point = _step2.value;
-            point = _objectSpread2({}, point);
-
-            var _axis = getCrossAxis(prevAxis);
-
-            var crossAxis = prevAxis; // A point should only differ from the previous point on the main axis,
-            // so if it doesn't, we create a new point between the two.
-
-            if (point[crossAxis] !== _prevPoint[crossAxis]) {
-              var newPoint = _objectSpread2(_objectSpread2({}, point), {}, _defineProperty({}, crossAxis, _prevPoint[crossAxis]));
-
-              points.push(newPoint);
-            }
-
+            var axis = getCrossAxis(prevAxis);
+            point = objectSpread2_objectSpread2(objectSpread2_objectSpread2({}, point), {}, _defineProperty({}, prevAxis, prevPoint[prevAxis]));
             points.push(point);
-            _prevPoint = point;
-            prevAxis = _axis;
+            prevPoint = point;
+            prevAxis = axis;
           }
         } catch (err) {
           _iterator2.e(err);
@@ -105894,14 +111432,14 @@ var GraphEdgePointsvue_type_script_lang_ts_GraphEdgePoints = /*#__PURE__*/functi
           _iterator2.f();
         }
 
-        var lastPoint = _prevPoint;
+        var lastPoint = prevPoint;
         var lastAxis = prevAxis;
         var targetAxis = targetEndpoint.axis;
         var targetCrossAxis = getCrossAxis(targetAxis); // If the last points axis is the same as the target endpoint,
         // we need to create a new point.
 
         if (lastAxis === targetAxis) {
-          lastPoint = _objectSpread2({}, lastPoint);
+          lastPoint = objectSpread2_objectSpread2({}, lastPoint);
           lastAxis = getCrossAxis(lastAxis);
           points.push(lastPoint);
         } // Make sure the last point is aligned with the target endpoint on the crossAxis.
@@ -105910,190 +111448,58 @@ var GraphEdgePointsvue_type_script_lang_ts_GraphEdgePoints = /*#__PURE__*/functi
         lastPoint[targetCrossAxis] = targetEndpoint[targetCrossAxis];
       }
 
-      var lines = [];
-
-      var createLine = function createLine(axis, point1, point2) {
-        var crossAxis = getCrossAxis(axis);
-        return {
-          axis: axis,
-          points: [point1, point2],
-          x: point1.x,
-          y: point1.y,
-          length: point2[axis] - point1[axis]
-        };
-      };
-
-      var prevPoint = sourceEndpoint;
-      var axis = sourceEndpoint.axis;
-
-      for (var _i = 0, _arr = [].concat(points, [targetEndpoint]); _i < _arr.length; _i++) {
-        var _point = _arr[_i];
-        lines.push(createLine(axis, prevPoint, _point));
-        prevPoint = _point;
-        axis = getCrossAxis(axis);
-      }
-
       this.n_sourceEndpoint = sourceEndpoint;
       this.n_targetEndpoint = targetEndpoint;
       this.n_points = [sourceEndpoint].concat(points, [targetEndpoint]);
-      this.n_lines = lines;
-    } // mounted () {
-    //   const graph = this.graphVm._graph
-    //   if (!graph) return
-    //   let selectedEdge: EdgeSingular | null = null
-    //   const setSelectedEdge = (edge: EdgeSingular | null) => {
-    //     const oldSelectedEdge = selectedEdge
-    //     const newSelectedEdge = edge
-    //     if (newSelectedEdge === oldSelectedEdge) return
-    //     if (oldSelectedEdge) {
-    //       // unbind things
+    } // testThingy () {
+    //   const {
+    //     n_sourceEndpoint,
+    //     n_targetEndpoint,
+    //   } = this
+    //   if (!n_sourceEndpoint || !n_targetEndpoint) return
+    //   const sourceSide = n_sourceEndpoint.side
+    //   const sourceAxis = n_sourceEndpoint.axis
+    //   const targetSide = n_targetEndpoint.side
+    //   const getOppositeSide = (side: Side): Side => {
+    //     switch (side) {
+    //       case 'top': return 'bottom'
+    //       case 'bottom': return 'top'
+    //       case 'left': return 'right'
+    //       case 'right': return 'left'
     //     }
-    //     if (newSelectedEdge) {
-    //       // bind things
-    //     }
-    //     selectedEdge = newSelectedEdge
-    //     updatePoints()
     //   }
-    //   const updateSelectedEdge = () => {
-    //     const selectedEdges = graph.edges(':selected')
-    //     const newSelectedEdge = selectedEdges.length === 1 ? selectedEdges[0] : null
-    //     setSelectedEdge(newSelectedEdge)
+    //   const isSameSide = sourceSide === targetSide
+    //   const isOppositeSide = !isSameSide && targetSide === getOppositeSide(sourceSide)
+    //   const delta = {
+    //     x: n_targetEndpoint.x - n_sourceEndpoint.x,
+    //     y: n_targetEndpoint.y - n_sourceEndpoint.y,
     //   }
-    //   const createPoint = (position: Position, endpoint?: 'source' | 'target') => {
-    //     const point: Point = {
-    //       isSource: endpoint === 'source',
-    //       isTarget: endpoint === 'target',
-    //       x: position.x,
-    //       y: position.y,
-    //       bounds: {
-    //         x: { min: null, max: null },
-    //         y: { min: null, max: null },
-    //       },
+    //   const relativeX =
+    //     delta.x < 0 ? 'left' :
+    //     delta.x > 0 ? 'right' :
+    //     'same'
+    //   const relativeY =
+    //     delta.y < 0 ? 'top' :
+    //     delta.y > 0 ? 'bottom' :
+    //     'same'
+    //   if (isOppositeSide) {
+    //     console.log('opposite side')
+    //     let sideDelta = delta[sourceAxis]
+    //     if (sourceSide === 'top' || sourceSide === 'left') sideDelta *= -1
+    //     if (sideDelta >= 0) {
+    //       console.log('no wraparound needed, 2 points')
+    //     } else {
+    //       console.log('wraparound needed for both nodes, 4 points')
     //     }
-    //     if (selectedEdge && endpoint) {
-    //       const node = selectedEdge[endpoint]()
-    //       const rect = cyUtil.node.getRect(node)
-    //       let side: Side = 'top'
-    //       if (position.y === rect.y.top) side = 'top'
-    //       else if (position.y === rect.y.bottom) side = 'bottom'
-    //       else if (position.x === rect.x.left) side = 'left'
-    //       else if (position.x === rect.x.right) side = 'right'
-    //       switch (side) {
-    //         case 'top':
-    //         case 'bottom': {
-    //           point.directionAxis = 'y'
-    //           point.bounds.x.min = rect.x.left
-    //           point.bounds.x.max = rect.x.right
-    //           point.bounds.y.min = rect.y[side]
-    //           point.bounds.y.max = rect.y[side]
-    //           break
-    //         }
-    //         case 'left':
-    //         case 'right': {
-    //           point.directionAxis = 'x'
-    //           point.bounds.y.min = rect.y.top
-    //           point.bounds.y.max = rect.y.bottom
-    //           point.bounds.x.min = rect.x[side]
-    //           point.bounds.x.max = rect.x[side]
-    //           break
-    //         }
+    //   }
+    //   switch (sourceSide) {
+    //     case 'top': {
+    //       if (isOppositeSide) {
+    //         if ()
     //       }
+    //       break
     //     }
-    //     return point
     //   }
-    //   const updatePoints = () => {
-    //     if (!selectedEdge) {
-    //       this.points = []
-    //       return
-    //     }
-    //     this.points = [
-    //       createPoint(selectedEdge.sourceEndpoint(), 'source'),
-    //       ...selectedEdge.segmentPoints().map(pos => createPoint(pos)),
-    //       createPoint(selectedEdge.targetEndpoint(), 'target'),
-    //     ]
-    //   }
-    //   const draggingOnMouseMove = (e: MouseEvent) => {
-    //     if (!this.dragging) return
-    //     const { point, line, offset } = this.dragging
-    //     if (!point && !line) return
-    //     e.preventDefault()
-    //     let mousePos = this.mousePosToModelPos(e.clientX, e.clientY)
-    //     mousePos.x += offset.x
-    //     mousePos.y += offset.y
-    //     const lines: [Point, Point][] = []
-    //     if (point) {
-    //       const i = this.points.indexOf(point)
-    //       const prevPoint = i > 0 ? this.points[i - 1] : null
-    //       const nextPoint = i < this.points.length - 1 ? this.points[i + 1] : null
-    //       if (prevPoint) lines.push([ prevPoint, point ])
-    //       if (nextPoint) lines.push([ point, nextPoint ])
-    //     } else if (line) {
-    //       lines.push(line)
-    //     }
-    //     if (!lines.length) return
-    //     const currentAxes: ('x' | 'y')[] = [ 'x', 'y' ]
-    //     if (this.points[0].directionAxis === 'x') currentAxes.reverse()
-    //     let i = this.points.indexOf(lines[0][0])
-    //     for (const line of lines) {
-    //       const axis = currentAxes[i % 2]
-    //       const bounds: Record<'min' | 'max', number | null> = { min: null, max: null }
-    //       for (const point of line) {
-    //         const pointBounds = point.bounds[axis]
-    //         if (pointBounds.min !== null) {
-    //           bounds.min = bounds.min === null
-    //             ? pointBounds.min
-    //             : Math.max(bounds.min, pointBounds.min)
-    //         }
-    //         if (pointBounds.max !== null) {
-    //           bounds.max = bounds.max === null
-    //             ? pointBounds.max
-    //             : Math.min(bounds.max, pointBounds.max)
-    //         }
-    //       }
-    //       for (const point of line) {
-    //         point[axis] = clamp(mousePos[axis], bounds.min, bounds.max)
-    //       }
-    //       i++
-    //     }
-    //     this.dragging.moved = true
-    //   }
-    //   const draggingOnMouseUp = (e: MouseEvent) => {
-    //     if (!this.dragging) return
-    //     e.preventDefault()
-    //     const { line, moved } = this.dragging
-    //     if (line && !moved) {
-    //       const i = this.points.indexOf(line[0])
-    //       const [ point1, point2 ] = line
-    //       const commonAxis = point1.x === point2.x ? 'x' : 'y'
-    //       const pos = this.mousePosToModelPos(e.clientX, e.clientY)
-    //       pos[commonAxis] = point1[commonAxis]
-    //       this.points.splice(i + 1, 0, createPoint(pos), createPoint(pos))
-    //     }
-    //     this.dragging = null
-    //   }
-    //   graph.on('add remove select unselect', 'edge', updateSelectedEdge)
-    //   this.$watch(
-    //     () => this.dragging,
-    //     (dragging, oldDragging) => {
-    //       if (dragging === oldDragging) return
-    //       if (oldDragging) {
-    //         window.removeEventListener('mousemove', draggingOnMouseMove)
-    //         window.removeEventListener('mouseup', draggingOnMouseUp)
-    //       }
-    //       if (dragging) {
-    //         window.addEventListener('mousemove', draggingOnMouseMove)
-    //         window.addEventListener('mouseup', draggingOnMouseUp)
-    //       }
-    //     },
-    //   )
-    //   this.onDestroy = () => {
-    //     graph.off('add remove select unselect', 'edge', updateSelectedEdge)
-    //     setSelectedEdge(null)
-    //     this.dragging = null
-    //   }
-    // }
-    // beforeDestroy () {
-    //   this.onDestroy?.()
     // }
 
   }, {
@@ -106111,17 +111517,104 @@ var GraphEdgePointsvue_type_script_lang_ts_GraphEdgePoints = /*#__PURE__*/functi
       });
     }
   }, {
-    key: "snapPos",
-    value: function snapPos(pos) {
-      return pos; // const size = this.graphVm.diagram.dragAndDropGridSize
-      // if (!size) return pos
-      // const snapNumber = (n: number) => Math.round(n / size) * size
-      // return { x: snapNumber(pos.x), y: snapNumber(pos.y) }
+    key: "onLineDblClick",
+    value: function onLineDblClick(i, event) {
+      var line = this.n_lines[i];
+      var axisValueMin = Math.min(line.axisValue1, line.axisValue2);
+      var axisValueMax = Math.max(line.axisValue1, line.axisValue2);
+      var pos = this.mousePosToModelPos(event.clientX, event.clientY);
+      pos[line.axis] = GraphEdgePointsvue_type_script_lang_ts_clamp(GraphEdgePointsvue_type_script_lang_ts_snapNumber(pos[line.axis], this.diagram.dragAndDropGridSize), axisValueMin, axisValueMax);
+      pos[line.crossAxis] = line.crossAxisValue;
+      this.n_points.splice(i + 1, 0, objectSpread2_objectSpread2({}, pos), objectSpread2_objectSpread2({}, pos));
+      this.updateCustomTaxi(true);
+    }
+  }, {
+    key: "onPointDblClick",
+    value: function onPointDblClick(i, event) {
+      if (this.n_points.length <= 4 || !i || i === this.n_points.length - 1) return;
+      if (i > 1) i--;
+      var line = this.n_lines[i];
+      var lineBefore = this.n_lines[i - 1];
+      var lineAfter = this.n_lines[i + 1];
+
+      if (!lineAfter.isLast) {
+        line.crossAxisValue = lineAfter.axisValue2;
+        lineAfter.crossAxisValue = lineBefore.crossAxisValue;
+
+        if (lineAfter.crossAxisValue !== lineBefore.crossAxisValue) {
+          lineBefore.crossAxisValue = lineAfter.crossAxisValue;
+        }
+      } else {
+        line.crossAxisValue = lineBefore.axisValue1;
+        lineBefore.crossAxisValue = lineAfter.crossAxisValue;
+
+        if (lineBefore.crossAxisValue !== lineAfter.crossAxisValue) {
+          lineAfter.crossAxisValue = lineBefore.crossAxisValue;
+        }
+      }
+
+      this.n_points.splice(i, 2);
+
+      var _iterator3 = _createForOfIteratorHelper(this.n_lines.slice(1, -1)),
+          _step3;
+
+      try {
+        for (_iterator3.s(); !(_step3 = _iterator3.n()).done;) {
+          var _line = _step3.value;
+          var value = _line.crossAxisValue;
+          _line.crossAxisValue = value;
+        }
+      } catch (err) {
+        _iterator3.e(err);
+      } finally {
+        _iterator3.f();
+      }
+
+      this.updateCustomTaxi(true);
+    }
+  }, {
+    key: "updateCustomTaxi",
+    value: function updateCustomTaxi() {
+      var commit = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : false;
+      var edge = this._edge,
+          sourceEndpoint = this.n_sourceEndpoint,
+          targetEndpoint = this.n_targetEndpoint;
+      if (!edge || !sourceEndpoint || !targetEndpoint) return;
+      var newCustomTaxi = {
+        from: GraphEdgePointsvue_type_script_lang_ts_createCustomTaxiEndpoint(sourceEndpoint, cyUtil.node.getRect(edge.source())),
+        to: GraphEdgePointsvue_type_script_lang_ts_createCustomTaxiEndpoint(targetEndpoint, cyUtil.node.getRect(edge.target())),
+        segmentPoints: this.n_points.slice(1, -1).map(function (point) {
+          return {
+            x: point.x,
+            y: point.y,
+            temp: point.temp
+          };
+        })
+      };
+
+      if (commit) {
+        this.diagram.activeDiagram.data.commitChange({
+          edit: {
+            relations: [{
+              id: edge.data('relation').id,
+              customTaxi: newCustomTaxi
+            }]
+          }
+        });
+      } else {
+        var oldCustomTaxi = edge.data('customTaxi');
+        edge.data('customTaxi', newCustomTaxi);
+        if (!oldCustomTaxi) this.diagram.eventBus.emit({
+          name: 'graph.spreadTaxiEdges'
+        });
+      }
     }
   }]);
 
   return GraphEdgePoints;
 }(external_commonjs_vue_commonjs2_vue_root_Vue_default.a);
+
+__decorate([Inject()], GraphEdgePointsvue_type_script_lang_ts_GraphEdgePoints.prototype, "diagram", void 0);
 
 __decorate([Inject()], GraphEdgePointsvue_type_script_lang_ts_GraphEdgePoints.prototype, "graphVm", void 0);
 
@@ -106143,8 +111636,8 @@ var GraphEdgePointsvue_type_style_index_0_lang_scss_ = __webpack_require__("5f8c
 
 var GraphEdgePoints_component = normalizeComponent(
   components_GraphEdgePointsvue_type_script_lang_ts_,
-  GraphEdgePointsvue_type_template_id_6d804a39_render,
-  GraphEdgePointsvue_type_template_id_6d804a39_staticRenderFns,
+  GraphEdgePointsvue_type_template_id_2bbd555d_render,
+  GraphEdgePointsvue_type_template_id_2bbd555d_staticRenderFns,
   false,
   null,
   null,
@@ -106153,20 +111646,20 @@ var GraphEdgePoints_component = normalizeComponent(
 )
 
 /* harmony default export */ var components_GraphEdgePoints = (GraphEdgePoints_component.exports);
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"00b53798-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/GraphContextMenu.vue?vue&type=template&id=64822112&
-var GraphContextMenuvue_type_template_id_64822112_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"lassox-diagram__GraphContextMenu"},[_c('div',{ref:"positionEl",staticClass:"lassox-diagram__GraphContextMenu-position",style:({
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"08613af9-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/GraphContextMenu.vue?vue&type=template&id=6daf68e2&
+var GraphContextMenuvue_type_template_id_6daf68e2_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"lassox-diagram__GraphContextMenu"},[_c('div',{ref:"positionEl",staticClass:"lassox-diagram__GraphContextMenu-position",style:({
       top: ((_vm.position.y) + "px"),
       left: ((_vm.position.x) + "px"),
     })}),(_vm.show)?_c('ContextMenu',{attrs:{"position":_vm.position,"actions":_vm.actions,"close":function () {
       _vm.show = false
       _vm.$parent.$el.focus()
     }}}):_vm._e()],1)}
-var GraphContextMenuvue_type_template_id_64822112_staticRenderFns = []
+var GraphContextMenuvue_type_template_id_6daf68e2_staticRenderFns = []
 
 
-// CONCATENATED MODULE: ./src/components/GraphContextMenu.vue?vue&type=template&id=64822112&
+// CONCATENATED MODULE: ./src/components/GraphContextMenu.vue?vue&type=template&id=6daf68e2&
 
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"00b53798-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/ContextMenu.vue?vue&type=template&id=164b3cd3&
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"08613af9-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/ContextMenu.vue?vue&type=template&id=164b3cd3&
 var ContextMenuvue_type_template_id_164b3cd3_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"lassox-diagram__ContextMenu"},[_c('div',{ref:"positionEl",staticClass:"lassox-diagram__GraphContextMenu-position",style:({
       top: ((_vm.position.y) + "px"),
       left: ((_vm.position.x) + "px"),
@@ -106408,21 +111901,21 @@ var ContextMenu_component = normalizeComponent(
 )
 
 /* harmony default export */ var components_ContextMenu = (ContextMenu_component.exports);
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"00b53798-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/AddRelationDropdownMenu.vue?vue&type=template&id=6bf9218d&
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"08613af9-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/AddRelationDropdownMenu.vue?vue&type=template&id=6bf9218d&
 var AddRelationDropdownMenuvue_type_template_id_6bf9218d_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('DropdownMenu',_vm._g(_vm._b({},'DropdownMenu',_vm.$attrs,false),_vm.$listeners),[_vm._l((_vm.actions),function(items,groupI){return [(groupI)?_c('DropdownMenuDivider',{key:("group-" + groupI + "-divider")}):_vm._e(),_vm._l((items),function(item,itemI){return _c('DropdownMenuItem',{key:("group-" + groupI + "-item-" + itemI),attrs:{"label":item.label},on:{"click":item.onClick}})})]})],2)}
 var AddRelationDropdownMenuvue_type_template_id_6bf9218d_staticRenderFns = []
 
 
 // CONCATENATED MODULE: ./src/components/AddRelationDropdownMenu.vue?vue&type=template&id=6bf9218d&
 
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"00b53798-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/AddRelationDialog.vue?vue&type=template&id=244a2d6c&
-var AddRelationDialogvue_type_template_id_244a2d6c_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('Dialog',{staticClass:"lassox-diagram__AddRelationDialog",attrs:{"dismissable":true,"title":("Tilføj " + (_vm.relationTypeLabel.toLowerCase())),"size":"2x","onClose":_vm.dismiss},scopedSlots:_vm._u([{key:"content",fn:function(){return [_c('DataCreator',{ref:"relationDataCreator",attrs:{"type":_vm.relationType},model:{value:(_vm.relationData),callback:function ($$v) {_vm.relationData=$$v},expression:"relationData"}}),_c('DropdownMenuDivider',{staticStyle:{"margin":"24px 0"}}),_c('EntitySelector',{ref:"entitySelector",attrs:{"entityTypes":_vm.supportedEntityTypes},on:{"change":function (model) { return _vm.entitySelectorModel = model; }}})]},proxy:true},{key:"actions",fn:function(){return [_c('ButtonGroup',{attrs:{"align":"right"}},[_c('Button',{attrs:{"label":"Fortryd"},on:{"click":_vm.dismiss}}),_c('Button',{attrs:{"label":"Tilføj","type":"primary","disabled":!_vm.canConfirm},on:{"click":_vm.confirm}})],1)]},proxy:true}])})}
-var AddRelationDialogvue_type_template_id_244a2d6c_staticRenderFns = []
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"08613af9-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/AddRelationDialog.vue?vue&type=template&id=3162c91c&
+var AddRelationDialogvue_type_template_id_3162c91c_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('Dialog',{staticClass:"lassox-diagram__AddRelationDialog",attrs:{"dismissable":true,"title":("Tilføj " + (_vm.relationTypeLabel.toLowerCase())),"size":"2x","onClose":_vm.dismiss},scopedSlots:_vm._u([{key:"content",fn:function(){return [_c('DataCreator',{ref:"relationDataCreator",attrs:{"type":_vm.relationType},model:{value:(_vm.relationData),callback:function ($$v) {_vm.relationData=$$v},expression:"relationData"}}),_c('DropdownMenuDivider',{staticStyle:{"margin":"24px 0"}}),_c('EntitySelector',{ref:"entitySelector",attrs:{"entityTypes":_vm.supportedEntityTypes},on:{"change":function (model) { return _vm.entitySelectorModel = model; }}})]},proxy:true},{key:"actions",fn:function(){return [_c('ButtonGroup',{attrs:{"align":"right"}},[_c('Button',{attrs:{"label":"Fortryd"},on:{"click":_vm.dismiss}}),_c('Button',{attrs:{"label":"Tilføj","type":"primary","disabled":!_vm.canConfirm},on:{"click":_vm.confirm}})],1)]},proxy:true}])})}
+var AddRelationDialogvue_type_template_id_3162c91c_staticRenderFns = []
 
 
-// CONCATENATED MODULE: ./src/components/AddRelationDialog.vue?vue&type=template&id=244a2d6c&
+// CONCATENATED MODULE: ./src/components/AddRelationDialog.vue?vue&type=template&id=3162c91c&
 
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"00b53798-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/EditorFieldGroups.vue?vue&type=template&id=545a4e7c&
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"08613af9-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/EditorFieldGroups.vue?vue&type=template&id=545a4e7c&
 var EditorFieldGroupsvue_type_template_id_545a4e7c_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"lassox-diagram__EditorFieldGroups"},[_vm._t("default")],2)}
 var EditorFieldGroupsvue_type_template_id_545a4e7c_staticRenderFns = []
 
@@ -106478,7 +111971,7 @@ var EditorFieldGroups_component = normalizeComponent(
 )
 
 /* harmony default export */ var components_EditorFieldGroups = (EditorFieldGroups_component.exports);
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"00b53798-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/EditorFieldGroup.vue?vue&type=template&id=3a3b3e51&
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"08613af9-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/EditorFieldGroup.vue?vue&type=template&id=3a3b3e51&
 var EditorFieldGroupvue_type_template_id_3a3b3e51_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"lassox-diagram__EditorFieldGroup"},[(_vm.title)?_c('div',{staticClass:"lassox-diagram__EditorFieldGroup-title"},[_vm._v(_vm._s(_vm.title))]):_vm._e(),_c('EditorFields',[_vm._t("default")],2)],1)}
 var EditorFieldGroupvue_type_template_id_3a3b3e51_staticRenderFns = []
 
@@ -106820,44 +112313,43 @@ var AddRelationDialogvue_type_script_lang_ts_AddRelationDialog = /*#__PURE__*/fu
 
                 toEntityContext.connectedRelations.push(relationContext);
                 toEntityContext.incomingRelations.push(relationContext);
-                console.log('AddRelationDialog - relation context:', relationContext);
 
                 if (this.relationDataCreator) {
-                  _context.next = 44;
+                  _context.next = 43;
                   break;
                 }
 
                 throw Error('this.relationDataCreator not found');
 
-              case 44:
+              case 43:
                 relationValid = this.relationDataCreator.validate(relationContext);
                 entityValid = true;
 
                 if (!newEntity) {
-                  _context.next = 50;
+                  _context.next = 49;
                   break;
                 }
 
                 if (this.entitySelector) {
-                  _context.next = 49;
+                  _context.next = 48;
                   break;
                 }
 
                 throw Error('this.entitySelector not found');
 
-              case 49:
+              case 48:
                 entityValid = this.entitySelector.validate(entity2Context);
 
-              case 50:
+              case 49:
                 if (!(!relationValid || !entityValid)) {
-                  _context.next = 53;
+                  _context.next = 52;
                   break;
                 }
 
                 this.isConfirming = false;
                 return _context.abrupt("return");
 
-              case 53:
+              case 52:
                 this.diagram.activeDiagram.data.add({
                   entities: newEntity ? [newEntity] : undefined,
                   relations: [newRelation]
@@ -106865,7 +112357,7 @@ var AddRelationDialogvue_type_script_lang_ts_AddRelationDialog = /*#__PURE__*/fu
                 this.close();
                 (_this$onConfirm = this.onConfirm) === null || _this$onConfirm === void 0 ? void 0 : _this$onConfirm.call(this);
 
-              case 56:
+              case 55:
               case "end":
                 return _context.stop();
             }
@@ -106948,8 +112440,8 @@ AddRelationDialogvue_type_script_lang_ts_AddRelationDialog = __decorate([vue_cla
 
 var AddRelationDialog_component = normalizeComponent(
   components_AddRelationDialogvue_type_script_lang_ts_,
-  AddRelationDialogvue_type_template_id_244a2d6c_render,
-  AddRelationDialogvue_type_template_id_244a2d6c_staticRenderFns,
+  AddRelationDialogvue_type_template_id_3162c91c_render,
+  AddRelationDialogvue_type_template_id_3162c91c_staticRenderFns,
   false,
   null,
   null,
@@ -107236,6 +112728,8 @@ var AddRelationDropdownMenu_component = normalizeComponent(
 
 
 
+
+
 var GraphContextMenuvue_type_script_lang_ts_GraphContextMenu = /*#__PURE__*/function (_Vue) {
   _inherits(GraphContextMenu, _Vue);
 
@@ -107327,7 +112821,9 @@ var GraphContextMenuvue_type_script_lang_ts_GraphContextMenu = /*#__PURE__*/func
   }, {
     key: "actions",
     get: function get() {
-      var _this$diagram$methods, _this$diagram$methods2;
+      var _this3 = this,
+          _this$diagram$methods,
+          _this$diagram$methods2;
 
       var actions = [];
 
@@ -107357,6 +112853,33 @@ var GraphContextMenuvue_type_script_lang_ts_GraphContextMenu = /*#__PURE__*/func
             disabled: !!((_this$onlySelectedIte2 = this.onlySelectedItem) !== null && _this$onlySelectedIte2 !== void 0 && _this$onlySelectedIte2.isEntity) && this.onlySelectedItem.isMainEntity,
             onClick: this.removeSelectedItems
           });
+
+          if (this.diagram.enableTaxiEditing) {
+            var relations = this.selectedItems.filter(function (item) {
+              return item.isRelation;
+            });
+            var customTaxiRelations = relations.filter(function (item) {
+              return item.isRelation && item.customTaxi;
+            });
+
+            if (relations.length) {
+              actions.push({
+                icon: 'replay',
+                label: customTaxiRelations.length === 1 ? 'Nulstil knækpil' : 'Nulstil knækpile',
+                disabled: !customTaxiRelations.length,
+                onClick: function onClick() {
+                  _this3.diagram.activeDiagram.data.edit({
+                    relations: customTaxiRelations.map(function (relation) {
+                      return {
+                        id: relation.id,
+                        customTaxi: null
+                      };
+                    })
+                  });
+                }
+              });
+            }
+          }
         }
       }
 
@@ -107437,8 +112960,8 @@ var GraphContextMenuvue_type_style_index_0_lang_scss_ = __webpack_require__("66e
 
 var GraphContextMenu_component = normalizeComponent(
   components_GraphContextMenuvue_type_script_lang_ts_,
-  GraphContextMenuvue_type_template_id_64822112_render,
-  GraphContextMenuvue_type_template_id_64822112_staticRenderFns,
+  GraphContextMenuvue_type_template_id_6daf68e2_render,
+  GraphContextMenuvue_type_template_id_6daf68e2_staticRenderFns,
   false,
   null,
   null,
@@ -107448,6 +112971,7 @@ var GraphContextMenu_component = normalizeComponent(
 
 /* harmony default export */ var components_GraphContextMenu = (GraphContextMenu_component.exports);
 // CONCATENATED MODULE: ./node_modules/babel-loader/lib!./node_modules/ts-loader??ref--14-1!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/Graph.vue?vue&type=script&lang=ts&
+
 
 
 
@@ -107513,7 +113037,7 @@ var Graphvue_type_script_lang_ts_generateStyle = function generateStyle(vm) {
     }
   }, {
     selector: 'edge',
-    style: _objectSpread2({
+    style: objectSpread2_objectSpread2({
       'z-index': function zIndex(edge) {
         return !vm.printMode && edge.selected() ? 1 : 0;
       },
@@ -107572,6 +113096,24 @@ var Graphvue_type_script_lang_ts_generateStyle = function generateStyle(vm) {
       }
     }
   }, {
+    selector: 'edge[?builtCustomTaxi]',
+    style: {
+      'curve-style': 'segments',
+      'source-endpoint': function sourceEndpoint(edge) {
+        return edge.data('builtCustomTaxi').sourceEndpoint;
+      },
+      'target-endpoint': function targetEndpoint(edge) {
+        return edge.data('builtCustomTaxi').targetEndpoint;
+      },
+      'edge-distances': 'node-position',
+      'segment-distances': function segmentDistances(edge) {
+        return edge.data('builtCustomTaxi').segmentDistances;
+      },
+      'segment-weights': function segmentWeights(edge) {
+        return edge.data('builtCustomTaxi').segmentWeights;
+      }
+    }
+  }, {
     selector: '[?hidden], [?hiddenByFilter]',
     style: {
       'visibility': 'hidden'
@@ -107579,7 +113121,7 @@ var Graphvue_type_script_lang_ts_generateStyle = function generateStyle(vm) {
   }];
 };
 
-function getDistWeight(source, target, point) {
+function Graphvue_type_script_lang_ts_getDistWeight(source, target, point) {
   var getDistance = function getDistance(a, b) {
     var x = b.x - a.x;
     var y = b.y - a.y;
@@ -107666,6 +113208,14 @@ function spreadTaxiEdges(graph) {
         edge: edge,
         newSourceEndpoint: sourceEndpoint,
         newTargetEndpoint: targetEndpoint,
+        newSourceEndpointOffset: {
+          x: 0,
+          y: 0
+        },
+        newTargetEndpointOffset: {
+          x: 0,
+          y: 0
+        },
         newSegmentPoints: sanitizePositions(edge.segmentPoints())
       };
       edgeMap.set(edge, mapEdge);
@@ -107683,7 +113233,7 @@ function spreadTaxiEdges(graph) {
     try {
       var _loop = function _loop() {
         var node = _step.value;
-        var edges = node.connectedEdges(':simple[!hiddenByFilter]').toArray().filter(function (edge) {
+        var edges = node.connectedEdges(':simple[!hiddenByFilter][!builtCustomTaxi]').toArray().filter(function (edge) {
           return edge.style('curve-style') === 'taxi';
         });
         if (!edges.length) return "continue";
@@ -107806,6 +113356,8 @@ function spreadTaxiEdges(graph) {
         for (var _i4 = 0, _arr4 = ['top', 'left', 'right', 'bottom']; _i4 < _arr4.length; _i4++) {
           var sideName = _arr4[_i4];
           var side = sides[sideName];
+          var axis = sideName === 'left' || sideName === 'right' ? 'x' : 'y';
+          var crossAxis = axis === 'x' ? 'y' : 'x';
           var isVertical = sideName === 'top' || sideName === 'bottom';
           var range = 100;
           var interval = range / (side.edges.length + 1);
@@ -107824,8 +113376,11 @@ function spreadTaxiEdges(graph) {
               if (!mapEdge) continue;
               var isSource = edge.source() === node;
               var mapEdgeEndpoint = mapEdge[isSource ? 'newSourceEndpoint' : 'newTargetEndpoint'];
+              var mapEdgeEndpointOffset = mapEdge[isSource ? 'newSourceEndpointOffset' : 'newTargetEndpointOffset'];
               var value = min + interval * (index + 1);
               var delta = (isVertical ? node.width() : node.height()) * (value / 100);
+              mapEdgeEndpointOffset[axis] = sideName === 'top' || sideName === 'left' ? -0.5 : 0.5;
+              mapEdgeEndpointOffset[crossAxis] = value / 100;
               var midpoint = {
                 x: (mapEdge.newSourceEndpoint.x + mapEdge.newTargetEndpoint.x) / 2,
                 y: (mapEdge.newSourceEndpoint.y + mapEdge.newTargetEndpoint.y) / 2
@@ -107878,8 +113433,8 @@ function spreadTaxiEdges(graph) {
       for (_iterator2.s(); !(_step2 = _iterator2.n()).done;) {
         var _step2$value = _step2.value,
             edge = _step2$value.edge,
-            newSourceEndpoint = _step2$value.newSourceEndpoint,
-            newTargetEndpoint = _step2$value.newTargetEndpoint,
+            newSourceEndpointOffset = _step2$value.newSourceEndpointOffset,
+            newTargetEndpointOffset = _step2$value.newTargetEndpointOffset,
             newSegmentPoints = _step2$value.newSegmentPoints;
         var source = edge.source().position();
         var target = edge.target().position();
@@ -107893,7 +113448,7 @@ function spreadTaxiEdges(graph) {
           for (_iterator5.s(); !(_step5 = _iterator5.n()).done;) {
             var point = _step5.value;
 
-            var _getDistWeight = getDistWeight(source, target, point),
+            var _getDistWeight = Graphvue_type_script_lang_ts_getDistWeight(source, target, point),
                 distance = _getDistWeight.distance,
                 weight = _getDistWeight.weight;
 
@@ -107907,8 +113462,8 @@ function spreadTaxiEdges(graph) {
         }
 
         edge.data('customPath', {
-          sourceEndpoint: "".concat(newSourceEndpoint.x - source.x, " ").concat(newSourceEndpoint.y - source.y),
-          targetEndpoint: "".concat(newTargetEndpoint.x - target.x, " ").concat(newTargetEndpoint.y - target.y),
+          sourceEndpoint: "".concat(newSourceEndpointOffset.x * 100, "% ").concat(newSourceEndpointOffset.y * 100, "%"),
+          targetEndpoint: "".concat(newTargetEndpointOffset.x * 100, "% ").concat(newTargetEndpointOffset.y * 100, "%"),
           segmentDistances: segmentDistances,
           segmentWeights: segmentWeights
         });
@@ -108198,81 +113753,190 @@ var Graphvue_type_script_lang_ts_Graph = /*#__PURE__*/function (_Vue) {
         }); // Track node position changes
 
         if (this.diagram.enableDragAndDrop) {
-          if (this.diagram.dragAndDropGridSize > 0) {
-            var grabbing = false;
-            var startPos = {
-              x: 0,
-              y: 0
-            };
-            var delta = {
-              x: 0,
-              y: 0
-            };
-            var dragNodes = new Map();
-            graph.on('grab', 'node', function (event) {
-              if (!grabbing) {
-                grabbing = true;
-                startPos = event.position;
-                delta = {
-                  x: 0,
-                  y: 0
-                };
+          var grabbing = false;
+          var startPos = {
+            x: 0,
+            y: 0
+          };
+          var lastPos = {
+            x: 0,
+            y: 0
+          };
+          var delta = {
+            x: 0,
+            y: 0
+          };
+          var dragged = false;
+          var selected = graph.collection();
+          var dragNodes = new Map();
+          var affectedTaxiEdges = new Set();
+          graph.on('grab', 'node', function (event) {
+            if (!grabbing) {
+              grabbing = true;
+              startPos = event.position;
+              delta = {
+                x: 0,
+                y: 0
+              };
+              lastPos = objectSpread2_objectSpread2({}, startPos);
+              dragged = false;
+            }
+
+            var node = event.target;
+            if (node.locked()) return;
+            node.lock();
+            dragNodes.set(node, {
+              startPos: _this4.snapPos(node.position())
+            });
+          });
+          graph.on('tapdrag', function (event) {
+            if (!grabbing) return;
+            var pos = event.position;
+            delta.x += pos.x - lastPos.x;
+            delta.y += pos.y - lastPos.y;
+            if (!delta.x && !delta.y) return;
+
+            if (!dragged) {
+              dragged = true;
+              selected = graph.elements(':selected');
+              graph.batch(function () {
+                var _iterator7 = _createForOfIteratorHelper(dragNodes.keys()),
+                    _step7;
+
+                try {
+                  for (_iterator7.s(); !(_step7 = _iterator7.n()).done;) {
+                    var node = _step7.value;
+
+                    var _pos = _this4.snapPos(node.position());
+
+                    node.unlock();
+                    node.position(_pos);
+                    node.lock();
+                  }
+                } catch (err) {
+                  _iterator7.e(err);
+                } finally {
+                  _iterator7.f();
+                }
+              });
+            }
+
+            var deltaSnapped = _this4.snapPos(delta);
+
+            delta.x -= deltaSnapped.x;
+            delta.y -= deltaSnapped.y;
+            graph.batch(function () {
+              var movedNodes = graph.collection();
+
+              var _iterator8 = _createForOfIteratorHelper(dragNodes.keys()),
+                  _step8;
+
+              try {
+                for (_iterator8.s(); !(_step8 = _iterator8.n()).done;) {
+                  var node = _step8.value;
+
+                  var _pos2 = node.position();
+
+                  var newPos = {
+                    x: _pos2.x + deltaSnapped.x,
+                    y: _pos2.y + deltaSnapped.y
+                  };
+                  movedNodes = movedNodes.union(node);
+                  node.unlock();
+                  node.position(newPos);
+                  node.lock();
+                }
+              } catch (err) {
+                _iterator8.e(err);
+              } finally {
+                _iterator8.f();
               }
 
-              var node = event.target;
-              if (node.locked()) return;
-              dragNodes.set(node, {
-                startPos: _this4.snapPos(node.position())
-              });
-            });
-            graph.on('tapdrag', function (event) {
-              if (!grabbing) return;
-              var pos = event.position;
-              delta = _this4.snapPos({
-                x: pos.x - startPos.x,
-                y: pos.y - startPos.y
-              });
-            });
-            graph.on('drag', 'node', function (event) {
-              var _dragNodes$get;
+              var affectedEdges = movedNodes.edgesWith(movedNodes);
+              affectedEdges.forEach(function (edge) {
+                var customTaxi = edge.data('customTaxi');
+                if (!customTaxi || customTaxi.segmentPoints.length < 2) return;
+                affectedTaxiEdges.add(edge);
+                var newCustomTaxi = lodash_clonedeep_default()(customTaxi);
 
-              if (!grabbing) return;
-              var node = event.target;
-              var nodeStartPos = (_dragNodes$get = dragNodes.get(node)) === null || _dragNodes$get === void 0 ? void 0 : _dragNodes$get.startPos;
-              if (!nodeStartPos) return;
-              node.position({
-                x: nodeStartPos.x + delta.x,
-                y: nodeStartPos.y + delta.y
+                for (var _i5 = 0, _arr5 = [[newCustomTaxi.segmentPoints[0], newCustomTaxi.from.side], [newCustomTaxi.segmentPoints[newCustomTaxi.segmentPoints.length - 1], newCustomTaxi.to.side]]; _i5 < _arr5.length; _i5++) {
+                  var _arr5$_i = _slicedToArray(_arr5[_i5], 2),
+                      point = _arr5$_i[0],
+                      side = _arr5$_i[1];
+
+                  var axis = side === 'left' || side === 'right' ? 'x' : 'y';
+                  point[axis] += deltaSnapped[axis];
+                }
+
+                var _iterator9 = _createForOfIteratorHelper(newCustomTaxi.segmentPoints.slice(1, -1)),
+                    _step9;
+
+                try {
+                  for (_iterator9.s(); !(_step9 = _iterator9.n()).done;) {
+                    var _point = _step9.value;
+                    _point.x += deltaSnapped.x;
+                    _point.y += deltaSnapped.y;
+                  }
+                } catch (err) {
+                  _iterator9.e(err);
+                } finally {
+                  _iterator9.f();
+                }
+
+                edge.data('customTaxi', newCustomTaxi);
               });
             });
-            graph.on('tapend', function () {
-              if (!grabbing) return;
-              grabbing = false;
-              dragNodes.clear();
-            });
-          }
+            lastPos = pos;
+          });
+          graph.on('tapend', function (e) {
+            if (!grabbing) return;
+            grabbing = false;
 
-          var movedNodes = new Set();
-          graph.on('dragfree', 'node', function (event) {
-            var node = event.target;
-            var pos = node.position();
-            var oldPos = node.data('entity').position;
-            if (oldPos && pos.x === oldPos.x && pos.y === oldPos.y) return;
-            movedNodes.add(node);
-            if (movedNodes.size == 1) requestAnimationFrame(function () {
+            var _iterator10 = _createForOfIteratorHelper(dragNodes.keys()),
+                _step10;
+
+            try {
+              for (_iterator10.s(); !(_step10 = _iterator10.n()).done;) {
+                var node = _step10.value;
+                node.unlock();
+              }
+            } catch (err) {
+              _iterator10.e(err);
+            } finally {
+              _iterator10.f();
+            }
+
+            if (dragged) {
+              var _affectedTaxiEdges = graph.collection(toConsumableArray_toConsumableArray(dragNodes.keys())).connectedEdges(':simple[?customTaxi]');
+
               _this4.diagram.activeDiagram.data.commitChange({
-                moveEntities: toConsumableArray_toConsumableArray(movedNodes).map(function (node) {
+                moveEntities: toConsumableArray_toConsumableArray(dragNodes.keys()).map(function (node) {
                   var position = node.position();
                   return {
                     id: node.id(),
                     x: position.x,
                     y: position.y
                   };
-                })
+                }),
+                edit: _affectedTaxiEdges.length ? {
+                  relations: _affectedTaxiEdges.map(function (edge) {
+                    return {
+                      id: edge.id(),
+                      customTaxi: lodash_clonedeep_default()(edge.data('customTaxi'))
+                    };
+                  })
+                } : undefined
               });
 
-              movedNodes.clear();
-            });
+              var toSelect = selected;
+              toSelect.select();
+              requestAnimationFrame(function () {
+                return toSelect.select();
+              });
+            }
+
+            dragNodes.clear();
+            affectedTaxiEdges.clear();
           });
         }
       } // Fit on resize
@@ -108374,22 +114038,25 @@ var Graphvue_type_script_lang_ts_Graph = /*#__PURE__*/function (_Vue) {
           };
         }();
 
+        this.diagram.eventBus.on('graph.spreadTaxiEdges', function () {
+          start();
+        });
         graph.on('add remove', 'node', function (e) {
           start();
         });
-        graph.on('bounds', 'node', function (e) {
+        graph.on('position bounds', 'node', function (e) {
           var node = e.target;
           var data = node.data();
           var entity = data.entity;
 
-          var pos = _objectSpread2({}, node.position());
+          var pos = objectSpread2_objectSpread2({}, node.position());
 
           pos.x = safePrecision(pos.x);
           pos.y = safePrecision(pos.y);
           var width = safePrecision(node.width());
           var height = safePrecision(node.height());
 
-          var oldPos = entity.position && _objectSpread2({}, entity.position);
+          var oldPos = entity.position && objectSpread2_objectSpread2({}, entity.position);
 
           if (oldPos) {
             oldPos.x = safePrecision(oldPos.x);
@@ -108405,6 +114072,9 @@ var Graphvue_type_script_lang_ts_Graph = /*#__PURE__*/function (_Vue) {
           start();
         });
         graph.on('layoutstop', function (e) {
+          start();
+        });
+        requestAnimationFrame(function () {
           start();
         });
       }
@@ -108438,38 +114108,38 @@ var Graphvue_type_script_lang_ts_Graph = /*#__PURE__*/function (_Vue) {
           var toUpdate = [];
           var toRemove = [];
 
-          var _iterator7 = _createForOfIteratorHelper(items),
-              _step7;
+          var _iterator11 = _createForOfIteratorHelper(items),
+              _step11;
 
           try {
-            for (_iterator7.s(); !(_step7 = _iterator7.n()).done;) {
-              var _step7$value = _slicedToArray(_step7.value, 2),
-                  id = _step7$value[0],
-                  _item4 = _step7$value[1];
+            for (_iterator11.s(); !(_step11 = _iterator11.n()).done;) {
+              var _step11$value = _slicedToArray(_step11.value, 2),
+                  id = _step11$value[0],
+                  _item4 = _step11$value[1];
 
               if (!_this5.addedItems.has(id)) toAdd.push(_item4);else toUpdate.push(_item4);
             }
           } catch (err) {
-            _iterator7.e(err);
+            _iterator11.e(err);
           } finally {
-            _iterator7.f();
+            _iterator11.f();
           }
 
-          var _iterator8 = _createForOfIteratorHelper(_this5.addedItems),
-              _step8;
+          var _iterator12 = _createForOfIteratorHelper(_this5.addedItems),
+              _step12;
 
           try {
-            for (_iterator8.s(); !(_step8 = _iterator8.n()).done;) {
-              var _step8$value = _slicedToArray(_step8.value, 2),
-                  _id = _step8$value[0],
-                  _item5 = _step8$value[1];
+            for (_iterator12.s(); !(_step12 = _iterator12.n()).done;) {
+              var _step12$value = _slicedToArray(_step12.value, 2),
+                  _id = _step12$value[0],
+                  _item5 = _step12$value[1];
 
               if (!items.has(_id)) toRemove.push(_item5);
             }
           } catch (err) {
-            _iterator8.e(err);
+            _iterator12.e(err);
           } finally {
-            _iterator8.f();
+            _iterator12.f();
           }
 
           var selectAddedElements = !!(!_this5.printMode && graph.elements().length && toAdd.length);
@@ -108496,7 +114166,7 @@ var Graphvue_type_script_lang_ts_Graph = /*#__PURE__*/function (_Vue) {
               group: 'nodes',
               classes: 'entity' + (item.position ? '' : ' needs-position'),
               grabbable: !_this5.printMode && _this5.diagram.enableDragAndDrop,
-              position: _objectSpread2({}, (_ref5 = (_item$position = item.position) !== null && _item$position !== void 0 ? _item$position : toAddPos) !== null && _ref5 !== void 0 ? _ref5 : {
+              position: objectSpread2_objectSpread2({}, (_ref5 = (_item$position = item.position) !== null && _item$position !== void 0 ? _item$position : toAddPos) !== null && _ref5 !== void 0 ? _ref5 : {
                 x: 0,
                 y: 0
               }),
@@ -108513,7 +114183,8 @@ var Graphvue_type_script_lang_ts_Graph = /*#__PURE__*/function (_Vue) {
                 id: item.id,
                 relation: item,
                 source: item.from,
-                target: item.to
+                target: item.to,
+                customTaxi: item.customTaxi
               }
             };
           }));
@@ -108523,8 +114194,10 @@ var Graphvue_type_script_lang_ts_Graph = /*#__PURE__*/function (_Vue) {
             addedElements.select();
           }
 
-          for (var _i5 = 0, _toUpdate = toUpdate; _i5 < _toUpdate.length; _i5++) {
-            var item = _toUpdate[_i5];
+          var shouldSpreadTaxiEdges = false;
+
+          for (var _i6 = 0, _toUpdate = toUpdate; _i6 < _toUpdate.length; _i6++) {
+            var item = _toUpdate[_i6];
             var element = graph.$id(item.id);
             var itemKey = item.isEntity ? 'entity' : 'relation';
             if (element.data(itemKey) !== item) element.data(itemKey, item);
@@ -108545,14 +114218,25 @@ var Graphvue_type_script_lang_ts_Graph = /*#__PURE__*/function (_Vue) {
                   y: y
                 });
               }
+            } else {
+              var oldCustomTaxi = element.data('customTaxi');
+              var newCustomTaxi = item.customTaxi;
+
+              if (newCustomTaxi !== oldCustomTaxi) {
+                element.data('customTaxi', item.customTaxi);
+                if (!oldCustomTaxi !== !newCustomTaxi) shouldSpreadTaxiEdges = true;
+              }
             }
           }
 
-          for (var _i6 = 0, _toRemove = toRemove; _i6 < _toRemove.length; _i6++) {
-            var _item = _toRemove[_i6];
+          for (var _i7 = 0, _toRemove = toRemove; _i7 < _toRemove.length; _i7++) {
+            var _item = _toRemove[_i7];
             graph.$id(_item.id).remove();
           }
 
+          if (shouldSpreadTaxiEdges) _this5.diagram.eventBus.emit({
+            name: 'graph.spreadTaxiEdges'
+          });
           var elements = graph.elements();
           var mainEntityNode = elements.$id(_this5.diagram.mainEntityId);
           _this5.addedItems = items; // Calculate hierarchy
@@ -108568,12 +114252,12 @@ var Graphvue_type_script_lang_ts_Graph = /*#__PURE__*/function (_Vue) {
               return item instanceof diagram_Relation ? item : null;
             };
 
-            var _iterator9 = _createForOfIteratorHelper(items.values()),
-                _step9;
+            var _iterator13 = _createForOfIteratorHelper(items.values()),
+                _step13;
 
             try {
-              for (_iterator9.s(); !(_step9 = _iterator9.n()).done;) {
-                var _item2 = _step9.value;
+              for (_iterator13.s(); !(_step13 = _iterator13.n()).done;) {
+                var _item2 = _step13.value;
                 _item2.isParent = false;
                 _item2.isChild = false;
 
@@ -108587,9 +114271,9 @@ var Graphvue_type_script_lang_ts_Graph = /*#__PURE__*/function (_Vue) {
                 }
               }
             } catch (err) {
-              _iterator9.e(err);
+              _iterator13.e(err);
             } finally {
-              _iterator9.f();
+              _iterator13.f();
             }
 
             elements.edges().forEach(function (edge) {
@@ -108621,19 +114305,19 @@ var Graphvue_type_script_lang_ts_Graph = /*#__PURE__*/function (_Vue) {
 
 
           if (!_this5.printMode) {
-            var _iterator10 = _createForOfIteratorHelper(items.values()),
-                _step10;
+            var _iterator14 = _createForOfIteratorHelper(items.values()),
+                _step14;
 
             try {
-              for (_iterator10.s(); !(_step10 = _iterator10.n()).done;) {
-                var _item3 = _step10.value;
+              for (_iterator14.s(); !(_step14 = _iterator14.n()).done;) {
+                var _item3 = _step14.value;
 
                 _item3.buildStyle();
               }
             } catch (err) {
-              _iterator10.e(err);
+              _iterator14.e(err);
             } finally {
-              _iterator10.f();
+              _iterator14.f();
             }
           }
 
@@ -108650,8 +114334,8 @@ var Graphvue_type_script_lang_ts_Graph = /*#__PURE__*/function (_Vue) {
                   var entity = node.data('entity');
 
                   if (!entity.position) {
-                    entity.initialState.position = _objectSpread2({}, node.position());
-                    entity.position = _objectSpread2({}, node.position());
+                    entity.initialState.position = objectSpread2_objectSpread2({}, node.position());
+                    entity.position = objectSpread2_objectSpread2({}, node.position());
                     node.removeClass('needs-position');
                   }
                 });
@@ -108781,7 +114465,7 @@ var Graphvue_type_script_lang_ts_Graph = /*#__PURE__*/function (_Vue) {
         switch (_layout === null || _layout === void 0 ? void 0 : _layout.type) {
           case 'dagre':
             {
-              options = _objectSpread2(_objectSpread2({}, baseOptions), {}, {
+              options = objectSpread2_objectSpread2(objectSpread2_objectSpread2({}, baseOptions), {}, {
                 name: 'dagre',
                 nodeSep: _layout.nodeSep,
                 edgeSep: _layout.edgeSep,
@@ -108797,7 +114481,7 @@ var Graphvue_type_script_lang_ts_Graph = /*#__PURE__*/function (_Vue) {
             {
               var _layout$directed, _layout$grid, _layout$maximal;
 
-              options = _objectSpread2(_objectSpread2({}, baseOptions), {}, {
+              options = objectSpread2_objectSpread2(objectSpread2_objectSpread2({}, baseOptions), {}, {
                 name: 'breadthfirst',
                 directed: (_layout$directed = _layout === null || _layout === void 0 ? void 0 : _layout.directed) !== null && _layout$directed !== void 0 ? _layout$directed : false,
                 grid: (_layout$grid = _layout === null || _layout === void 0 ? void 0 : _layout.grid) !== null && _layout$grid !== void 0 ? _layout$grid : false,
@@ -108861,8 +114545,8 @@ var Graphvue_type_style_index_0_lang_scss_ = __webpack_require__("2a3c");
 
 var Graph_component = normalizeComponent(
   components_Graphvue_type_script_lang_ts_,
-  Graphvue_type_template_id_6456fe9b_render,
-  Graphvue_type_template_id_6456fe9b_staticRenderFns,
+  Graphvue_type_template_id_23f66e9c_render,
+  Graphvue_type_template_id_23f66e9c_staticRenderFns,
   false,
   null,
   null,
@@ -108871,21 +114555,21 @@ var Graph_component = normalizeComponent(
 )
 
 /* harmony default export */ var components_Graph = (Graph_component.exports);
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"00b53798-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/Customizer.vue?vue&type=template&id=14bd9c54&
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"08613af9-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/Customizer.vue?vue&type=template&id=14bd9c54&
 var Customizervue_type_template_id_14bd9c54_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"lassox-diagram__Customizer",attrs:{"tabindex":"-1"},on:{"focusout":_vm.onFocusOut}},[(_vm.diagram.fieldGroups.length)?_c('div',{staticClass:"lassox-diagram__Customizer_fields"},_vm._l((_vm.diagram.fieldGroups),function(fieldGroup){return _c('CustomizerFieldGroup',{key:fieldGroup.id,attrs:{"fieldGroup":fieldGroup}})}),1):_vm._e(),(_vm.diagram.fieldGroups.length && _vm.diagram.filters.length)?_c('div',{staticClass:"lassox-diagram__Customizer_seperator"}):_vm._e(),(_vm.diagram.filters.length)?_c('div',{staticClass:"lassox-diagram__Customizer_filters"},[_c('div',{staticClass:"lassox-diagram__Customizer_filters-headline",domProps:{"textContent":_vm._s('Filtre')}}),_vm._l((_vm.diagram.filters),function(filter){return _c('BaseButton',{key:filter.id,staticClass:"lassox-diagram__Customizer_filter-button",attrs:{"label":filter.title,"icon":filter.active ? 'check_box' : 'check_box_outline_blank'},on:{"click":function () { return filter.active = !filter.active; }}})})],2):_vm._e()])}
 var Customizervue_type_template_id_14bd9c54_staticRenderFns = []
 
 
 // CONCATENATED MODULE: ./src/components/Customizer.vue?vue&type=template&id=14bd9c54&
 
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"00b53798-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/CustomizerFieldGroup.vue?vue&type=template&id=2795d6c6&
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"08613af9-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/CustomizerFieldGroup.vue?vue&type=template&id=2795d6c6&
 var CustomizerFieldGroupvue_type_template_id_2795d6c6_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"lassox-diagram__CustomizerFieldGroup"},[_c('CustomizerFieldGroupDropdownButton',{attrs:{"fieldGroup":_vm.fieldGroup}}),(_vm.activeFields.length)?_c('div',{staticClass:"lassox-diagram__CustomizerFieldGroup_fields"},_vm._l((_vm.activeFields),function(field){return _c('div',{key:field.id,staticClass:"lassox-diagram__CustomizerFieldGroup_field"},[_c('div',{staticClass:"lassox-diagram__CustomizerFieldGroup_field-legend-color",style:({ backgroundColor: field.legendColor })}),_c('div',{staticClass:"lassox-diagram__CustomizerFieldGroup_field-title",domProps:{"textContent":_vm._s(field.title)}})])}),0):_vm._e()],1)}
 var CustomizerFieldGroupvue_type_template_id_2795d6c6_staticRenderFns = []
 
 
 // CONCATENATED MODULE: ./src/components/CustomizerFieldGroup.vue?vue&type=template&id=2795d6c6&
 
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"00b53798-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/CustomizerFieldGroupDropdownButton.vue?vue&type=template&id=0688dc2f&
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"08613af9-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/CustomizerFieldGroupDropdownButton.vue?vue&type=template&id=0688dc2f&
 var CustomizerFieldGroupDropdownButtonvue_type_template_id_0688dc2f_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"lassox-diagram__CustomizerFieldGroupDropdownButton"},[_c('BaseButton',{ref:"button",staticClass:"lassox-diagram__CustomizerFieldGroupDropdownButton_button",attrs:{"label":_vm.fieldGroup.title,"trailingIcon":_vm.showDropdownMenu ? 'expand_less' : 'expand_more'},on:{"click":function () { return _vm.showDropdownMenu = !_vm.showDropdownMenu; },"focusout":_vm.onFocusOut}}),_c('div',{directives:[{name:"show",rawName:"v-show",value:(_vm.showDropdownMenu),expression:"showDropdownMenu"}],ref:"dropdownMenuEl",staticClass:"lassox-diagram__CustomizerFieldGroupDropdownButton_dropdown-menu",style:(_vm.dropdownStyle),attrs:{"tabindex":"-1"},on:{"focusout":_vm.onFocusOut}},_vm._l((_vm.fields),function(field){return _c('BaseButton',{key:field.id,staticClass:"lassox-diagram__CustomizerFieldGroupDropdownButton_dropdown-menu-item",attrs:{"label":field.title,"icon":field.active ? 'check_box' : 'check_box_outline_blank'},on:{"click":function () { return field.active = !field.active; }}})}),1),_c('div',{ref:"boundsEl",staticClass:"lassox-diagram__CustomizerFieldGroupDropdownButton_dropdown-menu-bounds"})],1)}
 var CustomizerFieldGroupDropdownButtonvue_type_template_id_0688dc2f_staticRenderFns = []
 
@@ -109204,7 +114888,7 @@ var Customizer_component = normalizeComponent(
 )
 
 /* harmony default export */ var components_Customizer = (Customizer_component.exports);
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"00b53798-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/Editor.vue?vue&type=template&id=45c10a02&
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"08613af9-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/Editor.vue?vue&type=template&id=45c10a02&
 var Editorvue_type_template_id_45c10a02_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return (_vm.object)?_c('div',{staticClass:"lassox-diagram__Editor"},[_c('header',{staticClass:"lassox-diagram__Editor_header"},[_c('div',{staticClass:"lassox-diagram__Editor_header-title-bar"},[_c('div',{staticClass:"lassox-diagram__Editor_header-title-bar-title",domProps:{"textContent":_vm._s(("Rediger " + _vm.label))}}),_c('IconButton',{attrs:{"icon":"close","size":"normal"},on:{"click":function () { return _vm.object = null; }}})],1),(_vm.description)?_c('div',{staticClass:"lassox-diagram__Editor_header-description",domProps:{"textContent":_vm._s(_vm.description)}}):_vm._e(),_c('div',{staticClass:"lassox-diagram__Editor_header-actions"},[_c('ButtonGroup',[(_vm.object.isEntity)?_c('Button',{ref:"addDropdownButton",attrs:{"label":"Tilføj","trailingIcon":_vm.showAddDropdownMenu ? 'expand_less' : 'expand_more',"disabled":!_vm.object.type.supportedRelations.size},on:{"click":function () { return _vm.showAddDropdownMenu = !_vm.showAddDropdownMenu; }}}):_vm._e(),_c('Button',{attrs:{"label":"Fjern","disabled":_vm.object.isEntity && _vm.object.isMainEntity},on:{"click":_vm.remove}})],1),(_vm.object.isEntity && _vm.object.type.supportedRelations.size)?_c('AddRelationDropdownMenu',{attrs:{"entity":_vm.object,"opener":_vm.showAddDropdownMenu ? _vm.$refs.addDropdownButton.$el : null,"close":function () { return _vm.showAddDropdownMenu = false; }}}):_vm._e()],1)]),_c('div',{staticClass:"lassox-diagram__Editor_body-wrapper"},[_c('div',{staticClass:"lassox-diagram__Editor_body"},[_c('EditorFieldGroups',_vm._l((_vm.visibleFieldGroups),function(fieldGroup){return _c('EditorFieldGroup',{key:fieldGroup.id,attrs:{"title":fieldGroup.title}},_vm._l((fieldGroup.fields),function(field){return _c('EditorField',{key:field.id,attrs:{"id":field.id,"type":field.type,"title":field.title,"editable":field.editable,"formatter":field.formatter,"options":field.options,"initialValue":field.initialValue,"initialValueLabel":field.initialValueLabel,"resetValue":field.resetValue,"errorMessage":field.errorMessage},model:{value:(field.value),callback:function ($$v) {_vm.$set(field, "value", $$v)},expression:"field.value"}})}),1)}),1)],1)]),_c('footer',{staticClass:"lassox-diagram__Editor_footer"},[_c('ButtonGroup',{attrs:{"align":"right"}},[_c('Button',{attrs:{"label":"Luk"},on:{"click":function () { return _vm.object = null; }}}),_c('Button',{attrs:{"type":"primary","label":"Gem ændringer","disabled":!_vm.hasChanges},on:{"click":_vm.saveChanges}})],1)],1)]):_vm._e()}
 var Editorvue_type_template_id_45c10a02_staticRenderFns = []
 
@@ -109288,7 +114972,7 @@ var Editorvue_type_script_lang_ts_Editor = /*#__PURE__*/function (_Vue) {
           var visibleFields = fieldGroup.fields.filter(function (field) {
             return field.show;
           });
-          if (visibleFields.length) visibleFieldGroups.push(_objectSpread2(_objectSpread2({}, fieldGroup), {}, {
+          if (visibleFields.length) visibleFieldGroups.push(objectSpread2_objectSpread2(objectSpread2_objectSpread2({}, fieldGroup), {}, {
             fields: visibleFields
           }));
         }
@@ -109304,7 +114988,7 @@ var Editorvue_type_script_lang_ts_Editor = /*#__PURE__*/function (_Vue) {
     key: "changedFieldGroups",
     get: function get() {
       return this.fieldGroups.map(function (fieldGroup) {
-        return _objectSpread2(_objectSpread2({}, fieldGroup), {}, {
+        return objectSpread2_objectSpread2(objectSpread2_objectSpread2({}, fieldGroup), {}, {
           fields: fieldGroup.fields.filter(function (field) {
             return field.value != field.valueBeforeChanges;
           })
@@ -109477,13 +115161,13 @@ var Editorvue_type_script_lang_ts_Editor = /*#__PURE__*/function (_Vue) {
       };
 
       var createTextField = function createTextField(options) {
-        return _objectSpread2(_objectSpread2({}, createField(options)), {}, {
+        return objectSpread2_objectSpread2(objectSpread2_objectSpread2({}, createField(options)), {}, {
           type: 'text'
         });
       };
 
       var createNumberField = function createNumberField(options) {
-        return _objectSpread2(_objectSpread2({}, createField(options)), {}, {
+        return objectSpread2_objectSpread2(objectSpread2_objectSpread2({}, createField(options)), {}, {
           type: 'number'
         });
       };
@@ -109491,7 +115175,7 @@ var Editorvue_type_script_lang_ts_Editor = /*#__PURE__*/function (_Vue) {
       var createRadioField = function createRadioField(options) {
         var _options$initialValue3, _options$options$find;
 
-        return _objectSpread2(_objectSpread2({}, createField(options)), {}, {
+        return objectSpread2_objectSpread2(objectSpread2_objectSpread2({}, createField(options)), {}, {
           type: 'radio-buttons',
           options: options.options,
           initialValueLabel: (_options$initialValue3 = options.initialValueLabel) !== null && _options$initialValue3 !== void 0 ? _options$initialValue3 : (_options$options$find = options.options.find(function (o) {
@@ -109501,7 +115185,7 @@ var Editorvue_type_script_lang_ts_Editor = /*#__PURE__*/function (_Vue) {
       };
 
       var createBooleanField = function createBooleanField(options) {
-        return createRadioField(_objectSpread2(_objectSpread2({}, options), {}, {
+        return createRadioField(objectSpread2_objectSpread2(objectSpread2_objectSpread2({}, options), {}, {
           options: [{
             label: 'Ja',
             value: true
@@ -109513,7 +115197,7 @@ var Editorvue_type_script_lang_ts_Editor = /*#__PURE__*/function (_Vue) {
       };
 
       var createColorField = function createColorField(options) {
-        return _objectSpread2(_objectSpread2({}, createField(options)), {}, {
+        return objectSpread2_objectSpread2(objectSpread2_objectSpread2({}, createField(options)), {}, {
           type: 'color'
         });
       };
@@ -109574,7 +115258,7 @@ var Editorvue_type_script_lang_ts_Editor = /*#__PURE__*/function (_Vue) {
                   }
               }
 
-              newField = _objectSpread2(_objectSpread2({}, newField), {}, {
+              newField = objectSpread2_objectSpread2(objectSpread2_objectSpread2({}, newField), {}, {
                 get show() {
                   return field.active || !!newField.errorMessage || showInactiveEditorFields;
                 }
@@ -109617,19 +115301,19 @@ var Editorvue_type_script_lang_ts_Editor = /*#__PURE__*/function (_Vue) {
         var styleFields = [];
 
         if (object.isEntity) {
-          styleFields.push(createColorField(_objectSpread2({
+          styleFields.push(createColorField(objectSpread2_objectSpread2({
             id: 'labelsBackgroundColor',
             title: 'Top baggrundsfarve',
             styleKey: 'labelsBackgroundColor'
-          }, getStyleValues(object, 'labelsBackgroundColor'))), createColorField(_objectSpread2({
+          }, getStyleValues(object, 'labelsBackgroundColor'))), createColorField(objectSpread2_objectSpread2({
             id: 'backgroundColor',
             title: 'Baggrundsfarve',
             styleKey: 'backgroundColor'
-          }, getStyleValues(object, 'backgroundColor'))), createColorField(_objectSpread2({
+          }, getStyleValues(object, 'backgroundColor'))), createColorField(objectSpread2_objectSpread2({
             id: 'borderColor',
             title: 'Kantfarve',
             styleKey: 'borderColor'
-          }, getStyleValues(object, 'borderColor'))), createRadioField(_objectSpread2({
+          }, getStyleValues(object, 'borderColor'))), createRadioField(objectSpread2_objectSpread2({
             id: 'borderStyle',
             title: 'Kanttype',
             styleKey: 'borderStyle',
@@ -109643,21 +115327,21 @@ var Editorvue_type_script_lang_ts_Editor = /*#__PURE__*/function (_Vue) {
               label: 'Stiplet',
               value: 'dashed'
             }]
-          }, getStyleValues(object, 'borderStyle'))), createNumberField(_objectSpread2({
+          }, getStyleValues(object, 'borderStyle'))), createNumberField(objectSpread2_objectSpread2({
             id: 'borderWidth',
             title: 'Kantbredde',
             styleKey: 'borderWidth'
           }, getStyleValues(object, 'borderWidth'))));
         } else {
-          styleFields.push(createBooleanField(_objectSpread2({
+          styleFields.push(createBooleanField(objectSpread2_objectSpread2({
             id: 'arrowTo',
             title: 'Vis pil til',
             styleKey: 'arrowTo'
-          }, getStyleValues(object, 'arrowTo'))), createBooleanField(_objectSpread2({
+          }, getStyleValues(object, 'arrowTo'))), createBooleanField(objectSpread2_objectSpread2({
             id: 'arrowFrom',
             title: 'Vis pil fra',
             styleKey: 'arrowFrom'
-          }, getStyleValues(object, 'arrowFrom'))), createRadioField(_objectSpread2({
+          }, getStyleValues(object, 'arrowFrom'))), createRadioField(objectSpread2_objectSpread2({
             id: 'lineStyle',
             title: 'Linjetype',
             styleKey: 'lineStyle',
@@ -109671,7 +115355,7 @@ var Editorvue_type_script_lang_ts_Editor = /*#__PURE__*/function (_Vue) {
               label: 'Stiplet',
               value: 'dashed'
             }]
-          }, getStyleValues(object, 'lineStyle'))), createColorField(_objectSpread2({
+          }, getStyleValues(object, 'lineStyle'))), createColorField(objectSpread2_objectSpread2({
             id: 'lineColor',
             title: 'Linjefarve',
             styleKey: 'lineColor'
@@ -109768,12 +115452,12 @@ var Editor_component = normalizeComponent(
 )
 
 /* harmony default export */ var components_Editor = (Editor_component.exports);
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"00b53798-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/GraphLegend.vue?vue&type=template&id=068dac86&
-var GraphLegendvue_type_template_id_068dac86_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"lassox-diagram__GraphLegend"},[_c('img',{staticClass:"lassox-diagram__GraphLegend-logo",attrs:{"src":__webpack_require__("cf05"),"alt":"Lasso X"}}),_c('div',{staticClass:"lassox-diagram__GraphLegend-fields"},_vm._l((_vm.fields),function(field){return _c('div',{key:field.fullId,staticClass:"lassox-diagram__GraphLegend-field"},[_c('div',{staticClass:"lassox-diagram__GraphLegend-field-legend-color",style:({ backgroundColor: field.legendColor })}),_c('div',{staticClass:"lassox-diagram__GraphLegend-field-title",domProps:{"textContent":_vm._s(field.title)}})])}),0)])}
-var GraphLegendvue_type_template_id_068dac86_staticRenderFns = []
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"08613af9-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/GraphLegend.vue?vue&type=template&id=05d78b92&
+var GraphLegendvue_type_template_id_05d78b92_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"lassox-diagram__GraphLegend"},[(!_vm.hideLogo)?_c('img',{staticClass:"lassox-diagram__GraphLegend-logo",attrs:{"src":__webpack_require__("cf05"),"alt":"Lasso X"}}):_vm._e(),_c('div',{staticClass:"lassox-diagram__GraphLegend-fields"},_vm._l((_vm.fields),function(field){return _c('div',{key:field.fullId,staticClass:"lassox-diagram__GraphLegend-field"},[_c('div',{staticClass:"lassox-diagram__GraphLegend-field-legend-color",style:({ backgroundColor: field.legendColor })}),_c('div',{staticClass:"lassox-diagram__GraphLegend-field-title",domProps:{"textContent":_vm._s(field.title)}})])}),0)])}
+var GraphLegendvue_type_template_id_05d78b92_staticRenderFns = []
 
 
-// CONCATENATED MODULE: ./src/components/GraphLegend.vue?vue&type=template&id=068dac86&
+// CONCATENATED MODULE: ./src/components/GraphLegend.vue?vue&type=template&id=05d78b92&
 
 // CONCATENATED MODULE: ./node_modules/babel-loader/lib!./node_modules/ts-loader??ref--14-1!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/GraphLegend.vue?vue&type=script&lang=ts&
 
@@ -109799,6 +115483,11 @@ var GraphLegendvue_type_script_lang_ts_GraphLegend = /*#__PURE__*/function (_Vue
     key: "diagram",
     get: function get() {
       return this.diagramVm.diagram;
+    }
+  }, {
+    key: "hideLogo",
+    get: function get() {
+      return this.diagram.printSettings.hideLogo;
     }
   }, {
     key: "fields",
@@ -109832,8 +115521,8 @@ var GraphLegendvue_type_style_index_0_lang_scss_ = __webpack_require__("b1cd");
 
 var GraphLegend_component = normalizeComponent(
   components_GraphLegendvue_type_script_lang_ts_,
-  GraphLegendvue_type_template_id_068dac86_render,
-  GraphLegendvue_type_template_id_068dac86_staticRenderFns,
+  GraphLegendvue_type_template_id_05d78b92_render,
+  GraphLegendvue_type_template_id_05d78b92_staticRenderFns,
   false,
   null,
   null,
@@ -109842,7 +115531,7 @@ var GraphLegend_component = normalizeComponent(
 )
 
 /* harmony default export */ var components_GraphLegend = (GraphLegend_component.exports);
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"00b53798-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/GraphPrint.vue?vue&type=template&id=5f15128f&
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"08613af9-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/GraphPrint.vue?vue&type=template&id=5f15128f&
 var GraphPrintvue_type_template_id_5f15128f_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"lassox-diagram__GraphPrint",style:({
     width: ((_vm.contentSize.width) + "mm"),
     height: ((_vm.contentSize.height) + "mm"),
@@ -110254,14 +115943,14 @@ var GraphPrint_component = normalizeComponent(
 )
 
 /* harmony default export */ var components_GraphPrint = (GraphPrint_component.exports);
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"00b53798-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/TooltipRoot.vue?vue&type=template&id=198d25dc&
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"08613af9-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/TooltipRoot.vue?vue&type=template&id=198d25dc&
 var TooltipRootvue_type_template_id_198d25dc_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"lassox-diagram__TooltipRoot"},_vm._l((_vm.tooltips),function(tooltip,i){return _c('Tooltip',_vm._b({key:i},'Tooltip',tooltip,false))}),1)}
 var TooltipRootvue_type_template_id_198d25dc_staticRenderFns = []
 
 
 // CONCATENATED MODULE: ./src/components/TooltipRoot.vue?vue&type=template&id=198d25dc&
 
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"00b53798-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/Tooltip.vue?vue&type=template&id=9cb8a308&
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"08613af9-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/Tooltip.vue?vue&type=template&id=9cb8a308&
 var Tooltipvue_type_template_id_9cb8a308_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"lassox-diagram__Tooltip",style:(_vm.style),domProps:{"textContent":_vm._s(_vm.text)}})}
 var Tooltipvue_type_template_id_9cb8a308_staticRenderFns = []
 
@@ -110595,7 +116284,7 @@ var TooltipRoot_component = normalizeComponent(
 )
 
 /* harmony default export */ var components_TooltipRoot = (TooltipRoot_component.exports);
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"00b53798-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/Toast.vue?vue&type=template&id=71d3f022&
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"08613af9-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/Toast.vue?vue&type=template&id=71d3f022&
 var Toastvue_type_template_id_71d3f022_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('transition',{attrs:{"appear":""},on:{"enter":_vm.onEnter,"leave":_vm.onLeave}},[_c('div',{staticClass:"lassox-diagram__Toast"},[_c('div',{ref:"boxEl",staticClass:"lassox-diagram__Toast-box"},[(_vm.showLoadingSpinner)?_c('LoadingSpinner',{attrs:{"preset":"small"}}):_vm._e(),(_vm.content)?_c('div',{staticClass:"lassox-diagram__Toast-content",domProps:{"textContent":_vm._s(_vm.content)}}):_vm._e(),(_vm.dismissable)?_c('IconButton',{attrs:{"icon":"close","light":""},on:{"click":_vm.close}}):_vm._e()],1)])])}
 var Toastvue_type_template_id_71d3f022_staticRenderFns = []
 
@@ -110768,17 +116457,17 @@ var Toast_component = normalizeComponent(
 )
 
 /* harmony default export */ var components_Toast = (Toast_component.exports);
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"00b53798-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/PrintDialog.vue?vue&type=template&id=4347fcec&
-var PrintDialogvue_type_template_id_4347fcec_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('Dialog',{staticClass:"lassox-diagram__PrintDialog",attrs:{"dismissable":true,"title":_vm.title,"size":"3x","onClose":_vm.close},scopedSlots:_vm._u([{key:"content",fn:function(){return [(_vm.description)?_c('p',{staticStyle:{"margin-bottom":"16px"},domProps:{"textContent":_vm._s(_vm.description)}}):_vm._e(),_c('EditorFields',[_c('EditorField',{attrs:{"id":"print-orientation","type":"radio-buttons","title":"Orientering","options":[
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"08613af9-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/PrintDialog.vue?vue&type=template&id=8ae082dc&
+var PrintDialogvue_type_template_id_8ae082dc_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('Dialog',{staticClass:"lassox-diagram__PrintDialog",attrs:{"dismissable":true,"title":_vm.title,"size":"3x","onClose":_vm.close},scopedSlots:_vm._u([{key:"content",fn:function(){return [(_vm.description)?_c('p',{domProps:{"textContent":_vm._s(_vm.description)}}):_vm._e(),(_vm.hasFields)?_c('EditorFields',{staticStyle:{"margin-top":"16px"}},[(_vm.diagram.printSettings.orientation === undefined)?_c('EditorField',{attrs:{"id":"print-orientation","type":"radio-buttons","title":"Orientering","options":[
           { label: 'Stående', value: 'portrait' },
-          { label: 'Liggende', value: 'landscape' } ],"editable":!_vm.printing},model:{value:(_vm.orientation),callback:function ($$v) {_vm.orientation=$$v},expression:"orientation"}}),_c('EditorField',{attrs:{"id":"print-size","type":"radio-buttons","title":"Størrelse","options":[
+          { label: 'Liggende', value: 'landscape' } ],"editable":!_vm.printing},model:{value:(_vm.orientation),callback:function ($$v) {_vm.orientation=$$v},expression:"orientation"}}):_vm._e(),(_vm.diagram.printSettings.size === undefined)?_c('EditorField',{attrs:{"id":"print-size","type":"radio-buttons","title":"Størrelse","options":[
           { label: 'A5', value: 'A5' },
           { label: 'A4', value: 'A4' },
-          { label: 'A3', value: 'A3' } ],"editable":!_vm.printing},model:{value:(_vm.size),callback:function ($$v) {_vm.size=$$v},expression:"size"}}),(_vm.mode !== 'png')?_c('EditorField',{attrs:{"id":"print-fit","type":"boolean","title":"Begræns til én side","editable":!_vm.printing},model:{value:(_vm.fitToPaper),callback:function ($$v) {_vm.fitToPaper=$$v},expression:"fitToPaper"}}):_vm._e(),(_vm.mode !== 'png')?_c('EditorField',{attrs:{"id":"print-margin","type":"boolean","title":"Margen","helperText":"Inkluder en margen (1 cm) eller udskriv til papirets kant.","editable":!_vm.printing},model:{value:(_vm.includeMargin),callback:function ($$v) {_vm.includeMargin=$$v},expression:"includeMargin"}}):_vm._e()],1)]},proxy:true},{key:"actions",fn:function(){return [_c('ButtonGroup',{attrs:{"align":"right"}},[_c('Button',{attrs:{"label":"Luk"},on:{"click":_vm.close}}),_c('Button',{attrs:{"type":"primary","label":_vm.buttonLabel,"disabled":_vm.printing},on:{"click":_vm.confirm}})],1)]},proxy:true}])})}
-var PrintDialogvue_type_template_id_4347fcec_staticRenderFns = []
+          { label: 'A3', value: 'A3' } ],"editable":!_vm.printing},model:{value:(_vm.size),callback:function ($$v) {_vm.size=$$v},expression:"size"}}):_vm._e(),(_vm.diagram.printSettings.fitToPaper === undefined && _vm.mode !== 'png')?_c('EditorField',{attrs:{"id":"print-fit","type":"boolean","title":"Begræns til én side","editable":!_vm.printing},model:{value:(_vm.fitToPaper),callback:function ($$v) {_vm.fitToPaper=$$v},expression:"fitToPaper"}}):_vm._e(),(_vm.diagram.printSettings.includeMargin === undefined && _vm.mode !== 'png')?_c('EditorField',{attrs:{"id":"print-margin","type":"boolean","title":"Margen","helperText":"Inkluder en margen (1 cm) eller udskriv til papirets kant.","editable":!_vm.printing},model:{value:(_vm.includeMargin),callback:function ($$v) {_vm.includeMargin=$$v},expression:"includeMargin"}}):_vm._e()],1):_vm._e()]},proxy:true},{key:"actions",fn:function(){return [_c('ButtonGroup',{attrs:{"align":"right"}},[_c('Button',{attrs:{"label":"Luk"},on:{"click":_vm.close}}),_c('Button',{attrs:{"type":"primary","label":_vm.buttonLabel,"disabled":_vm.printing},on:{"click":_vm.confirm}})],1)]},proxy:true}])})}
+var PrintDialogvue_type_template_id_8ae082dc_staticRenderFns = []
 
 
-// CONCATENATED MODULE: ./src/components/PrintDialog.vue?vue&type=template&id=4347fcec&
+// CONCATENATED MODULE: ./src/components/PrintDialog.vue?vue&type=template&id=8ae082dc&
 
 // EXTERNAL MODULE: ./node_modules/core-js/modules/web.url.js
 var web_url = __webpack_require__("2b3d");
@@ -110827,6 +116516,11 @@ var PrintDialogvue_type_script_lang_ts_PrintDialog = /*#__PURE__*/function (_Vue
       return this.diagramVm.diagram;
     }
   }, {
+    key: "hasFields",
+    get: function get() {
+      return this.diagram.printSettings.orientation === undefined || this.diagram.printSettings.size === undefined || this.diagram.printSettings.fitToPaper === undefined && this.mode !== 'png' || this.diagram.printSettings.includeMargin === undefined && this.mode !== 'png';
+    }
+  }, {
     key: "title",
     get: function get() {
       switch (this.mode) {
@@ -110848,7 +116542,7 @@ var PrintDialogvue_type_script_lang_ts_PrintDialog = /*#__PURE__*/function (_Vue
     get: function get() {
       switch (this.mode) {
         case 'print':
-          return 'Din computers udskriftsindstillinger skal være de samme som de nedenfor valgte.';
+          return this.hasFields ? 'Din computers udskriftsindstillinger skal være de samme som de nedenfor valgte.' : 'Udskriv diagrammet via din browser.';
 
         case 'pdf':
           return 'Gem diagrammet til din computer som PDF.';
@@ -110882,6 +116576,10 @@ var PrintDialogvue_type_script_lang_ts_PrintDialog = /*#__PURE__*/function (_Vue
       }, this.saveToLocalStorage, {
         immediate: true
       });
+
+      if (!this.hasFields) {
+        this.confirm();
+      }
     }
   }, {
     key: "beforeDestroy",
@@ -110903,19 +116601,19 @@ var PrintDialogvue_type_script_lang_ts_PrintDialog = /*#__PURE__*/function (_Vue
             fitToPaper = settings.fitToPaper,
             includeMargin = settings.includeMargin;
 
-        if (orientation === 'portrait' || orientation === 'landscape') {
+        if (this.diagram.printSettings.orientation === undefined && orientation === 'portrait' || orientation === 'landscape') {
           this.orientation = orientation;
         }
 
-        if (size === 'A5' || size === 'A4' || size === 'A3') {
+        if (this.diagram.printSettings.size === undefined && size === 'A5' || size === 'A4' || size === 'A3') {
           this.size = size;
         }
 
-        if (typeof fitToPaper === 'boolean') {
+        if (this.diagram.printSettings.fitToPaper === undefined && typeof fitToPaper === 'boolean') {
           this.fitToPaper = fitToPaper;
         }
 
-        if (typeof includeMargin === 'boolean') {
+        if (this.diagram.printSettings.includeMargin === undefined && typeof includeMargin === 'boolean') {
           this.includeMargin = includeMargin;
         }
       } catch (_unused) {
@@ -110950,15 +116648,17 @@ var PrintDialogvue_type_script_lang_ts_PrintDialog = /*#__PURE__*/function (_Vue
 
       this.printing = true;
       requestAnimationFrame(function () {
+        var _this3$diagram$printS, _this3$diagram$printS2, _this3$diagram$printS3, _this3$diagram$printS4;
+
         _this3.diagram.eventBus.one('printDone', _this3.onPrintDone);
 
         _this3.diagram.eventBus.emit({
           name: 'print',
           mode: _this3.mode,
-          orientation: _this3.orientation,
-          size: _this3.size,
-          fitToPaper: _this3.fitToPaper,
-          includeMargin: _this3.includeMargin
+          orientation: (_this3$diagram$printS = _this3.diagram.printSettings.orientation) !== null && _this3$diagram$printS !== void 0 ? _this3$diagram$printS : _this3.orientation,
+          size: (_this3$diagram$printS2 = _this3.diagram.printSettings.size) !== null && _this3$diagram$printS2 !== void 0 ? _this3$diagram$printS2 : _this3.size,
+          fitToPaper: (_this3$diagram$printS3 = _this3.diagram.printSettings.fitToPaper) !== null && _this3$diagram$printS3 !== void 0 ? _this3$diagram$printS3 : _this3.fitToPaper,
+          includeMargin: (_this3$diagram$printS4 = _this3.diagram.printSettings.includeMargin) !== null && _this3$diagram$printS4 !== void 0 ? _this3$diagram$printS4 : _this3.includeMargin
         });
       });
     }
@@ -111015,8 +116715,8 @@ PrintDialogvue_type_script_lang_ts_PrintDialog = __decorate([vue_class_component
 
 var PrintDialog_component = normalizeComponent(
   components_PrintDialogvue_type_script_lang_ts_,
-  PrintDialogvue_type_template_id_4347fcec_render,
-  PrintDialogvue_type_template_id_4347fcec_staticRenderFns,
+  PrintDialogvue_type_template_id_8ae082dc_render,
+  PrintDialogvue_type_template_id_8ae082dc_staticRenderFns,
   false,
   null,
   null,
@@ -111025,7 +116725,7 @@ var PrintDialog_component = normalizeComponent(
 )
 
 /* harmony default export */ var components_PrintDialog = (PrintDialog_component.exports);
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"00b53798-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/LoadDialog.vue?vue&type=template&id=4e5ceb18&
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"08613af9-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/LoadDialog.vue?vue&type=template&id=4e5ceb18&
 var LoadDialogvue_type_template_id_4e5ceb18_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('Dialog',{staticClass:"lassox-diagram__LoadDialog",attrs:{"dismissable":_vm.diagram.hasActiveDiagram,"title":"Indlæs diagram","size":"3x","onClose":_vm.close},scopedSlots:_vm._u([{key:"content",fn:function(){return [_c('div',{staticClass:"lassox-diagram__LoadDialog-loading-overlay",style:({
         opacity: _vm.loading ? '1' : '0',
         pointerEvents: _vm.loading ? '' : 'none',
@@ -111456,7 +117156,7 @@ var Diagramvue_type_style_index_0_lang_scss_ = __webpack_require__("034b");
 
 var Diagram_component = normalizeComponent(
   components_Diagramvue_type_script_lang_ts_,
-  Diagramvue_type_template_id_2daaf2e6_render,
+  Diagramvue_type_template_id_7d79cfe5_render,
   staticRenderFns,
   false,
   null,
@@ -112062,6 +117762,10 @@ var DiagramData_DiagramData = /*#__PURE__*/function () {
                 data: (_relationEdit$data = relationEdit.data) !== null && _relationEdit$data !== void 0 ? _relationEdit$data : {},
                 style: (_relationEdit$style = relationEdit.style) !== null && _relationEdit$style !== void 0 ? _relationEdit$style : {}
               }));
+
+              if (relationEdit.customTaxi !== undefined) {
+                reverters.push(set(relation, 'customTaxi', relationEdit.customTaxi));
+              }
             }
           } catch (err) {
             _iterator8.e(err);
@@ -112082,15 +117786,36 @@ var DiagramData_DiagramData = /*#__PURE__*/function () {
 
         var layoutId = change.layout;
         var oldLayout = this.diagram.activeDiagram.settings.activeLayout;
+        var oldEnableTaxi = this.diagram.activeDiagram.settings.enableTaxi;
         var newLayout = (_this$diagram$layouts = this.diagram.layouts.find(function (layout) {
           return layout.id === layoutId;
         })) !== null && _this$diagram$layouts !== void 0 ? _this$diagram$layouts : null;
+        var customTaxiRelations = this.diagram.activeDiagram.data.relations.filter(function (relation) {
+          return relation.customTaxi;
+        });
         applyFns.push(function () {
           if (!newLayout) return false;
-          _this2.diagram.activeDiagram.settings.activeLayout = newLayout;
+
+          _this2.diagram.activeDiagram.settings.setActiveLayout(newLayout);
+
           revertFns.push(function () {
             _this2.diagram.activeDiagram.settings.activeLayout = oldLayout;
+            _this2.diagram.activeDiagram.settings.enableTaxi = oldEnableTaxi;
           });
+
+          var _iterator9 = _createForOfIteratorHelper(customTaxiRelations),
+              _step9;
+
+          try {
+            for (_iterator9.s(); !(_step9 = _iterator9.n()).done;) {
+              var relation = _step9.value;
+              revertFns.push(set(relation, 'customTaxi', null));
+            }
+          } catch (err) {
+            _iterator9.e(err);
+          } finally {
+            _iterator9.f();
+          }
         });
       }
 
@@ -112099,15 +117824,15 @@ var DiagramData_DiagramData = /*#__PURE__*/function () {
         applyFns.push(function () {
           var reverters = [];
 
-          var _iterator9 = _createForOfIteratorHelper(moveEntities),
-              _step9;
+          var _iterator10 = _createForOfIteratorHelper(moveEntities),
+              _step10;
 
           try {
-            for (_iterator9.s(); !(_step9 = _iterator9.n()).done;) {
-              var _step9$value = _step9.value,
-                  id = _step9$value.id,
-                  x = _step9$value.x,
-                  y = _step9$value.y;
+            for (_iterator10.s(); !(_step10 = _iterator10.n()).done;) {
+              var _step10$value = _step10.value,
+                  id = _step10$value.id,
+                  x = _step10$value.x,
+                  y = _step10$value.y;
 
               var entity = _this2.entitiesMap.get(id);
 
@@ -112121,9 +117846,9 @@ var DiagramData_DiagramData = /*#__PURE__*/function () {
             } // Cancel if nothing was changed
 
           } catch (err) {
-            _iterator9.e(err);
+            _iterator10.e(err);
           } finally {
-            _iterator9.f();
+            _iterator10.f();
           }
 
           if (!reverters.length) return false;
@@ -112144,21 +117869,25 @@ var DiagramData_DiagramData = /*#__PURE__*/function () {
           applied = true;
           var success = true;
 
-          var _iterator10 = _createForOfIteratorHelper(applyFns),
-              _step10;
+          if (applyFns.length) {
+            success = false;
 
-          try {
-            for (_iterator10.s(); !(_step10 = _iterator10.n()).done;) {
-              var fn = _step10.value;
+            var _iterator11 = _createForOfIteratorHelper(applyFns),
+                _step11;
 
-              if (fn() === false) {
-                success = false;
+            try {
+              for (_iterator11.s(); !(_step11 = _iterator11.n()).done;) {
+                var fn = _step11.value;
+
+                if (fn() !== false) {
+                  success = true;
+                }
               }
+            } catch (err) {
+              _iterator11.e(err);
+            } finally {
+              _iterator11.f();
             }
-          } catch (err) {
-            _iterator10.e(err);
-          } finally {
-            _iterator10.f();
           }
 
           if (trackEvents) {
@@ -112189,18 +117918,18 @@ var DiagramData_DiagramData = /*#__PURE__*/function () {
 
           applied = false;
 
-          var _iterator11 = _createForOfIteratorHelper([].concat(revertFns).reverse()),
-              _step11;
+          var _iterator12 = _createForOfIteratorHelper([].concat(revertFns).reverse()),
+              _step12;
 
           try {
-            for (_iterator11.s(); !(_step11 = _iterator11.n()).done;) {
-              var fn = _step11.value;
+            for (_iterator12.s(); !(_step12 = _iterator12.n()).done;) {
+              var fn = _step12.value;
               fn();
             }
           } catch (err) {
-            _iterator11.e(err);
+            _iterator12.e(err);
           } finally {
-            _iterator11.f();
+            _iterator12.f();
           }
 
           revertFns.splice(0);
@@ -112228,18 +117957,18 @@ var DiagramData_DiagramData = /*#__PURE__*/function () {
     value: function _addEntities(entities) {
       if (!entities.length) return;
 
-      var _iterator12 = _createForOfIteratorHelper(entities),
-          _step12;
+      var _iterator13 = _createForOfIteratorHelper(entities),
+          _step13;
 
       try {
-        for (_iterator12.s(); !(_step12 = _iterator12.n()).done;) {
-          var entity = _step12.value;
+        for (_iterator13.s(); !(_step13 = _iterator13.n()).done;) {
+          var entity = _step13.value;
           this.entitiesMap.set(entity.id, entity);
         }
       } catch (err) {
-        _iterator12.e(err);
+        _iterator13.e(err);
       } finally {
-        _iterator12.f();
+        _iterator13.f();
       }
 
       this._updateEntitiesArray();
@@ -112249,18 +117978,18 @@ var DiagramData_DiagramData = /*#__PURE__*/function () {
     value: function _addRelations(relations) {
       if (!relations.length) return;
 
-      var _iterator13 = _createForOfIteratorHelper(relations),
-          _step13;
+      var _iterator14 = _createForOfIteratorHelper(relations),
+          _step14;
 
       try {
-        for (_iterator13.s(); !(_step13 = _iterator13.n()).done;) {
-          var relation = _step13.value;
+        for (_iterator14.s(); !(_step14 = _iterator14.n()).done;) {
+          var relation = _step14.value;
           this.relationsMap.set(relation.id, relation);
         }
       } catch (err) {
-        _iterator13.e(err);
+        _iterator14.e(err);
       } finally {
-        _iterator13.f();
+        _iterator14.f();
       }
 
       this._updateRelationsArray();
@@ -112270,18 +117999,18 @@ var DiagramData_DiagramData = /*#__PURE__*/function () {
     value: function _removeEntities(entities) {
       if (!entities.length) return;
 
-      var _iterator14 = _createForOfIteratorHelper(entities),
-          _step14;
+      var _iterator15 = _createForOfIteratorHelper(entities),
+          _step15;
 
       try {
-        for (_iterator14.s(); !(_step14 = _iterator14.n()).done;) {
-          var entity = _step14.value;
+        for (_iterator15.s(); !(_step15 = _iterator15.n()).done;) {
+          var entity = _step15.value;
           this.entitiesMap.delete(entity.id);
         }
       } catch (err) {
-        _iterator14.e(err);
+        _iterator15.e(err);
       } finally {
-        _iterator14.f();
+        _iterator15.f();
       }
 
       this._updateEntitiesArray();
@@ -112291,18 +118020,18 @@ var DiagramData_DiagramData = /*#__PURE__*/function () {
     value: function _removeRelations(relations) {
       if (!relations.length) return;
 
-      var _iterator15 = _createForOfIteratorHelper(relations),
-          _step15;
+      var _iterator16 = _createForOfIteratorHelper(relations),
+          _step16;
 
       try {
-        for (_iterator15.s(); !(_step15 = _iterator15.n()).done;) {
-          var relation = _step15.value;
+        for (_iterator16.s(); !(_step16 = _iterator16.n()).done;) {
+          var relation = _step16.value;
           this.relationsMap.delete(relation.id);
         }
       } catch (err) {
-        _iterator15.e(err);
+        _iterator16.e(err);
       } finally {
-        _iterator15.f();
+        _iterator16.f();
       }
 
       this._updateRelationsArray();
@@ -112328,12 +118057,12 @@ var DiagramData_DiagramData = /*#__PURE__*/function () {
 var DiagramData_mapThrowable = function mapThrowable(items, transformer) {
   var result = [];
 
-  var _iterator16 = _createForOfIteratorHelper(items),
-      _step16;
+  var _iterator17 = _createForOfIteratorHelper(items),
+      _step17;
 
   try {
-    for (_iterator16.s(); !(_step16 = _iterator16.n()).done;) {
-      var item = _step16.value;
+    for (_iterator17.s(); !(_step17 = _iterator17.n()).done;) {
+      var item = _step17.value;
 
       try {
         result.push(transformer(item));
@@ -112342,9 +118071,9 @@ var DiagramData_mapThrowable = function mapThrowable(items, transformer) {
       }
     }
   } catch (err) {
-    _iterator16.e(err);
+    _iterator17.e(err);
   } finally {
-    _iterator16.f();
+    _iterator17.f();
   }
 
   return result;
@@ -112420,13 +118149,13 @@ var SavedDiagram_createSavedDiagram = function createSavedDiagram(diagram) {
     mainEntityId: diagram.mainEntityId,
     data: {
       entities: diagram.activeDiagram.data.initialData.entities.map(function (e) {
-        return _objectSpread2({
+        return objectSpread2_objectSpread2({
           type: e.type.id,
           id: e.id
         }, e.initialState);
       }),
       relations: diagram.activeDiagram.data.initialData.relations.map(function (r) {
-        return _objectSpread2({
+        return objectSpread2_objectSpread2({
           type: r.type.id,
           id: r.id,
           from: r.from,
@@ -112444,7 +118173,8 @@ var SavedDiagram_createSavedDiagram = function createSavedDiagram(diagram) {
       activeFilters: Object.keys(diagram.activeDiagram.settings.activeFilters).filter(function (id) {
         return diagram.activeDiagram.settings.activeFilters[id];
       }),
-      activeLayout: (_diagram$activeDiagra = diagram.activeDiagram.settings.activeLayout) === null || _diagram$activeDiagra === void 0 ? void 0 : _diagram$activeDiagra.id
+      activeLayout: (_diagram$activeDiagra = diagram.activeDiagram.settings.activeLayout) === null || _diagram$activeDiagra === void 0 ? void 0 : _diagram$activeDiagra.id,
+      enableTaxi: diagram.activeDiagram.settings.enableTaxi
     }
   };
 };
@@ -112549,12 +118279,15 @@ var SavedDiagram_parseChanges = function parseChanges(v) {
 
             try {
               for (_iterator3.s(); !(_step3 = _iterator3.n()).done;) {
+                var _parseCustomTaxi;
+
                 var relation = _step3.value;
                 if (!SavedDiagram_isRecord(relation) || !isString(relation.id)) continue;
                 relations.push({
                   id: relation.id,
                   data: parseRecord(relation.data),
-                  style: parseRelationStyle(relation.style)
+                  style: parseRelationStyle(relation.style),
+                  customTaxi: (_parseCustomTaxi = SavedDiagram_parseCustomTaxi(relation.customTaxi)) !== null && _parseCustomTaxi !== void 0 ? _parseCustomTaxi : undefined
                 });
               }
             } catch (err) {
@@ -112688,21 +118421,25 @@ var parseEntityStyle = function parseEntityStyle(v) {
 
 var parseRelation = function parseRelation(v) {
   if (!SavedDiagram_isRecord(v)) return null;
-  if (!isString(v.type)) return null;
-  var type = v.type;
-  if (!isString(v.id)) return null;
-  var id = v.id;
-  if (!isString(v.from)) return null;
-  var from = v.from;
-  if (!isString(v.to)) return null;
-  var to = v.to;
+  var type = v.type,
+      id = v.id,
+      from = v.from,
+      to = v.to,
+      data = v.data,
+      style = v.style,
+      customTaxi = v.customTaxi;
+  if (!isString(type)) return null;
+  if (!isString(id)) return null;
+  if (!isString(from)) return null;
+  if (!isString(to)) return null;
   return {
     type: type,
     id: id,
     from: from,
     to: to,
-    data: parseRecord(v.data),
-    style: parseRelationStyle(v.style)
+    data: parseRecord(data),
+    style: parseRelationStyle(style),
+    customTaxi: SavedDiagram_parseCustomTaxi(customTaxi)
   };
 };
 
@@ -112718,6 +118455,60 @@ var parseRelationStyle = function parseRelationStyle(v) {
   return style;
 };
 
+var SavedDiagram_parseCustomTaxi = function parseCustomTaxi(v) {
+  if (!SavedDiagram_isRecord(v)) return null;
+
+  var parseCustomTaxiEndpoint = function parseCustomTaxiEndpoint(v) {
+    if (!SavedDiagram_isRecord(v)) return null;
+    var side = v.side,
+        x = v.x,
+        y = v.y;
+    if (side !== 'top' && side !== 'bottom' && side !== 'left' && side !== 'right') return null;
+    if (!isNumber(x) || !isNumber(y)) return null;
+    return {
+      side: side,
+      x: x,
+      y: y
+    };
+  };
+
+  var from = parseCustomTaxiEndpoint(v.from);
+  if (!from) return null;
+  var to = parseCustomTaxiEndpoint(v.to);
+  if (!to) return null;
+  if (!isArray(v.segmentPoints)) return null;
+  var segmentPoints = [];
+
+  var _iterator7 = _createForOfIteratorHelper(v.segmentPoints),
+      _step7;
+
+  try {
+    for (_iterator7.s(); !(_step7 = _iterator7.n()).done;) {
+      var point = _step7.value;
+      if (!SavedDiagram_isRecord(point)) return null;
+      var x = point.x,
+          y = point.y,
+          temp = point.temp;
+      if (!isNumber(x) || !isNumber(y)) return null;
+      segmentPoints.push({
+        x: x,
+        y: y,
+        temp: isBoolean(temp) ? temp : false
+      });
+    }
+  } catch (err) {
+    _iterator7.e(err);
+  } finally {
+    _iterator7.f();
+  }
+
+  return {
+    from: from,
+    to: to,
+    segmentPoints: segmentPoints
+  };
+};
+
 var parseRecord = function parseRecord(v) {
   if (!SavedDiagram_isRecord(v)) return;
   return v;
@@ -112730,31 +118521,13 @@ var SavedDiagram_parseSettings = function parseSettings(v) {
   if (isArray(v.activeFields)) {
     settings.activeFields = [];
 
-    var _iterator7 = _createForOfIteratorHelper(v.activeFields),
-        _step7;
-
-    try {
-      for (_iterator7.s(); !(_step7 = _iterator7.n()).done;) {
-        var id = _step7.value;
-        if (isString(id)) settings.activeFields.push(id);
-      }
-    } catch (err) {
-      _iterator7.e(err);
-    } finally {
-      _iterator7.f();
-    }
-  }
-
-  if (isArray(v.activeFilters)) {
-    settings.activeFilters = [];
-
-    var _iterator8 = _createForOfIteratorHelper(v.activeFilters),
+    var _iterator8 = _createForOfIteratorHelper(v.activeFields),
         _step8;
 
     try {
       for (_iterator8.s(); !(_step8 = _iterator8.n()).done;) {
-        var _id = _step8.value;
-        if (isString(_id)) settings.activeFilters.push(_id);
+        var id = _step8.value;
+        if (isString(id)) settings.activeFields.push(id);
       }
     } catch (err) {
       _iterator8.e(err);
@@ -112763,8 +118536,30 @@ var SavedDiagram_parseSettings = function parseSettings(v) {
     }
   }
 
+  if (isArray(v.activeFilters)) {
+    settings.activeFilters = [];
+
+    var _iterator9 = _createForOfIteratorHelper(v.activeFilters),
+        _step9;
+
+    try {
+      for (_iterator9.s(); !(_step9 = _iterator9.n()).done;) {
+        var _id = _step9.value;
+        if (isString(_id)) settings.activeFilters.push(_id);
+      }
+    } catch (err) {
+      _iterator9.e(err);
+    } finally {
+      _iterator9.f();
+    }
+  }
+
   if (isString(v.activeLayout)) {
     settings.activeLayout = v.activeLayout;
+  }
+
+  if (isBoolean(v.enableTaxi)) {
+    settings.enableTaxi = v.enableTaxi;
   }
 
   return settings;
@@ -112774,18 +118569,18 @@ var SavedDiagram_parseStringArray = function parseStringArray(v) {
   if (!isArray(v)) return;
   var array = [];
 
-  var _iterator9 = _createForOfIteratorHelper(v),
-      _step9;
+  var _iterator10 = _createForOfIteratorHelper(v),
+      _step10;
 
   try {
-    for (_iterator9.s(); !(_step9 = _iterator9.n()).done;) {
-      var item = _step9.value;
+    for (_iterator10.s(); !(_step10 = _iterator10.n()).done;) {
+      var item = _step10.value;
       if (isString(item)) array.push(item);
     }
   } catch (err) {
-    _iterator9.e(err);
+    _iterator10.e(err);
   } finally {
-    _iterator9.f();
+    _iterator10.f();
   }
 
   return array;
@@ -112959,7 +118754,7 @@ var exampleConfig = {
       var _context$activeLayout;
 
       return {
-        taxi: ((_context$activeLayout = context.activeLayout) === null || _context$activeLayout === void 0 ? void 0 : _context$activeLayout.type) === 'dagre'
+        taxi: ((_context$activeLayout = context.activeLayout) === null || _context$activeLayout === void 0 ? void 0 : _context$activeLayout.type) === 'dagre' ? true : undefined
       };
     },
     printStyle: {
@@ -113327,11 +119122,13 @@ var exampleConfig = {
     id: 'company-layout-1',
     name: 'Layout 1',
     default: true,
-    directed: true
+    directed: true,
+    enableTaxiToggle: true
   }, {
     id: 'company-layout-2',
     name: 'Layout 2',
-    inverted: true
+    inverted: true,
+    enableTaxiToggle: true
   }, // Layouts for if the main entity is a person
   // {
   //   id: 'person-layout-1',
@@ -113347,7 +119144,8 @@ var exampleConfig = {
   {
     id: 'dagre-layout',
     name: 'Dagre',
-    type: 'dagre'
+    type: 'dagre',
+    taxi: true
   }],
   methods: {
     getSavedDiagrams: function () {
@@ -113555,12 +119353,23 @@ var exampleConfig = {
   showInactiveEditorFields: true,
   // (Optional) Enable dragging and dropping entities.
   enableDragAndDrop: true,
+  // (Optional) Enable editing of taxi relations.
+  enableTaxiEditing: true,
   // (Optional) Enable expanding (the "Udvid" button).
   enableExpand: true,
   // (Optional) Enable saving the diagram (does not enable or disable saving as image or PDF).
   enableSaving: true,
   // (Optional) Enable sharing diagrams.
   enableSharing: true,
+  // (Optional) Print settings.
+  // printSettings: {
+  // orientation: 'landscape',
+  // size: 'A3',
+  // fitToPaper: false,
+  // includeMargin: false,
+  // (Optional) Hide logo.
+  // hideLogo: true,
+  // },
   // (Optional) Remember settings by using localStorage
   saveSettingsToLocalStorage: true
 };
@@ -114209,9 +120018,11 @@ var diagram_Diagram = /*#__PURE__*/function () {
     this.enableStyleEditing = false;
     this.showInactiveEditorFields = false;
     this.enableDragAndDrop = false;
+    this.enableTaxiEditing = false;
     this.enableExpand = false;
     this.enableSaving = false;
     this.enableSharing = false;
+    this.printSettings = {};
     this.isLoading = false;
     this.loadSavedDiagramsPromise = null;
     this.savedDiagrams = [];
@@ -114270,6 +120081,10 @@ var diagram_Diagram = /*#__PURE__*/function () {
       this.enableDragAndDrop = true;
     }
 
+    if (config.enableTaxiEditing) {
+      this.enableTaxiEditing = true;
+    }
+
     if (config.enableExpand) {
       this.enableExpand = true;
     }
@@ -114299,6 +120114,16 @@ var diagram_Diagram = /*#__PURE__*/function () {
       }
     }
 
+    if (config.printSettings) {
+      var _config$printSettings;
+
+      this.printSettings.orientation = config.printSettings.orientation;
+      this.printSettings.size = config.printSettings.size;
+      this.printSettings.fitToPaper = config.printSettings.fitToPaper;
+      this.printSettings.includeMargin = config.printSettings.includeMargin;
+      this.printSettings.hideLogo = (_config$printSettings = config.printSettings.hideLogo) !== null && _config$printSettings !== void 0 ? _config$printSettings : false;
+    }
+
     this.saveSettingsToLocalStorage = (_config$saveSettingsT = config.saveSettingsToLocalStorage) !== null && _config$saveSettingsT !== void 0 ? _config$saveSettingsT : false;
 
     var _iterator = _createForOfIteratorHelper(this.entityTypes.items),
@@ -114308,7 +120133,7 @@ var diagram_Diagram = /*#__PURE__*/function () {
       var _loop = function _loop() {
         var entityType = _step.value;
         entityType.fieldGroups = _this.fieldGroups.map(function (fg) {
-          return new diagram_FieldGroup(_this, _objectSpread2(_objectSpread2({}, fg), {}, {
+          return new diagram_FieldGroup(_this, objectSpread2_objectSpread2(objectSpread2_objectSpread2({}, fg), {}, {
             fields: fg.fields.filter(function (f) {
               return f.entityTypes.has(entityType);
             })
@@ -114338,7 +120163,7 @@ var diagram_Diagram = /*#__PURE__*/function () {
       var _loop2 = function _loop2() {
         var relationType = _step2.value;
         relationType.fieldGroups = _this.fieldGroups.map(function (fg) {
-          return new diagram_FieldGroup(_this, _objectSpread2(_objectSpread2({}, fg), {}, {
+          return new diagram_FieldGroup(_this, objectSpread2_objectSpread2(objectSpread2_objectSpread2({}, fg), {}, {
             fields: fg.fields.filter(function (f) {
               return f.relationTypes.has(relationType);
             })
@@ -114693,7 +120518,8 @@ var diagram_Diagram = /*#__PURE__*/function () {
                 this.isSaving = true;
                 savedDiagram = SavedDiagram_createSavedDiagram(this);
                 if (!overwrite) savedDiagram.id = '';
-                _context4.next = 9;
+                _context4.prev = 7;
+                _context4.next = 10;
                 return saveDiagram({
                   savedDiagram: savedDiagram,
                   generatePng: function generatePng(options) {
@@ -114718,24 +120544,32 @@ var diagram_Diagram = /*#__PURE__*/function () {
                   }
                 });
 
-              case 9:
+              case 10:
                 id = _context4.sent;
                 if (id) this.activeDiagram.id = id;
                 this.activeDiagram.data.setInitialChanges();
                 this.activeDiagram.settings.setInitialState();
-                _context4.next = 15;
+                _context4.next = 16;
                 return this.loadSavedDiagrams();
 
-              case 15:
+              case 16:
                 this.hasUnsavedChanges = false;
                 this.isSaving = false;
+                _context4.next = 24;
+                break;
 
-              case 17:
+              case 20:
+                _context4.prev = 20;
+                _context4.t0 = _context4["catch"](7);
+                this.isSaving = false;
+                throw _context4.t0;
+
+              case 24:
               case "end":
                 return _context4.stop();
             }
           }
-        }, _callee4, this);
+        }, _callee4, this, [[7, 20]]);
       }));
 
       function save() {
@@ -114816,7 +120650,11 @@ var diagram_Diagram = /*#__PURE__*/function () {
                     layout = this.layouts.find(function (l) {
                       return l.id === _id4;
                     });
-                    if (layout) settings.activeLayout = layout;
+                    if (layout) settings.setActiveLayout(layout);
+                  }
+
+                  if (savedDiagram.settings.enableTaxi !== undefined) {
+                    settings.setEnableTaxi(savedDiagram.settings.enableTaxi);
                   }
                 }
 
@@ -115087,7 +120925,7 @@ var diagram_EntityType = function EntityType(options) {
   };
 };
 var diagram_RelationType = function RelationType(options) {
-  var _style$taxi, _style$arrowFrom, _style$arrowTo, _style$arrowSize, _style$lineWidth, _style$lineStyle, _style$lineColor, _options$searchable2;
+  var _style$arrowFrom, _style$arrowTo, _style$arrowSize, _style$lineWidth, _style$lineStyle, _style$lineColor, _options$searchable2;
 
   _classCallCheck(this, RelationType);
 
@@ -115098,7 +120936,7 @@ var diagram_RelationType = function RelationType(options) {
   this.labels = options.labels;
   var style = typeof options.style === 'function' ? undefined : options.style;
   this.style = {
-    taxi: (_style$taxi = style === null || style === void 0 ? void 0 : style.taxi) !== null && _style$taxi !== void 0 ? _style$taxi : false,
+    taxi: style === null || style === void 0 ? void 0 : style.taxi,
     arrowFrom: (_style$arrowFrom = style === null || style === void 0 ? void 0 : style.arrowFrom) !== null && _style$arrowFrom !== void 0 ? _style$arrowFrom : false,
     arrowTo: (_style$arrowTo = style === null || style === void 0 ? void 0 : style.arrowTo) !== null && _style$arrowTo !== void 0 ? _style$arrowTo : true,
     arrowSize: (_style$arrowSize = style === null || style === void 0 ? void 0 : style.arrowSize) !== null && _style$arrowSize !== void 0 ? _style$arrowSize : 6,
@@ -115178,7 +121016,7 @@ var diagram_Entity = /*#__PURE__*/function () {
 }();
 var diagram_Relation = /*#__PURE__*/function () {
   function Relation(diagram, options) {
-    var _cloneDeep3, _cloneDeep4;
+    var _cloneDeep3, _cloneDeep4, _cloneDeep5;
 
     _classCallCheck(this, Relation);
 
@@ -115200,10 +121038,12 @@ var diagram_Relation = /*#__PURE__*/function () {
     this.to = options.to;
     this.initialState = {
       data: (_cloneDeep3 = Object(lodash["cloneDeep"])(options.data)) !== null && _cloneDeep3 !== void 0 ? _cloneDeep3 : {},
-      style: (_cloneDeep4 = Object(lodash["cloneDeep"])(options.style)) !== null && _cloneDeep4 !== void 0 ? _cloneDeep4 : {}
+      style: (_cloneDeep4 = Object(lodash["cloneDeep"])(options.style)) !== null && _cloneDeep4 !== void 0 ? _cloneDeep4 : {},
+      customTaxi: (_cloneDeep5 = Object(lodash["cloneDeep"])(options.customTaxi)) !== null && _cloneDeep5 !== void 0 ? _cloneDeep5 : null
     };
     this.data = Object(lodash["cloneDeep"])(this.initialState.data);
     this.style = Object(lodash["cloneDeep"])(this.initialState.style);
+    this.customTaxi = Object(lodash["cloneDeep"])(this.initialState.customTaxi);
   }
 
   _createClass(Relation, [{
@@ -115214,10 +121054,13 @@ var diagram_Relation = /*#__PURE__*/function () {
   }, {
     key: "buildStyle",
     value: function buildStyle() {
-      var _this$type$styleBuild3, _this$type$styleBuild4, _this$type3, _this$type$printStyle4, _this$type$printStyle5, _this$type$printStyle6, _this$type4;
+      var _context$activeLayout, _context$activeLayout2, _context$activeLayout3, _this$type$styleBuild3, _this$type$styleBuild4, _this$type3, _this$type$printStyle4, _this$type$printStyle5, _this$type$printStyle6, _this$type4;
 
       var context = diagram_createContextItem(this);
-      this.builtTypeStyle = Object(lodash["merge"])({}, this.type.style, (_this$type$styleBuild3 = (_this$type$styleBuild4 = (_this$type3 = this.type).styleBuilder) === null || _this$type$styleBuild4 === void 0 ? void 0 : _this$type$styleBuild4.call(_this$type3, context)) !== null && _this$type$styleBuild3 !== void 0 ? _this$type$styleBuild3 : {});
+      var baseStyle = {
+        taxi: (_context$activeLayout = context.activeLayout) !== null && _context$activeLayout !== void 0 && _context$activeLayout.enableTaxiToggle ? this.diagram.activeDiagram.settings.enableTaxi : (_context$activeLayout2 = (_context$activeLayout3 = context.activeLayout) === null || _context$activeLayout3 === void 0 ? void 0 : _context$activeLayout3.taxi) !== null && _context$activeLayout2 !== void 0 ? _context$activeLayout2 : false
+      };
+      this.builtTypeStyle = Object(lodash["merge"])({}, baseStyle, this.type.style, (_this$type$styleBuild3 = (_this$type$styleBuild4 = (_this$type3 = this.type).styleBuilder) === null || _this$type$styleBuild4 === void 0 ? void 0 : _this$type$styleBuild4.call(_this$type3, context)) !== null && _this$type$styleBuild3 !== void 0 ? _this$type$styleBuild3 : {});
       this.builtTypePrintStyle = Object(lodash["merge"])({}, this.builtTypeStyle, (_this$type$printStyle4 = this.type.printStyle) !== null && _this$type$printStyle4 !== void 0 ? _this$type$printStyle4 : {}, (_this$type$printStyle5 = (_this$type$printStyle6 = (_this$type4 = this.type).printStyleBuilder) === null || _this$type$printStyle6 === void 0 ? void 0 : _this$type$printStyle6.call(_this$type4, context)) !== null && _this$type$printStyle5 !== void 0 ? _this$type$printStyle5 : {});
       this.builtStyle = Object(lodash["merge"])({}, this.builtTypeStyle, this.style);
       this.builtPrintStyle = Object(lodash["merge"])({}, this.builtTypePrintStyle, this.style);
@@ -115356,11 +121199,13 @@ var diagram_Settings = /*#__PURE__*/function () {
     this.initialState = {
       activeFields: {},
       activeFilters: {},
-      activeLayout: null
+      activeLayout: null,
+      enableTaxi: false
     };
     this.activeFields = {};
     this.activeFilters = {};
     this.activeLayout = null;
+    this.enableTaxi = false;
     this.diagram = diagram;
     this.init();
   }
@@ -115401,9 +121246,9 @@ var diagram_Settings = /*#__PURE__*/function () {
         _iterator13.f();
       }
 
-      this.activeLayout = (_ref3 = (_this$diagram$layouts = this.diagram.layouts.find(function (l) {
+      this.setActiveLayout((_ref3 = (_this$diagram$layouts = this.diagram.layouts.find(function (l) {
         return l.default;
-      })) !== null && _this$diagram$layouts !== void 0 ? _this$diagram$layouts : this.diagram.layouts[0]) !== null && _ref3 !== void 0 ? _ref3 : null;
+      })) !== null && _this$diagram$layouts !== void 0 ? _this$diagram$layouts : this.diagram.layouts[0]) !== null && _ref3 !== void 0 ? _ref3 : null);
       this.loadFromLocalStorage();
       this.saveToLocalStorage();
       this.setInitialState();
@@ -115411,16 +121256,18 @@ var diagram_Settings = /*#__PURE__*/function () {
   }, {
     key: "setInitialState",
     value: function setInitialState() {
-      this.initialState.activeFields = _objectSpread2({}, this.activeFields);
-      this.initialState.activeFilters = _objectSpread2({}, this.activeFilters);
+      this.initialState.activeFields = objectSpread2_objectSpread2({}, this.activeFields);
+      this.initialState.activeFilters = objectSpread2_objectSpread2({}, this.activeFilters);
       this.initialState.activeLayout = this.activeLayout;
+      this.initialState.enableTaxi = this.enableTaxi;
     }
   }, {
     key: "reset",
     value: function reset() {
-      this.activeFields = _objectSpread2({}, this.initialState.activeFields);
-      this.activeFilters = _objectSpread2({}, this.initialState.activeFilters);
+      this.activeFields = objectSpread2_objectSpread2({}, this.initialState.activeFields);
+      this.activeFilters = objectSpread2_objectSpread2({}, this.initialState.activeFilters);
       this.activeLayout = this.initialState.activeLayout;
+      this.enableTaxi = this.initialState.enableTaxi;
     }
   }, {
     key: "loadFromLocalStorage",
@@ -115434,7 +121281,8 @@ var diagram_Settings = /*#__PURE__*/function () {
         if (!type_guards_isRecord(settings)) return;
         var activeFields = settings.activeFields,
             activeFilters = settings.activeFilters,
-            activeLayout = settings.activeLayout;
+            activeLayout = settings.activeLayout,
+            enableTaxi = settings.enableTaxi;
 
         if (type_guards_isRecord(activeFields)) {
           var _iterator14 = _createForOfIteratorHelper(this.diagram.fields),
@@ -115475,7 +121323,11 @@ var diagram_Settings = /*#__PURE__*/function () {
           var layout = this.diagram.layouts.find(function (l) {
             return l.id == activeLayout;
           });
-          if (layout) this.activeLayout = layout;
+          if (layout) this.setActiveLayout(layout);
+        }
+
+        if (typeof enableTaxi === 'boolean') {
+          this.setEnableTaxi(enableTaxi);
         }
       } catch (_unused3) {
         return;
@@ -115509,11 +121361,27 @@ var diagram_Settings = /*#__PURE__*/function () {
         localStorage.setItem('lassox-diagram/settings', JSON.stringify({
           activeFields: this.activeFields,
           activeFilters: activeFilters,
-          activeLayout: (_this$activeLayout = this.activeLayout) === null || _this$activeLayout === void 0 ? void 0 : _this$activeLayout.id
+          activeLayout: (_this$activeLayout = this.activeLayout) === null || _this$activeLayout === void 0 ? void 0 : _this$activeLayout.id,
+          enableTaxi: this.enableTaxi
         }));
       } catch (_unused4) {
         return;
       }
+    }
+  }, {
+    key: "setActiveLayout",
+    value: function setActiveLayout(layout) {
+      if (layout === this.activeLayout) return;
+      this.activeLayout = layout;
+      this.setEnableTaxi();
+    }
+  }, {
+    key: "setEnableTaxi",
+    value: function setEnableTaxi(enableTaxi) {
+      var _layout$taxi;
+
+      var layout = this.activeLayout;
+      this.enableTaxi = enableTaxi !== undefined && layout !== null && layout !== void 0 && layout.enableTaxiToggle ? enableTaxi : (_layout$taxi = layout === null || layout === void 0 ? void 0 : layout.taxi) !== null && _layout$taxi !== void 0 ? _layout$taxi : false;
     }
   }]);
 
@@ -115648,6 +121516,9 @@ var LassoDiagram = {
     return {
       render: function render(container) {
         return diagram.render(container);
+      },
+      triggerUnsavedChanges: function triggerUnsavedChanges() {
+        diagram.hasUnsavedChanges = true;
       }
     };
   }

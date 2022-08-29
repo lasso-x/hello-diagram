@@ -1,23 +1,12 @@
 import { Vue } from 'vue-property-decorator';
 import type Graph from './Graph.vue';
 import type { Core, Position, EdgeSingular } from 'cytoscape';
+import type { default as Diagram } from '@/diagram';
 declare type Side = 'top' | 'bottom' | 'left' | 'right';
-declare type Point = {
-    isSource: boolean;
-    isTarget: boolean;
-    directionAxis?: 'x' | 'y';
-    x: number;
-    y: number;
-    bounds: Record<'x' | 'y', Record<'min' | 'max', number | null>>;
-};
-declare type Line = {
-    position: Position;
-    length: number;
-    rotation: number;
-};
 declare type NPoint = {
     x: number;
     y: number;
+    temp?: boolean;
 };
 declare type NEndpoint = {
     side: Side;
@@ -25,31 +14,28 @@ declare type NEndpoint = {
     x: number;
     y: number;
 };
-declare type NLine = {
-    axis: 'x' | 'y';
-    points: [NPoint, NPoint];
-    x: number;
-    y: number;
-    length: number;
-};
 export default class GraphEdgePoints extends Vue {
+    readonly diagram: Diagram;
     readonly graphVm: Graph;
     get graph(): Core;
     log: (...data: any[]) => void;
     _edge: EdgeSingular | null;
+    lineThickness: number;
     n_sourceEndpoint: NEndpoint | null;
     n_targetEndpoint: NEndpoint | null;
     n_points: NPoint[];
-    n_lines: NLine[];
     n_dragging: {
-        lines: NLine[];
+        lines: GraphEdgePoints['n_lines'];
         offset: Position;
+        endpointMode?: boolean;
         moved?: boolean;
     } | null;
-    get n_liness(): {
+    get n_lines(): {
         points: NPoint[];
-        axis: "x" | "y";
-        crossAxis: "x" | "y";
+        axis: import("../diagram").Axis;
+        crossAxis: import("../diagram").Axis;
+        isFirst: boolean;
+        isLast: boolean;
         readonly x: number;
         readonly y: number;
         readonly width: number;
@@ -57,33 +43,27 @@ export default class GraphEdgePoints extends Vue {
         axisValue1: number;
         axisValue2: number;
         crossAxisValue: number;
+        crossAxisValueSnapped: number;
         length: number;
     }[];
-    get n_tLines(): {
-        line: NLine;
-        readonly x: number;
-        readonly y: number;
-        readonly width: number;
-        readonly rotation: number;
-    }[];
-    points: Point[];
-    get lines(): Line[];
-    dragging: {
-        point?: Point;
-        line?: [Point, Point];
-        offset: Position;
-        moved?: boolean;
-    } | null;
+    get lineHeight(): number;
+    get linePadding(): number;
+    get pointSizeInner(): number;
+    get pointSize(): number;
+    get pointPadding(): number;
     onDestroy: (() => void) | null;
     mounted(): void;
     beforeDestroy(): void;
     setEdge(edge: EdgeSingular | null): void;
     updateEdge(): void;
+    onEdgeData(): void;
     updatePoints(): void;
     mousePosToModelPos(clientX: number, clientY: number): {
         x: number;
         y: number;
     };
-    snapPos(pos: Position): Position;
+    onLineDblClick(i: number, event: MouseEvent): void;
+    onPointDblClick(i: number, event: MouseEvent): void;
+    updateCustomTaxi(commit?: boolean): void;
 }
 export {};

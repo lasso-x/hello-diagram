@@ -1,4 +1,4 @@
-import Diagram, { Entity, EntityDefinition, EntityStyle, Relation, RelationDefinition, RelationStyle } from '@/diagram';
+import Diagram, { CustomTaxi, Entity, EntityDefinition, EntityStyle, Relation, RelationDefinition, RelationStyle } from '@/diagram';
 export default class DiagramData {
     constructor(diagram: Diagram, options?: {
         data?: DiagramDataDefinition;
@@ -70,6 +70,7 @@ export interface RelationEdit {
     id: string;
     data?: Record<string, any>;
     style?: RelationStyle;
+    customTaxi?: CustomTaxi | null;
 }
 export interface EntityMove {
     id: string;

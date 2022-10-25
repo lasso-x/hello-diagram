@@ -1,11 +1,13 @@
 import { Vue } from 'vue-property-decorator';
+import Graph from './Graph.vue';
 import type DiagramVm from './Diagram.vue';
 import type cytoscape from 'cytoscape';
 export default class GraphPrint extends Vue {
     readonly diagramVm: DiagramVm;
     readonly printContentEl?: HTMLDivElement;
+    readonly graphVm?: Graph;
     printing: boolean;
-    scaling: number;
+    graphScaling: number;
     title: string;
     mode: 'print' | 'pdf' | 'png';
     orientation: 'portrait' | 'landscape';

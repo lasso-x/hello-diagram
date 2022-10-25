@@ -1,6 +1,6 @@
-import DiagramVue from '@/DiagramVue';
+import DiagramVue from '../DiagramVue';
 import type DiagramVm from './Diagram.vue';
-import type Diagram from '@/diagram';
+import type Diagram from '../diagram';
 export default class TopBar extends DiagramVue {
     readonly diagramVm: DiagramVm;
     readonly diagram: Diagram;
@@ -21,4 +21,5 @@ export default class TopBar extends DiagramVue {
     showAddDialog(): void;
     showSaveDialog(): void;
     showEditDiagramDialog(): void;
+    showConfirmDeleteDiagramDialog(): void;
 }

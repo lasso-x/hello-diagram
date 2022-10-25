@@ -1,7 +1,7 @@
 import { Vue } from 'vue-property-decorator';
 import type Graph from './Graph.vue';
 import type { Core, Position, EdgeSingular } from 'cytoscape';
-import type { default as Diagram } from '@/diagram';
+import type { default as Diagram } from '../diagram';
 declare type Side = 'top' | 'bottom' | 'left' | 'right';
 declare type NPoint = {
     x: number;

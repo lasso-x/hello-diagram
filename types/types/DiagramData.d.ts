@@ -1,4 +1,4 @@
-import Diagram, { CustomTaxi, Entity, EntityDefinition, EntityStyle, Relation, RelationDefinition, RelationStyle } from '@/diagram';
+import Diagram, { CustomTaxi, Entity, EntityDefinition, EntityStyle, Relation, RelationDefinition, RelationStyle } from '../diagram';
 export default class DiagramData {
     constructor(diagram: Diagram, options?: {
         data?: DiagramDataDefinition;

@@ -1,6 +1,6 @@
 import { Vue } from 'vue-property-decorator';
 import type DiagramVm from './Diagram.vue';
-import type { default as Diagram, Entity } from '@/diagram';
+import type { default as Diagram, Entity } from '../diagram';
 interface Item {
     label: string;
     onClick: () => void;

@@ -1,4 +1,4 @@
-import { ContextMenuActions } from '@/diagram';
+import { ContextMenuActions } from '../diagram';
 import { Vue } from 'vue-property-decorator';
 interface StateMenu {
     id: string;

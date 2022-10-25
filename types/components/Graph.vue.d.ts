@@ -1,5 +1,5 @@
 import { Vue } from 'vue-property-decorator';
-import { Entity, LayoutDefinition, Relation } from '@/diagram';
+import { Entity, LayoutDefinition, Relation } from '../diagram';
 import cytoscape from 'cytoscape';
 import 'cytoscape-panzoom/cytoscape.js-panzoom.css';
 import type DiagramVm from './Diagram.vue';
@@ -7,6 +7,7 @@ export default class Graph extends Vue {
     readonly diagramVm: DiagramVm;
     get graphVm(): this;
     readonly printMode: boolean;
+    readonly scaling: number;
     readonly graphContainerEl: HTMLElement;
     readonly graphNodesEl: HTMLElement;
     _graph?: cytoscape.Core;

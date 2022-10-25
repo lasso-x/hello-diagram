@@ -2,7 +2,7 @@ import { Vue } from 'vue-property-decorator';
 import DataCreator from './DataCreator.vue';
 import EntitySelector, { EntitySelectorModel } from './EntitySelector.vue';
 import type DiagramVm from './Diagram.vue';
-import { Entity, EntityType, RelationType } from '@/diagram';
+import { Entity, EntityType, RelationType } from '../diagram';
 export default class AddRelationDialog extends Vue {
     readonly diagramVm: DiagramVm;
     readonly relationDataCreator?: DataCreator;

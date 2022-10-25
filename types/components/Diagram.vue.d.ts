@@ -1,5 +1,5 @@
 import { Vue } from 'vue-property-decorator';
-import Diagram from '@/diagram';
+import Diagram from '../diagram';
 import { VueConstructor } from 'vue';
 export default class DiagramVm extends Vue {
     get diagramVm(): this;

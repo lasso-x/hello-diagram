@@ -1,7 +1,7 @@
 import { Vue } from 'vue-property-decorator';
 import type DiagramVm from './Diagram.vue';
-import type Diagram from '@/diagram';
-import type SavedDiagram from '@/types/SavedDiagram';
+import type Diagram from '../diagram';
+import type SavedDiagram from '../types/SavedDiagram';
 export default class LoadDialog extends Vue {
     readonly diagramVm: DiagramVm;
     readonly diagram: Diagram;
@@ -13,4 +13,5 @@ export default class LoadDialog extends Vue {
     close(): void;
     load(savedDiagram?: SavedDiagram): Promise<void>;
     showEditDiagramDialog(savedDiagram: SavedDiagram): void;
+    showConfirmDeleteDiagramDialog(savedDiagram: SavedDiagram): void;
 }

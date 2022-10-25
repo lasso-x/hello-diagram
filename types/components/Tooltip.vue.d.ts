@@ -1,5 +1,5 @@
 import { Vue } from 'vue-property-decorator';
-import { TooltipOptions } from '@/tooltips';
+import { TooltipOptions } from '../tooltips';
 export default class Tooltip extends Vue {
     readonly el?: TooltipOptions['el'];
     readonly text: TooltipOptions['text'];

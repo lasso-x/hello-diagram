@@ -1,4 +1,4 @@
-import type { Entity, LayoutDefinition, Relation } from '@/diagram';
+import type { Entity, LayoutDefinition, Relation } from '../diagram';
 import EventBus from './EventBus';
 export declare type DiagramEvent = ({
     name: 'dataUpdated';
@@ -20,6 +20,8 @@ export declare type DiagramEvent = ({
     name: 'graph.fit';
 } | {
     name: 'graph.spreadTaxiEdges';
+} | {
+    name: 'graph.updatedElements';
 } | {
     name: 'editor.open';
     target: Entity | Relation;

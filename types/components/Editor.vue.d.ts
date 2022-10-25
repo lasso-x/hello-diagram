@@ -1,6 +1,6 @@
 import { Vue } from 'vue-property-decorator';
 import type DiagramVm from './Diagram.vue';
-import { default as Diagram, Entity, Relation, Field } from '@/diagram';
+import { default as Diagram, Entity, Relation, Field } from '../diagram';
 interface EditorFieldGroup {
     id: string;
     title: string;

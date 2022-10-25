@@ -7,6 +7,7 @@ export default class Diagram {
     element?: Element;
     vm?: Vue;
     eventBus: DiagramEventBus;
+    userId: string;
     mainEntityId: string;
     entityTypes: EntityTypes;
     relationTypes: RelationTypes;
@@ -14,7 +15,7 @@ export default class Diagram {
     fields: Field[];
     filters: Filter[];
     layouts: LayoutDefinition[];
-    methods: Pick<DiagramConfigMethods, ('getSavedDiagrams' | 'saveDiagram' | 'deleteSavedDiagram' | 'getDefaultSavedDiagramId' | 'setDefaultSavedDiagramId' | 'getPrintTitle' | 'getPrintFilename' | 'convertPngToPdf' | 'getEntityData' | 'searchEntities' | 'getContextMenuActions')>;
+    methods: Pick<DiagramConfigMethods, ('getSavedDiagrams' | 'saveDiagram' | 'deleteSavedDiagram' | 'getDefaultSavedDiagramId' | 'setDefaultSavedDiagramId' | 'getPrintTitle' | 'getPrintFilename' | 'convertPngToPdf' | 'getEntityData' | 'searchEntities' | 'getContextMenuActions' | 'openFullscreen')>;
     spreadTaxiEdges: boolean;
     initialZoomLevel: number | null;
     initialPan: NonNullable<DiagramConfig['initialPan']> | null;
@@ -54,12 +55,16 @@ export default class Diagram {
     getDefaultSavedDiagramId(): Promise<string | null>;
     setDefaultSavedDiagramId(id: string | null): Promise<void>;
     save(overwrite?: boolean): Promise<void>;
+    updateSavedDiagram(savedDiagram: SavedDiagram): Promise<void>;
+    generatePng(options?: Pick<NonNullable<DiagramConfig['printSettings']>, 'orientation' | 'size'>): Promise<Blob>;
     load(savedDiagram?: SavedDiagram): Promise<void>;
+    deleteSavedDiagram(savedDiagram: SavedDiagram): Promise<void>;
     reset(): void;
     search(type: EntityType, searchString: string): Entity[];
     search(type: RelationType, searchString: string): Relation[];
 }
 export interface DiagramConfig {
+    userId?: string;
     mainEntityId: string;
     entityTypes?: EntityTypeDefinition[];
     relationTypes?: RelationTypeDefinition[];
@@ -98,6 +103,7 @@ export interface DiagramConfigMethods {
     getSavedDiagrams?: () => Promise<SavedDiagram[]>;
     saveDiagram?: (context: {
         savedDiagram: SavedDiagram;
+        isActiveDiagram: boolean;
         generatePng: (options?: {
             orientation?: 'portrait' | 'landscape';
             size?: 'A5' | 'A4' | 'A3';
@@ -114,6 +120,8 @@ export interface DiagramConfigMethods {
         filename: string;
         size: 'A5' | 'A4' | 'A3';
         orientation: 'portrait' | 'landscape';
+        includeMargin: boolean;
+        pageCount: number;
     }) => Promise<Blob>;
     getEntityData?: (options: {
         ids: string[];
@@ -137,6 +145,7 @@ export interface DiagramConfigMethods {
         onlySelectedItem: ContextItem | null;
         commitChange: (change: Change) => void;
     }) => ContextMenuActions;
+    openFullscreen?: () => void;
 }
 export interface PrintContext {
     mainEntity: ContextItem;
@@ -157,6 +166,7 @@ export interface ContextMenuAction {
 export declare class ActiveDiagram {
     constructor(diagram: Diagram, options?: {
         id?: string;
+        ownerUserId?: string;
         title?: string;
         description?: string;
         shared?: boolean;
@@ -165,6 +175,7 @@ export declare class ActiveDiagram {
     });
     diagram: Diagram;
     id: string;
+    ownerUserId: string;
     title: string;
     description: string;
     shared: boolean;
@@ -200,6 +211,7 @@ export declare class EntityType {
     printStyleBuilder?: EntityStyleBuilder;
     searchable: boolean;
     searchResultBuilder: SearchResultBuilder;
+    showDetailsButton?: EntityTypeDefinition['showDetailsButton'];
     fieldGroups: FieldGroup[];
     fields: Field[];
     searchableFields: Field[];
@@ -226,6 +238,10 @@ export interface EntityTypeDefinition {
     printStyle?: EntityTypeStyleArgument;
     searchable?: boolean;
     searchResultBuilder?: SearchResultBuilder;
+    showDetailsButton?: {
+        label?: string;
+        onClick: () => void;
+    };
 }
 export declare type EntityTypeStyleArgument = EntityStyle | EntityStyleBuilder;
 export declare type EntityStyleBuilder = (context: ContextItem) => EntityStyle;

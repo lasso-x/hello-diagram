@@ -1,6 +1,6 @@
 import { Vue } from 'vue-property-decorator';
 import type DiagramVm from './Diagram.vue';
-import type { default as Diagram, Relation } from '@/diagram';
+import type { default as Diagram, Relation } from '../diagram';
 import type Graph from './Graph.vue';
 import type cytoscape from 'cytoscape';
 export default class GraphEdge extends Vue {

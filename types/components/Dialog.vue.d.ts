@@ -5,8 +5,8 @@ export default class Dialog extends Vue {
     readonly content?: string;
     readonly size: string | number;
     readonly onClose?: () => void;
-    contentEl?: HTMLElement;
-    contentInnerEl?: HTMLElement;
+    contentEl: HTMLElement | null;
+    contentInnerEl: HTMLElement | null;
     scrollable: boolean;
     get maxWidth(): number;
     get slotProps(): {

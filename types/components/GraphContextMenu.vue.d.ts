@@ -1,7 +1,7 @@
 /// <reference types="cytoscape" />
 import { Vue } from 'vue-property-decorator';
-import Diagram, { ContextItem, ContextMenuActions } from '@/diagram';
-import type { Change } from '@/types/DiagramData';
+import Diagram, { ContextItem, ContextMenuActions } from '../diagram';
+import type { Change } from '../types/DiagramData';
 import type DiagramVm from './Diagram.vue';
 import type Graph from './Graph.vue';
 export default class GraphContextMenu extends Vue {

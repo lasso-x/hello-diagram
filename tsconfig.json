@@ -13,12 +13,7 @@
     "sourceMap": true,
     "declaration": true,
     "declarationDir": "types",
-    "baseUrl": ".",
-    "paths": {
-      "@/*": [
-        "types/*"
-      ]
-    }
+    "baseUrl": "."
   },
   "exclude": [
     "node_modules"

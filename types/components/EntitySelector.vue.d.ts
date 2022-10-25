@@ -1,5 +1,5 @@
 import { Vue } from 'vue-property-decorator';
-import { ContextItem, EntityType } from '@/diagram';
+import { ContextItem, EntityType } from '../diagram';
 import type DiagramVm from './Diagram.vue';
 import DataCreator from './DataCreator.vue';
 import { Suggestion } from './EntitySearchBar.vue';

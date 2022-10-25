@@ -1,6 +1,6 @@
 import { Vue } from 'vue-property-decorator';
 import type DiagramVm from './Diagram.vue';
-import type Diagram from '@/diagram';
+import type Diagram from '../diagram';
 import type Graph from './Graph.vue';
 import type cytoscape from 'cytoscape';
 interface FieldGroup {

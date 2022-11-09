@@ -101771,8 +101771,8 @@ var es_array_concat = __webpack_require__("99af");
 var external_commonjs_vue_commonjs2_vue_root_Vue_ = __webpack_require__("8bbf");
 var external_commonjs_vue_commonjs2_vue_root_Vue_default = /*#__PURE__*/__webpack_require__.n(external_commonjs_vue_commonjs2_vue_root_Vue_);
 
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"801a2c14-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/Diagram.vue?vue&type=template&id=a1141696&
-var Diagramvue_type_template_id_a1141696_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{class:[
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"801a2c14-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/Diagram.vue?vue&type=template&id=4c75294c&
+var Diagramvue_type_template_id_4c75294c_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{class:[
     'lassox-diagram__Diagram',
     _vm.compact && 'lassox-diagram__Diagram--compact' ],attrs:{"tabindex":"-1"},on:{"keydown":_vm.onKeyDown}},[_c('div',{staticClass:"lassox-diagram__Diagram-loading-screen",style:({
       opacity: _vm.diagram.isLoading ? '1' : '0',
@@ -101781,7 +101781,7 @@ var Diagramvue_type_template_id_a1141696_render = function () {var _vm=this;var 
 var staticRenderFns = []
 
 
-// CONCATENATED MODULE: ./src/components/Diagram.vue?vue&type=template&id=a1141696&
+// CONCATENATED MODULE: ./src/components/Diagram.vue?vue&type=template&id=4c75294c&
 
 // CONCATENATED MODULE: ./node_modules/@babel/runtime/helpers/esm/setPrototypeOf.js
 function _setPrototypeOf(o, p) {
@@ -103102,27 +103102,30 @@ var component = normalizeComponent(
 )
 
 /* harmony default export */ var components_LoadingSpinner = (component.exports);
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"801a2c14-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/TopBar.vue?vue&type=template&id=6d36e42e&
-var TopBarvue_type_template_id_6d36e42e_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"lassox-diagram__TopBar"},[_c('ButtonGroup',[(!_vm.compact)?[_c('Button',{attrs:{"type":"primary","label":"Udskriv"},on:{"click":function () { return _vm.diagramVm.showPrintDialog('print'); }}}),_c('Button',{ref:"saveAsDropdownButton",attrs:{"label":"Gem som","trailingIcon":_vm.showSaveAsDropdownMenu ? 'expand_less' : 'expand_more'},on:{"click":function () { return _vm.showSaveAsDropdownMenu = !_vm.showSaveAsDropdownMenu; }}}),(_vm.diagram.methods.getSavedDiagrams)?_c('Button',{attrs:{"label":"Indlæs"},on:{"click":function () { return _vm.diagramVm.showLoadDialog(); }}}):_vm._e()]:_vm._e()],2),_c('div',{staticStyle:{"width":"16px","flex-shrink":"0"}}),(!_vm.compact && _vm.diagram.enableSaving)?[_c('div',{staticClass:"lassox-diagram__TopBar_active-diagram"},[(_vm.diagram.activeDiagram.id)?[(_vm.diagram.activeDiagram.title)?_c('div',{staticClass:"lassox-diagram__TopBar_active-diagram-name",domProps:{"textContent":_vm._s(_vm.diagram.activeDiagram.title)}}):_vm._e(),(_vm.diagram.activeDiagram.title && _vm.diagram.enableSharing)?_c('div',{staticStyle:{"width":"12px","flex-shrink":"0"}}):_vm._e(),(_vm.diagram.enableSharing)?_c('IconButton',{directives:[{name:"tooltip",rawName:"v-tooltip",value:(_vm.diagram.activeDiagram.shared ? 'Diagrammet er delt med din organisation' : 'Diagrammet er privat og deles ikke'),expression:"diagram.activeDiagram.shared ? 'Diagrammet er delt med din organisation' : 'Diagrammet er privat og deles ikke'"}],staticClass:"lassox-diagram__TopBar_active-diagram-shared-icon",attrs:{"icon":_vm.diagram.activeDiagram.shared ? 'lock_open' : 'lock'},on:{"click":function () { return _vm.showEditDiagramDialog(); }}}):_vm._e(),((_vm.diagram.activeDiagram.title || _vm.diagram.enableSharing) && _vm.diagram.hasUnsavedChanges)?_c('div',{staticStyle:{"width":"12px","flex-shrink":"0"}}):_vm._e()]:_vm._e(),(_vm.diagram.hasUnsavedChanges)?_c('div',{staticClass:"lassox-diagram__TopBar_active-diagram-unsaved-changes"},[(_vm.diagram.activeDiagram.id && (_vm.diagram.activeDiagram.title || _vm.diagram.enableSharing))?_c('div',{staticStyle:{"margin-right":"12px"}},[_vm._v("—")]):_vm._e(),(_vm.diagram.isSaving)?_c('div',{domProps:{"textContent":_vm._s('Gemmer...')}}):_c('a',{attrs:{"href":"#"},domProps:{"textContent":_vm._s('Gem ændringer')},on:{"click":function($event){$event.preventDefault();return (function () {
-            if (_vm.diagram.activeDiagram.id) { _vm.save() }
-            else { _vm.showSaveDialog() }
-          }).apply(null, arguments)}}})]):_vm._e()],2),_c('div',{staticStyle:{"width":"16px","flex-shrink":"0"}})]:_vm._e(),_c('ButtonGroup',{staticStyle:{"margin-left":"auto"}},[(_vm.diagram.methods.openFullscreen)?_c('Button',{directives:[{name:"tooltip",rawName:"v-tooltip",value:('Vis i fuld skærm'),expression:"'Vis i fuld skærm'"}],attrs:{"icon":"fullscreen"},on:{"click":_vm.diagram.methods.openFullscreen}}):_vm._e(),(_vm.diagram.layouts.length)?_c('Button',{ref:"layoutDropdownButton",attrs:{"label":"Layout","trailingIcon":_vm.showLayoutDropdownMenu ? 'expand_less' : 'expand_more'},on:{"click":function () { return _vm.showLayoutDropdownMenu = !_vm.showLayoutDropdownMenu; }}}):_vm._e(),(!_vm.compact && _vm.diagram.enableExpand)?_c('Button',{attrs:{"label":"Udvid"},on:{"click":_vm.expand}}):_vm._e(),(!_vm.compact)?_c('Button',{ref:"editDropdownButton",attrs:{"label":"Rediger","trailingIcon":_vm.showEditDropdownMenu ? 'expand_less' : 'expand_more'},on:{"click":function () { return _vm.showEditDropdownMenu = !_vm.showEditDropdownMenu; }}}):_c('Button',{attrs:{"icon":"replay"},on:{"click":_vm.reset}}),(_vm.compact)?_c('Button',{attrs:{"label":"Tilpas"},on:{"mousedown":function (e) {
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"801a2c14-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/TopBar.vue?vue&type=template&id=6250f78a&
+var TopBarvue_type_template_id_6250f78a_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"lassox-diagram__TopBar"},[_c('ButtonGroup',{staticStyle:{"padding-right":"16px"}},[_c('Button',{attrs:{"type":"primary","label":"Udskriv"},on:{"click":function () { return _vm.diagramVm.showPrintDialog('print'); }}}),_c('Button',{ref:"saveAsDropdownButton",attrs:{"label":"Gem som","trailingIcon":_vm.showSaveAsDropdownMenu ? 'expand_less' : 'expand_more'},on:{"click":function () { return _vm.showSaveAsDropdownMenu = !_vm.showSaveAsDropdownMenu; }}}),(_vm.diagram.enableDocuments && _vm.diagram.methods.getSavedDiagrams)?_c('Button',{attrs:{"label":"Indlæs"},on:{"click":function () { return _vm.diagramVm.showLoadDialog(); }}}):_vm._e()],1),((
+      (!_vm.compact || true)
+      && (
+        (_vm.diagram.activeDiagram.id && _vm.diagram.activeDiagram.title || _vm.diagram.enableSharing)
+        || (_vm.diagram.enableSaving && _vm.diagram.hasUnsavedChanges)
+      )
+    ))?_c('div',{staticClass:"lassox-diagram__TopBar_active-diagram",staticStyle:{"padding-right":"16px"}},[(_vm.diagram.activeDiagram.id)?[(_vm.diagram.activeDiagram.title)?_c('div',{staticClass:"lassox-diagram__TopBar_active-diagram-name",domProps:{"textContent":_vm._s(_vm.diagram.activeDiagram.title)}}):_vm._e(),(_vm.diagram.activeDiagram.title && _vm.diagram.enableSharing)?_c('div',{staticStyle:{"width":"12px","flex-shrink":"0"}}):_vm._e(),(_vm.diagram.enableSharing)?_c('IconButton',{directives:[{name:"tooltip",rawName:"v-tooltip",value:(_vm.diagram.activeDiagram.shared ? 'Diagrammet er delt med din organisation' : 'Diagrammet er privat og deles ikke'),expression:"diagram.activeDiagram.shared ? 'Diagrammet er delt med din organisation' : 'Diagrammet er privat og deles ikke'"}],staticClass:"lassox-diagram__TopBar_active-diagram-shared-icon",attrs:{"icon":_vm.diagram.activeDiagram.shared ? 'lock_open' : 'lock'},on:{"click":function () { return _vm.diagram.enableDocuments && _vm.showEditDiagramDialog(); }}}):_vm._e(),((_vm.diagram.activeDiagram.title || _vm.diagram.enableSharing) && _vm.diagram.hasUnsavedChanges)?_c('div',{staticStyle:{"width":"12px","flex-shrink":"0"}}):_vm._e()]:_vm._e(),(_vm.diagram.enableSaving && _vm.diagram.hasUnsavedChanges)?_c('div',{staticClass:"lassox-diagram__TopBar_active-diagram-unsaved-changes"},[(_vm.diagram.activeDiagram.id && (_vm.diagram.activeDiagram.title || _vm.diagram.enableSharing))?_c('div',{staticStyle:{"margin-right":"12px"}},[_vm._v("—")]):_vm._e(),(_vm.diagram.isSaving)?_c('div',{domProps:{"textContent":_vm._s('Gemmer...')}}):_c('a',{attrs:{"href":"#"},domProps:{"textContent":_vm._s('Gem ændringer')},on:{"click":function($event){$event.preventDefault();return (function () {
+          if (!_vm.diagram.activeDiagram.id && _vm.diagram.enableDocuments) { _vm.showSaveDialog() }
+          else { _vm.save() }
+        }).apply(null, arguments)}}})]):_vm._e()],2):_vm._e(),_c('ButtonGroup',{staticStyle:{"margin-left":"auto"}},[(_vm.diagram.methods.openFullscreen)?_c('Button',{directives:[{name:"tooltip",rawName:"v-tooltip",value:('Vis i fuld skærm'),expression:"'Vis i fuld skærm'"}],attrs:{"icon":"fullscreen"},on:{"click":_vm.diagram.methods.openFullscreen}}):_vm._e(),(_vm.diagram.layouts.length)?_c('Button',{ref:"layoutDropdownButton",attrs:{"label":"Layout","trailingIcon":_vm.showLayoutDropdownMenu ? 'expand_less' : 'expand_more'},on:{"click":function () { return _vm.showLayoutDropdownMenu = !_vm.showLayoutDropdownMenu; }}}):_vm._e(),(_vm.diagram.enableExpand)?_c('Button',{attrs:{"label":"Udvid"},on:{"click":_vm.expand}}):_vm._e(),_c('Button',{ref:"editDropdownButton",attrs:{"label":"Rediger","trailingIcon":_vm.showEditDropdownMenu ? 'expand_less' : 'expand_more'},on:{"click":function () { return _vm.showEditDropdownMenu = !_vm.showEditDropdownMenu; }}}),(_vm.compact)?_c('Button',{attrs:{"label":"Tilpas"},on:{"mousedown":function (e) {
         if (_vm.diagramVm.showCustomizer) { e.preventDefault() }
       },"click":function () {
         _vm.diagramVm.showCustomizer = !_vm.diagramVm.showCustomizer
-      }}}):_vm._e()],1),_c('DropdownMenu',{attrs:{"opener":_vm.showSaveAsDropdownMenu ? _vm.$refs.saveAsDropdownButton.$el : null,"close":function () { return _vm.showSaveAsDropdownMenu = false; }}},[(_vm.diagram.activeDiagram.id && _vm.diagram.enableSaving)?[_c('DropdownMenuItem',{attrs:{"label":"Nyt diagram"},on:{"click":function () {
-          // save(false)
-          _vm.showSaveDialog()
-        }}}),_c('DropdownMenuDivider')]:_vm._e(),(_vm.diagram.methods.convertPngToPdf)?_c('DropdownMenuItem',{attrs:{"label":"PDF"},on:{"click":function () { return _vm.diagramVm.showPrintDialog('pdf'); }}}):_vm._e(),_c('DropdownMenuItem',{attrs:{"label":"Billede"},on:{"click":function () { return _vm.diagramVm.showPrintDialog('png'); }}})],2),(_vm.diagram.layouts.length)?_c('DropdownMenu',{attrs:{"opener":_vm.showLayoutDropdownMenu ? _vm.$refs.layoutDropdownButton.$el : null,"close":function () { return _vm.showLayoutDropdownMenu = false; }}},[_vm._l((_vm.diagram.layouts),function(layout){return _c('DropdownMenuItem',{key:layout.id,attrs:{"label":layout.name,"icon":layout == _vm.diagram.activeDiagram.settings.activeLayout ? 'check' : ' '},on:{"click":function () { return _vm.diagram.eventBus.emit({ name: 'graph.layout', layout: layout }); }}})}),(_vm.showTaxiToggle)?[_c('DropdownMenuDivider'),_c('DropdownMenuItem',{attrs:{"label":"Knækpile","icon":_vm.diagram.activeDiagram.settings.enableTaxi ? 'check' : ' ',"disabled":!_vm.diagram.activeDiagram.settings.activeLayout.enableTaxiToggle},on:{"click":function () {
+      }}}):_vm._e()],1),_c('DropdownMenu',{attrs:{"opener":_vm.showSaveAsDropdownMenu ? _vm.$refs.saveAsDropdownButton.$el : null,"close":function () { return _vm.showSaveAsDropdownMenu = false; }}},[(_vm.diagram.activeDiagram.id && _vm.diagram.enableSaving && _vm.diagram.enableDocuments)?[_c('DropdownMenuItem',{attrs:{"label":"Nyt diagram"},on:{"click":function () { return _vm.showSaveDialog(); }}}),_c('DropdownMenuDivider')]:_vm._e(),(_vm.diagram.methods.convertPngToPdf)?_c('DropdownMenuItem',{attrs:{"label":"PDF"},on:{"click":function () { return _vm.diagramVm.showPrintDialog('pdf'); }}}):_vm._e(),_c('DropdownMenuItem',{attrs:{"label":"Billede"},on:{"click":function () { return _vm.diagramVm.showPrintDialog('png'); }}})],2),(_vm.diagram.layouts.length)?_c('DropdownMenu',{attrs:{"opener":_vm.showLayoutDropdownMenu ? _vm.$refs.layoutDropdownButton.$el : null,"close":function () { return _vm.showLayoutDropdownMenu = false; }}},[_vm._l((_vm.diagram.layouts),function(layout){return _c('DropdownMenuItem',{key:layout.id,attrs:{"label":layout.name,"icon":layout == _vm.diagram.activeDiagram.settings.activeLayout ? 'check' : ' '},on:{"click":function () { return _vm.diagram.eventBus.emit({ name: 'graph.layout', layout: layout }); }}})}),(_vm.showTaxiToggle)?[_c('DropdownMenuDivider'),_c('DropdownMenuItem',{attrs:{"label":"Knækpile","icon":_vm.diagram.activeDiagram.settings.enableTaxi ? 'check' : ' ',"disabled":!_vm.diagram.activeDiagram.settings.activeLayout.enableTaxiToggle},on:{"click":function () {
           _vm.diagram.activeDiagram.settings.enableTaxi = !_vm.diagram.activeDiagram.settings.enableTaxi
           _vm.diagram.eventBus.emit({ name: 'settingsChanged' })
           _vm.diagram.eventBus.emit({ name: 'dataUpdated' })
           _vm.diagram.eventBus.emit({ name: 'graph.spreadTaxiEdges' })
-        }}})]:_vm._e()],2):_vm._e(),_c('DropdownMenu',{attrs:{"opener":_vm.showEditDropdownMenu ? _vm.$refs.editDropdownButton.$el : null,"close":function () { return _vm.showEditDropdownMenu = false; }}},[(_vm.diagram.enableEditing)?[_c('DropdownMenuItem',{attrs:{"label":"Tilføj","icon":"add"},on:{"click":_vm.showAddDialog}}),_c('DropdownMenuDivider')]:_vm._e(),_c('DropdownMenuItem',{attrs:{"label":"Fortryd","icon":"undo","disabled":!_vm.canUndo},on:{"click":_vm.undo}}),_c('DropdownMenuItem',{attrs:{"label":"Annuller fortryd","icon":"redo","disabled":!_vm.canRedo},on:{"click":_vm.redo}}),_c('DropdownMenuItem',{attrs:{"label":"Nulstil","icon":"replay","disabled":!_vm.canUndo},on:{"click":_vm.reset}}),(_vm.diagram.activeDiagram.id)?[_c('DropdownMenuDivider'),_c('DropdownMenuItem',{attrs:{"label":"Rediger diagram"},on:{"click":function () { return _vm.showEditDiagramDialog(); }}}),_c('DropdownMenuItem',{attrs:{"label":"Slet"},on:{"click":function () { return _vm.showConfirmDeleteDiagramDialog(); }}})]:_vm._e()],2)],2)}
-var TopBarvue_type_template_id_6d36e42e_staticRenderFns = []
+        }}})]:_vm._e()],2):_vm._e(),_c('DropdownMenu',{attrs:{"opener":_vm.showEditDropdownMenu ? _vm.$refs.editDropdownButton.$el : null,"close":function () { return _vm.showEditDropdownMenu = false; }}},[(_vm.diagram.enableEditing)?[_c('DropdownMenuItem',{attrs:{"label":"Tilføj","icon":"add"},on:{"click":_vm.showAddDialog}}),_c('DropdownMenuDivider')]:_vm._e(),_c('DropdownMenuItem',{attrs:{"label":"Fortryd","icon":"undo","disabled":!_vm.canUndo},on:{"click":_vm.undo}}),_c('DropdownMenuItem',{attrs:{"label":"Annuller fortryd","icon":"redo","disabled":!_vm.canRedo},on:{"click":_vm.redo}}),_c('DropdownMenuItem',{attrs:{"label":"Nulstil","icon":"replay","disabled":!_vm.canUndo},on:{"click":_vm.reset}}),(_vm.diagram.activeDiagram.id && ((_vm.diagram.enableSaving && _vm.diagram.enableDocuments) || _vm.diagram.methods.deleteSavedDiagram))?[_c('DropdownMenuDivider'),(_vm.diagram.enableSaving && _vm.diagram.enableDocuments)?_c('DropdownMenuItem',{attrs:{"label":"Rediger diagram"},on:{"click":function () { return _vm.showEditDiagramDialog(); }}}):_vm._e(),(_vm.diagram.methods.deleteSavedDiagram)?_c('DropdownMenuItem',{attrs:{"label":"Slet"},on:{"click":function () { return _vm.showConfirmDeleteDiagramDialog(); }}}):_vm._e()]:_vm._e()],2)],1)}
+var TopBarvue_type_template_id_6250f78a_staticRenderFns = []
 
 
-// CONCATENATED MODULE: ./src/components/TopBar.vue?vue&type=template&id=6d36e42e&
+// CONCATENATED MODULE: ./src/components/TopBar.vue?vue&type=template&id=6250f78a&
 
 // CONCATENATED MODULE: ./node_modules/@babel/runtime/helpers/esm/typeof.js
 
@@ -110201,7 +110204,6 @@ var TopBarvue_type_script_lang_ts_TopBar = /*#__PURE__*/function (_DiagramVue) {
     _this.showLoadDropdownMenu = false;
     _this.showLayoutDropdownMenu = false;
     _this.showEditDropdownMenu = false;
-    _this.log = console.log;
     return _this;
   }
 
@@ -110507,8 +110509,8 @@ var TopBarvue_type_style_index_0_lang_scss_ = __webpack_require__("d4bd");
 
 var TopBar_component = normalizeComponent(
   components_TopBarvue_type_script_lang_ts_,
-  TopBarvue_type_template_id_6d36e42e_render,
-  TopBarvue_type_template_id_6d36e42e_staticRenderFns,
+  TopBarvue_type_template_id_6250f78a_render,
+  TopBarvue_type_template_id_6250f78a_staticRenderFns,
   false,
   null,
   null,
@@ -117497,8 +117499,8 @@ var PrintDialog_component = normalizeComponent(
 )
 
 /* harmony default export */ var components_PrintDialog = (PrintDialog_component.exports);
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"801a2c14-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/LoadDialog.vue?vue&type=template&id=5cd0df4d&
-var LoadDialogvue_type_template_id_5cd0df4d_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('Dialog',{staticClass:"lassox-diagram__LoadDialog",attrs:{"dismissable":_vm.diagram.hasActiveDiagram,"title":"Indlæs diagram","size":"3x","onClose":_vm.close},scopedSlots:_vm._u([{key:"content",fn:function(){return [_c('div',{staticClass:"lassox-diagram__LoadDialog-loading-overlay",style:({
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"801a2c14-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/LoadDialog.vue?vue&type=template&id=9b0e18c8&
+var LoadDialogvue_type_template_id_9b0e18c8_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('Dialog',{staticClass:"lassox-diagram__LoadDialog",attrs:{"dismissable":_vm.diagram.hasActiveDiagram,"title":"Indlæs diagram","size":"3x","onClose":_vm.close},scopedSlots:_vm._u([{key:"content",fn:function(){return [_c('div',{staticClass:"lassox-diagram__LoadDialog-loading-overlay",style:({
         opacity: _vm.loading ? '1' : '0',
         pointerEvents: _vm.loading ? '' : 'none',
       })},[_c('LoadingSpinner',{staticStyle:{"margin":"auto"}})],1),_c('div',{staticClass:"lassox-diagram__LoadDialog-saved-diagrams"},[_c('BaseButton',{class:[
@@ -117508,14 +117510,14 @@ var LoadDialogvue_type_template_id_5cd0df4d_render = function () {var _vm=this;v
           savedDiagram.id === _vm.diagram.activeDiagram.id && 'lassox-diagram__LoadDialog-saved-diagram--active',
           savedDiagram === _vm.selectedSavedDiagram && 'lassox-diagram__LoadDialog-saved-diagram--selected' ],on:{"click":function () { return _vm.selectedSavedDiagram = savedDiagram; }}},[_c('div',{staticClass:"lassox-diagram__LoadDialog-saved-diagram-icons"},[(_vm.diagram.enableSharing)?_c('Icon',{attrs:{"icon":savedDiagram.shared ? 'lock_open' : 'lock'}}):_c('Icon',{attrs:{"icon":" "}})],1),_c('div',{staticClass:"lassox-diagram__LoadDialog-saved-diagram-text"},[_c('div',{staticClass:"lassox-diagram__LoadDialog-saved-diagram-title",domProps:{"textContent":_vm._s(savedDiagram.title || 'Unavngivet diagram')}}),(savedDiagram.description)?_c('div',{staticClass:"lassox-diagram__LoadDialog-saved-diagram-description",domProps:{"textContent":_vm._s(savedDiagram.description)}}):_vm._e()]),_c('div',{staticClass:"lassox-diagram__LoadDialog-saved-diagram-actions"},[(savedDiagram.id === _vm.diagram.defaultSavedDiagramId)?_c('Icon',{attrs:{"icon":"check"}}):_vm._e(),_c('div',{staticStyle:{"margin-right":"12px"}}),_c('DropdownButton',{scopedSlots:_vm._u([{key:"default",fn:function(ref){
         var onClick = ref.onClick;
-return [_c('IconButton',{attrs:{"icon":"more_vert","size":"small"},on:{"click":function($event){$event.stopPropagation();return onClick.apply(null, arguments)}}})]}},{key:"dropdown-menu",fn:function(){return [_c('DropdownMenuItem',{attrs:{"label":"Rediger","icon":"edit"},on:{"click":function () { return _vm.showEditDiagramDialog(savedDiagram); }}}),_c('DropdownMenuItem',{attrs:{"label":"Slet","icon":"delete","disabled":(savedDiagram.ownerUserId || '') !== _vm.diagram.userId},on:{"click":function () { return _vm.showConfirmDeleteDiagramDialog(savedDiagram); }}})]},proxy:true}],null,true)})],1)])})],2)]},proxy:true},{key:"actions",fn:function(){return [(_vm.canSetDefault)?_c('CheckBoxField',{staticStyle:{"margin-right":"16px"},attrs:{"label":"Åbn som standard","disabled":!_vm.selectedSavedDiagram || _vm.selectedSavedDiagram == 'new'},model:{value:(_vm.setAsDefault),callback:function ($$v) {_vm.setAsDefault=$$v},expression:"setAsDefault"}}):_vm._e(),_c('div',{staticStyle:{"margin":"auto"}}),_c('ButtonGroup',{attrs:{"align":"right"}},[(_vm.diagram.hasActiveDiagram)?_c('Button',{attrs:{"label":"Luk"},on:{"click":_vm.close}}):_vm._e(),_c('Button',{attrs:{"label":"Indlæs","type":"primary","disabled":!_vm.selectedSavedDiagram},on:{"click":function () {
+return [_c('IconButton',{attrs:{"icon":"more_vert","size":"small"},on:{"click":function($event){$event.stopPropagation();return onClick.apply(null, arguments)}}})]}},{key:"dropdown-menu",fn:function(){return [_c('DropdownMenuItem',{attrs:{"label":"Rediger","icon":"edit"},on:{"click":function () { return _vm.showEditDiagramDialog(savedDiagram); }}}),(_vm.diagram.methods.deleteSavedDiagram)?_c('DropdownMenuItem',{attrs:{"label":"Slet","icon":"delete","disabled":(savedDiagram.ownerUserId || '') !== _vm.diagram.userId},on:{"click":function () { return _vm.showConfirmDeleteDiagramDialog(savedDiagram); }}}):_vm._e()]},proxy:true}],null,true)})],1)])})],2)]},proxy:true},{key:"actions",fn:function(){return [(_vm.canSetDefault)?_c('CheckBoxField',{staticStyle:{"margin-right":"16px"},attrs:{"label":"Åbn som standard","disabled":!_vm.selectedSavedDiagram || _vm.selectedSavedDiagram == 'new'},model:{value:(_vm.setAsDefault),callback:function ($$v) {_vm.setAsDefault=$$v},expression:"setAsDefault"}}):_vm._e(),_c('div',{staticStyle:{"margin":"auto"}}),_c('ButtonGroup',{attrs:{"align":"right"}},[(_vm.diagram.hasActiveDiagram)?_c('Button',{attrs:{"label":"Luk"},on:{"click":_vm.close}}):_vm._e(),_c('Button',{attrs:{"label":"Indlæs","type":"primary","disabled":!_vm.selectedSavedDiagram},on:{"click":function () {
           if (_vm.selectedSavedDiagram === 'new') { _vm.load() }
           else { _vm.load(_vm.selectedSavedDiagram) }
         }}})],1)]},proxy:true}])})}
-var LoadDialogvue_type_template_id_5cd0df4d_staticRenderFns = []
+var LoadDialogvue_type_template_id_9b0e18c8_staticRenderFns = []
 
 
-// CONCATENATED MODULE: ./src/components/LoadDialog.vue?vue&type=template&id=5cd0df4d&
+// CONCATENATED MODULE: ./src/components/LoadDialog.vue?vue&type=template&id=9b0e18c8&
 
 // CONCATENATED MODULE: ./node_modules/babel-loader/lib!./node_modules/ts-loader??ref--14-1!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/LoadDialog.vue?vue&type=script&lang=ts&
 
@@ -117726,8 +117728,8 @@ var LoadDialogvue_type_style_index_0_lang_scss_ = __webpack_require__("96c8");
 
 var LoadDialog_component = normalizeComponent(
   components_LoadDialogvue_type_script_lang_ts_,
-  LoadDialogvue_type_template_id_5cd0df4d_render,
-  LoadDialogvue_type_template_id_5cd0df4d_staticRenderFns,
+  LoadDialogvue_type_template_id_9b0e18c8_render,
+  LoadDialogvue_type_template_id_9b0e18c8_staticRenderFns,
   false,
   null,
   null,
@@ -117801,23 +117803,28 @@ var Diagramvue_type_script_lang_ts_DiagramVm = /*#__PURE__*/function (_Vue) {
                 return diagram.loadSavedDiagrams();
 
               case 4:
-                defaultSavedDiagram = diagram.defaultSavedDiagramId && diagram.savedDiagramsMap.get(diagram.defaultSavedDiagramId);
-
-                if (!defaultSavedDiagram) {
-                  _context.next = 10;
+                if (diagram.hasActiveDiagram) {
+                  _context.next = 17;
                   break;
                 }
 
-                _context.next = 8;
+                defaultSavedDiagram = diagram.defaultSavedDiagramId && diagram.savedDiagramsMap.get(diagram.defaultSavedDiagramId);
+
+                if (!defaultSavedDiagram) {
+                  _context.next = 11;
+                  break;
+                }
+
+                _context.next = 9;
                 return diagram.load(defaultSavedDiagram);
 
-              case 8:
+              case 9:
                 diagram.isLoading = false;
                 return _context.abrupt("return");
 
-              case 10:
+              case 11:
                 if (!diagram.savedDiagrams.length) {
-                  _context.next = 14;
+                  _context.next = 15;
                   break;
                 }
 
@@ -117825,14 +117832,14 @@ var Diagramvue_type_script_lang_ts_DiagramVm = /*#__PURE__*/function (_Vue) {
                 this.showLoadDialog();
                 return _context.abrupt("return");
 
-              case 14:
-                _context.next = 16;
+              case 15:
+                _context.next = 17;
                 return diagram.load();
 
-              case 16:
+              case 17:
                 diagram.isLoading = false;
 
-              case 17:
+              case 18:
               case "end":
                 return _context.stop();
             }
@@ -117981,7 +117988,7 @@ var Diagramvue_type_style_index_0_lang_scss_ = __webpack_require__("034b");
 
 var Diagram_component = normalizeComponent(
   components_Diagramvue_type_script_lang_ts_,
-  Diagramvue_type_template_id_a1141696_render,
+  Diagramvue_type_template_id_4c75294c_render,
   staticRenderFns,
   false,
   null,
@@ -120408,6 +120415,7 @@ var diagram_Diagram = /*#__PURE__*/function () {
     this.enableTaxiEditing = false;
     this.enableExpand = false;
     this.enableSaving = false;
+    this.enableDocuments = false;
     this.enableSharing = false;
     this.printSettings = {};
     this.isLoading = false;
@@ -120492,6 +120500,10 @@ var diagram_Diagram = /*#__PURE__*/function () {
         console.warn('Cannot enable saving without providing a saveDiagram method.');
         this.enableSaving = false;
       }
+    }
+
+    if (config.enableDocuments) {
+      this.enableDocuments = true;
     }
 
     if (config.enableSharing) {
@@ -120670,6 +120682,10 @@ var diagram_Diagram = /*#__PURE__*/function () {
     this.eventBus.on('settingsChanged', function () {
       _this.activeDiagram.settings.saveToLocalStorage();
     });
+
+    if (config.savedDiagram) {
+      this.loadSavedDiagram(config.savedDiagram);
+    }
   }
 
   _createClass(Diagram, [{
@@ -121049,100 +121065,97 @@ var diagram_Diagram = /*#__PURE__*/function () {
       return generatePng;
     }()
   }, {
-    key: "load",
-    value: function () {
-      var _load = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee7(savedDiagram) {
-        var activeDiagram, _activeDiagram, settings, id, _iterator8, _step8, _id, _id2, _iterator9, _step9, _id3, _id4, layout, data;
+    key: "loadSavedDiagram",
+    value: function loadSavedDiagram(savedDiagram) {
+      var activeDiagram = new diagram_ActiveDiagram(this, {
+        id: savedDiagram.id,
+        ownerUserId: savedDiagram.ownerUserId,
+        title: savedDiagram.title,
+        description: savedDiagram.description,
+        shared: savedDiagram.shared,
+        data: new DiagramData_DiagramData(this, {
+          data: savedDiagram.data,
+          changes: savedDiagram.changes
+        })
+      });
 
+      if (savedDiagram.settings) {
+        var settings = activeDiagram.settings;
+
+        if (savedDiagram.settings.activeFields) {
+          for (var id in settings.activeFields) {
+            settings.activeFields[id] = false;
+          }
+
+          var _iterator8 = _createForOfIteratorHelper(savedDiagram.settings.activeFields),
+              _step8;
+
+          try {
+            for (_iterator8.s(); !(_step8 = _iterator8.n()).done;) {
+              var _id = _step8.value;
+              if (_id in settings.activeFields) settings.activeFields[_id] = true;
+            }
+          } catch (err) {
+            _iterator8.e(err);
+          } finally {
+            _iterator8.f();
+          }
+        }
+
+        if (savedDiagram.settings.activeFilters) {
+          for (var _id2 in settings.activeFilters) {
+            settings.activeFilters[_id2] = false;
+          }
+
+          var _iterator9 = _createForOfIteratorHelper(savedDiagram.settings.activeFilters),
+              _step9;
+
+          try {
+            for (_iterator9.s(); !(_step9 = _iterator9.n()).done;) {
+              var _id3 = _step9.value;
+              if (_id3 in settings.activeFilters) settings.activeFilters[_id3] = true;
+            }
+          } catch (err) {
+            _iterator9.e(err);
+          } finally {
+            _iterator9.f();
+          }
+        }
+
+        if (savedDiagram.settings.activeLayout) {
+          var _id4 = savedDiagram.settings.activeLayout;
+          var layout = this.layouts.find(function (l) {
+            return l.id === _id4;
+          });
+          if (layout) settings.setActiveLayout(layout);
+        }
+
+        if (savedDiagram.settings.enableTaxi !== undefined) {
+          settings.setEnableTaxi(savedDiagram.settings.enableTaxi);
+        }
+      }
+
+      this.setActiveDiagram(activeDiagram);
+    }
+  }, {
+    key: "loadNewDiagram",
+    value: function () {
+      var _loadNewDiagram = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee7() {
+        var data, activeDiagram;
         return regeneratorRuntime.wrap(function _callee7$(_context7) {
           while (1) {
             switch (_context7.prev = _context7.next) {
               case 0:
-                if (!savedDiagram) {
-                  _context7.next = 5;
-                  break;
-                }
-
-                activeDiagram = new diagram_ActiveDiagram(this, {
-                  id: savedDiagram.id,
-                  ownerUserId: savedDiagram.ownerUserId,
-                  title: savedDiagram.title,
-                  description: savedDiagram.description,
-                  shared: savedDiagram.shared,
-                  data: new DiagramData_DiagramData(this, {
-                    data: savedDiagram.data,
-                    changes: savedDiagram.changes
-                  })
-                });
-
-                if (savedDiagram.settings) {
-                  _activeDiagram = activeDiagram, settings = _activeDiagram.settings;
-
-                  if (savedDiagram.settings.activeFields) {
-                    for (id in settings.activeFields) {
-                      settings.activeFields[id] = false;
-                    }
-
-                    _iterator8 = _createForOfIteratorHelper(savedDiagram.settings.activeFields);
-
-                    try {
-                      for (_iterator8.s(); !(_step8 = _iterator8.n()).done;) {
-                        _id = _step8.value;
-                        if (_id in settings.activeFields) settings.activeFields[_id] = true;
-                      }
-                    } catch (err) {
-                      _iterator8.e(err);
-                    } finally {
-                      _iterator8.f();
-                    }
-                  }
-
-                  if (savedDiagram.settings.activeFilters) {
-                    for (_id2 in settings.activeFilters) {
-                      settings.activeFilters[_id2] = false;
-                    }
-
-                    _iterator9 = _createForOfIteratorHelper(savedDiagram.settings.activeFilters);
-
-                    try {
-                      for (_iterator9.s(); !(_step9 = _iterator9.n()).done;) {
-                        _id3 = _step9.value;
-                        if (_id3 in settings.activeFilters) settings.activeFilters[_id3] = true;
-                      }
-                    } catch (err) {
-                      _iterator9.e(err);
-                    } finally {
-                      _iterator9.f();
-                    }
-                  }
-
-                  if (savedDiagram.settings.activeLayout) {
-                    _id4 = savedDiagram.settings.activeLayout;
-                    layout = this.layouts.find(function (l) {
-                      return l.id === _id4;
-                    });
-                    if (layout) settings.setActiveLayout(layout);
-                  }
-
-                  if (savedDiagram.settings.enableTaxi !== undefined) {
-                    settings.setEnableTaxi(savedDiagram.settings.enableTaxi);
-                  }
-                }
-
-                _context7.next = 15;
-                break;
-
-              case 5:
                 data = undefined;
 
                 if (!this.methods.getEntityData) {
-                  _context7.next = 14;
+                  _context7.next = 9;
                   break;
                 }
 
                 _context7.t0 = DiagramData_DiagramData;
                 _context7.t1 = this;
-                _context7.next = 11;
+                _context7.next = 6;
                 return this.methods.getEntityData({
                   ids: [this.mainEntityId],
                   relationTypes: this.relationTypes.items.map(function (rt) {
@@ -121152,28 +121165,61 @@ var diagram_Diagram = /*#__PURE__*/function () {
                   children: 10
                 });
 
-              case 11:
+              case 6:
                 _context7.t2 = _context7.sent;
                 _context7.t3 = {
                   data: _context7.t2
                 };
                 data = new _context7.t0(_context7.t1, _context7.t3);
 
-              case 14:
+              case 9:
                 activeDiagram = new diagram_ActiveDiagram(this, {
                   ownerUserId: this.userId,
                   data: data
                 });
-
-              case 15:
                 this.setActiveDiagram(activeDiagram);
 
-              case 16:
+              case 11:
               case "end":
                 return _context7.stop();
             }
           }
         }, _callee7, this);
+      }));
+
+      function loadNewDiagram() {
+        return _loadNewDiagram.apply(this, arguments);
+      }
+
+      return loadNewDiagram;
+    }()
+  }, {
+    key: "load",
+    value: function () {
+      var _load = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee8(savedDiagram) {
+        return regeneratorRuntime.wrap(function _callee8$(_context8) {
+          while (1) {
+            switch (_context8.prev = _context8.next) {
+              case 0:
+                if (!savedDiagram) {
+                  _context8.next = 4;
+                  break;
+                }
+
+                this.loadSavedDiagram(savedDiagram);
+                _context8.next = 6;
+                break;
+
+              case 4:
+                _context8.next = 6;
+                return this.loadNewDiagram();
+
+              case 6:
+              case "end":
+                return _context8.stop();
+            }
+          }
+        }, _callee8, this);
       }));
 
       function load(_x4) {
@@ -121185,35 +121231,35 @@ var diagram_Diagram = /*#__PURE__*/function () {
   }, {
     key: "deleteSavedDiagram",
     value: function () {
-      var _deleteSavedDiagram = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee8(savedDiagram) {
+      var _deleteSavedDiagram = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee9(savedDiagram) {
         var deleteSavedDiagram;
-        return regeneratorRuntime.wrap(function _callee8$(_context8) {
+        return regeneratorRuntime.wrap(function _callee9$(_context9) {
           while (1) {
-            switch (_context8.prev = _context8.next) {
+            switch (_context9.prev = _context9.next) {
               case 0:
                 deleteSavedDiagram = this.methods.deleteSavedDiagram;
 
                 if (!(!deleteSavedDiagram || !savedDiagram.id)) {
-                  _context8.next = 3;
+                  _context9.next = 3;
                   break;
                 }
 
-                return _context8.abrupt("return");
+                return _context9.abrupt("return");
 
               case 3:
-                _context8.next = 5;
+                _context9.next = 5;
                 return deleteSavedDiagram(savedDiagram);
 
               case 5:
-                _context8.next = 7;
+                _context9.next = 7;
                 return this.loadSavedDiagrams();
 
               case 7:
               case "end":
-                return _context8.stop();
+                return _context9.stop();
             }
           }
-        }, _callee8, this);
+        }, _callee9, this);
       }));
 
       function deleteSavedDiagram(_x5) {

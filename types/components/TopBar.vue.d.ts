@@ -1,6 +1,6 @@
 import DiagramVue from '../DiagramVue';
 import type DiagramVm from './Diagram.vue';
-import type Diagram from '../diagram';
+import type { default as Diagram } from '../diagram';
 export default class TopBar extends DiagramVue {
     readonly diagramVm: DiagramVm;
     readonly diagram: Diagram;
@@ -8,7 +8,6 @@ export default class TopBar extends DiagramVue {
     showLoadDropdownMenu: boolean;
     showLayoutDropdownMenu: boolean;
     showEditDropdownMenu: boolean;
-    log: (...data: any[]) => void;
     get compact(): boolean;
     get canUndo(): boolean;
     get canRedo(): boolean;

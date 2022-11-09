@@ -30,6 +30,7 @@ export default class Diagram {
     enableTaxiEditing: boolean;
     enableExpand: boolean;
     enableSaving: boolean;
+    enableDocuments: boolean;
     enableSharing: boolean;
     printSettings: {
         orientation?: 'portrait' | 'landscape';
@@ -57,6 +58,8 @@ export default class Diagram {
     save(overwrite?: boolean): Promise<void>;
     updateSavedDiagram(savedDiagram: SavedDiagram): Promise<void>;
     generatePng(options?: Pick<NonNullable<DiagramConfig['printSettings']>, 'orientation' | 'size'>): Promise<Blob>;
+    loadSavedDiagram(savedDiagram: SavedDiagram): void;
+    loadNewDiagram(): Promise<void>;
     load(savedDiagram?: SavedDiagram): Promise<void>;
     deleteSavedDiagram(savedDiagram: SavedDiagram): Promise<void>;
     reset(): void;
@@ -66,6 +69,7 @@ export default class Diagram {
 export interface DiagramConfig {
     userId?: string;
     mainEntityId: string;
+    savedDiagram?: SavedDiagram;
     entityTypes?: EntityTypeDefinition[];
     relationTypes?: RelationTypeDefinition[];
     fieldGroups?: FieldGroupDefinition[];
@@ -89,6 +93,7 @@ export interface DiagramConfig {
     enableTaxiEditing?: boolean;
     enableExpand?: boolean;
     enableSaving?: boolean;
+    enableDocuments?: boolean;
     enableSharing?: boolean;
     printSettings?: {
         orientation?: 'portrait' | 'landscape';

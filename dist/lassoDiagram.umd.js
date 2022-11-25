@@ -116236,18 +116236,18 @@ var GraphLegend_component = normalizeComponent(
 )
 
 /* harmony default export */ var components_GraphLegend = (GraphLegend_component.exports);
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"801a2c14-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/GraphPrint.vue?vue&type=template&id=b5b6bafe&
-var GraphPrintvue_type_template_id_b5b6bafe_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"lassox-diagram__GraphPrint",style:({
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"801a2c14-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/GraphPrint.vue?vue&type=template&id=4f50ab5e&
+var GraphPrintvue_type_template_id_4f50ab5e_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"lassox-diagram__GraphPrint",style:({
     width: ((_vm.contentSize.width) + "mm"),
     height: ((_vm.contentSize.height) + "mm"),
   })},[(_vm.printing)?_c('div',{ref:"printContentEl",staticClass:"lassox-diagram__GraphPrint-print-content",style:({
       width: ((_vm.contentSize.width) + "mm"),
       height: ((_vm.contentSize.height) + "mm"),
     })},[_c('div',{staticClass:"lassox-diagram__GraphPrint-print-content-title",domProps:{"textContent":_vm._s(_vm.title)}}),_c('Graph',{ref:"graphVm",attrs:{"printMode":"","scaling":_vm.graphScaling},on:{"readyToPrint":_vm.onReadyToPrint}}),_c('GraphLegend')],1):_vm._e()])}
-var GraphPrintvue_type_template_id_b5b6bafe_staticRenderFns = []
+var GraphPrintvue_type_template_id_4f50ab5e_staticRenderFns = []
 
 
-// CONCATENATED MODULE: ./src/components/GraphPrint.vue?vue&type=template&id=b5b6bafe&
+// CONCATENATED MODULE: ./src/components/GraphPrint.vue?vue&type=template&id=4f50ab5e&
 
 // EXTERNAL MODULE: ./node_modules/core-js/modules/es.string.pad-start.js
 var es_string_pad_start = __webpack_require__("4d90");
@@ -116370,7 +116370,8 @@ var GraphPrintvue_type_script_lang_ts_GraphPrint = /*#__PURE__*/function (_Vue) 
             _this$diagram$methods3,
             _this$diagram$methods4,
             _this$diagram$methods5,
-            _this$diagram$methods6;
+            _this$diagram$methods6,
+            _this$graphVm3;
 
         var cleanup, diagram, activeDiagram, data, date, context, filename, pages, _graph$elements$bound, width, height, graphRatio, contentRatio, _this$graphVm, zoom, _this$graphVm2, minScaling, maxScaling, canvas, oldCanvas, ctx, oldCtx, nullableBlob, blob, base64, iFrameEl, iFrameWindow, cleanupPrint, orientation, img, onAfterPrint;
 
@@ -116503,16 +116504,29 @@ var GraphPrintvue_type_script_lang_ts_GraphPrint = /*#__PURE__*/function (_Vue) 
 
               case 48:
                 _context.next = 50;
+                return new Promise(function (resolve) {
+                  return setTimeout(resolve, 10);
+                });
+
+              case 50:
+                (_this$graphVm3 = this.graphVm) === null || _this$graphVm3 === void 0 ? void 0 : _this$graphVm3.fit();
+                _context.next = 53;
+                return new Promise(function (resolve) {
+                  return setTimeout(resolve, 10);
+                });
+
+              case 53:
+                _context.next = 55;
                 return html2canvas_default()(this.printContentEl, {
                   logging: false,
                   scale: 4
                 });
 
-              case 50:
+              case 55:
                 canvas = _context.sent;
 
                 if (!this.rotate) {
-                  _context.next = 64;
+                  _context.next = 69;
                   break;
                 }
 
@@ -116524,45 +116538,45 @@ var GraphPrintvue_type_script_lang_ts_GraphPrint = /*#__PURE__*/function (_Vue) 
                 oldCtx = oldCanvas.getContext('2d');
 
                 if (!(!ctx || !oldCtx)) {
-                  _context.next = 60;
+                  _context.next = 65;
                   break;
                 }
 
                 throw 'Could not create canvas';
 
-              case 60:
+              case 65:
                 ctx.translate(oldCanvas.height, 0);
                 ctx.rotate(90 * (Math.PI / 180));
                 ctx.drawImage(oldCanvas, 0, 0);
                 oldCanvas.remove();
 
-              case 64:
-                _context.next = 66;
+              case 69:
+                _context.next = 71;
                 return new Promise(function (resolve) {
                   return canvas.toBlob(resolve, 'image/png');
                 });
 
-              case 66:
+              case 71:
                 nullableBlob = _context.sent;
                 canvas.remove();
 
                 if (nullableBlob) {
-                  _context.next = 71;
+                  _context.next = 76;
                   break;
                 }
 
                 console.error('Something went wrong when trying to get canvas blob');
                 return _context.abrupt("return", cleanup());
 
-              case 71:
+              case 76:
                 blob = nullableBlob;
 
                 if (!(this.mode === 'print')) {
-                  _context.next = 103;
+                  _context.next = 108;
                   break;
                 }
 
-                _context.next = 75;
+                _context.next = 80;
                 return new Promise(function (resolve) {
                   var reader = new FileReader();
 
@@ -116573,7 +116587,7 @@ var GraphPrintvue_type_script_lang_ts_GraphPrint = /*#__PURE__*/function (_Vue) 
                   reader.readAsDataURL(blob);
                 });
 
-              case 75:
+              case 80:
                 base64 = _context.sent;
                 iFrameEl = document.createElement('iframe');
                 iFrameEl.className = 'lassox-diagram__GraphPrint-iframe';
@@ -116589,13 +116603,13 @@ var GraphPrintvue_type_script_lang_ts_GraphPrint = /*#__PURE__*/function (_Vue) 
                 };
 
                 if (iFrameWindow) {
-                  _context.next = 85;
+                  _context.next = 90;
                   break;
                 }
 
                 return _context.abrupt("return", cleanupPrint());
 
-              case 85:
+              case 90:
                 orientation = this.orientation;
                 if (this.rotate) orientation = orientation === 'portrait' ? 'landscape' : 'portrait';
                 iFrameWindow.document.head.innerHTML = ['<style>', '@page {', "  size: ".concat(this.size, " ").concat(orientation, ";"), "  margin: ".concat(this.includeMargin ? 10 : 0, "mm;"), '}', 'html, body {', '  padding: 0;', '  margin: 0;', '  overflow: hidden;', '}', 'html {', "  width: 100%;", "  height: ".concat(pages * 100, "%;"), '}', 'body {', '  width: 100%;', '  height: 100%;', '}', '</style>'].join('\n');
@@ -116605,16 +116619,16 @@ var GraphPrintvue_type_script_lang_ts_GraphPrint = /*#__PURE__*/function (_Vue) 
                 img.style.height = "".concat(pages * 100, "vh");
                 iFrameWindow.document.body.appendChild(img);
                 img.src = base64;
-                _context.next = 96;
+                _context.next = 101;
                 return nextFrame();
 
-              case 96:
+              case 101:
                 if (!(iFrameWindow.document.readyState !== 'complete')) {
-                  _context.next = 99;
+                  _context.next = 104;
                   break;
                 }
 
-                _context.next = 99;
+                _context.next = 104;
                 return new Promise(function (resolve) {
                   var cb = function cb() {
                     iFrameEl.removeEventListener('load', cb);
@@ -116624,7 +116638,7 @@ var GraphPrintvue_type_script_lang_ts_GraphPrint = /*#__PURE__*/function (_Vue) 
                   iFrameEl.addEventListener('load', cb);
                 });
 
-              case 99:
+              case 104:
                 onAfterPrint = function onAfterPrint() {
                   iFrameWindow.removeEventListener('afterprint', onAfterPrint);
                   requestAnimationFrame(cleanupPrint);
@@ -116634,21 +116648,21 @@ var GraphPrintvue_type_script_lang_ts_GraphPrint = /*#__PURE__*/function (_Vue) 
                 iFrameWindow.print();
                 return _context.abrupt("return");
 
-              case 103:
+              case 108:
                 if (!(this.mode === 'pdf')) {
-                  _context.next = 109;
+                  _context.next = 114;
                   break;
                 }
 
                 if (this.diagram.methods.convertPngToPdf) {
-                  _context.next = 106;
+                  _context.next = 111;
                   break;
                 }
 
                 return _context.abrupt("return", cleanup());
 
-              case 106:
-                _context.next = 108;
+              case 111:
+                _context.next = 113;
                 return this.diagram.methods.convertPngToPdf({
                   blob: blob,
                   title: this.title,
@@ -116659,16 +116673,16 @@ var GraphPrintvue_type_script_lang_ts_GraphPrint = /*#__PURE__*/function (_Vue) 
                   pageCount: pages
                 });
 
-              case 108:
+              case 113:
                 blob = _context.sent;
 
-              case 109:
+              case 114:
                 cleanup({
                   filename: "".concat(filename, ".").concat(this.mode === 'pdf' ? 'pdf' : 'png'),
                   blob: blob
                 });
 
-              case 110:
+              case 115:
               case "end":
                 return _context.stop();
             }
@@ -116716,8 +116730,8 @@ var GraphPrintvue_type_style_index_0_lang_scss_ = __webpack_require__("f645");
 
 var GraphPrint_component = normalizeComponent(
   components_GraphPrintvue_type_script_lang_ts_,
-  GraphPrintvue_type_template_id_b5b6bafe_render,
-  GraphPrintvue_type_template_id_b5b6bafe_staticRenderFns,
+  GraphPrintvue_type_template_id_4f50ab5e_render,
+  GraphPrintvue_type_template_id_4f50ab5e_staticRenderFns,
   false,
   null,
   null,

@@ -110528,18 +110528,18 @@ var TopBar_component = normalizeComponent(
 )
 
 /* harmony default export */ var components_TopBar = (TopBar_component.exports);
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"801a2c14-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/Graph.vue?vue&type=template&id=bda3fac2&
-var Graphvue_type_template_id_bda3fac2_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{class:[
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"801a2c14-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/Graph.vue?vue&type=template&id=149bb07e&
+var Graphvue_type_template_id_149bb07e_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{class:[
     'lassox-diagram__Graph',
     _vm.elementHovered && 'lassox-diagram__Graph--has-hovered-element' ],attrs:{"tabindex":_vm.printMode ? '' : '-1'},on:{"keydown":_vm.onKeyDown,"contextmenu":function($event){$event.preventDefault();return (function () {}).apply(null, arguments)}}},[_c('div',{staticClass:"lassox-diagram__Graph-scaler",style:({
       width: ((_vm.scaling * 100) + "%"),
       height: ((_vm.scaling * 100) + "%"),
       transform: ("scale(" + (1 / _vm.scaling) + ")"),
     })},[_c('div',{ref:"graphContainerEl",staticClass:"lassox-diagram__Graph-container",staticStyle:{"width":"100%","height":"100%"},on:{"mousedown":_vm.redirectCytoscapeBlur,"touchstart":_vm.redirectCytoscapeBlur}},[_c('div',{ref:"graphNodesEl",staticClass:"lassox-diagram__Graph-nodes"},[_vm._l((_vm.relations),function(relation){return _c('GraphEdge',{key:relation.id,attrs:{"id":relation.id}})}),_vm._l((_vm.entities),function(entity){return _c('GraphNode',{key:entity.id,attrs:{"id":entity.id}})}),(!_vm.printMode && _vm.diagram.enableTaxiEditing && _vm.graphReady)?_c('GraphEdgePoints'):_vm._e()],2)])]),(!_vm.printMode)?_c('GraphContextMenu'):_vm._e()],1)}
-var Graphvue_type_template_id_bda3fac2_staticRenderFns = []
+var Graphvue_type_template_id_149bb07e_staticRenderFns = []
 
 
-// CONCATENATED MODULE: ./src/components/Graph.vue?vue&type=template&id=bda3fac2&
+// CONCATENATED MODULE: ./src/components/Graph.vue?vue&type=template&id=149bb07e&
 
 // EXTERNAL MODULE: ./node_modules/core-js/modules/es.array.sort.js
 var es_array_sort = __webpack_require__("4e82");
@@ -113820,38 +113820,19 @@ function Graphvue_type_script_lang_ts_getDistWeight(source, target, point) {
     return Math.sqrt(x * x + y * y);
   };
 
-  function radToDeg(rad) {
-    return rad * 180 / Math.PI;
-  }
-
-  function degToRad(deg) {
-    return deg * Math.PI / 180;
-  }
-
   function getRadAngle(a, b) {
     return Math.atan2(b.y - a.y, b.x - a.x);
   }
 
-  var lineAngle = getRadAngle(source, target); //?
-
-  var pointAngle = getRadAngle(source, point); //?
-
-  var angleDiff = pointAngle - lineAngle; //?
-
-  var lineLength = getDistance(source, target); //?
-
-  var pointDistance = getDistance(source, point); //?
-
-  var distMult = Math.sin(angleDiff); //?
-
-  var distance = pointDistance * distMult; //?
-
-  var weightMult = Math.cos(angleDiff); //?
-
-  var weight = pointDistance * weightMult / lineLength; //?
-  // const distance = point.y - target.y //?
-  // const weight = point.x / target.x //?
-
+  var lineAngle = getRadAngle(source, target);
+  var pointAngle = getRadAngle(source, point);
+  var angleDiff = pointAngle - lineAngle;
+  var lineLength = getDistance(source, target);
+  var pointDistance = getDistance(source, point);
+  var distMult = Math.sin(angleDiff);
+  var distance = pointDistance * distMult;
+  var weightMult = Math.cos(angleDiff);
+  var weight = pointDistance * weightMult / lineLength;
   return {
     distance: distance,
     weight: weight
@@ -114320,6 +114301,8 @@ var Graphvue_type_script_lang_ts_Graph = /*#__PURE__*/function (_Vue) {
         var updateElementsPromise = this.updateElements();
         this.runFilters();
         updateElementsPromise.then(function () {
+          spreadTaxiEdges(graph);
+
           _this2.fit();
 
           requestAnimationFrame(function () {
@@ -114464,7 +114447,6 @@ var Graphvue_type_script_lang_ts_Graph = /*#__PURE__*/function (_Vue) {
             y: 0
           };
           var dragged = false;
-          var selected = graph.collection();
           var dragNodes = new Map();
           var affectedTaxiEdges = new Set();
           graph.on('grab', 'node', function (event) {
@@ -114495,7 +114477,6 @@ var Graphvue_type_script_lang_ts_Graph = /*#__PURE__*/function (_Vue) {
 
             if (!dragged) {
               dragged = true;
-              selected = graph.elements(':selected');
               graph.batch(function () {
                 var _iterator7 = _createForOfIteratorHelper(dragNodes.keys()),
                     _step7;
@@ -114681,96 +114662,95 @@ var Graphvue_type_script_lang_ts_Graph = /*#__PURE__*/function (_Vue) {
         graph.on('unselect', function (event) {
           if (!isElement(event.target)) return;
           event.target.data('selected', false);
-        });
-      } // Spread taxi edges
+        }); // Spread taxi edges
 
+        if (this.diagram.spreadTaxiEdges) {
+          var handle = 0;
 
-      if (this.diagram.spreadTaxiEdges) {
-        var handle = 0;
+          var start = /*#__PURE__*/function () {
+            var _ref4 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee() {
+              var thisHandle;
+              return regeneratorRuntime.wrap(function _callee$(_context) {
+                while (1) {
+                  switch (_context.prev = _context.next) {
+                    case 0:
+                      thisHandle = ++handle;
+                      graph.batch(function () {
+                        graph.edges().forEach(function (edge) {
+                          if (edge.data('customPath')) edge.data('customPath', null);
+                        });
+                      }); // await new Promise(resolve => requestAnimationFrame(resolve))
 
-        var start = /*#__PURE__*/function () {
-          var _ref4 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee() {
-            var thisHandle;
-            return regeneratorRuntime.wrap(function _callee$(_context) {
-              while (1) {
-                switch (_context.prev = _context.next) {
-                  case 0:
-                    thisHandle = ++handle;
-                    graph.batch(function () {
-                      graph.edges().forEach(function (edge) {
-                        if (edge.data('customPath')) edge.data('customPath', null);
+                      _context.next = 4;
+                      return new Promise(function (resolve) {
+                        return setTimeout(resolve, 100);
                       });
-                    }); // await new Promise(resolve => requestAnimationFrame(resolve))
 
-                    _context.next = 4;
-                    return new Promise(function (resolve) {
-                      return setTimeout(resolve, 100);
-                    });
+                    case 4:
+                      if (!(handle !== thisHandle)) {
+                        _context.next = 6;
+                        break;
+                      }
 
-                  case 4:
-                    if (!(handle !== thisHandle)) {
-                      _context.next = 6;
-                      break;
-                    }
+                      return _context.abrupt("return");
 
-                    return _context.abrupt("return");
+                    case 6:
+                      handle = 0;
+                      spreadTaxiEdges(graph);
 
-                  case 6:
-                    handle = 0;
-                    spreadTaxiEdges(graph);
-
-                  case 8:
-                  case "end":
-                    return _context.stop();
+                    case 8:
+                    case "end":
+                      return _context.stop();
+                  }
                 }
-              }
-            }, _callee);
-          }));
+              }, _callee);
+            }));
 
-          return function start() {
-            return _ref4.apply(this, arguments);
-          };
-        }();
+            return function start() {
+              return _ref4.apply(this, arguments);
+            };
+          }();
 
-        this.diagram.eventBus.on('graph.spreadTaxiEdges', function () {
-          start();
-        });
-        graph.on('add remove', 'node', function (e) {
-          start();
-        });
-        graph.on('position bounds', 'node', function (e) {
-          var node = e.target;
-          var data = node.data();
-          var entity = data.entity;
+          this.diagram.eventBus.on('graph.spreadTaxiEdges', function () {
+            start();
+          });
+          graph.on('add remove', 'node', function () {
+            start();
+          });
+          graph.on('position bounds', 'node', function (e) {
+            var node = e.target;
+            var data = node.data();
+            var entity = data.entity;
 
-          var pos = objectSpread2_objectSpread2({}, node.position());
+            var pos = objectSpread2_objectSpread2({}, node.position());
 
-          pos.x = safePrecision(pos.x);
-          pos.y = safePrecision(pos.y);
-          var width = safePrecision(node.width());
-          var height = safePrecision(node.height());
+            pos.x = safePrecision(pos.x);
+            pos.y = safePrecision(pos.y);
+            var width = safePrecision(node.width());
+            var height = safePrecision(node.height());
 
-          var oldPos = entity.position && objectSpread2_objectSpread2({}, entity.position);
+            var oldPos = entity.position && objectSpread2_objectSpread2({}, entity.position);
 
-          if (oldPos) {
-            oldPos.x = safePrecision(oldPos.x);
-            oldPos.y = safePrecision(oldPos.y);
-          }
+            if (oldPos) {
+              oldPos.x = safePrecision(oldPos.x);
+              oldPos.y = safePrecision(oldPos.y);
+            }
 
-          var oldWidth = typeof data.width === 'number' ? safePrecision(data.width) : null;
-          var oldHeight = typeof data.height === 'number' ? safePrecision(data.height) : null;
-          if (pos.x === (oldPos === null || oldPos === void 0 ? void 0 : oldPos.x) && pos.y === (oldPos === null || oldPos === void 0 ? void 0 : oldPos.y) && width === oldWidth && height === oldHeight) return;
-          start();
-        });
-        graph.on('add remove', 'edge', function (e) {
-          start();
-        });
-        graph.on('layoutstop', function (e) {
-          start();
-        });
-        requestAnimationFrame(function () {
-          start();
-        });
+            var oldWidth = typeof data.width === 'number' ? safePrecision(data.width) : null;
+            var oldHeight = typeof data.height === 'number' ? safePrecision(data.height) : null;
+            if (pos.x === (oldPos === null || oldPos === void 0 ? void 0 : oldPos.x) && pos.y === (oldPos === null || oldPos === void 0 ? void 0 : oldPos.y) && width === oldWidth && height === oldHeight) return;
+            start();
+          });
+          graph.on('add remove', 'edge', function () {
+            start();
+          });
+          graph.on('layoutstop', function () {
+            start();
+          });
+          requestAnimationFrame(function () {
+            start();
+          });
+        }
       }
 
       this.graphReady = true;
@@ -114939,11 +114919,6 @@ var Graphvue_type_script_lang_ts_Graph = /*#__PURE__*/function (_Vue) {
             var getEntity = function getEntity(id) {
               var item = items.get(id);
               return item instanceof diagram_Entity ? item : null;
-            };
-
-            var getRelation = function getRelation(id) {
-              var item = items.get(id);
-              return item instanceof diagram_Relation ? item : null;
             };
 
             var _iterator13 = _createForOfIteratorHelper(items.values()),
@@ -115250,8 +115225,8 @@ var Graphvue_type_style_index_0_lang_scss_ = __webpack_require__("2a3c");
 
 var Graph_component = normalizeComponent(
   components_Graphvue_type_script_lang_ts_,
-  Graphvue_type_template_id_bda3fac2_render,
-  Graphvue_type_template_id_bda3fac2_staticRenderFns,
+  Graphvue_type_template_id_149bb07e_render,
+  Graphvue_type_template_id_149bb07e_staticRenderFns,
   false,
   null,
   null,

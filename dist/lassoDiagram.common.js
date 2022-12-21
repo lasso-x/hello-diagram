@@ -103824,12 +103824,12 @@ var IconButton_component = normalizeComponent(
 )
 
 /* harmony default export */ var components_IconButton = (IconButton_component.exports);
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"801a2c14-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/DropdownMenu.vue?vue&type=template&id=9a6e07a2&
-var DropdownMenuvue_type_template_id_9a6e07a2_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"lassox-diagram__DropdownMenu"},[_c('div',{ref:"boundsEl",staticClass:"lassox-diagram__DropdownMenu_bounds"}),_c('div',{ref:"dropdownMenuEl",staticClass:"lassox-diagram__DropdownMenu_dropdown-menu",style:(_vm.dropdownMenuStyle),attrs:{"tabindex":"-1"}},[_vm._t("default")],2)])}
-var DropdownMenuvue_type_template_id_9a6e07a2_staticRenderFns = []
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"801a2c14-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/DropdownMenu.vue?vue&type=template&id=4e9da8b1&
+var DropdownMenuvue_type_template_id_4e9da8b1_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"lassox-diagram__DropdownMenu"},[_c('div',{ref:"boundsEl",staticClass:"lassox-diagram__DropdownMenu_bounds"}),_c('div',{ref:"dropdownMenuEl",staticClass:"lassox-diagram__DropdownMenu_dropdown-menu",style:(_vm.dropdownMenuStyle),attrs:{"tabindex":"-1"}},[_vm._t("default")],2)])}
+var DropdownMenuvue_type_template_id_4e9da8b1_staticRenderFns = []
 
 
-// CONCATENATED MODULE: ./src/components/DropdownMenu.vue?vue&type=template&id=9a6e07a2&
+// CONCATENATED MODULE: ./src/components/DropdownMenu.vue?vue&type=template&id=4e9da8b1&
 
 // EXTERNAL MODULE: ./node_modules/core-js/modules/es.array.join.js
 var es_array_join = __webpack_require__("a15b");
@@ -104264,7 +104264,9 @@ var DropdownMenuvue_type_script_lang_ts_DropdownMenu = /*#__PURE__*/function (_V
     value: function beforeDestroy() {
       var _this$close;
 
+      var oldOpenerEl = this.openerEl;
       this.openerEl = null;
+      this.onOpenerElChanged(this.openerEl, oldOpenerEl);
       (_this$close = this.close) === null || _this$close === void 0 ? void 0 : _this$close.call(this);
     }
   }, {
@@ -104502,8 +104504,8 @@ var DropdownMenuvue_type_style_index_0_lang_scss_ = __webpack_require__("bf1c");
 
 var DropdownMenu_component = normalizeComponent(
   components_DropdownMenuvue_type_script_lang_ts_,
-  DropdownMenuvue_type_template_id_9a6e07a2_render,
-  DropdownMenuvue_type_template_id_9a6e07a2_staticRenderFns,
+  DropdownMenuvue_type_template_id_4e9da8b1_render,
+  DropdownMenuvue_type_template_id_4e9da8b1_staticRenderFns,
   false,
   null,
   null,
@@ -110519,18 +110521,18 @@ var TopBar_component = normalizeComponent(
 )
 
 /* harmony default export */ var components_TopBar = (TopBar_component.exports);
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"801a2c14-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/Graph.vue?vue&type=template&id=149bb07e&
-var Graphvue_type_template_id_149bb07e_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{class:[
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"801a2c14-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/Graph.vue?vue&type=template&id=064cd013&
+var Graphvue_type_template_id_064cd013_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{class:[
     'lassox-diagram__Graph',
     _vm.elementHovered && 'lassox-diagram__Graph--has-hovered-element' ],attrs:{"tabindex":_vm.printMode ? '' : '-1'},on:{"keydown":_vm.onKeyDown,"contextmenu":function($event){$event.preventDefault();return (function () {}).apply(null, arguments)}}},[_c('div',{staticClass:"lassox-diagram__Graph-scaler",style:({
       width: ((_vm.scaling * 100) + "%"),
       height: ((_vm.scaling * 100) + "%"),
       transform: ("scale(" + (1 / _vm.scaling) + ")"),
     })},[_c('div',{ref:"graphContainerEl",staticClass:"lassox-diagram__Graph-container",staticStyle:{"width":"100%","height":"100%"},on:{"mousedown":_vm.redirectCytoscapeBlur,"touchstart":_vm.redirectCytoscapeBlur}},[_c('div',{ref:"graphNodesEl",staticClass:"lassox-diagram__Graph-nodes"},[_vm._l((_vm.relations),function(relation){return _c('GraphEdge',{key:relation.id,attrs:{"id":relation.id}})}),_vm._l((_vm.entities),function(entity){return _c('GraphNode',{key:entity.id,attrs:{"id":entity.id}})}),(!_vm.printMode && _vm.diagram.enableTaxiEditing && _vm.graphReady)?_c('GraphEdgePoints'):_vm._e()],2)])]),(!_vm.printMode)?_c('GraphContextMenu'):_vm._e()],1)}
-var Graphvue_type_template_id_149bb07e_staticRenderFns = []
+var Graphvue_type_template_id_064cd013_staticRenderFns = []
 
 
-// CONCATENATED MODULE: ./src/components/Graph.vue?vue&type=template&id=149bb07e&
+// CONCATENATED MODULE: ./src/components/Graph.vue?vue&type=template&id=064cd013&
 
 // EXTERNAL MODULE: ./node_modules/core-js/modules/es.array.sort.js
 var es_array_sort = __webpack_require__("4e82");
@@ -114421,7 +114423,8 @@ var Graphvue_type_script_lang_ts_Graph = /*#__PURE__*/function (_Vue) {
           zoomOutIcon: 'material-icons-outlined',
           resetIcon: 'material-icons-outlined',
           zoomFactor: 0.1
-        }); // Track node position changes
+        });
+        var ignoreTap = false; // Track node position changes
 
         if (this.diagram.enableDragAndDrop) {
           var grabbing = false;
@@ -114597,9 +114600,11 @@ var Graphvue_type_script_lang_ts_Graph = /*#__PURE__*/function (_Vue) {
                 } : undefined
               });
 
+              ignoreTap = true;
               graph.autounselectify(true);
               requestAnimationFrame(function () {
-                return graph.autounselectify(false);
+                ignoreTap = false;
+                graph.autounselectify(false);
               });
             }
 
@@ -114616,7 +114621,7 @@ var Graphvue_type_script_lang_ts_Graph = /*#__PURE__*/function (_Vue) {
           return _this4.elementHovered = isElement(event.target);
         });
         graph.on('tap', function (event) {
-          if (!isElement(event.target) || _this4.contextMenu.show || event.originalEvent.ctrlKey || event.originalEvent.shiftKey || event.originalEvent.altKey || event.originalEvent.metaKey) return;
+          if (ignoreTap || !isElement(event.target) || _this4.contextMenu.show || event.originalEvent.ctrlKey || event.originalEvent.shiftKey || event.originalEvent.altKey || event.originalEvent.metaKey) return;
 
           _this4.diagram.eventBus.emit({
             name: 'editor.open',
@@ -115216,8 +115221,8 @@ var Graphvue_type_style_index_0_lang_scss_ = __webpack_require__("2a3c");
 
 var Graph_component = normalizeComponent(
   components_Graphvue_type_script_lang_ts_,
-  Graphvue_type_template_id_149bb07e_render,
-  Graphvue_type_template_id_149bb07e_staticRenderFns,
+  Graphvue_type_template_id_064cd013_render,
+  Graphvue_type_template_id_064cd013_staticRenderFns,
   false,
   null,
   null,
@@ -117488,8 +117493,8 @@ var PrintDialog_component = normalizeComponent(
 )
 
 /* harmony default export */ var components_PrintDialog = (PrintDialog_component.exports);
-// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"801a2c14-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/LoadDialog.vue?vue&type=template&id=9b0e18c8&
-var LoadDialogvue_type_template_id_9b0e18c8_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('Dialog',{staticClass:"lassox-diagram__LoadDialog",attrs:{"dismissable":_vm.diagram.hasActiveDiagram,"title":"Indlæs diagram","size":"3x","onClose":_vm.close},scopedSlots:_vm._u([{key:"content",fn:function(){return [_c('div',{staticClass:"lassox-diagram__LoadDialog-loading-overlay",style:({
+// CONCATENATED MODULE: ./node_modules/cache-loader/dist/cjs.js?{"cacheDirectory":"node_modules/.cache/vue-loader","cacheIdentifier":"801a2c14-vue-loader-template"}!./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/LoadDialog.vue?vue&type=template&id=7d90dc19&
+var LoadDialogvue_type_template_id_7d90dc19_render = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('Dialog',{staticClass:"lassox-diagram__LoadDialog",attrs:{"dismissable":_vm.diagram.hasActiveDiagram,"title":"Indlæs diagram","size":"3x","onClose":_vm.close},scopedSlots:_vm._u([{key:"content",fn:function(){return [_c('div',{staticClass:"lassox-diagram__LoadDialog-loading-overlay",style:({
         opacity: _vm.loading ? '1' : '0',
         pointerEvents: _vm.loading ? '' : 'none',
       })},[_c('LoadingSpinner',{staticStyle:{"margin":"auto"}})],1),_c('div',{staticClass:"lassox-diagram__LoadDialog-saved-diagrams"},[_c('BaseButton',{class:[
@@ -117497,16 +117502,26 @@ var LoadDialogvue_type_template_id_9b0e18c8_render = function () {var _vm=this;v
           _vm.selectedSavedDiagram === 'new' && 'lassox-diagram__LoadDialog-saved-diagram--selected' ],on:{"click":function () { return _vm.selectedSavedDiagram = 'new'; }}},[_c('div',{staticClass:"lassox-diagram__LoadDialog-saved-diagram-icons"},[_c('Icon',{attrs:{"icon":"add"}})],1),_c('div',{staticClass:"lassox-diagram__LoadDialog-saved-diagram-text"},[_c('div',{staticClass:"lassox-diagram__LoadDialog-saved-diagram-title",domProps:{"textContent":_vm._s('Nyt diagram')}}),_c('div',{staticClass:"lassox-diagram__LoadDialog-saved-diagram-description",domProps:{"textContent":_vm._s('Opret et nyt diagram med seneste data')}})])]),_vm._l((_vm.diagram.savedDiagrams),function(savedDiagram){return _c('BaseButton',{key:savedDiagram.id,class:[
           'lassox-diagram__LoadDialog-saved-diagram',
           savedDiagram.id === _vm.diagram.activeDiagram.id && 'lassox-diagram__LoadDialog-saved-diagram--active',
-          savedDiagram === _vm.selectedSavedDiagram && 'lassox-diagram__LoadDialog-saved-diagram--selected' ],on:{"click":function () { return _vm.selectedSavedDiagram = savedDiagram; }}},[_c('div',{staticClass:"lassox-diagram__LoadDialog-saved-diagram-icons"},[(_vm.diagram.enableSharing)?_c('Icon',{attrs:{"icon":savedDiagram.shared ? 'lock_open' : 'lock'}}):_c('Icon',{attrs:{"icon":" "}})],1),_c('div',{staticClass:"lassox-diagram__LoadDialog-saved-diagram-text"},[_c('div',{staticClass:"lassox-diagram__LoadDialog-saved-diagram-title",domProps:{"textContent":_vm._s(savedDiagram.title || 'Unavngivet diagram')}}),(savedDiagram.description)?_c('div',{staticClass:"lassox-diagram__LoadDialog-saved-diagram-description",domProps:{"textContent":_vm._s(savedDiagram.description)}}):_vm._e()]),_c('div',{staticClass:"lassox-diagram__LoadDialog-saved-diagram-actions"},[(savedDiagram.id === _vm.diagram.defaultSavedDiagramId)?_c('Icon',{attrs:{"icon":"check"}}):_vm._e(),_c('div',{staticStyle:{"margin-right":"12px"}}),_c('DropdownButton',{scopedSlots:_vm._u([{key:"default",fn:function(ref){
-        var onClick = ref.onClick;
-return [_c('IconButton',{attrs:{"icon":"more_vert","size":"small"},on:{"click":function($event){$event.stopPropagation();return onClick.apply(null, arguments)}}})]}},{key:"dropdown-menu",fn:function(){return [_c('DropdownMenuItem',{attrs:{"label":"Rediger","icon":"edit"},on:{"click":function () { return _vm.showEditDiagramDialog(savedDiagram); }}}),(_vm.diagram.methods.deleteSavedDiagram)?_c('DropdownMenuItem',{attrs:{"label":"Slet","icon":"delete","disabled":(savedDiagram.ownerUserId || '') !== _vm.diagram.userId},on:{"click":function () { return _vm.showConfirmDeleteDiagramDialog(savedDiagram); }}}):_vm._e()]},proxy:true}],null,true)})],1)])})],2)]},proxy:true},{key:"actions",fn:function(){return [(_vm.canSetDefault)?_c('CheckBoxField',{staticStyle:{"margin-right":"16px"},attrs:{"label":"Åbn som standard","disabled":!_vm.selectedSavedDiagram || _vm.selectedSavedDiagram == 'new'},model:{value:(_vm.setAsDefault),callback:function ($$v) {_vm.setAsDefault=$$v},expression:"setAsDefault"}}):_vm._e(),_c('div',{staticStyle:{"margin":"auto"}}),_c('ButtonGroup',{attrs:{"align":"right"}},[(_vm.diagram.hasActiveDiagram)?_c('Button',{attrs:{"label":"Luk"},on:{"click":_vm.close}}):_vm._e(),_c('Button',{attrs:{"label":"Indlæs","type":"primary","disabled":!_vm.selectedSavedDiagram},on:{"click":function () {
+          savedDiagram === _vm.selectedSavedDiagram && 'lassox-diagram__LoadDialog-saved-diagram--selected' ],on:{"click":function () { return _vm.selectedSavedDiagram = savedDiagram; }}},[_c('div',{staticClass:"lassox-diagram__LoadDialog-saved-diagram-icons"},[(_vm.diagram.enableSharing)?_c('Icon',{attrs:{"icon":savedDiagram.shared ? 'lock_open' : 'lock'}}):_c('Icon',{attrs:{"icon":" "}})],1),_c('div',{staticClass:"lassox-diagram__LoadDialog-saved-diagram-text"},[_c('div',{staticClass:"lassox-diagram__LoadDialog-saved-diagram-title",domProps:{"textContent":_vm._s(savedDiagram.title || 'Unavngivet diagram')}}),(savedDiagram.description)?_c('div',{staticClass:"lassox-diagram__LoadDialog-saved-diagram-description",domProps:{"textContent":_vm._s(savedDiagram.description)}}):_vm._e()]),_c('div',{staticClass:"lassox-diagram__LoadDialog-saved-diagram-actions"},[(savedDiagram.id === _vm.diagram.defaultSavedDiagramId)?[_c('Icon',{attrs:{"icon":"check"}}),_c('div',{staticStyle:{"margin-right":"12px"}})]:_vm._e(),_c('IconButton',{attrs:{"icon":"more_vert","size":"small"},on:{"click":function($event){$event.stopPropagation();return (function (e) {
+              if (!_vm.moreDropdown || _vm.moreDropdown.savedDiagram !== savedDiagram) {
+                _vm.moreDropdown = {
+                  opener: e.currentTarget,
+                  savedDiagram: savedDiagram,
+                }
+                return
+              }
+
+              _vm.moreDropdown = null
+            }).apply(null, arguments)}}})],2)])}),(_vm.moreDropdown)?_c('DropdownMenu',{attrs:{"opener":_vm.moreDropdown.opener,"close":function () {
+          _vm.moreDropdown = null
+        }}},[_c('DropdownMenuItem',{attrs:{"label":"Rediger","icon":"edit"},on:{"click":function () { return _vm.showEditDiagramDialog(_vm.moreDropdown.savedDiagram); }}}),(_vm.diagram.methods.deleteSavedDiagram)?_c('DropdownMenuItem',{attrs:{"label":"Slet","icon":"delete","disabled":(_vm.moreDropdown.savedDiagram.ownerUserId || '') !== _vm.diagram.userId},on:{"click":function () { return _vm.showConfirmDeleteDiagramDialog(_vm.moreDropdown.savedDiagram); }}}):_vm._e()],1):_vm._e()],2)]},proxy:true},{key:"actions",fn:function(){return [(_vm.canSetDefault)?_c('CheckBoxField',{staticStyle:{"margin-right":"16px"},attrs:{"label":"Åbn som standard","disabled":!_vm.selectedSavedDiagram || _vm.selectedSavedDiagram == 'new'},model:{value:(_vm.setAsDefault),callback:function ($$v) {_vm.setAsDefault=$$v},expression:"setAsDefault"}}):_vm._e(),_c('div',{staticStyle:{"margin":"auto"}}),_c('ButtonGroup',{attrs:{"align":"right"}},[(_vm.diagram.hasActiveDiagram)?_c('Button',{attrs:{"label":"Luk"},on:{"click":_vm.close}}):_vm._e(),_c('Button',{attrs:{"label":"Indlæs","type":"primary","disabled":!_vm.selectedSavedDiagram},on:{"click":function () {
           if (_vm.selectedSavedDiagram === 'new') { _vm.load() }
           else { _vm.load(_vm.selectedSavedDiagram) }
         }}})],1)]},proxy:true}])})}
-var LoadDialogvue_type_template_id_9b0e18c8_staticRenderFns = []
+var LoadDialogvue_type_template_id_7d90dc19_staticRenderFns = []
 
 
-// CONCATENATED MODULE: ./src/components/LoadDialog.vue?vue&type=template&id=9b0e18c8&
+// CONCATENATED MODULE: ./src/components/LoadDialog.vue?vue&type=template&id=7d90dc19&
 
 // CONCATENATED MODULE: ./node_modules/babel-loader/lib!./node_modules/ts-loader??ref--14-1!./node_modules/cache-loader/dist/cjs.js??ref--0-0!./node_modules/vue-loader/lib??vue-loader-options!./src/components/LoadDialog.vue?vue&type=script&lang=ts&
 
@@ -117552,6 +117567,7 @@ var LoadDialogvue_type_script_lang_ts_LoadDialog = /*#__PURE__*/function (_Vue) 
     _this.loading = false;
     _this.selectedSavedDiagram = null;
     _this.setAsDefault = false;
+    _this.moreDropdown = null;
     return _this;
   }
 
@@ -117693,7 +117709,7 @@ LoadDialogvue_type_script_lang_ts_LoadDialog = __decorate([vue_class_component_e
     BaseButton: components_BaseButton,
     Icon: components_Icon,
     IconButton: components_IconButton,
-    DropdownButton: components_DropdownButton,
+    DropdownMenu: components_DropdownMenu,
     DropdownMenuItem: components_DropdownMenuItem,
     CheckBoxField: components_CheckBoxField,
     ButtonGroup: components_ButtonGroup,
@@ -117717,8 +117733,8 @@ var LoadDialogvue_type_style_index_0_lang_scss_ = __webpack_require__("96c8");
 
 var LoadDialog_component = normalizeComponent(
   components_LoadDialogvue_type_script_lang_ts_,
-  LoadDialogvue_type_template_id_9b0e18c8_render,
-  LoadDialogvue_type_template_id_9b0e18c8_staticRenderFns,
+  LoadDialogvue_type_template_id_7d90dc19_render,
+  LoadDialogvue_type_template_id_7d90dc19_staticRenderFns,
   false,
   null,
   null,
@@ -120665,6 +120681,7 @@ var diagram_Diagram = /*#__PURE__*/function () {
     this.activeDiagram = new diagram_ActiveDiagram(this);
     this.activeDiagram.settings.loadFromLocalStorage();
     this.activeDiagram.settings.saveToLocalStorage();
+    this.activeDiagram.settings.setInitialState();
     this.eventBus.on(['dataUpdated', 'settingsChanged'], function () {
       _this.hasUnsavedChanges = true;
     });
@@ -121122,6 +121139,8 @@ var diagram_Diagram = /*#__PURE__*/function () {
         if (savedDiagram.settings.enableTaxi !== undefined) {
           settings.setEnableTaxi(savedDiagram.settings.enableTaxi);
         }
+
+        settings.setInitialState();
       }
 
       this.setActiveDiagram(activeDiagram);

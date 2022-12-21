@@ -8,6 +8,10 @@ export default class LoadDialog extends Vue {
     loading: boolean;
     selectedSavedDiagram: SavedDiagram | 'new' | null;
     setAsDefault: boolean;
+    moreDropdown: {
+        opener: HTMLElement;
+        savedDiagram: SavedDiagram;
+    } | null;
     get canSetDefault(): boolean;
     created(): void;
     close(): void;

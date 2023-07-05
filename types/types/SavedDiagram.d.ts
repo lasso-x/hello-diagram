@@ -15,6 +15,7 @@ export default interface SavedDiagram {
         activeLayout?: string;
         enableTaxi?: boolean;
     };
+    metadata?: Record<string, any>;
 }
 export declare const createSavedDiagram: (diagram: Diagram) => SavedDiagram;
 export declare const parseSavedDiagramJSON: (json: string) => SavedDiagram | null;

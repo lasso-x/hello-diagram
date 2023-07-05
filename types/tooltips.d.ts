@@ -4,6 +4,7 @@ export interface TooltipOptions {
     text: string;
     placement?: TooltipPlacement;
     offset?: TooltipOffset;
+    overrideShow?: boolean;
 }
 export declare type TooltipPlacement = 'auto' | 'top' | 'left' | 'right' | 'bottom';
 export declare type TooltipOffset = number | {

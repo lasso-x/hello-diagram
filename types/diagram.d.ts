@@ -2,20 +2,25 @@ import Vue from 'vue';
 import DiagramEventBus from './types/DiagramEventBus';
 import DiagramData, { DiagramDataDefinition, Change } from './types/DiagramData';
 import SavedDiagram from './types/SavedDiagram';
+import DiagramUpdater from './types/DiagramUpdater';
+import { Store } from './store';
 export default class Diagram {
     static init(config: DiagramConfig): Diagram;
+    static defaultGraphCache: Map<string, Promise<DiagramDataDefinition | null>>;
+    store: Store;
     element?: Element;
     vm?: Vue;
     eventBus: DiagramEventBus;
     userId: string;
     mainEntityId: string;
+    initialSavedDiagram: SavedDiagram | null;
     entityTypes: EntityTypes;
     relationTypes: RelationTypes;
     fieldGroups: FieldGroup[];
     fields: Field[];
     filters: Filter[];
     layouts: LayoutDefinition[];
-    methods: Pick<DiagramConfigMethods, ('getSavedDiagrams' | 'saveDiagram' | 'deleteSavedDiagram' | 'getDefaultSavedDiagramId' | 'setDefaultSavedDiagramId' | 'getPrintTitle' | 'getPrintFilename' | 'convertPngToPdf' | 'getEntityData' | 'searchEntities' | 'getContextMenuActions' | 'openFullscreen')>;
+    methods: DiagramConfigMethods;
     spreadTaxiEdges: boolean;
     initialZoomLevel: number | null;
     initialPan: NonNullable<DiagramConfig['initialPan']> | null;
@@ -32,6 +37,12 @@ export default class Diagram {
     enableSaving: boolean;
     enableDocuments: boolean;
     enableSharing: boolean;
+    updater: {
+        enabled: boolean;
+        dialog: {
+            description: string;
+        };
+    };
     printSettings: {
         orientation?: 'portrait' | 'landscape';
         size?: 'A5' | 'A4' | 'A3';
@@ -40,31 +51,40 @@ export default class Diagram {
         hideLogo?: boolean;
     };
     saveSettingsToLocalStorage: boolean;
+    userPreferences: UserPreferences;
     isLoading: boolean;
     loadSavedDiagramsPromise: Promise<SavedDiagram[]> | null;
     savedDiagrams: SavedDiagram[];
     savedDiagramsMap: Map<string, SavedDiagram>;
-    defaultSavedDiagramId: string | null;
+    defaultDiagram: {
+        new?: boolean;
+        savedDiagramId?: string;
+    };
     activeDiagram: ActiveDiagram;
     hasActiveDiagram: boolean;
     hasUnsavedChanges: boolean;
+    hasSavedSinceLoad: boolean;
     isSaving: boolean;
     constructor(config: DiagramConfig);
     render(container: Element): HTMLDivElement;
     setActiveDiagram(activeDiagram: ActiveDiagram): void;
     loadSavedDiagrams(): Promise<void>;
-    getDefaultSavedDiagramId(): Promise<string | null>;
-    setDefaultSavedDiagramId(id: string | null): Promise<void>;
+    getDefaultDiagram(): Promise<{
+        new?: boolean | undefined;
+        savedDiagramId?: string | undefined;
+    }>;
+    setDefaultDiagram(defaultDiagram: Diagram['defaultDiagram']): Promise<void>;
     save(overwrite?: boolean): Promise<void>;
     updateSavedDiagram(savedDiagram: SavedDiagram): Promise<void>;
-    generatePng(options?: Pick<NonNullable<DiagramConfig['printSettings']>, 'orientation' | 'size'>): Promise<Blob>;
-    loadSavedDiagram(savedDiagram: SavedDiagram): void;
+    generatePng(options?: GeneratePngOptions): Promise<Blob>;
+    loadSavedDiagram(savedDiagram: SavedDiagram): Promise<void>;
     loadNewDiagram(): Promise<void>;
     load(savedDiagram?: SavedDiagram): Promise<void>;
     deleteSavedDiagram(savedDiagram: SavedDiagram): Promise<void>;
     reset(): void;
     search(type: EntityType, searchString: string): Entity[];
     search(type: RelationType, searchString: string): Relation[];
+    fetchDefaultGraph(): Promise<DiagramDataDefinition | null>;
 }
 export interface DiagramConfig {
     userId?: string;
@@ -95,6 +115,12 @@ export interface DiagramConfig {
     enableSaving?: boolean;
     enableDocuments?: boolean;
     enableSharing?: boolean;
+    updater?: {
+        enabled?: boolean;
+        dialog?: {
+            description?: string;
+        };
+    };
     printSettings?: {
         orientation?: 'portrait' | 'landscape';
         size?: 'A5' | 'A4' | 'A3';
@@ -106,17 +132,18 @@ export interface DiagramConfig {
 }
 export interface DiagramConfigMethods {
     getSavedDiagrams?: () => Promise<SavedDiagram[]>;
+    loadSavedDiagram?: (savedDiagram: SavedDiagram) => Promise<SavedDiagram>;
     saveDiagram?: (context: {
         savedDiagram: SavedDiagram;
         isActiveDiagram: boolean;
-        generatePng: (options?: {
-            orientation?: 'portrait' | 'landscape';
-            size?: 'A5' | 'A4' | 'A3';
-        }) => Promise<Blob>;
+        generatePng: (options?: GeneratePngOptions) => Promise<Blob>;
     }) => Promise<string | void>;
     deleteSavedDiagram?: (savedDiagram: SavedDiagram) => Promise<void>;
-    getDefaultSavedDiagramId?: () => Promise<string | null>;
-    setDefaultSavedDiagramId?: (id: string | null) => Promise<void>;
+    getDefaultDiagram?: () => Promise<Diagram['defaultDiagram']>;
+    setDefaultDiagram?: (defaultDiagram: Diagram['defaultDiagram']) => Promise<void>;
+    getUserPreferences?(): Promise<UserPreferencesDefinition | null>;
+    getUserPreferences?(): Promise<unknown>;
+    setUserPreferences?: (userPreferences: UserPreferencesDefinition) => Promise<void>;
     getPrintTitle?: (context: PrintContext) => string;
     getPrintFilename?: (context: PrintContext) => string;
     convertPngToPdf?: (context: {
@@ -149,8 +176,19 @@ export interface DiagramConfigMethods {
         hasSelectedItems: boolean;
         onlySelectedItem: ContextItem | null;
         commitChange: (change: Change) => void;
-    }) => ContextMenuActions;
+    }) => ContextMenuActions | {
+        before?: ContextMenuActions;
+        after?: ContextMenuActions;
+    };
     openFullscreen?: () => void;
+}
+export interface GeneratePngOptions {
+    paperOrientation?: 'portrait' | 'landscape';
+    paperSize?: 'A5' | 'A4' | 'A3';
+    width?: number;
+    height?: number;
+    grow?: boolean | 'width' | 'height';
+    scaling?: number;
 }
 export interface PrintContext {
     mainEntity: ContextItem;
@@ -177,6 +215,7 @@ export declare class ActiveDiagram {
         shared?: boolean;
         data?: DiagramData;
         settings?: Settings;
+        metadata?: Record<string, any>;
     });
     diagram: Diagram;
     id: string;
@@ -186,7 +225,11 @@ export declare class ActiveDiagram {
     shared: boolean;
     data: DiagramData;
     settings: Settings;
+    metadata: Record<string, any>;
+    updater: DiagramUpdater;
+    expanding: boolean;
     reset(): void;
+    expand(entities?: Entity[]): Promise<void>;
 }
 export declare class EntityTypes {
     constructor(items: EntityTypeDefinition[]);
@@ -214,6 +257,7 @@ export declare class EntityType {
     styleBuilder?: EntityStyleBuilder;
     printStyle?: EntityStyle;
     printStyleBuilder?: EntityStyleBuilder;
+    customCreatable: boolean;
     searchable: boolean;
     searchResultBuilder: SearchResultBuilder;
     showDetailsButton?: EntityTypeDefinition['showDetailsButton'];
@@ -236,17 +280,21 @@ export interface EntityTypeDefinition {
     labels: {
         singular: string;
         plural: string;
+        entityLabel?: (context: {
+            data: Record<string, any>;
+        }) => string;
         editorLabel?: (data: Record<string, any>) => string;
         editorDescription?: (data: Record<string, any>) => string;
     };
     style?: EntityTypeStyleArgument;
     printStyle?: EntityTypeStyleArgument;
+    customCreatable?: boolean;
     searchable?: boolean;
     searchResultBuilder?: SearchResultBuilder;
-    showDetailsButton?: {
+    showDetailsButton?: Callbackable<(context: ContextItem) => {
         label?: string;
         onClick: () => void;
-    };
+    } | null | undefined>;
 }
 export declare type EntityTypeStyleArgument = EntityStyle | EntityStyleBuilder;
 export declare type EntityStyleBuilder = (context: ContextItem) => EntityStyle;
@@ -258,6 +306,7 @@ export declare class RelationType {
     printStyle?: RelationStyle;
     printStyleBuilder?: RelationStyleBuilder;
     supports: RelationTypeSupport[];
+    customCreatable: boolean;
     searchable: boolean;
     fieldGroups: FieldGroup[];
     fields: Field[];
@@ -283,6 +332,7 @@ export declare type RelationTypeDefinition = {
     style?: RelationTypeStyleArgument;
     printStyle?: RelationTypeStyleArgument;
     supports: RelationTypeSupportDefinition[];
+    customCreatable?: boolean;
     searchable?: boolean;
 };
 export declare type RelationTypeStyleArgument = RelationStyle | RelationStyleBuilder;
@@ -310,6 +360,7 @@ export declare class Entity {
     readonly isRelation = false;
     type: EntityType;
     id: string;
+    isCustom: boolean;
     initialState: Pick<Entity, 'position' | 'data' | 'style'>;
     position?: {
         x: number;
@@ -317,6 +368,8 @@ export declare class Entity {
     };
     data: Record<string, any>;
     style: EntityStyle;
+    previewData: Record<string, any> | null;
+    previewStyle: EntityStyle | null;
     isMainEntity: boolean;
     isParent: boolean;
     isChild: boolean;
@@ -328,9 +381,31 @@ export declare class Entity {
     builtTypePrintStyle: EntityStyle;
     builtStyle: EntityStyle;
     builtPrintStyle: EntityStyle;
+    builtPreviewStyle: EntityStyle | null;
     constructor(diagram: Diagram, options: EntityDefinition);
+    get label(): string;
     get fieldGroups(): FieldGroup[];
-    buildStyle(): void;
+    buildBaseStyle({ context }: {
+        context: ContextItem;
+    }): EntityStyle;
+    buildTypeStyle({ context, builtBaseStyle }: {
+        context: ContextItem;
+        builtBaseStyle: EntityStyle;
+    }): EntityStyle;
+    buildTypePrintStyle({ context, builtTypeStyle }: {
+        context: ContextItem;
+        builtTypeStyle: EntityStyle;
+    }): EntityStyle;
+    buildStyle({ builtTypeStyle, style }: {
+        builtTypeStyle: EntityStyle;
+        style: EntityStyle;
+    }): EntityStyle;
+    buildPrintStyle({ builtTypePrintStyle, style }: {
+        builtTypePrintStyle: EntityStyle;
+        style: EntityStyle;
+    }): EntityStyle;
+    buildAndApplyStyles(): void;
+    buildAndApplyPreviewStyle(): void;
 }
 export interface EntityDefinition {
     type: string;
@@ -359,10 +434,13 @@ export declare class Relation {
     id: string;
     from: string;
     to: string;
+    isCustom: boolean;
     initialState: Pick<Relation, 'data' | 'style' | 'customTaxi'>;
     data: Record<string, any>;
     style: RelationStyle;
     customTaxi: CustomTaxi | null;
+    previewData: Record<string, any> | null;
+    previewStyle: RelationStyle | null;
     isParent: boolean;
     isChild: boolean;
     connectedEntities: Entity[];
@@ -372,9 +450,30 @@ export declare class Relation {
     builtTypePrintStyle: RelationStyle;
     builtStyle: RelationStyle;
     builtPrintStyle: RelationStyle;
+    builtPreviewStyle: RelationStyle | null;
     constructor(diagram: Diagram, options: RelationDefinition);
     get fieldGroups(): FieldGroup[];
-    buildStyle(): void;
+    buildBaseStyle({ context }: {
+        context: ContextItem;
+    }): RelationStyle;
+    buildTypeStyle({ context, builtBaseStyle }: {
+        context: ContextItem;
+        builtBaseStyle: RelationStyle;
+    }): RelationStyle;
+    buildTypePrintStyle({ context, builtTypeStyle }: {
+        context: ContextItem;
+        builtTypeStyle: RelationStyle;
+    }): RelationStyle;
+    buildStyle({ builtTypeStyle, style }: {
+        builtTypeStyle: RelationStyle;
+        style: RelationStyle;
+    }): RelationStyle;
+    buildPrintStyle({ builtTypePrintStyle, style }: {
+        builtTypePrintStyle: RelationStyle;
+        style: RelationStyle;
+    }): RelationStyle;
+    buildAndApplyStyles(): void;
+    buildAndApplyPreviewStyle(): void;
 }
 export interface RelationDefinition {
     type: string;
@@ -424,6 +523,7 @@ export declare class Field {
     dataKey: string;
     getInitialValue?: (data: Record<string, any>) => any;
     formatter?: (value: any) => any;
+    htmlFormatter?: (value: any) => any;
     validator?: (value: any, context: ContextItem) => true | {
         error: string;
     };
@@ -433,6 +533,7 @@ export declare class Field {
     legendColor: string | null;
     startActive: boolean;
     display: boolean;
+    hideFromCustomizer: boolean;
     searchable: boolean;
     editable: boolean;
     constructor(diagram: Diagram, fieldGroup: FieldGroup, options: FieldDefinition);
@@ -449,6 +550,7 @@ export interface FieldDefinition {
     dataKey: string;
     getInitialValue?: (data: Record<string, any>) => any;
     formatter?: (value: any) => any;
+    htmlFormatter?: (value: any) => any;
     validator?: (value: any, context: ContextItem) => boolean | {
         error: string;
     };
@@ -458,6 +560,7 @@ export interface FieldDefinition {
     legendColor?: string;
     startActive?: boolean;
     display?: boolean;
+    hideFromCustomizer?: boolean;
     searchable?: boolean;
     editable?: boolean;
 }
@@ -506,18 +609,45 @@ export interface LayoutDefinition {
 export declare class Settings {
     diagram: Diagram;
     initialState: Pick<Settings, 'activeFields' | 'activeFilters' | 'activeLayout' | 'enableTaxi'>;
-    activeFields: Record<string, boolean | undefined>;
-    activeFilters: Record<string, boolean | undefined>;
+    activeFields: Partial<Record<string, boolean>>;
+    activeFilters: Partial<Record<string, boolean>>;
     activeLayout: LayoutDefinition | null;
     enableTaxi: boolean;
     constructor(diagram: Diagram);
-    init(): void;
+    clone(): Settings;
+    getDefaults(): {
+        activeFields: Partial<Record<string, boolean>>;
+        activeFilters: Partial<Record<string, boolean>>;
+        activeLayout: LayoutDefinition | null;
+        enableTaxi: boolean;
+    };
     setInitialState(): void;
     reset(): void;
-    loadFromLocalStorage(): void;
-    saveToLocalStorage(): void;
     setActiveLayout(layout: LayoutDefinition | null): void;
     setEnableTaxi(enableTaxi?: boolean): void;
+}
+export interface UserPreferencesDefinition {
+    runLayoutAfterAddition?: boolean;
+    settings?: {
+        activeFields?: Partial<Record<string, boolean>>;
+        activeFilters?: Partial<Record<string, boolean>>;
+        activeLayout?: string | null;
+        enableTaxi?: boolean;
+    };
+}
+export declare class UserPreferences {
+    diagram: Diagram;
+    defaults: Pick<UserPreferences, ('runLayoutAfterAddition')>;
+    runLayoutAfterAddition: boolean;
+    settings: Settings;
+    loaded: boolean;
+    constructor(diagram: Diagram);
+    getDefaults(): {
+        runLayoutAfterAddition: boolean;
+    };
+    createDefinition(): UserPreferencesDefinition;
+    load(): Promise<void>;
+    save(): Promise<void>;
 }
 export declare const createContextItems: (items: (Entity | Relation)[]) => ContextItem[];
 export declare const createContextItem: (item: Entity | Relation) => ContextItem;
@@ -539,6 +669,7 @@ export interface ContextItem {
     connectedEntities: ContextItem[];
 }
 export declare type Arrayable<T> = T | T[];
+export declare type Callbackable<T extends (...args: any) => any> = T | ReturnType<T>;
 export declare type Side = 'top' | 'bottom' | 'left' | 'right';
 export declare type Axis = 'x' | 'y';
 export interface CustomTaxi {

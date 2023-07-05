@@ -1,4 +1,4 @@
-import type { Entity, LayoutDefinition, Relation } from '../diagram';
+import type { Entity, GeneratePngOptions, LayoutDefinition, Relation } from '../diagram';
 import EventBus from './EventBus';
 export declare type DiagramEvent = ({
     name: 'dataUpdated';
@@ -23,16 +23,20 @@ export declare type DiagramEvent = ({
 } | {
     name: 'graph.updatedElements';
 } | {
+    name: 'graph.deleteSelected';
+} | {
     name: 'editor.open';
     target: Entity | Relation;
 } | {
+    name: 'editor.previewUpdated';
+} | {
+    name: 'editor.close';
+} | ({
     name: 'print';
     mode: 'print' | 'pdf' | 'png';
-    orientation: 'portrait' | 'landscape';
-    size: 'A5' | 'A4' | 'A3';
-    fitToPaper: boolean;
+    paper: boolean;
     includeMargin: boolean;
-} | {
+} & GeneratePngOptions) | {
     name: 'printDone';
     file?: {
         filename: string;

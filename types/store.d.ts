@@ -1,6 +1,6 @@
-import { Vue } from 'vue-property-decorator';
-import type Diagram from './diagram';
+import Vue from 'vue';
 import type { VueConstructor } from 'vue/types/umd';
+import type Diagram from './diagram';
 interface StoreProps {
     diagram: Diagram;
 }

@@ -8,7 +8,7 @@
     "url": "https://github.com/lasso-x/hello-diagram/issues"
   },
   "homepage": "https://github.com/lasso-x/hello-diagram#readme",
-  "version": "8.0.0",
+  "version": "8.0.1",
   "description": "Hello World Diagram Example",
   "main": "dist/lassoDiagram.umd.min.js",
   "types": "types/index.d.ts",

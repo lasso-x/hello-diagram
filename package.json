@@ -8,11 +8,11 @@
     "url": "https://github.com/lasso-x/hello-diagram/issues"
   },
   "homepage": "https://github.com/lasso-x/hello-diagram#readme",
-  "version": "8.1.0",
+  "version": "9.0.0-alpha.0",
   "description": "Hello World Diagram Example",
   "main": "dist/lassoDiagram.umd.min.js",
   "types": "types/index.d.ts",
   "dependencies": {
-    "vue": "^2.6.11"
+    "vue": "^2.7.16"
   }
 }

@@ -6,8 +6,8 @@ export interface TooltipOptions {
     offset?: TooltipOffset;
     overrideShow?: boolean;
 }
-export declare type TooltipPlacement = 'auto' | 'top' | 'left' | 'right' | 'bottom';
-export declare type TooltipOffset = number | {
+export type TooltipPlacement = 'auto' | 'top' | 'left' | 'right' | 'bottom';
+export type TooltipOffset = number | {
     all?: number;
     x?: number;
     y?: number;

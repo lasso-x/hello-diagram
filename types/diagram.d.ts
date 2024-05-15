@@ -28,6 +28,8 @@ export default class Diagram {
     compactWidth: number;
     dragAndDropGridSize: number;
     hideDanglingEntitiesAfterFilter: boolean;
+    enableTopBar: boolean;
+    enableCustomizer: boolean;
     enableEditing: boolean;
     enableStyleEditing: boolean;
     showInactiveEditorFields: boolean;
@@ -37,7 +39,6 @@ export default class Diagram {
     enableSaving: boolean;
     enableDocuments: boolean;
     enableSharing: boolean;
-    enableHistoricalDatePicker: boolean;
     updater: {
         enabled: boolean;
         dialog: {
@@ -79,17 +80,13 @@ export default class Diagram {
     updateSavedDiagram(savedDiagram: SavedDiagram): Promise<void>;
     generatePng(options?: GeneratePngOptions): Promise<Blob>;
     loadSavedDiagram(savedDiagram: SavedDiagram): Promise<void>;
-    loadNewDiagram(options?: {
-        onDate?: Date | null;
-    }): Promise<void>;
+    loadNewDiagram(): Promise<void>;
     load(savedDiagram?: SavedDiagram): Promise<void>;
     deleteSavedDiagram(savedDiagram: SavedDiagram): Promise<void>;
     reset(): void;
     search(type: EntityType, searchString: string): Entity[];
     search(type: RelationType, searchString: string): Relation[];
-    fetchDefaultGraph(options?: {
-        onDate?: Date | null;
-    }): Promise<DiagramDataDefinition | null>;
+    fetchDefaultGraph(): Promise<DiagramDataDefinition | null>;
 }
 export interface DiagramConfig {
     userId?: string;
@@ -120,7 +117,8 @@ export interface DiagramConfig {
     enableSaving?: boolean;
     enableDocuments?: boolean;
     enableSharing?: boolean;
-    enableHistoricalDatePicker?: boolean;
+    enableTopBar?: boolean;
+    enableCustomizer?: boolean;
     updater?: {
         enabled?: boolean;
         dialog?: {
@@ -166,7 +164,6 @@ export interface DiagramConfigMethods {
         relationTypes: string[];
         parents: number;
         children: number;
-        onDate: Date | null;
     }) => Promise<DiagramDataDefinition>;
     searchEntities?: (context: {
         query: string;
@@ -200,14 +197,11 @@ export interface GeneratePngOptions {
 export interface PrintContext {
     mainEntity: ContextItem;
     hasDataChanges: boolean;
-    hasCustomizedData: boolean;
     date: Date;
     formattedDate: string;
     formattedTime: string;
-    historicalDate: Date | null;
-    formattedHistoricalDate: string;
 }
-export declare type ContextMenuActions = Arrayable<ContextMenuAction | null>[];
+export type ContextMenuActions = Arrayable<ContextMenuAction | null>[];
 export interface ContextMenuAction {
     icon?: string;
     iconColor?: string;
@@ -226,7 +220,6 @@ export declare class ActiveDiagram {
         data?: DiagramData;
         settings?: Settings;
         metadata?: Record<string, any>;
-        historicalDate?: Date | null;
     });
     diagram: Diagram;
     id: string;
@@ -237,7 +230,6 @@ export declare class ActiveDiagram {
     data: DiagramData;
     settings: Settings;
     metadata: Record<string, any>;
-    historicalDate: Date | null;
     updater: DiagramUpdater;
     expanding: boolean;
     reset(): void;
@@ -308,8 +300,8 @@ export interface EntityTypeDefinition {
         onClick: () => void;
     } | null | undefined>;
 }
-export declare type EntityTypeStyleArgument = EntityStyle | EntityStyleBuilder;
-export declare type EntityStyleBuilder = (context: ContextItem) => EntityStyle;
+export type EntityTypeStyleArgument = EntityStyle | EntityStyleBuilder;
+export type EntityStyleBuilder = (context: ContextItem) => EntityStyle;
 export declare class RelationType {
     id: string;
     labels: RelationTypeDefinition['labels'];
@@ -325,7 +317,7 @@ export declare class RelationType {
     searchableFields: Field[];
     constructor(options: RelationTypeDefinition);
 }
-export declare type RelationTypeDefinition = {
+export type RelationTypeDefinition = {
     id: string;
     labels: {
         singular: string;
@@ -347,8 +339,8 @@ export declare type RelationTypeDefinition = {
     customCreatable?: boolean;
     searchable?: boolean;
 };
-export declare type RelationTypeStyleArgument = RelationStyle | RelationStyleBuilder;
-export declare type RelationStyleBuilder = (context: ContextItem) => RelationStyle;
+export type RelationTypeStyleArgument = RelationStyle | RelationStyleBuilder;
+export type RelationStyleBuilder = (context: ContextItem) => RelationStyle;
 export declare class RelationTypeSupport {
     from: string;
     to: string;
@@ -360,7 +352,7 @@ export interface RelationTypeSupportDefinition {
     to: string;
     allowAddExisting?: boolean;
 }
-export declare type SearchResultBuilder = (context: ContextItem) => SearchResult;
+export type SearchResultBuilder = (context: ContextItem) => SearchResult;
 export interface SearchResult {
     text: string;
     supertext?: string | null;
@@ -680,10 +672,10 @@ export interface ContextItem {
     toEntity: ContextItem | null;
     connectedEntities: ContextItem[];
 }
-export declare type Arrayable<T> = T | T[];
-export declare type Callbackable<T extends (...args: any) => any> = T | ReturnType<T>;
-export declare type Side = 'top' | 'bottom' | 'left' | 'right';
-export declare type Axis = 'x' | 'y';
+export type Arrayable<T> = T | T[];
+export type Callbackable<T extends (...args: any) => any> = T | ReturnType<T>;
+export type Side = 'top' | 'bottom' | 'left' | 'right';
+export type Axis = 'x' | 'y';
 export interface CustomTaxi {
     from: CustomTaxiEndpoint;
     to: CustomTaxiEndpoint;

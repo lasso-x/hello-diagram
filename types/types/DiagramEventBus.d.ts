@@ -1,6 +1,6 @@
 import type { Entity, GeneratePngOptions, LayoutDefinition, Relation } from '../diagram';
 import EventBus from './EventBus';
-export declare type DiagramEvent = ({
+export type DiagramEvent = ({
     name: 'dataUpdated';
 } | {
     name: 'undo';

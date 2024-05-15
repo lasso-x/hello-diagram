@@ -10,7 +10,7 @@ export default EventBus;
 export interface BaseEvent {
     name: string;
 }
-export declare type EventByName<Event extends BaseEvent, Name extends Event['name']> = (Event extends {
+export type EventByName<Event extends BaseEvent, Name extends Event['name']> = (Event extends {
     name: Name;
 } ? Event : never);
-export declare type EventHandler<E extends BaseEvent> = (event: E) => void;
+export type EventHandler<E extends BaseEvent> = (event: E) => void;

@@ -30,6 +30,7 @@ export default class Diagram {
     hideDanglingEntitiesAfterFilter: boolean;
     enableTopBar: boolean;
     enableCustomizer: boolean;
+    enableZoom: boolean;
     enableEditing: boolean;
     enableStyleEditing: boolean;
     showInactiveEditorFields: boolean;
@@ -119,6 +120,7 @@ export interface DiagramConfig {
     enableSharing?: boolean;
     enableTopBar?: boolean;
     enableCustomizer?: boolean;
+    enableZoom?: boolean;
     updater?: {
         enabled?: boolean;
         dialog?: {

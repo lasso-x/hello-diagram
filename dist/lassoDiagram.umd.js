@@ -57264,7 +57264,7 @@ var es_array_push = __webpack_require__(4114);
 // EXTERNAL MODULE: external {"commonjs":"vue","commonjs2":"vue","root":"Vue"}
 var external_commonjs_vue_commonjs2_vue_root_Vue_ = __webpack_require__(9274);
 var external_commonjs_vue_commonjs2_vue_root_Vue_default = /*#__PURE__*/__webpack_require__.n(external_commonjs_vue_commonjs2_vue_root_Vue_);
-;// CONCATENATED MODULE: ./node_modules/thread-loader/dist/cjs.js!./node_modules/babel-loader/lib/index.js??clonedRuleSet-85.use[1]!./node_modules/@vue/vue-loader-v15/lib/loaders/templateLoader.js??ruleSet[1].rules[4]!./node_modules/@vue/vue-loader-v15/lib/index.js??vue-loader-options!./src/components/Diagram.vue?vue&type=template&id=158d7aeb
+;// CONCATENATED MODULE: ./node_modules/thread-loader/dist/cjs.js!./node_modules/babel-loader/lib/index.js??clonedRuleSet-85.use[1]!./node_modules/@vue/vue-loader-v15/lib/loaders/templateLoader.js??ruleSet[1].rules[4]!./node_modules/@vue/vue-loader-v15/lib/index.js??vue-loader-options!./src/components/Diagram.vue?vue&type=template&id=6047c2a0
 var render = function render() {
   var _vm = this,
     _c = _vm._self._c,
@@ -57293,7 +57293,10 @@ var render = function render() {
       visibility: !_vm.diagram.hasActiveDiagram || _vm.diagram.isLoading ? 'hidden' : ''
     }
   }, [_c('Graph', {
-    ref: "graph"
+    ref: "graph",
+    attrs: {
+      "zoom": _vm.diagram.enableZoom
+    }
   }), _vm.diagram.enableCustomizer ? _c('Customizer', {
     style: {
       visibility: _vm.showCustomizer ? '' : 'hidden'
@@ -67187,8 +67190,8 @@ var TopBar_component = normalizeComponent(
 )
 
 /* harmony default export */ var components_TopBar = (TopBar_component.exports);
-;// CONCATENATED MODULE: ./node_modules/thread-loader/dist/cjs.js!./node_modules/babel-loader/lib/index.js??clonedRuleSet-85.use[1]!./node_modules/@vue/vue-loader-v15/lib/loaders/templateLoader.js??ruleSet[1].rules[4]!./node_modules/@vue/vue-loader-v15/lib/index.js??vue-loader-options!./src/components/Graph.vue?vue&type=template&id=7be1299c
-var Graphvue_type_template_id_7be1299c_render = function render() {
+;// CONCATENATED MODULE: ./node_modules/thread-loader/dist/cjs.js!./node_modules/babel-loader/lib/index.js??clonedRuleSet-85.use[1]!./node_modules/@vue/vue-loader-v15/lib/loaders/templateLoader.js??ruleSet[1].rules[4]!./node_modules/@vue/vue-loader-v15/lib/index.js??vue-loader-options!./src/components/Graph.vue?vue&type=template&id=3bd6640b
+var Graphvue_type_template_id_3bd6640b_render = function render() {
   var _vm = this,
     _c = _vm._self._c,
     _setup = _vm._self._setupProxy;
@@ -67241,7 +67244,7 @@ var Graphvue_type_template_id_7be1299c_render = function render() {
     });
   }), !_vm.printMode && _vm.diagram.enableTaxiEditing && _vm.graphReady ? _c('GraphEdgePoints') : _vm._e()], 2)])]), !_vm.printMode ? _c('GraphContextMenu') : _vm._e()], 1);
 };
-var Graphvue_type_template_id_7be1299c_staticRenderFns = [];
+var Graphvue_type_template_id_3bd6640b_staticRenderFns = [];
 
 ;// CONCATENATED MODULE: ./node_modules/cytoscape/dist/cytoscape.esm.mjs
 /**
@@ -106559,6 +106562,7 @@ let Graph = class Graph extends (external_commonjs_vue_commonjs2_vue_root_Vue_de
   constructor(...args) {
     super(...args);
     _defineProperty(this, "diagramVm", void 0);
+    _defineProperty(this, "zoom", void 0);
     _defineProperty(this, "printMode", void 0);
     _defineProperty(this, "scaling", void 0);
     _defineProperty(this, "graphContainerEl", void 0);
@@ -106661,8 +106665,10 @@ let Graph = class Graph extends (external_commonjs_vue_commonjs2_vue_root_Vue_de
           zoom: to.zoom - from.zoom
         };
         this.animating = true;
-        graph.userPanningEnabled(false);
-        graph.userZoomingEnabled(false);
+        if (this.zoom) {
+          graph.userPanningEnabled(false);
+          graph.userZoomingEnabled(false);
+        }
         // const ease = (t: number) => t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2
         // const ease = (t: number) => t === 1 ? 1 : 1 - Math.pow(2, -10 * t)
         const ease = t => 1 - Math.pow(1 - t, 3);
@@ -106681,8 +106687,10 @@ let Graph = class Graph extends (external_commonjs_vue_commonjs2_vue_root_Vue_de
           });
           if (n === 1) {
             this.animating = false;
-            graph.userPanningEnabled(true);
-            graph.userZoomingEnabled(true);
+            if (this.zoom) {
+              graph.userPanningEnabled(true);
+              graph.userZoomingEnabled(true);
+            }
             return;
           }
           rafId = requestAnimationFrame(doFrame);
@@ -106896,6 +106904,7 @@ let Graph = class Graph extends (external_commonjs_vue_commonjs2_vue_root_Vue_de
       container: this.graphContainerEl,
       style: generateStyle(this),
       wheelSensitivity: 0.15,
+      userZoomingEnabled: this.zoom,
       minZoom: 0,
       maxZoom: !this.printMode ? 1 : undefined,
       pixelRatio: !this.printMode ? 2 : 1
@@ -107546,6 +107555,10 @@ __decorate([Inject()], Graph.prototype, "diagramVm", void 0);
 __decorate([Provide()], Graph.prototype, "graphVm", null);
 __decorate([Prop({
   type: Boolean,
+  default: true
+})], Graph.prototype, "zoom", void 0);
+__decorate([Prop({
+  type: Boolean,
   default: false
 })], Graph.prototype, "printMode", void 0);
 __decorate([Prop({
@@ -107565,10 +107578,10 @@ Graph = __decorate([vue_class_component_esm({
 /* harmony default export */ var Graphvue_type_script_lang_ts = (Graph);
 ;// CONCATENATED MODULE: ./src/components/Graph.vue?vue&type=script&lang=ts
  /* harmony default export */ var components_Graphvue_type_script_lang_ts = (Graphvue_type_script_lang_ts); 
-;// CONCATENATED MODULE: ./node_modules/mini-css-extract-plugin/dist/loader.js??clonedRuleSet-67.use[0]!./node_modules/css-loader/dist/cjs.js??clonedRuleSet-67.use[1]!./node_modules/@vue/vue-loader-v15/lib/loaders/stylePostLoader.js!./node_modules/postcss-loader/dist/cjs.js??clonedRuleSet-67.use[2]!./node_modules/sass-loader/dist/cjs.js??clonedRuleSet-67.use[3]!./node_modules/@vue/vue-loader-v15/lib/index.js??vue-loader-options!./src/components/Graph.vue?vue&type=style&index=0&id=7be1299c&prod&lang=scss
+;// CONCATENATED MODULE: ./node_modules/mini-css-extract-plugin/dist/loader.js??clonedRuleSet-67.use[0]!./node_modules/css-loader/dist/cjs.js??clonedRuleSet-67.use[1]!./node_modules/@vue/vue-loader-v15/lib/loaders/stylePostLoader.js!./node_modules/postcss-loader/dist/cjs.js??clonedRuleSet-67.use[2]!./node_modules/sass-loader/dist/cjs.js??clonedRuleSet-67.use[3]!./node_modules/@vue/vue-loader-v15/lib/index.js??vue-loader-options!./src/components/Graph.vue?vue&type=style&index=0&id=3bd6640b&prod&lang=scss
 // extracted by mini-css-extract-plugin
 
-;// CONCATENATED MODULE: ./src/components/Graph.vue?vue&type=style&index=0&id=7be1299c&prod&lang=scss
+;// CONCATENATED MODULE: ./src/components/Graph.vue?vue&type=style&index=0&id=3bd6640b&prod&lang=scss
 
 ;// CONCATENATED MODULE: ./src/components/Graph.vue
 
@@ -107581,8 +107594,8 @@ Graph = __decorate([vue_class_component_esm({
 
 var Graph_component = normalizeComponent(
   components_Graphvue_type_script_lang_ts,
-  Graphvue_type_template_id_7be1299c_render,
-  Graphvue_type_template_id_7be1299c_staticRenderFns,
+  Graphvue_type_template_id_3bd6640b_render,
+  Graphvue_type_template_id_3bd6640b_staticRenderFns,
   false,
   null,
   null,
@@ -109290,10 +109303,10 @@ DiagramVm = __decorate([vue_class_component_esm({
 /* harmony default export */ var Diagramvue_type_script_lang_ts = (DiagramVm);
 ;// CONCATENATED MODULE: ./src/components/Diagram.vue?vue&type=script&lang=ts
  /* harmony default export */ var components_Diagramvue_type_script_lang_ts = (Diagramvue_type_script_lang_ts); 
-;// CONCATENATED MODULE: ./node_modules/mini-css-extract-plugin/dist/loader.js??clonedRuleSet-67.use[0]!./node_modules/css-loader/dist/cjs.js??clonedRuleSet-67.use[1]!./node_modules/@vue/vue-loader-v15/lib/loaders/stylePostLoader.js!./node_modules/postcss-loader/dist/cjs.js??clonedRuleSet-67.use[2]!./node_modules/sass-loader/dist/cjs.js??clonedRuleSet-67.use[3]!./node_modules/@vue/vue-loader-v15/lib/index.js??vue-loader-options!./src/components/Diagram.vue?vue&type=style&index=0&id=158d7aeb&prod&lang=scss
+;// CONCATENATED MODULE: ./node_modules/mini-css-extract-plugin/dist/loader.js??clonedRuleSet-67.use[0]!./node_modules/css-loader/dist/cjs.js??clonedRuleSet-67.use[1]!./node_modules/@vue/vue-loader-v15/lib/loaders/stylePostLoader.js!./node_modules/postcss-loader/dist/cjs.js??clonedRuleSet-67.use[2]!./node_modules/sass-loader/dist/cjs.js??clonedRuleSet-67.use[3]!./node_modules/@vue/vue-loader-v15/lib/index.js??vue-loader-options!./src/components/Diagram.vue?vue&type=style&index=0&id=6047c2a0&prod&lang=scss
 // extracted by mini-css-extract-plugin
 
-;// CONCATENATED MODULE: ./src/components/Diagram.vue?vue&type=style&index=0&id=158d7aeb&prod&lang=scss
+;// CONCATENATED MODULE: ./src/components/Diagram.vue?vue&type=style&index=0&id=6047c2a0&prod&lang=scss
 
 ;// CONCATENATED MODULE: ./src/components/Diagram.vue
 
@@ -112007,10 +112020,12 @@ const exampleConfig = {
   compactWidth: 839,
   // (Optional) Set grid size for drag and drop snapping (0 = disabled).
   dragAndDropGridSize: 16,
-  // (Optional) Show the top bar.
+  // (Optional) Show the top bar (default: true).
   enableTopBar: true,
-  // (Optional) Show the top bar.
+  // (Optional) Show the customizer (default: true).
   enableCustomizer: true,
+  // (Optional) Enables zoom (default: true).
+  enableZoom: true,
   // (Optional) Enable editing.
   enableEditing: true,
   // (Optional) Enable editing style fields.
@@ -112662,6 +112677,7 @@ class Diagram {
     _defineProperty(this, "hideDanglingEntitiesAfterFilter", void 0);
     _defineProperty(this, "enableTopBar", true);
     _defineProperty(this, "enableCustomizer", true);
+    _defineProperty(this, "enableZoom", true);
     _defineProperty(this, "enableEditing", false);
     _defineProperty(this, "enableStyleEditing", false);
     _defineProperty(this, "showInactiveEditorFields", false);
@@ -112725,6 +112741,7 @@ class Diagram {
     this.hideDanglingEntitiesAfterFilter = config.hideDanglingEntitiesAfterFilter ?? true;
     this.enableCustomizer = config.enableCustomizer ?? true;
     this.enableTopBar = config.enableTopBar ?? true;
+    this.enableZoom = config.enableZoom ?? true;
     if (config.enableEditing) this.enableEditing = true;
     if (config.enableStyleEditing) this.enableStyleEditing = true;
     if (config.showInactiveEditorFields) this.showInactiveEditorFields = true;

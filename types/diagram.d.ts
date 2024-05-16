@@ -429,6 +429,7 @@ export interface EntityStyle {
     backgroundColor?: string;
     borderColor?: string;
     borderStyle?: 'solid' | 'dotted' | 'dashed';
+    textColor?: string;
     borderWidth?: number;
     labelsBackgroundColor?: string;
 }

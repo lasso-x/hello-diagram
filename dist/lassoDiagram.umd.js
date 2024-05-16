@@ -64042,8 +64042,8 @@ var EditorField_component = normalizeComponent(
 )
 
 /* harmony default export */ var components_EditorField = (EditorField_component.exports);
-;// CONCATENATED MODULE: ./node_modules/thread-loader/dist/cjs.js!./node_modules/babel-loader/lib/index.js??clonedRuleSet-85.use[1]!./node_modules/@vue/vue-loader-v15/lib/loaders/templateLoader.js??ruleSet[1].rules[4]!./node_modules/@vue/vue-loader-v15/lib/index.js??vue-loader-options!./src/components/DataCreator.vue?vue&type=template&id=9fe5b69c
-var DataCreatorvue_type_template_id_9fe5b69c_render = function render() {
+;// CONCATENATED MODULE: ./node_modules/thread-loader/dist/cjs.js!./node_modules/babel-loader/lib/index.js??clonedRuleSet-85.use[1]!./node_modules/@vue/vue-loader-v15/lib/loaders/templateLoader.js??ruleSet[1].rules[4]!./node_modules/@vue/vue-loader-v15/lib/index.js??vue-loader-options!./src/components/DataCreator.vue?vue&type=template&id=13e9a8d3
+var DataCreatorvue_type_template_id_13e9a8d3_render = function render() {
   var _vm = this,
     _c = _vm._self._c,
     _setup = _vm._self._setupProxy;
@@ -64065,7 +64065,7 @@ var DataCreatorvue_type_template_id_9fe5b69c_render = function render() {
     });
   }), 1) : _vm._e();
 };
-var DataCreatorvue_type_template_id_9fe5b69c_staticRenderFns = [];
+var DataCreatorvue_type_template_id_13e9a8d3_staticRenderFns = [];
 
 // EXTERNAL MODULE: ./node_modules/lodash.set/index.js
 var lodash_set = __webpack_require__(974);
@@ -64151,8 +64151,8 @@ DataCreator = __decorate([vue_class_component_esm({
 ;
 var DataCreator_component = normalizeComponent(
   components_DataCreatorvue_type_script_lang_ts,
-  DataCreatorvue_type_template_id_9fe5b69c_render,
-  DataCreatorvue_type_template_id_9fe5b69c_staticRenderFns,
+  DataCreatorvue_type_template_id_13e9a8d3_render,
+  DataCreatorvue_type_template_id_13e9a8d3_staticRenderFns,
   false,
   null,
   null,
@@ -98559,8 +98559,8 @@ var cytoscape_panzoom_default = /*#__PURE__*/__webpack_require__.n(cytoscape_pan
 // EXTERNAL MODULE: ./node_modules/cytoscape-dagre/cytoscape-dagre.js
 var cytoscape_dagre = __webpack_require__(5111);
 var cytoscape_dagre_default = /*#__PURE__*/__webpack_require__.n(cytoscape_dagre);
-;// CONCATENATED MODULE: ./node_modules/thread-loader/dist/cjs.js!./node_modules/babel-loader/lib/index.js??clonedRuleSet-85.use[1]!./node_modules/@vue/vue-loader-v15/lib/loaders/templateLoader.js??ruleSet[1].rules[4]!./node_modules/@vue/vue-loader-v15/lib/index.js??vue-loader-options!./src/components/GraphNode.vue?vue&type=template&id=a449c364
-var GraphNodevue_type_template_id_a449c364_render = function render() {
+;// CONCATENATED MODULE: ./node_modules/thread-loader/dist/cjs.js!./node_modules/babel-loader/lib/index.js??clonedRuleSet-85.use[1]!./node_modules/@vue/vue-loader-v15/lib/loaders/templateLoader.js??ruleSet[1].rules[4]!./node_modules/@vue/vue-loader-v15/lib/index.js??vue-loader-options!./src/components/GraphNode.vue?vue&type=template&id=31678342
+var GraphNodevue_type_template_id_31678342_render = function render() {
   var _vm = this,
     _c = _vm._self._c,
     _setup = _vm._self._setupProxy;
@@ -98626,7 +98626,7 @@ var GraphNodevue_type_template_id_a449c364_render = function render() {
     })], 2);
   }), 0) : _vm._e()]);
 };
-var GraphNodevue_type_template_id_a449c364_staticRenderFns = [];
+var GraphNodevue_type_template_id_31678342_staticRenderFns = [];
 
 ;// CONCATENATED MODULE: ./src/util/color.ts
 const getPercBrightness = (() => {
@@ -98690,6 +98690,7 @@ let GraphNode = class GraphNode extends (external_commonjs_vue_commonjs2_vue_roo
     return {
       minWidth: entityStyle.minWidth ?? 160,
       maxWidth: entityStyle.maxWidth ?? 480,
+      textColor: entityStyle.textColor ?? 'auto',
       borderWidth: entityStyle.borderWidth ?? 0,
       borderStyle: entityStyle.borderStyle ?? 'solid',
       borderColor: entityStyle.borderColor ?? '#000000',
@@ -98716,6 +98717,7 @@ let GraphNode = class GraphNode extends (external_commonjs_vue_commonjs2_vue_roo
       maxWidth: typeof style.maxWidth === 'number' ? `${style.maxWidth}px` : style.maxWidth,
       borderWidth: `${style.borderWidth}px`,
       borderStyle: style.borderStyle,
+      textColor: style.textColor,
       borderColor: style.borderColor,
       borderRadius: this.borderRadius.outer,
       boxShadow: this.selected ? '0 0 2px 2px #ffa07a' : ''
@@ -98747,7 +98749,7 @@ let GraphNode = class GraphNode extends (external_commonjs_vue_commonjs2_vue_roo
         borderBottomLeftRadius: '0',
         borderBottomRightRadius: '0'
       } : {}),
-      color: textColorsByBrightness[this.brightnessTypes.labels.fg],
+      color: style.textColor === 'auto' ? textColorsByBrightness[this.brightnessTypes.labels.fg] : style.textColor,
       backgroundColor
     };
   }
@@ -98882,10 +98884,10 @@ GraphNode = __decorate([vue_class_component_esm({
 /* harmony default export */ var GraphNodevue_type_script_lang_ts = (GraphNode);
 ;// CONCATENATED MODULE: ./src/components/GraphNode.vue?vue&type=script&lang=ts
  /* harmony default export */ var components_GraphNodevue_type_script_lang_ts = (GraphNodevue_type_script_lang_ts); 
-;// CONCATENATED MODULE: ./node_modules/mini-css-extract-plugin/dist/loader.js??clonedRuleSet-67.use[0]!./node_modules/css-loader/dist/cjs.js??clonedRuleSet-67.use[1]!./node_modules/@vue/vue-loader-v15/lib/loaders/stylePostLoader.js!./node_modules/postcss-loader/dist/cjs.js??clonedRuleSet-67.use[2]!./node_modules/sass-loader/dist/cjs.js??clonedRuleSet-67.use[3]!./node_modules/@vue/vue-loader-v15/lib/index.js??vue-loader-options!./src/components/GraphNode.vue?vue&type=style&index=0&id=a449c364&prod&lang=scss
+;// CONCATENATED MODULE: ./node_modules/mini-css-extract-plugin/dist/loader.js??clonedRuleSet-67.use[0]!./node_modules/css-loader/dist/cjs.js??clonedRuleSet-67.use[1]!./node_modules/@vue/vue-loader-v15/lib/loaders/stylePostLoader.js!./node_modules/postcss-loader/dist/cjs.js??clonedRuleSet-67.use[2]!./node_modules/sass-loader/dist/cjs.js??clonedRuleSet-67.use[3]!./node_modules/@vue/vue-loader-v15/lib/index.js??vue-loader-options!./src/components/GraphNode.vue?vue&type=style&index=0&id=31678342&prod&lang=scss
 // extracted by mini-css-extract-plugin
 
-;// CONCATENATED MODULE: ./src/components/GraphNode.vue?vue&type=style&index=0&id=a449c364&prod&lang=scss
+;// CONCATENATED MODULE: ./src/components/GraphNode.vue?vue&type=style&index=0&id=31678342&prod&lang=scss
 
 ;// CONCATENATED MODULE: ./src/components/GraphNode.vue
 
@@ -98898,8 +98900,8 @@ GraphNode = __decorate([vue_class_component_esm({
 
 var GraphNode_component = normalizeComponent(
   components_GraphNodevue_type_script_lang_ts,
-  GraphNodevue_type_template_id_a449c364_render,
-  GraphNodevue_type_template_id_a449c364_staticRenderFns,
+  GraphNodevue_type_template_id_31678342_render,
+  GraphNodevue_type_template_id_31678342_staticRenderFns,
   false,
   null,
   null,
@@ -111449,7 +111451,8 @@ const exampleConfig = {
     style: context => ({
       ...(context.isMainEntity ? {
         labelsBackgroundColor: '#f1f1f1',
-        borderColor: '#000000'
+        borderColor: '#000000',
+        textColor: '#262626'
       } : {})
     }),
     // (Optional) Seperate style for printing
@@ -113284,6 +113287,7 @@ class EntityType {
       minWidth: style?.minWidth ?? 160,
       maxWidth: style?.maxWidth ?? 480,
       backgroundColor: style?.backgroundColor ?? '#ffffff',
+      textColor: style?.textColor ?? 'auto',
       borderColor: style?.borderColor ?? '#e0e0e0',
       borderStyle: style?.borderStyle ?? 'solid',
       borderWidth: style?.borderWidth ?? 2,

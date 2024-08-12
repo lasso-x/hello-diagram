@@ -40,6 +40,7 @@ export default class Diagram {
     enableSaving: boolean;
     enableDocuments: boolean;
     enableSharing: boolean;
+    enableHistoricalDatePicker: boolean;
     updater: {
         enabled: boolean;
         dialog: {
@@ -81,13 +82,17 @@ export default class Diagram {
     updateSavedDiagram(savedDiagram: SavedDiagram): Promise<void>;
     generatePng(options?: GeneratePngOptions): Promise<Blob>;
     loadSavedDiagram(savedDiagram: SavedDiagram): Promise<void>;
-    loadNewDiagram(): Promise<void>;
+    loadNewDiagram(options?: {
+        onDate?: Date | null;
+    }): Promise<void>;
     load(savedDiagram?: SavedDiagram): Promise<void>;
     deleteSavedDiagram(savedDiagram: SavedDiagram): Promise<void>;
     reset(): void;
     search(type: EntityType, searchString: string): Entity[];
     search(type: RelationType, searchString: string): Relation[];
-    fetchDefaultGraph(): Promise<DiagramDataDefinition | null>;
+    fetchDefaultGraph(options?: {
+        onDate?: Date | null;
+    }): Promise<DiagramDataDefinition | null>;
 }
 export interface DiagramConfig {
     userId?: string;
@@ -121,6 +126,7 @@ export interface DiagramConfig {
     enableTopBar?: boolean;
     enableCustomizer?: boolean;
     enableZoom?: boolean;
+    enableHistoricalDatePicker?: boolean;
     updater?: {
         enabled?: boolean;
         dialog?: {
@@ -166,6 +172,7 @@ export interface DiagramConfigMethods {
         relationTypes: string[];
         parents: number;
         children: number;
+        onDate: Date | null;
     }) => Promise<DiagramDataDefinition>;
     searchEntities?: (context: {
         query: string;
@@ -199,9 +206,12 @@ export interface GeneratePngOptions {
 export interface PrintContext {
     mainEntity: ContextItem;
     hasDataChanges: boolean;
+    hasCustomizedData: boolean;
     date: Date;
     formattedDate: string;
     formattedTime: string;
+    historicalDate: Date | null;
+    formattedHistoricalDate: string;
 }
 export type ContextMenuActions = Arrayable<ContextMenuAction | null>[];
 export interface ContextMenuAction {
@@ -222,6 +232,7 @@ export declare class ActiveDiagram {
         data?: DiagramData;
         settings?: Settings;
         metadata?: Record<string, any>;
+        historicalDate?: Date | null;
     });
     diagram: Diagram;
     id: string;
@@ -232,6 +243,7 @@ export declare class ActiveDiagram {
     data: DiagramData;
     settings: Settings;
     metadata: Record<string, any>;
+    historicalDate: Date | null;
     updater: DiagramUpdater;
     expanding: boolean;
     reset(): void;

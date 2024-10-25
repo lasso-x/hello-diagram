@@ -66705,8 +66705,8 @@ var DropdownButton_component = normalizeComponent(
 )
 
 /* harmony default export */ var components_DropdownButton = (DropdownButton_component.exports);
-;// CONCATENATED MODULE: ./node_modules/thread-loader/dist/cjs.js!./node_modules/babel-loader/lib/index.js??clonedRuleSet-40.use[1]!./node_modules/@vue/vue-loader-v15/lib/loaders/templateLoader.js??ruleSet[1].rules[4]!./node_modules/@vue/vue-loader-v15/lib/index.js??vue-loader-options!./src/components/ColorPicker.vue?vue&type=template&id=555e6232
-var ColorPickervue_type_template_id_555e6232_render = function render() {
+;// CONCATENATED MODULE: ./node_modules/thread-loader/dist/cjs.js!./node_modules/babel-loader/lib/index.js??clonedRuleSet-40.use[1]!./node_modules/@vue/vue-loader-v15/lib/loaders/templateLoader.js??ruleSet[1].rules[4]!./node_modules/@vue/vue-loader-v15/lib/index.js??vue-loader-options!./src/components/ColorPicker.vue?vue&type=template&id=04268468
+var ColorPickervue_type_template_id_04268468_render = function render() {
   var _vm = this,
     _c = _vm._self._c,
     _setup = _vm._self._setupProxy;
@@ -66765,7 +66765,7 @@ var ColorPickervue_type_template_id_555e6232_render = function render() {
     }
   })], 1)]);
 };
-var ColorPickervue_type_template_id_555e6232_staticRenderFns = [];
+var ColorPickervue_type_template_id_04268468_staticRenderFns = [];
 
 ;// CONCATENATED MODULE: ./node_modules/@jaames/iro/dist/iro.es.js
 /*!
@@ -68572,12 +68572,6 @@ let ColorPicker = class ColorPicker extends (external_commonjs_vue_commonjs2_vue
   }
   mounted() {
     let width = 0;
-    const {
-      unwatch: unwatchRect
-    } = watchRect(this.iroEl, rect => {
-      width = rect.width;
-      if (colorPicker) colorPicker.resize(width);
-    });
     const colorPicker = iro_es.ColorPicker(this.iroEl, {
       width,
       color: this.color,
@@ -68596,6 +68590,12 @@ let ColorPicker = class ColorPicker extends (external_commonjs_vue_commonjs2_vue
           sliderType: 'hue'
         }
       }]
+    });
+    const {
+      unwatch: unwatchRect
+    } = watchRect(this.iroEl, rect => {
+      width = rect.width;
+      if (colorPicker) colorPicker.resize(width);
     });
     this.$watch(() => this.color, () => {
       if (colorPicker.color.hslaString !== this.color.hslaString) colorPicker.color.set(this.color);
@@ -68743,10 +68743,10 @@ ColorPicker = __decorate([vue_class_component_esm({
 /* harmony default export */ var ColorPickervue_type_script_lang_ts = (ColorPicker);
 ;// CONCATENATED MODULE: ./src/components/ColorPicker.vue?vue&type=script&lang=ts
  /* harmony default export */ var components_ColorPickervue_type_script_lang_ts = (ColorPickervue_type_script_lang_ts); 
-;// CONCATENATED MODULE: ./node_modules/mini-css-extract-plugin/dist/loader.js??clonedRuleSet-22.use[0]!./node_modules/css-loader/dist/cjs.js??clonedRuleSet-22.use[1]!./node_modules/@vue/vue-loader-v15/lib/loaders/stylePostLoader.js!./node_modules/postcss-loader/dist/cjs.js??clonedRuleSet-22.use[2]!./node_modules/sass-loader/dist/cjs.js??clonedRuleSet-22.use[3]!./node_modules/@vue/vue-loader-v15/lib/index.js??vue-loader-options!./src/components/ColorPicker.vue?vue&type=style&index=0&id=555e6232&prod&lang=scss
+;// CONCATENATED MODULE: ./node_modules/mini-css-extract-plugin/dist/loader.js??clonedRuleSet-22.use[0]!./node_modules/css-loader/dist/cjs.js??clonedRuleSet-22.use[1]!./node_modules/@vue/vue-loader-v15/lib/loaders/stylePostLoader.js!./node_modules/postcss-loader/dist/cjs.js??clonedRuleSet-22.use[2]!./node_modules/sass-loader/dist/cjs.js??clonedRuleSet-22.use[3]!./node_modules/@vue/vue-loader-v15/lib/index.js??vue-loader-options!./src/components/ColorPicker.vue?vue&type=style&index=0&id=04268468&prod&lang=scss
 // extracted by mini-css-extract-plugin
 
-;// CONCATENATED MODULE: ./src/components/ColorPicker.vue?vue&type=style&index=0&id=555e6232&prod&lang=scss
+;// CONCATENATED MODULE: ./src/components/ColorPicker.vue?vue&type=style&index=0&id=04268468&prod&lang=scss
 
 ;// CONCATENATED MODULE: ./src/components/ColorPicker.vue
 
@@ -68759,8 +68759,8 @@ ColorPicker = __decorate([vue_class_component_esm({
 
 var ColorPicker_component = normalizeComponent(
   components_ColorPickervue_type_script_lang_ts,
-  ColorPickervue_type_template_id_555e6232_render,
-  ColorPickervue_type_template_id_555e6232_staticRenderFns,
+  ColorPickervue_type_template_id_04268468_render,
+  ColorPickervue_type_template_id_04268468_staticRenderFns,
   false,
   null,
   null,
